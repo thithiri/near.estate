@@ -1,0 +1,14 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110123019-56986259017680.testnet",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "keyPublic": "ed25519:5aQZTKjh2yeCB1tLujdC7kEkLQx6jAQhNmKMQ9TSTBX1",
+  "allowanceYocto": "62000000000000000000000",
+  "remainingYoctoBeforeRevoke": "60784547849179200000000",
+  "allowedCalls": 4,
+  "methodBlocked": true,
+  "depositBlocked": true,
+  "wrongReceiverBlocked": true,
+  "allowanceExhausted": true,
+  "revoked": true
+}

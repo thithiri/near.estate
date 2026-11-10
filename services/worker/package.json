@@ -1,0 +1,21 @@
+{
+  "name": "@estate/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "seed:audit": "node dist/index.js",
+    "index:once": "node dist/index-events.js --once",
+    "index:start": "node dist/index-events.js --run",
+    "index:rebuild": "node dist/index-events.js --rebuild",
+    "index:catchup": "node dist/catchup-events.js",
+    "monitor:once": "node dist/monitor.js --once",
+    "monitor:start": "node dist/monitor.js --run",
+    "test": "tsx --test src/*.test.ts"
+  },
+  "dependencies": {
+    "@estate/shared": "0.1.0"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110123019-56986259017680.testnet",
+  "startHeight": 1,
+  "indexedThroughHeight": 277099575,
+  "indexedThroughHash": "2t9WheqjMhTQ4Bo75PjLjcoFfXZJy5oncYDiLWSC1XGB",
+  "indexedThroughTimestampNs": "1794332573281804663",
+  "accountHistoryTransactions": 43,
+  "rawEvents": 40,
+  "eventCounts": {
+    "parked": 4,
+    "collected": 2,
+    "ticketed": 1,
+    "expired": 1
+  },
+  "plotTotals": {
+    "plot-main-n-0": {
+      "parks": 2,
+      "collections": 1,
+      "tickets": 1,
+      "gross": "308333",
+      "driverPayout": "111111",
+      "recipientPayout": "144722",
+      "forfeited": "52500"
+    },
+    "plot-main-n-1": {
+      "parks": 2,
+      "collections": 1,
+      "expiries": 1,
+      "gross": "1033333",
+      "driverPayout": "1033333"
+    }
+  },
+  "economyTotals": {
+    "curbParks": 4,
+    "collections": 2,
+    "tickets": 1,
+    "expiries": 1,
+    "gross": "1341666",
+    "driverPayout": "1144444",
+    "recipientPayout": "144722",
+    "forfeited": "52500"
+  },
+  "verification": {
+    "meterGrossMatchesJourneyRecord": true,
+    "meterOwnerPayoutMatchesJourneyRecord": true,
+    "expiryDriverPayoutMatchesJourneyRecord": true,
+    "apiPlotStatsHttp": 200,
+    "apiEconomyStatsHttp": 200,
+    "replayAddedEvents": 0,
+    "rebuildPreservedRawAndAggregates": true
+  }
+}

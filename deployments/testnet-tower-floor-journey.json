@@ -1,0 +1,15 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "driverId": "dev-20261110121826-61851458515092.testnet",
+  "floor": 3,
+  "space": 16,
+  "sessionId": 1,
+  "beforeFloors": [8, 8, 8, 8],
+  "occupiedFloors": [8, 8, 7, 8],
+  "afterFloors": [8, 8, 8, 8],
+  "gross": "41666",
+  "driverPayout": "41666",
+  "parkTransactionHash": "G2j6kjwZQnqabfSn1kcNgDYEsh2pxysqRhX9bJTNeQgc",
+  "collectTransactionHash": "HcQEGv1inFAzSLqs7tzyufYJjSMCtmnpStg7uAmF5qi1"
+}

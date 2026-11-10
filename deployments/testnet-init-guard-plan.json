@@ -1,0 +1,10 @@
+{
+  "scope": "read-only testnet state import and sandbox code upgrade rehearsal",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "beforeWasmSha256": "b6f54542351bcca17924f37063d644ec4a06d5e6c0d62c33fe1a99185247f6d3",
+  "candidateWasmSha256": "007f67a531c87671f57a96660b4a61f3b7fca6a60681944c5b8227eaf0549c59",
+  "beforeStateSha256": "477508ada0ec7a8d9e42b5171b56cb51fb7a02bf34d5519497b803846342ff6b",
+  "sandboxStatePreserved": true,
+  "sandboxFloorViewsPassed": true,
+  "appliedToTestnet": false
+}

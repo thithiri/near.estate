@@ -1,0 +1,22 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110123019-56986259017680.testnet",
+  "inspectorId": "dev-20261110121823-64776049168223.testnet",
+  "driverId": "dev-20261110121826-61851458515092.testnet",
+  "restrictedKeyPublic": "ed25519:6k89owoVRRTyxWVZMu4dxEpepzLP3uEyiuQs8NQPVPaG",
+  "allowedMethods": ["inspect"],
+  "allowanceYocto": "250000000000000000000000",
+  "sessionId": 10,
+  "patrol": {
+    "roadId": "main",
+    "side": "North",
+    "eligible": 1,
+    "attempted": 1,
+    "failed": 0
+  },
+  "sessionFreed": true,
+  "keyRevoked": true,
+  "configRestored": true,
+  "configVersionBefore": 12,
+  "configVersionAfter": 14
+}

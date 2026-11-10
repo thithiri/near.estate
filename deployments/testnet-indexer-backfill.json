@@ -1,0 +1,22 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "startHeight": 277066408,
+  "indexedThroughHeight": 277099314,
+  "indexedThroughHash": "ELfD1oFgPiH61b7UpeMpf55jKchjBGnh9vfo3Tp7Vdvb",
+  "indexedThroughTimestampNs": "1794332422026818867",
+  "eventBlocks": 97,
+  "eventCounts": {
+    "npc_site_seeded": 7,
+    "plot_seeded": 80
+  },
+  "verification": {
+    "accountHistoryTransactions": 90,
+    "sparseHistoryCheckpoint": 277098256,
+    "normalPollingResumedThrough": 277098266,
+    "firstContainerPassThrough": 277098823,
+    "secondContainerPassThrough": 277098841,
+    "reopenedApiStatsThrough": 277098841,
+    "postFixHashAnchorPassThrough": 277099314
+  }
+}

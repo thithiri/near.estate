@@ -1,0 +1,9 @@
+services:
+  api:
+    environment:
+      MODERATOR_ACCOUNT_ID: ${MODERATOR_ACCOUNT_ID:?Set the dedicated testnet moderator account}
+      MODERATOR_KEY_FILE: /run/secrets/moderator.json
+      MODERATION_USER: ${MODERATION_USER:?Set the review user}
+      MODERATION_PASSWORD: ${MODERATION_PASSWORD:?Set a strong review password}
+    volumes:
+      - ${MODERATOR_KEY_HOST_FILE:?Set an absolute protected key-file path}:/run/secrets/moderator.json:ro

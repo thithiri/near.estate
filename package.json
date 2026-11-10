@@ -1,0 +1,55 @@
+{
+  "name": "near-estate",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @estate/shared && npm run build -w @estate/web && npm run build -w @estate/api && npm run build -w @estate/worker",
+    "check": "npm run check --workspaces --if-present && npm run test --workspaces --if-present && npm run beta:metrics:test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "assets:generate": "node scripts/generate-presets.mjs && node scripts/generate-world-sprites.mjs",
+    "assets:check": "node scripts/generate-presets.mjs --check && node scripts/generate-world-sprites.mjs --check",
+    "assets:review": "node scripts/render-preset-review.mjs",
+    "seed:check": "npm run seed:check -w @estate/shared",
+    "config:check": "npm run build -w @estate/shared && node scripts/check-config-parity.mjs",
+    "contract:test": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo test --manifest-path contracts/estate/Cargo.toml",
+    "contract:check": "cargo check --manifest-path contracts/estate/Cargo.toml --target wasm32-unknown-unknown",
+    "deploy:plan": "npm run seed:check && cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example deploy_testnet -- --plan",
+    "deploy:seed:test": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo test --manifest-path contracts/estate/Cargo.toml --example deploy_testnet",
+    "deploy:testnet": "npm run seed:check && cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example deploy_testnet -- --apply",
+    "testnet:code:plan": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example upgrade_testnet -- --plan",
+    "testnet:code:upgrade": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example upgrade_testnet -- --apply",
+    "testnet:tower-floor:journey": "cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_tower_floor_journey -- --apply",
+    "testnet:tower-floor:indexed": "node scripts/verify-tower-floor-indexer.mjs",
+    "backup:drill": "npm run build -w @estate/shared && npm run build -w @estate/api && npm run build -w @estate/worker && node scripts/state-backup-drill.mjs",
+    "beta:metrics": "node scripts/report-beta-metrics.mjs",
+    "beta:metrics:test": "node --test scripts/beta-metrics.test.mjs",
+    "testnet:journey": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_journey -- --apply",
+    "testnet:gameplay-key": "cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_gameplay_key -- --apply",
+    "testnet:inspector-journey": "npm run build -w @estate/api && cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_inspector_journey -- --apply",
+    "testnet:moderation-journey": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_moderation_journey -- --apply",
+    "inspector:key:plan": "cargo run --manifest-path contracts/estate/Cargo.toml --example provision_inspector_key -- --plan",
+    "inspector:key:apply": "cargo run --manifest-path contracts/estate/Cargo.toml --example provision_inspector_key -- --apply",
+    "inspector:key:revoke": "cargo run --manifest-path contracts/estate/Cargo.toml --example provision_inspector_key -- --revoke",
+    "moderator:key:plan": "cargo run --manifest-path contracts/estate/Cargo.toml --example provision_moderator_key -- --plan",
+    "moderator:key:apply": "cargo run --manifest-path contracts/estate/Cargo.toml --example provision_moderator_key -- --apply",
+    "moderator:key:revoke": "cargo run --manifest-path contracts/estate/Cargo.toml --example provision_moderator_key -- --revoke",
+    "testnet:event-source": "cargo run --manifest-path contracts/estate/Cargo.toml --example event_source_probe -- --apply && npm run build -w @estate/shared && node scripts/verify-event-source.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "prettier": "3.6.2",
+    "sharp": "0.35.5",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "vite-plugin-node-polyfills": "0.28.0"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

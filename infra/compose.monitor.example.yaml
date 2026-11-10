@@ -1,0 +1,33 @@
+services:
+  monitor:
+    profiles: [monitor]
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.worker
+    command: ["node", "services/worker/dist/monitor.js", "--run"]
+    environment:
+      API_DATA_DIR: /data
+      ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:?Set the deployed testnet contract}
+      ESTATE_MONITOR_DAILY_BUDGET_USD_MICROS: ${ESTATE_MONITOR_DAILY_BUDGET_USD_MICROS:?Set 0 only while paid generation is off; otherwise match the API daily budget}
+      ESTATE_MONITOR_INDEXER_MAX_AGE_SECONDS: ${ESTATE_MONITOR_INDEXER_MAX_AGE_SECONDS:-900}
+      ESTATE_MONITOR_INSPECTOR_STATUS_FILE: ${ESTATE_MONITOR_INSPECTOR_STATUS_FILE:-}
+      ESTATE_MONITOR_INSPECTOR_MAX_AGE_SECONDS: ${ESTATE_MONITOR_INSPECTOR_MAX_AGE_SECONDS:-900}
+      ESTATE_MONITOR_BUDGET_WARN_PERCENT: ${ESTATE_MONITOR_BUDGET_WARN_PERCENT:-80}
+      ESTATE_MONITOR_REMINDER_SECONDS: ${ESTATE_MONITOR_REMINDER_SECONDS:-1800}
+      ESTATE_MONITOR_WEBHOOK_URL: ${ESTATE_MONITOR_WEBHOOK_URL:?Set an operator-controlled HTTPS alert endpoint}
+      ESTATE_MONITOR_WEBHOOK_TOKEN_FILE: /run/secrets/monitor-webhook-token
+    volumes:
+      - api_data:/data:ro
+      - inspector_status:/status:ro
+      - ${ESTATE_MONITOR_TOKEN_HOST_FILE:?Set a protected alert-token file}:/run/secrets/monitor-webhook-token:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+volumes:
+  inspector_status:

@@ -1,0 +1,16 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "indexedThroughHeight": 277105001,
+  "indexedThroughHash": "9U7eP4xwdb18EWaL8E9z5LwbEpcoGEgDT3eLY4is996d",
+  "towerSessionId": 1,
+  "towerSpace": 16,
+  "parkReceiptId": "Eg4uTpfgAqmcCU5ybUuqNhPVP6nFF1waLToCtLANyjfy",
+  "parkBlockHeight": 277104573,
+  "collectReceiptId": "Fh1XknnTibK86dvu4NN9U4Y6uRk8jpKhS1ziiCKMBWTV",
+  "collectBlockHeight": 277104581,
+  "towerParks": 1,
+  "collections": 1,
+  "gross": "41666",
+  "driverPayout": "41666"
+}

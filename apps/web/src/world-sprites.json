@@ -1,0 +1,380 @@
+{
+  "version": 1,
+  "cars": [
+    {
+      "body": "Hatchback",
+      "color": "Red",
+      "sprite": "hatchback-red.png",
+      "hash": "65c2c1adcfab6a4feed1262ce08bdf7c468d2569d45efbb7061487290b0ee200",
+      "alphaBounds": {
+        "x": 4.25,
+        "y": 7.25,
+        "width": 56.5,
+        "height": 23.5
+      }
+    },
+    {
+      "body": "Hatchback",
+      "color": "Blue",
+      "sprite": "hatchback-blue.png",
+      "hash": "007e00863fab2f2a6926738a179427769868a81f043775d8da7276aca5db0c85",
+      "alphaBounds": {
+        "x": 4.25,
+        "y": 7.25,
+        "width": 56.5,
+        "height": 23.5
+      }
+    },
+    {
+      "body": "Hatchback",
+      "color": "Yellow",
+      "sprite": "hatchback-yellow.png",
+      "hash": "21091720ae7415cdd3c592496bd64671b3e60b69688c3c682a65e5dd6af247c5",
+      "alphaBounds": {
+        "x": 4.25,
+        "y": 7.25,
+        "width": 56.5,
+        "height": 23.5
+      }
+    },
+    {
+      "body": "Hatchback",
+      "color": "Green",
+      "sprite": "hatchback-green.png",
+      "hash": "c27dca075d1c2cbb05a6f1342d16723529c409089aa278af63c717c801a2a937",
+      "alphaBounds": {
+        "x": 4.25,
+        "y": 7.25,
+        "width": 56.5,
+        "height": 23.5
+      }
+    },
+    {
+      "body": "Sedan",
+      "color": "Red",
+      "sprite": "sedan-red.png",
+      "hash": "838f180f94cc3737d1e9fd2ddf93d848cb04918fc8f617d00103e104a310e43b",
+      "alphaBounds": {
+        "x": 2.25,
+        "y": 8.25,
+        "width": 59.5,
+        "height": 22.5
+      }
+    },
+    {
+      "body": "Sedan",
+      "color": "Blue",
+      "sprite": "sedan-blue.png",
+      "hash": "2314b96202b48143be88d39d2584e3fea0328733e2c1cdfeb1c67ed54215451b",
+      "alphaBounds": {
+        "x": 2.25,
+        "y": 8.25,
+        "width": 59.5,
+        "height": 22.5
+      }
+    },
+    {
+      "body": "Sedan",
+      "color": "Yellow",
+      "sprite": "sedan-yellow.png",
+      "hash": "585d1183349813d1ad3145c6055c7dc94555a17ec88643703873474245b2f03d",
+      "alphaBounds": {
+        "x": 2.25,
+        "y": 8.25,
+        "width": 59.5,
+        "height": 22.5
+      }
+    },
+    {
+      "body": "Sedan",
+      "color": "Green",
+      "sprite": "sedan-green.png",
+      "hash": "fe87cd02ae61b11732cb86e0fbe3a89c4cf65d1cc58fe51b30427bcd6a2c5e91",
+      "alphaBounds": {
+        "x": 2.25,
+        "y": 8.25,
+        "width": 59.5,
+        "height": 22.5
+      }
+    },
+    {
+      "body": "SportsCoupe",
+      "color": "Red",
+      "sprite": "sportscoupe-red.png",
+      "hash": "5082ce4490ed0d606131ffe3deb32aafc48f1b72dbb3d083434b46db7d424435",
+      "alphaBounds": {
+        "x": 1.25,
+        "y": 9.25,
+        "width": 61.5,
+        "height": 21.5
+      }
+    },
+    {
+      "body": "SportsCoupe",
+      "color": "Blue",
+      "sprite": "sportscoupe-blue.png",
+      "hash": "af4d5b0092f35572695f609ad66d035b24ab2f257050a92b73a0767f7a54b6cf",
+      "alphaBounds": {
+        "x": 1.25,
+        "y": 9.25,
+        "width": 61.5,
+        "height": 21.5
+      }
+    },
+    {
+      "body": "SportsCoupe",
+      "color": "Yellow",
+      "sprite": "sportscoupe-yellow.png",
+      "hash": "edef88219c4602606a7377dbb041e685c103f6b736678524f9c6dc5b8ee4b74e",
+      "alphaBounds": {
+        "x": 1.25,
+        "y": 9.25,
+        "width": 61.5,
+        "height": 21.5
+      }
+    },
+    {
+      "body": "SportsCoupe",
+      "color": "Green",
+      "sprite": "sportscoupe-green.png",
+      "hash": "fb009b1794b92bb4c251f7d92024c452de7097805d6b18a1ca2131243467a76e",
+      "alphaBounds": {
+        "x": 1.25,
+        "y": 9.25,
+        "width": 61.5,
+        "height": 21.5
+      }
+    },
+    {
+      "body": "SUV",
+      "color": "Red",
+      "sprite": "suv-red.png",
+      "hash": "a78b3de5cfca0302f5c24fc6e84b751cebbb86f847060645017710b1c67b0c85",
+      "alphaBounds": {
+        "x": 3.25,
+        "y": 7.25,
+        "width": 58.5,
+        "height": 23.5
+      }
+    },
+    {
+      "body": "SUV",
+      "color": "Blue",
+      "sprite": "suv-blue.png",
+      "hash": "87f9228ac5a61d5906cb126c9afe2a73b0e9c7b2c8d2b72ea4f61b79aab08b5b",
+      "alphaBounds": {
+        "x": 3.25,
+        "y": 7.25,
+        "width": 58.5,
+        "height": 23.5
+      }
+    },
+    {
+      "body": "SUV",
+      "color": "Yellow",
+      "sprite": "suv-yellow.png",
+      "hash": "a75f99fab0b567ce053dc87adbfd64cc106243865fb152ed76c0e80850fa2dcb",
+      "alphaBounds": {
+        "x": 3.25,
+        "y": 7.25,
+        "width": 58.5,
+        "height": 23.5
+      }
+    },
+    {
+      "body": "SUV",
+      "color": "Green",
+      "sprite": "suv-green.png",
+      "hash": "18d11a43dd198a49c9edcc56f01ae0e23e6e831c109684172f8ffc01d0ac02ff",
+      "alphaBounds": {
+        "x": 3.25,
+        "y": 7.25,
+        "width": 58.5,
+        "height": 23.5
+      }
+    },
+    {
+      "body": "Pickup",
+      "color": "Red",
+      "sprite": "pickup-red.png",
+      "hash": "d47148c2cf47dda3f61fc4cba9b793ff1a9519ae35f11569a64627d43a28b819",
+      "alphaBounds": {
+        "x": 2.25,
+        "y": 8.25,
+        "width": 59.5,
+        "height": 22.5
+      }
+    },
+    {
+      "body": "Pickup",
+      "color": "Blue",
+      "sprite": "pickup-blue.png",
+      "hash": "e9bd1f0dcb079f56890e0208eed9f334a48c9d4df7273d26f3f0f037f3dc8b6d",
+      "alphaBounds": {
+        "x": 2.25,
+        "y": 8.25,
+        "width": 59.5,
+        "height": 22.5
+      }
+    },
+    {
+      "body": "Pickup",
+      "color": "Yellow",
+      "sprite": "pickup-yellow.png",
+      "hash": "29974f5dc77f9745550c0d472b67906e46d26f9bb36b1db12750feab9a4cf284",
+      "alphaBounds": {
+        "x": 2.25,
+        "y": 8.25,
+        "width": 59.5,
+        "height": 22.5
+      }
+    },
+    {
+      "body": "Pickup",
+      "color": "Green",
+      "sprite": "pickup-green.png",
+      "hash": "2e9521aefd6ca7d57d812132e0ab88f41ff8247bab5f6b3b12f5a5ab4fdfc264",
+      "alphaBounds": {
+        "x": 2.25,
+        "y": 8.25,
+        "width": 59.5,
+        "height": 22.5
+      }
+    },
+    {
+      "body": "Microvan",
+      "color": "Red",
+      "sprite": "microvan-red.png",
+      "hash": "050135eb85e6b06f5d9693c1341ab417d5106da428e0875b8ffdb5accb342bf8",
+      "alphaBounds": {
+        "x": 4.5,
+        "y": 6.25,
+        "width": 55.25,
+        "height": 24.5
+      }
+    },
+    {
+      "body": "Microvan",
+      "color": "Blue",
+      "sprite": "microvan-blue.png",
+      "hash": "9bf12ed0b669d40cdf5cc97e8dff383077ddb1c5e303c651012d650b9e0e02ae",
+      "alphaBounds": {
+        "x": 4.5,
+        "y": 6.25,
+        "width": 55.25,
+        "height": 24.5
+      }
+    },
+    {
+      "body": "Microvan",
+      "color": "Yellow",
+      "sprite": "microvan-yellow.png",
+      "hash": "5a94eac2ec3e14f610af97c0782587d23881e30d1423c0259a6cff25d8e60838",
+      "alphaBounds": {
+        "x": 4.5,
+        "y": 6.25,
+        "width": 55.25,
+        "height": 24.5
+      }
+    },
+    {
+      "body": "Microvan",
+      "color": "Green",
+      "sprite": "microvan-green.png",
+      "hash": "f89607466ec617fdc30fed9aa9d070b9df67ac5639083b11a8b8af7bc0bdce37",
+      "alphaBounds": {
+        "x": 4.5,
+        "y": 6.25,
+        "width": 55.25,
+        "height": 24.5
+      }
+    }
+  ],
+  "sites": [
+    {
+      "role": "ParkingTower",
+      "sprite": "parkingtower.png",
+      "hash": "dc207630ec9b10314951d3499ff3d9dccab5cc85e31976790dff6180c9376cef",
+      "alphaBounds": {
+        "x": 7.5,
+        "y": 6.5,
+        "width": 125,
+        "height": 152
+      },
+      "labelRect": {
+        "x": 25,
+        "y": 20,
+        "width": 90,
+        "height": 16
+      }
+    },
+    {
+      "role": "RepairGarage",
+      "sprite": "repairgarage.png",
+      "hash": "7923ee6c5090546955140ea6f4ccbdb964cda0cf93d281c84df0a07f0f301ef3",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 49.25,
+        "width": 126.5,
+        "height": 109.25
+      },
+      "labelRect": {
+        "x": 25,
+        "y": 76,
+        "width": 90,
+        "height": 15
+      }
+    },
+    {
+      "role": "Cinema",
+      "sprite": "cinema.png",
+      "hash": "1ae708e1c9f8f9446b01d79cc25f9a238bc5a9de283cb74938f48f1583a62dc8",
+      "alphaBounds": {
+        "x": 3.5,
+        "y": 27.25,
+        "width": 133,
+        "height": 131.25
+      },
+      "labelRect": {
+        "x": 18,
+        "y": 84,
+        "width": 104,
+        "height": 15
+      }
+    },
+    {
+      "role": "BurgerStop",
+      "sprite": "burgerstop.png",
+      "hash": "2acde1939e6f689677f5a780121d001b695165b7874f2fd55dc82dd1956dab9e",
+      "alphaBounds": {
+        "x": 7.5,
+        "y": 71.5,
+        "width": 125,
+        "height": 87
+      },
+      "labelRect": {
+        "x": 18,
+        "y": 110,
+        "width": 104,
+        "height": 18
+      }
+    },
+    {
+      "role": "PracticeCourse",
+      "sprite": "practicecourse.png",
+      "hash": "7b7f4163aa1528942c958394a3784157efa67ef1a845d2fb455c65fe184c2f61",
+      "alphaBounds": {
+        "x": 4.25,
+        "y": 66.25,
+        "width": 131.5,
+        "height": 92.25
+      },
+      "labelRect": {
+        "x": 28,
+        "y": 94,
+        "width": 84,
+        "height": 18
+      }
+    }
+  ]
+}

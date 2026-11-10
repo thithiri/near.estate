@@ -1,0 +1,24 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110123019-56986259017680.testnet",
+  "sessionId": 10,
+  "inspectionBlockHeight": 277101855,
+  "receiptId": "CzX7VLn8V9QL2y3KXfSW4KL3dmxuh6NZVf2mAJaSLyBF",
+  "inspectionSucceeded": true,
+  "ticket": {
+    "plotId": "plot-main-n-0",
+    "gross": "150000",
+    "driverPayout": "0",
+    "recipientPayout": "105000",
+    "forfeited": "45000"
+  },
+  "indexedThroughHeight": 277102017,
+  "indexedThroughHash": "G6GbFxypccJNSb1io8opzksXRjBLLeZ2bCenAf9u5U1q",
+  "apiEconomyStatsHttp": 200,
+  "apiEconomyTotalsIncludingEarlierJourneyRuns": {
+    "inspectorAttempts": 6,
+    "inspectorSuccesses": 6,
+    "tickets": 7,
+    "gross": "2066666"
+  }
+}

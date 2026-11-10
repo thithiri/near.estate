@@ -1,0 +1,55 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    environment:
+      PORT: 3000
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8080}
+      ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:-}
+      NEAR_RPC_URL: ${NEAR_RPC_URL:-https://test.rpc.fastnear.com}
+      API_DATA_DIR: /data
+    volumes:
+      - api_data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+  indexer:
+    profiles: [indexer]
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.worker
+    environment:
+      ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:-}
+      INDEXER_START_HEIGHT: ${INDEXER_START_HEIGHT:-}
+      ESTATE_FASTNEAR_API_KEY: ${ESTATE_FASTNEAR_API_KEY:-}
+      API_DATA_DIR: /data
+    volumes:
+      - api_data:/data
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+      args:
+        VITE_ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+volumes:
+  api_data:

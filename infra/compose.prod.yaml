@@ -1,0 +1,54 @@
+services:
+  api:
+    environment:
+      APP_ORIGIN: https://${ESTATE_HOST:?Set the public hostname without a scheme}
+      ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:?Set the deployed testnet contract}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+  indexer:
+    environment:
+      ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:?Set the deployed testnet contract}
+      INDEXER_START_HEIGHT: ${INDEXER_START_HEIGHT:?Set the contract creation height}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+  web:
+    build:
+      args:
+        VITE_ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:?Set the deployed testnet contract}
+    environment:
+      ESTATE_HOST: ${ESTATE_HOST:?Set the public hostname without a scheme}
+    ports: !override
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:8081/healthz",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+volumes:
+  caddy_data:
+  caddy_config:

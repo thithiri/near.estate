@@ -1,0 +1,19 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110123019-56986259017680.testnet",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "transactionHash": "9eBSuAX37tLJVwapr221vmuApVoHevmn5nAUK5AP7zoJ",
+  "receiptId": "AU2BiFZpuzv8fzSuVrkGxwAr1ua4zYLDqb55dyqtUe7R",
+  "receiptBlockHash": "An6fp6yiakeeB4EzRmbiAKHu9vv9zywTBggtoRpXmcBm",
+  "eventLog": "EVENT_JSON:{\"standard\":\"near_estate\",\"version\":\"1.0.0\",\"event\":\"rule_scheduled\",\"data\":[{\"plot_id\":\"plot-main-n-0\",\"effective_at\":1794316011}]}",
+  "sourceChecks": {
+    "blockHeight": 277071365,
+    "eventIdentity": "AU2BiFZpuzv8fzSuVrkGxwAr1ua4zYLDqb55dyqtUe7R:0",
+    "neardataReplayMatched": true,
+    "archivalTransactionMatched": true,
+    "archivalBlockScanMatched": true,
+    "transactionBlockHash": "7ZHW9vG95nX4tZ6zrAEjq2VXYZzNYgKbq93TucDGRJyD",
+    "historicalBlockHeight": 277000000,
+    "historicalBlockHash": "95Mh7hUpQ8PXeimvMeFaxV7PCh12YM7xz5hhacQXjdpQ"
+  }
+}

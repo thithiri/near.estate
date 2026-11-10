@@ -1,0 +1,30 @@
+{
+  "name": "@estate/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit -p tsconfig.json && vite build",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test src/*.test.ts"
+  },
+  "dependencies": {
+    "@estate/shared": "0.1.0",
+    "@near-js/accounts": "2.3.0",
+    "@near-js/crypto": "2.3.0",
+    "@near-js/keystores": "2.3.0",
+    "@near-js/providers": "2.3.0",
+    "@near-js/signers": "2.3.0",
+    "@near-js/transactions": "2.3.0",
+    "@near-wallet-selector/core": "10.1.4",
+    "@near-wallet-selector/meteor-wallet": "10.1.4",
+    "@near-wallet-selector/modal-ui": "10.1.4",
+    "@near-wallet-selector/my-near-wallet": "10.1.4",
+    "pixi.js": "8.22.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "vite": "8.3.7"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "scope": "local backup and restore drill; no VPS volume swap",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "restoredFinalizedSnapshot": {
+    "eventCount": 91,
+    "cursorHeight": 277105001,
+    "cursorHash": "9U7eP4xwdb18EWaL8E9z5LwbEpcoGEgDT3eLY4is996d",
+    "deploymentJsonCount": 11,
+    "backupManifestSha256": "036b26ac3006e7014f49ca73aa827d537bd2ee3996daa03cba9a0576d4148e17",
+    "sqliteIntegrityPassed": true,
+    "aggregateRebuildPreservedCounts": true
+  },
+  "compositeFixture": {
+    "eventsPreserved": 2,
+    "backupCursorHeight": 11,
+    "resumedCursorHeight": 12,
+    "uploadAndImagePreserved": true,
+    "assetSha256": "c3310a2246e313b8b7e5523fc80cc451ea46bd1f92bcf9ce1cb05a581848e049",
+    "deploymentJsonCount": 2,
+    "duplicateEventRejected": true,
+    "missingReferencedAssetRejected": true,
+    "tamperedAssetRejected": true
+  }
+}

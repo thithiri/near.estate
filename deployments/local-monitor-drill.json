@@ -1,0 +1,21 @@
+{
+  "scope": "local monitor and read-only container drill; no production alert receiver",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "indexedSnapshot": {
+    "cursorHeight": 277105001,
+    "mountedReadOnly": true,
+    "observedAt": "2026-11-10T19:35:03.000Z",
+    "cursorAgeSeconds": 3529,
+    "alertCode": "INDEXER_STALE"
+  },
+  "localChecks": {
+    "sharedWalRead": true,
+    "budgetThresholds": true,
+    "wrongContractAndMissingCursor": true,
+    "reminderAndResolution": true,
+    "deliveryRetry": true,
+    "authenticatedWebhookRequest": true,
+    "rejectedWebhookResponse": true
+  },
+  "liveWebhookDelivered": false
+}

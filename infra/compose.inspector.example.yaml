@@ -1,0 +1,24 @@
+services:
+  inspector:
+    profiles: [inspector]
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    command: ["node", "services/api/dist/run-inspector.js", "--run"]
+    environment:
+      ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:?Set the deployed testnet contract}
+      INSPECTOR_ACCOUNT_ID: ${INSPECTOR_ACCOUNT_ID:?Set the dedicated inspector account}
+      INSPECTOR_KEY_FILE: /run/secrets/inspector.json
+      INSPECTOR_STATUS_FILE: /status/patrol.json
+      NEAR_RPC_URL: ${NEAR_RPC_URL:-https://test.rpc.fastnear.com}
+    volumes:
+      - ${INSPECTOR_KEY_HOST_FILE:?Set an absolute protected key-file path}:/run/secrets/inspector.json:ro
+      - inspector_status:/status
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+volumes:
+  inspector_status:

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#fff9ed" />
+    <title>near.estate — Parking City</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <strong class="brand">near.estate</strong>
+        <nav aria-label="Main navigation">
+          <button data-screen="Street" class="active" aria-current="page">
+            Street
+          </button>
+          <button data-screen="Map">Map</button>
+          <button data-screen="Cars">Cars</button>
+          <button data-screen="My Plots">My Plots</button>
+          <button data-screen="Menu" class="menu-nav">Menu</button>
+        </nav>
+        <div class="wallet">
+          <span id="balance">100</span> <span aria-label="coins">🟡</span
+          ><span class="guest">Guest preview</span>
+          <button
+            id="mode-button"
+            hidden
+            aria-label="Switch between guest and testnet street"
+          >
+            Testnet street
+          </button>
+          <button
+            id="network-button"
+            hidden
+            aria-label="Open live testnet city"
+          >
+            Wallet
+          </button>
+        </div>
+      </header>
+      <main>
+        <section id="street-screen" class="screen street-screen">
+          <div class="scene-wrap">
+            <div id="street-head">
+              <span id="car-name">Hatchback · Tier 1</span
+              ><strong id="street-name">Main Street</strong
+              ><span id="street-side">North side</span>
+            </div>
+            <div
+              id="street-canvas"
+              aria-label="Side-scrolling street game"
+            ></div>
+            <div class="rotate-card">
+              <div class="rotate-icon">↻</div>
+              <h1>Rotate to drive</h1>
+              <p>Explore the city while upright, then rotate to drive.</p>
+              <div class="rotate-actions">
+                <button data-screen="Map">Open city map</button
+                ><button data-screen="Cars">My cars</button
+                ><button data-screen="My Plots">My plots</button>
+              </div>
+            </div>
+            <div class="controlbar">
+              <div class="drive-buttons">
+                <button id="left" aria-label="Drive left">◀</button
+                ><button id="right" aria-label="Drive right">▶</button>
+              </div>
+              <span id="durability">🔧 100%</span>
+              <button id="cross-side">Cross to South</button>
+              <button id="collect" hidden>Collect parked car</button>
+              <label id="tower-floor-wrap" hidden
+                >Floor
+                <select id="tower-floor" aria-label="Parking tower floor">
+                  <option value="0">1</option>
+                  <option value="1">2</option>
+                  <option value="2">3</option>
+                  <option value="3">4</option>
+                </select>
+              </label>
+              <button
+                id="context-details"
+                aria-controls="plot-panel"
+                aria-expanded="false"
+                hidden
+              >
+                Details
+              </button>
+              <button id="action" class="primary">Park here</button>
+            </div>
+          </div>
+          <aside id="plot-panel" class="plot-panel">
+            <button
+              id="close-panel"
+              class="close-panel"
+              aria-label="Close plot panel"
+            >
+              ×
+            </button>
+            <h2 id="plot-title">Plot</h2>
+            <p id="plot-rule">Free parking</p>
+            <p id="plot-rate">60 coins / hour</p>
+            <p id="plot-owner-price">Unowned</p>
+            <p id="plot-spaces">2 spaces</p>
+            <div id="plot-links" class="plot-links" hidden></div>
+            <div id="tower-spaces" hidden></div>
+            <button id="panel-action" class="primary">Park here</button>
+            <button id="panel-collect" hidden>Collect parked car</button>
+            <hr />
+            <small>Guest preview — shared state requires a wallet.</small>
+          </aside>
+        </section>
+        <section id="other-screen" class="screen other-screen" hidden></section>
+      </main>
+      <nav class="mobile-bottom-nav" aria-label="Phone navigation">
+        <button data-screen="Street" class="active" aria-current="page">
+          Street
+        </button>
+        <button data-screen="Map">Map</button>
+        <button data-screen="Cars">Cars</button>
+        <button data-screen="My Plots">Plots</button>
+        <button data-screen="Menu">Menu</button>
+      </nav>
+      <footer id="status" role="status">
+        Use arrows or A/D to drive. Space parks or collects.
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

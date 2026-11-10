@@ -1,0 +1,13 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110123019-56986259017680.testnet",
+  "driverId": "dev-20261110121826-61851458515092.testnet",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "wasmSha256": "cfd227883fb641175c49b09d31d31556b02b25de6defad33a566f161f9f55d55",
+  "meterGross": "133333",
+  "meterOwnerPayout": "22222",
+  "ticketSessionId": 2,
+  "contestedSessionId": 3,
+  "expiryDriverPayout": "1000000",
+  "reconnected": true
+}

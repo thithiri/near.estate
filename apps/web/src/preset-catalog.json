@@ -1,0 +1,1385 @@
+{
+  "version": 1,
+  "facades": [
+    {
+      "buildingType": "Retail",
+      "variant": 1,
+      "level": 1,
+      "sprite": "retail-1-l1.png",
+      "paletteMask": "retail-1-l1-mask.png",
+      "thumbnail": "retail-1-l1-thumb.png",
+      "spriteHash": "dcff66083a5c8c223b5ef213b8a3aeeb9a865419191b01da51db988d86e37f4d",
+      "paletteMaskHash": "f1be7f8fac3a9c919ef42d370c32f6359c691dcbe8d175e56dd0d3b5666a1401",
+      "thumbnailHash": "460a71f9b4f097b04219e75254927e320d5925ce70eef8ae8837ab747737ac90",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 99.25,
+        "width": 128.5,
+        "height": 59.5
+      },
+      "logoRect": {
+        "x": 22,
+        "y": 111,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 76,
+        "y": 131,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 56,
+        "y": 120,
+        "width": 74,
+        "height": 10
+      }
+    },
+    {
+      "buildingType": "Retail",
+      "variant": 1,
+      "level": 2,
+      "sprite": "retail-1-l2.png",
+      "paletteMask": "retail-1-l2-mask.png",
+      "thumbnail": "retail-1-l2-thumb.png",
+      "spriteHash": "5ab8b17704eed0317c6a3bc6e20b95f010fa3363c37202708d831a9eddd8398c",
+      "paletteMaskHash": "b176419e9c606aaf848da45cd8df07ee4cf7ca95b4142c454b1fd07f137401fe",
+      "thumbnailHash": "4382febd3ea72b53d4c9a76b457bedab6f72a8f2112997d22a9acd71cf49f6eb",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 69.25,
+        "width": 128.5,
+        "height": 89.5
+      },
+      "logoRect": {
+        "x": 22,
+        "y": 81,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 76,
+        "y": 101,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 56,
+        "y": 90,
+        "width": 74,
+        "height": 10
+      }
+    },
+    {
+      "buildingType": "Retail",
+      "variant": 1,
+      "level": 3,
+      "sprite": "retail-1-l3.png",
+      "paletteMask": "retail-1-l3-mask.png",
+      "thumbnail": "retail-1-l3-thumb.png",
+      "spriteHash": "853123fb9d549b332c96e87ccc22283f9f1a1ddd8cd5b3af558eae7a9f724826",
+      "paletteMaskHash": "e1f368f401a7b0d7fd5ed1800e3e6b116337762a260447a28a01fe14eee8dbc6",
+      "thumbnailHash": "5e0061a68eb4383842ac563a4cad564a9d84e60274214997a7f051092d04d032",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 39.25,
+        "width": 128.5,
+        "height": 119.5
+      },
+      "logoRect": {
+        "x": 22,
+        "y": 51,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 76,
+        "y": 71,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 56,
+        "y": 60,
+        "width": 74,
+        "height": 10
+      }
+    },
+    {
+      "buildingType": "Retail",
+      "variant": 1,
+      "level": 4,
+      "sprite": "retail-1-l4.png",
+      "paletteMask": "retail-1-l4-mask.png",
+      "thumbnail": "retail-1-l4-thumb.png",
+      "spriteHash": "4ef0e9719143d54d3a46ff23f4da43d5669fba1d375b9b8c551a1398ae425c4c",
+      "paletteMaskHash": "dd7c2d4aae52f4444c6e6db7c7a1d1abff2c31176b258064eaad30e3dfed8605",
+      "thumbnailHash": "369b6073dc749bee31c659b69915bb7c8cf0c6d5a41b46c79f455147dad45afc",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 9.25,
+        "width": 128.5,
+        "height": 149.5
+      },
+      "logoRect": {
+        "x": 22,
+        "y": 21,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 76,
+        "y": 41,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 56,
+        "y": 30,
+        "width": 74,
+        "height": 10
+      }
+    },
+    {
+      "buildingType": "Retail",
+      "variant": 2,
+      "level": 1,
+      "sprite": "retail-2-l1.png",
+      "paletteMask": "retail-2-l1-mask.png",
+      "thumbnail": "retail-2-l1-thumb.png",
+      "spriteHash": "87439e462f1bdbcef24fdff923ff06fdbd16af70b27c8cc4e35948c3f1ed4645",
+      "paletteMaskHash": "f17b13ffa4ba6b6dfd4317ef1c883dc51a9935db621b3f6e587ce2cd7e884b25",
+      "thumbnailHash": "392b89349acfe546cc3ffba0905d8c16e999c516d483f09825b451a9521c240f",
+      "alphaBounds": {
+        "x": 7.25,
+        "y": 99.25,
+        "width": 125.5,
+        "height": 59.5
+      },
+      "logoRect": {
+        "x": 17,
+        "y": 124,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 76,
+        "y": 125,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 43,
+        "y": 112,
+        "width": 90,
+        "height": 11
+      }
+    },
+    {
+      "buildingType": "Retail",
+      "variant": 2,
+      "level": 2,
+      "sprite": "retail-2-l2.png",
+      "paletteMask": "retail-2-l2-mask.png",
+      "thumbnail": "retail-2-l2-thumb.png",
+      "spriteHash": "9119c783ba4e89004179639fb544686581429c9d49a294a13d30b5259f566868",
+      "paletteMaskHash": "1a70ea01e3ed094ad67aab9abdff1af3871997c70cbeb99bdf4422773eafb438",
+      "thumbnailHash": "79c4a8b55aa68c8d944808a6997a8a5c636cb793387a3ecd26a5bb086f2bc84f",
+      "alphaBounds": {
+        "x": 7.25,
+        "y": 69.25,
+        "width": 125.5,
+        "height": 89.5
+      },
+      "logoRect": {
+        "x": 17,
+        "y": 94,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 76,
+        "y": 95,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 43,
+        "y": 112,
+        "width": 90,
+        "height": 11
+      }
+    },
+    {
+      "buildingType": "Retail",
+      "variant": 2,
+      "level": 3,
+      "sprite": "retail-2-l3.png",
+      "paletteMask": "retail-2-l3-mask.png",
+      "thumbnail": "retail-2-l3-thumb.png",
+      "spriteHash": "a86f1ae7a3953e4e429095858f7a2591f6826820090b29bb8388c4a4423efd89",
+      "paletteMaskHash": "efa0d7ecac53f4427485a67073698bf04dd994477ce23346493c03bdef100f45",
+      "thumbnailHash": "84691b93d04cd72377639da23bea7d07503b009f47952f55fd15631e805e7714",
+      "alphaBounds": {
+        "x": 7.25,
+        "y": 39.25,
+        "width": 125.5,
+        "height": 119.5
+      },
+      "logoRect": {
+        "x": 17,
+        "y": 64,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 76,
+        "y": 65,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 43,
+        "y": 112,
+        "width": 90,
+        "height": 11
+      }
+    },
+    {
+      "buildingType": "Retail",
+      "variant": 2,
+      "level": 4,
+      "sprite": "retail-2-l4.png",
+      "paletteMask": "retail-2-l4-mask.png",
+      "thumbnail": "retail-2-l4-thumb.png",
+      "spriteHash": "0402f3a03f83c5ca7edc1accb1a5089b1dc31bda7fa926378626572c5b8f42d7",
+      "paletteMaskHash": "a6d60fce8c4ce9bc5c811cb2c73ac435c8bdff17ae077460e412fcf4fca981ff",
+      "thumbnailHash": "84f2c0276c73fe64cb2c45caf3bb9b51800d1ae816159ff1b35b874bad90bc40",
+      "alphaBounds": {
+        "x": 7.25,
+        "y": 9.25,
+        "width": 125.5,
+        "height": 149.5
+      },
+      "logoRect": {
+        "x": 17,
+        "y": 34,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 76,
+        "y": 35,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 43,
+        "y": 112,
+        "width": 90,
+        "height": 11
+      }
+    },
+    {
+      "buildingType": "Cafe",
+      "variant": 1,
+      "level": 1,
+      "sprite": "cafe-1-l1.png",
+      "paletteMask": "cafe-1-l1-mask.png",
+      "thumbnail": "cafe-1-l1-thumb.png",
+      "spriteHash": "a40f180340853b4e621c0fda1ca5b0ab7376d839c6e01de06d4596502f2dfbea",
+      "paletteMaskHash": "0ab21f51a04200ce03305529e2dafb3d30b1dff1bf0abf5569b53bd44d39cc88",
+      "thumbnailHash": "bfbc031713f7d82e1551beb25dfe79b2f4a93fcb5a78aa76d218caa3632370b1",
+      "alphaBounds": {
+        "x": 10.25,
+        "y": 97.25,
+        "width": 119.5,
+        "height": 61.75
+      },
+      "logoRect": {
+        "x": 24,
+        "y": 129,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 76,
+        "y": 129,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 43,
+        "y": 113,
+        "width": 54,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Cafe",
+      "variant": 1,
+      "level": 2,
+      "sprite": "cafe-1-l2.png",
+      "paletteMask": "cafe-1-l2-mask.png",
+      "thumbnail": "cafe-1-l2-thumb.png",
+      "spriteHash": "4709a173ae1a5de1aea281b9a0ff777deaa7f5d3258f673283e13fa41de5c40a",
+      "paletteMaskHash": "d46a003d476e6296b5358cb320a262996e6c67c98ec7e7b8d84668d0671eeb28",
+      "thumbnailHash": "dc9f63e6fa3b372321aff58ed334ad23cdc10bd23081f773dbfd2cc76eaf222b",
+      "alphaBounds": {
+        "x": 10.25,
+        "y": 67.25,
+        "width": 119.5,
+        "height": 91.75
+      },
+      "logoRect": {
+        "x": 24,
+        "y": 99,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 76,
+        "y": 99,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 43,
+        "y": 113,
+        "width": 54,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Cafe",
+      "variant": 1,
+      "level": 3,
+      "sprite": "cafe-1-l3.png",
+      "paletteMask": "cafe-1-l3-mask.png",
+      "thumbnail": "cafe-1-l3-thumb.png",
+      "spriteHash": "3c2d7837135efa154ea8cd3828f31a4f960a3c288a5d60b2b44c2dfb204fc533",
+      "paletteMaskHash": "4dd38d542551af03145dd45534c267801f84fc821b807367b51c0896ee92c63c",
+      "thumbnailHash": "213ee7a8cbc1dea9080e279e2817b70a275dea8046454ea7b2562a0fbff08264",
+      "alphaBounds": {
+        "x": 10.25,
+        "y": 37.25,
+        "width": 119.5,
+        "height": 121.75
+      },
+      "logoRect": {
+        "x": 24,
+        "y": 69,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 76,
+        "y": 69,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 43,
+        "y": 113,
+        "width": 54,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Cafe",
+      "variant": 1,
+      "level": 4,
+      "sprite": "cafe-1-l4.png",
+      "paletteMask": "cafe-1-l4-mask.png",
+      "thumbnail": "cafe-1-l4-thumb.png",
+      "spriteHash": "0a3c36c96bc3833b31b7a5375d8f27b195a662ef7b0cc8b6cc3f43b96c0ee730",
+      "paletteMaskHash": "4ae08adebb824ff23bde4df9acb9d2a22a455764ccf732695f95d719dff3d480",
+      "thumbnailHash": "d55ad6516ba32e99ed31d54cebbb4e6080dfee320e13e91b78d9206221f34699",
+      "alphaBounds": {
+        "x": 10.25,
+        "y": 7.25,
+        "width": 119.5,
+        "height": 151.75
+      },
+      "logoRect": {
+        "x": 24,
+        "y": 39,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 76,
+        "y": 39,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 43,
+        "y": 113,
+        "width": 54,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Cafe",
+      "variant": 2,
+      "level": 1,
+      "sprite": "cafe-2-l1.png",
+      "paletteMask": "cafe-2-l1-mask.png",
+      "thumbnail": "cafe-2-l1-thumb.png",
+      "spriteHash": "130787405e8839161bbb51c965fb467060356ddbd4a9acd3d060393ff007a4c9",
+      "paletteMaskHash": "7c9238ab2d33062447898ff3730cef3b0927efd60601bb0b54fd4744b2ba0901",
+      "thumbnailHash": "90b785cbeabbac3117261a571bbad5da84a80fb405db4dd1c0bf0c6e7be36c20",
+      "alphaBounds": {
+        "x": 4.25,
+        "y": 106.25,
+        "width": 131.5,
+        "height": 52.5
+      },
+      "logoRect": {
+        "x": 28,
+        "y": 123,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 77,
+        "y": 123,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 43,
+        "y": 115,
+        "width": 54,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Cafe",
+      "variant": 2,
+      "level": 2,
+      "sprite": "cafe-2-l2.png",
+      "paletteMask": "cafe-2-l2-mask.png",
+      "thumbnail": "cafe-2-l2-thumb.png",
+      "spriteHash": "0b9f365808a90447c21607d1ff85530f83655ed5ebe2ce29d5e4f4e82a61ae4c",
+      "paletteMaskHash": "62a3ee373cadc21b9d2c0f7925b4afc9710b190f51bf7d17ec652efb73bb8486",
+      "thumbnailHash": "c9ae4932908c8d15c00c7d42eec6a9832f031b08e50550d0eff4419b21fdd616",
+      "alphaBounds": {
+        "x": 4.25,
+        "y": 76.25,
+        "width": 131.5,
+        "height": 82.5
+      },
+      "logoRect": {
+        "x": 28,
+        "y": 93,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 77,
+        "y": 93,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 43,
+        "y": 115,
+        "width": 54,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Cafe",
+      "variant": 2,
+      "level": 3,
+      "sprite": "cafe-2-l3.png",
+      "paletteMask": "cafe-2-l3-mask.png",
+      "thumbnail": "cafe-2-l3-thumb.png",
+      "spriteHash": "da1e70089e53f6da6a3a63c8e7a70a247fbf6cd46477e690f4b8f950f8c85af4",
+      "paletteMaskHash": "93fc600d7a32a24d62b85954864a21b7f7d7f26f43f155aa0ea4dda0e255a1b0",
+      "thumbnailHash": "44d46b303fe57812e1f5120dc8489ab9a54aca8f62bacae56145e91357a015f2",
+      "alphaBounds": {
+        "x": 4.25,
+        "y": 46.25,
+        "width": 131.5,
+        "height": 112.5
+      },
+      "logoRect": {
+        "x": 28,
+        "y": 63,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 77,
+        "y": 63,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 43,
+        "y": 115,
+        "width": 54,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Cafe",
+      "variant": 2,
+      "level": 4,
+      "sprite": "cafe-2-l4.png",
+      "paletteMask": "cafe-2-l4-mask.png",
+      "thumbnail": "cafe-2-l4-thumb.png",
+      "spriteHash": "3e4857b67b67c9774acac5f48764bab8c6e3d225ea3abc550cbbdcc2d415e8c1",
+      "paletteMaskHash": "bae88c0405b4ca0185ff8471e2a6a2af122f0e2e6bf125d8f2938c894cb18386",
+      "thumbnailHash": "95486085702fa0460bc447343e083ceb9509de94c24b7206ff65c3d3896e581c",
+      "alphaBounds": {
+        "x": 4.25,
+        "y": 16.25,
+        "width": 131.5,
+        "height": 142.5
+      },
+      "logoRect": {
+        "x": 28,
+        "y": 33,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 77,
+        "y": 33,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 43,
+        "y": 115,
+        "width": 54,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Restaurant",
+      "variant": 1,
+      "level": 1,
+      "sprite": "restaurant-1-l1.png",
+      "paletteMask": "restaurant-1-l1-mask.png",
+      "thumbnail": "restaurant-1-l1-thumb.png",
+      "spriteHash": "e64f5de05e22e868f27ecc74ac5e05531eaf9ea88689a4604c0a165fc13ff883",
+      "paletteMaskHash": "72e348289e15bc34acc5d4d82adacd39e745f79656b5523063d66f4d6699f984",
+      "thumbnailHash": "760bb492533e0efae96080dce54b196f3a3049765a40ba6f51c49ac284ea1229",
+      "alphaBounds": {
+        "x": 3.25,
+        "y": 101.25,
+        "width": 133.5,
+        "height": 57.5
+      },
+      "logoRect": {
+        "x": 20,
+        "y": 126,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 75,
+        "y": 126,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 40,
+        "y": 104,
+        "width": 60,
+        "height": 13
+      }
+    },
+    {
+      "buildingType": "Restaurant",
+      "variant": 1,
+      "level": 2,
+      "sprite": "restaurant-1-l2.png",
+      "paletteMask": "restaurant-1-l2-mask.png",
+      "thumbnail": "restaurant-1-l2-thumb.png",
+      "spriteHash": "334e57e71af5e67e306ab16ffc5ff3a2103a530f47322c53a5229c8c1417b1b3",
+      "paletteMaskHash": "dfb332754524ede8a1479d45c38b8e5ced62354384586f05f6e1b8bc85ef1a02",
+      "thumbnailHash": "4939f084f87d942a4ed8f0e034dc44191cb5dd29065a093653862d0823b70d8d",
+      "alphaBounds": {
+        "x": 3.25,
+        "y": 71.25,
+        "width": 133.5,
+        "height": 87.5
+      },
+      "logoRect": {
+        "x": 20,
+        "y": 96,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 75,
+        "y": 96,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 40,
+        "y": 74,
+        "width": 60,
+        "height": 13
+      }
+    },
+    {
+      "buildingType": "Restaurant",
+      "variant": 1,
+      "level": 3,
+      "sprite": "restaurant-1-l3.png",
+      "paletteMask": "restaurant-1-l3-mask.png",
+      "thumbnail": "restaurant-1-l3-thumb.png",
+      "spriteHash": "4c92c0417602a63c9590afb039ed8f7b52a296cad019a0b6a69acb6a9e74c907",
+      "paletteMaskHash": "982ced6d469b8c601ede8a6a33c03173b4e8127429cf9a0c91937c3fd4927bd5",
+      "thumbnailHash": "faca0fcaa0992b155b5f619b09097e3938c2ce61cc8a3fed0e8d3785ffc98c0d",
+      "alphaBounds": {
+        "x": 3.25,
+        "y": 41.25,
+        "width": 133.5,
+        "height": 117.5
+      },
+      "logoRect": {
+        "x": 20,
+        "y": 66,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 75,
+        "y": 66,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 40,
+        "y": 44,
+        "width": 60,
+        "height": 13
+      }
+    },
+    {
+      "buildingType": "Restaurant",
+      "variant": 1,
+      "level": 4,
+      "sprite": "restaurant-1-l4.png",
+      "paletteMask": "restaurant-1-l4-mask.png",
+      "thumbnail": "restaurant-1-l4-thumb.png",
+      "spriteHash": "b858377985d2346fb5cba0fc92986fc289da5ebc4929b1e2134bbb540dcc5687",
+      "paletteMaskHash": "6c0b3c7cc1e996129edaf3840bd9f09ba86babfef24f22823427fe7374b0a74d",
+      "thumbnailHash": "851c1e26b9c010149e901b96e6392dfa67a6f7385aa43214842b5cc8d2875cfd",
+      "alphaBounds": {
+        "x": 3.25,
+        "y": 11.25,
+        "width": 133.5,
+        "height": 147.5
+      },
+      "logoRect": {
+        "x": 20,
+        "y": 36,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 75,
+        "y": 36,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 40,
+        "y": 14,
+        "width": 60,
+        "height": 13
+      }
+    },
+    {
+      "buildingType": "Restaurant",
+      "variant": 2,
+      "level": 1,
+      "sprite": "restaurant-2-l1.png",
+      "paletteMask": "restaurant-2-l1-mask.png",
+      "thumbnail": "restaurant-2-l1-thumb.png",
+      "spriteHash": "3c818ac5915d2684b301fa720b26af21dc7d108caaa4d48b38d0a764ed9b8a25",
+      "paletteMaskHash": "ced3c773a8deb8e5b5ccf4f106db2008c674b5281b21a04ad81e5979f6029c32",
+      "thumbnailHash": "5a5cefc9a6874846e51bc54e2e51aeec5880d0649d6c05f9bb42b9c34adcc42f",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 104.25,
+        "width": 127.5,
+        "height": 54.5
+      },
+      "logoRect": {
+        "x": 93,
+        "y": 121,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 10,
+        "y": 121,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 53,
+        "y": 119,
+        "width": 34,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Restaurant",
+      "variant": 2,
+      "level": 2,
+      "sprite": "restaurant-2-l2.png",
+      "paletteMask": "restaurant-2-l2-mask.png",
+      "thumbnail": "restaurant-2-l2-thumb.png",
+      "spriteHash": "00d11eb67349f47f0f486f605d730a7042c65f31cfa620ef3c7484b60002fe90",
+      "paletteMaskHash": "0ec2d100796f7e2e7da22998de825d2e486f2e3e808c47766e549b7eee3afdab",
+      "thumbnailHash": "7affdaa63a3f5b236cc568afb3a4fb1371405175776104c8ce97425699e0823e",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 74.25,
+        "width": 127.5,
+        "height": 84.5
+      },
+      "logoRect": {
+        "x": 93,
+        "y": 91,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 10,
+        "y": 91,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 53,
+        "y": 119,
+        "width": 34,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Restaurant",
+      "variant": 2,
+      "level": 3,
+      "sprite": "restaurant-2-l3.png",
+      "paletteMask": "restaurant-2-l3-mask.png",
+      "thumbnail": "restaurant-2-l3-thumb.png",
+      "spriteHash": "ecc96892383a1641d7c143bdd47f496bbbc27a46053e092aee2d816246acf455",
+      "paletteMaskHash": "185b2fbbfc27aab975657f42b7e2af0867c42ec8f22fa581bf8e8e2623e71a55",
+      "thumbnailHash": "cdee514cf32a34168c7db17fed45178e464a450083e6926adfc9e08f2105eab6",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 44.25,
+        "width": 127.5,
+        "height": 114.5
+      },
+      "logoRect": {
+        "x": 93,
+        "y": 61,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 10,
+        "y": 61,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 53,
+        "y": 119,
+        "width": 34,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Restaurant",
+      "variant": 2,
+      "level": 4,
+      "sprite": "restaurant-2-l4.png",
+      "paletteMask": "restaurant-2-l4-mask.png",
+      "thumbnail": "restaurant-2-l4-thumb.png",
+      "spriteHash": "0b9b72f1cee44290f17e1095cdee34a7d9c7cb25c34dd6ff8e6a7f07934b5dc5",
+      "paletteMaskHash": "fba7c40c0913d92f682eede08ba2efa05e900389b0020d9f43bbf5cb7b53df69",
+      "thumbnailHash": "3538e0cdbb63a3b617baeaf6242f54cd165a1cd4cf06f91920a60a2ce75b1aed",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 14.25,
+        "width": 127.5,
+        "height": 144.5
+      },
+      "logoRect": {
+        "x": 93,
+        "y": 31,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 10,
+        "y": 31,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 53,
+        "y": 119,
+        "width": 34,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Office",
+      "variant": 1,
+      "level": 1,
+      "sprite": "office-1-l1.png",
+      "paletteMask": "office-1-l1-mask.png",
+      "thumbnail": "office-1-l1-thumb.png",
+      "spriteHash": "41bbd9a31219837a333439eacf3ec38835fec18bf9725446c834f2bc072b756f",
+      "paletteMaskHash": "dd3fe1cc3ae971f54976a29578b9936fd19ebfcdaa3425dcbc993fa2f406f5fd",
+      "thumbnailHash": "a6e5cb989d62a5323e3246dd89618956073b372625e9b3491dd9145f5c552de2",
+      "alphaBounds": {
+        "x": 33.25,
+        "y": 97.25,
+        "width": 73.5,
+        "height": 61.5
+      },
+      "logoRect": {
+        "x": 41,
+        "y": 108,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 50,
+        "y": 133,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 41,
+        "y": 115,
+        "width": 58,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Office",
+      "variant": 1,
+      "level": 2,
+      "sprite": "office-1-l2.png",
+      "paletteMask": "office-1-l2-mask.png",
+      "thumbnail": "office-1-l2-thumb.png",
+      "spriteHash": "47410b391aee29fa213007af9b2106b640f312ccee78ee19d1ca1ac705912aeb",
+      "paletteMaskHash": "4744feadf437a7395e54f2ce8f70eb55ab9f2faf704174191997458ff16e8774",
+      "thumbnailHash": "7a5dc92806d72626a7403eb5f4cb98bd5c994d6b7ff151317c864b1ebdcf89b7",
+      "alphaBounds": {
+        "x": 33.25,
+        "y": 67.25,
+        "width": 73.5,
+        "height": 91.5
+      },
+      "logoRect": {
+        "x": 41,
+        "y": 78,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 50,
+        "y": 103,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 41,
+        "y": 115,
+        "width": 58,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Office",
+      "variant": 1,
+      "level": 3,
+      "sprite": "office-1-l3.png",
+      "paletteMask": "office-1-l3-mask.png",
+      "thumbnail": "office-1-l3-thumb.png",
+      "spriteHash": "9facb24df5484270cee49c00886d44f7628630d7c665e2755093d7f775048b86",
+      "paletteMaskHash": "ae36feecef7880ec5f26fc3eaa81a80ca807e570b313d8f6f84e4e6580d71fcb",
+      "thumbnailHash": "a9d381c1e0ff0a7bf311f27011c01ba6a87fdf501f8288e57efe109d9aff8484",
+      "alphaBounds": {
+        "x": 33.25,
+        "y": 37.25,
+        "width": 73.5,
+        "height": 121.5
+      },
+      "logoRect": {
+        "x": 41,
+        "y": 48,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 50,
+        "y": 73,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 41,
+        "y": 115,
+        "width": 58,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Office",
+      "variant": 1,
+      "level": 4,
+      "sprite": "office-1-l4.png",
+      "paletteMask": "office-1-l4-mask.png",
+      "thumbnail": "office-1-l4-thumb.png",
+      "spriteHash": "fbdac3b1b4c4cf6d201c6610aaf1604e2a2a8913e20e545442dbc82a55d4d334",
+      "paletteMaskHash": "91e3a52054154f9b0b9b8b1872b7a0573e9bf80ba97de75e26744a14e03421dc",
+      "thumbnailHash": "f7963230e5a29a70e13cc62dc3e7be924dcb293b8ce5e77398d6e7fed0e63ba7",
+      "alphaBounds": {
+        "x": 33.25,
+        "y": 7.25,
+        "width": 73.5,
+        "height": 151.5
+      },
+      "logoRect": {
+        "x": 41,
+        "y": 18,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 50,
+        "y": 43,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 41,
+        "y": 115,
+        "width": 58,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Office",
+      "variant": 2,
+      "level": 1,
+      "sprite": "office-2-l1.png",
+      "paletteMask": "office-2-l1-mask.png",
+      "thumbnail": "office-2-l1-thumb.png",
+      "spriteHash": "5d459a4cb615292ac1887f23faf17d9fe4aef4e5669e8428f84d99f8ba6535e0",
+      "paletteMaskHash": "4781d9789bbf50b1ac836a4e55338e94f5d74e3960b43f11ab0c6b3489a7bc56",
+      "thumbnailHash": "ea8379ab1d114613e3db1b51c580f1b1c6e7f2d28582b0a3aceff7ced03bd575",
+      "alphaBounds": {
+        "x": 7.25,
+        "y": 102.25,
+        "width": 125.5,
+        "height": 56.5
+      },
+      "logoRect": {
+        "x": 23,
+        "y": 110,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 75,
+        "y": 111,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 42,
+        "y": 113,
+        "width": 32,
+        "height": 10
+      }
+    },
+    {
+      "buildingType": "Office",
+      "variant": 2,
+      "level": 2,
+      "sprite": "office-2-l2.png",
+      "paletteMask": "office-2-l2-mask.png",
+      "thumbnail": "office-2-l2-thumb.png",
+      "spriteHash": "0f0126a452d3a4a92ac5de21745dad6fd0ac7731b648bc8a5fd93fd78c00d896",
+      "paletteMaskHash": "aa4f8eef0a21a4a00aaff0db59bff374be8223ee0220d43a6b5f45c32dfc8741",
+      "thumbnailHash": "f1d90af7a8762a4f42b9f9bdafe0473e7755fd6733c87c692bad27480a8f1e1d",
+      "alphaBounds": {
+        "x": 7.25,
+        "y": 72.25,
+        "width": 125.5,
+        "height": 86.5
+      },
+      "logoRect": {
+        "x": 23,
+        "y": 80,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 75,
+        "y": 81,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 42,
+        "y": 83,
+        "width": 32,
+        "height": 10
+      }
+    },
+    {
+      "buildingType": "Office",
+      "variant": 2,
+      "level": 3,
+      "sprite": "office-2-l3.png",
+      "paletteMask": "office-2-l3-mask.png",
+      "thumbnail": "office-2-l3-thumb.png",
+      "spriteHash": "8fa44aedbb8debe2d159a9af72ddc75a2500725cf45e9d1935ec3ef7c0b9aae5",
+      "paletteMaskHash": "7fc424fcd1d411d26d750d763601952c519be09b0730694a1f05ec39f740ff02",
+      "thumbnailHash": "be142d91746b64528e0b44bc1f3296a0acf137a4e0a4e8fb68b2a9e49f68ddaa",
+      "alphaBounds": {
+        "x": 7.25,
+        "y": 42.25,
+        "width": 125.5,
+        "height": 116.5
+      },
+      "logoRect": {
+        "x": 23,
+        "y": 50,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 75,
+        "y": 51,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 42,
+        "y": 53,
+        "width": 32,
+        "height": 10
+      }
+    },
+    {
+      "buildingType": "Office",
+      "variant": 2,
+      "level": 4,
+      "sprite": "office-2-l4.png",
+      "paletteMask": "office-2-l4-mask.png",
+      "thumbnail": "office-2-l4-thumb.png",
+      "spriteHash": "a4e49ea6751f09e276bef614b1e3d02b7a0baa3c909d07ea76b1268e0e1e4421",
+      "paletteMaskHash": "e38b139043b14d8cb940a24744c732b3c2656e5a66da1e1b795f8205c6f48a55",
+      "thumbnailHash": "0e65885a58e49c2136120476184d6feaec2c2789df3fb2e1b321962b9178b7c6",
+      "alphaBounds": {
+        "x": 7.25,
+        "y": 12.25,
+        "width": 125.5,
+        "height": 146.5
+      },
+      "logoRect": {
+        "x": 23,
+        "y": 20,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 75,
+        "y": 21,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 42,
+        "y": 23,
+        "width": 32,
+        "height": 10
+      }
+    },
+    {
+      "buildingType": "Homes",
+      "variant": 1,
+      "level": 1,
+      "sprite": "homes-1-l1.png",
+      "paletteMask": "homes-1-l1-mask.png",
+      "thumbnail": "homes-1-l1-thumb.png",
+      "spriteHash": "0520c2adba3cf05996c78cff6a6f8b992fca11ca94eda7904adf0340116a5905",
+      "paletteMaskHash": "3498448a5cf782d1af221e41891bf9579db3fd46396f7c6f71e791f2fadd574c",
+      "thumbnailHash": "6e85f7f01b321042830740ec37dd049237eec6945677a424274acab4a1f5b203",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 97.25,
+        "width": 127.5,
+        "height": 61.5
+      },
+      "logoRect": {
+        "x": 103,
+        "y": 108,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 46,
+        "y": 123,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 12,
+        "y": 116,
+        "width": 36,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Homes",
+      "variant": 1,
+      "level": 2,
+      "sprite": "homes-1-l2.png",
+      "paletteMask": "homes-1-l2-mask.png",
+      "thumbnail": "homes-1-l2-thumb.png",
+      "spriteHash": "2882f24c4bccd8174f56889f78c4c3a65aac6f4514c364afffa48182cdea2b05",
+      "paletteMaskHash": "dccf1313d5d42fe45c0d0d5a36079ff9597ce4f064904a8a3fd95d223c353c39",
+      "thumbnailHash": "bc9d7eb4db10c2186fa53316e67ecfaee0e5b16550e87fa06f34fe35b9f8db11",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 67.25,
+        "width": 127.5,
+        "height": 91.5
+      },
+      "logoRect": {
+        "x": 103,
+        "y": 78,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 46,
+        "y": 93,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 12,
+        "y": 116,
+        "width": 36,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Homes",
+      "variant": 1,
+      "level": 3,
+      "sprite": "homes-1-l3.png",
+      "paletteMask": "homes-1-l3-mask.png",
+      "thumbnail": "homes-1-l3-thumb.png",
+      "spriteHash": "debb66e6e9ea1c43ffd58e54f88fd9139e3701deeb8a95227bb9c4b1db7cb04a",
+      "paletteMaskHash": "4d2f271917b7eaaedc5831d935b6269eda0bffb4559f575ff9fb0cf25ebd9d75",
+      "thumbnailHash": "c75ee7816f59da0daec5430b8964d25a99ba1a120a9bc450d2162556d5688b51",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 37.25,
+        "width": 127.5,
+        "height": 121.5
+      },
+      "logoRect": {
+        "x": 103,
+        "y": 48,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 46,
+        "y": 63,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 12,
+        "y": 116,
+        "width": 36,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Homes",
+      "variant": 1,
+      "level": 4,
+      "sprite": "homes-1-l4.png",
+      "paletteMask": "homes-1-l4-mask.png",
+      "thumbnail": "homes-1-l4-thumb.png",
+      "spriteHash": "03dabb4335ec71eeffbcec511a0c3003929d27b421c4482103c8b436f8c25a95",
+      "paletteMaskHash": "24de45fb225c78692fc63b8928fb9dc28b59534d2538d4438d13aadfb8a62f17",
+      "thumbnailHash": "7ea1f52909c77ca37d48947eb4a6ad99643bf2f5e4cebf698c3419ea181d5e1c",
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 7.25,
+        "width": 127.5,
+        "height": 151.5
+      },
+      "logoRect": {
+        "x": 103,
+        "y": 18,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": {
+        "x": 46,
+        "y": 33,
+        "width": 48,
+        "height": 24
+      },
+      "nameRect": {
+        "x": 12,
+        "y": 116,
+        "width": 36,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Homes",
+      "variant": 2,
+      "level": 1,
+      "sprite": "homes-2-l1.png",
+      "paletteMask": "homes-2-l1-mask.png",
+      "thumbnail": "homes-2-l1-thumb.png",
+      "spriteHash": "d310eea4facc3f82c3289af4e0564895e1a98f5cebf2440259067137eda59f89",
+      "paletteMaskHash": "61cc386795494cd6ce8bd3f20c02f93a7bd181a9f74fbd8241419b72cbbd3268",
+      "thumbnailHash": "1d470aa918efea9c1d2ab39e4df96296e0048b235ebff187d1d7b3ea1d3756f8",
+      "alphaBounds": {
+        "x": 35.25,
+        "y": 98.25,
+        "width": 71.5,
+        "height": 60.5
+      },
+      "logoRect": {
+        "x": 49,
+        "y": 128,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": null,
+      "nameRect": {
+        "x": 42,
+        "y": 113,
+        "width": 57,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Homes",
+      "variant": 2,
+      "level": 2,
+      "sprite": "homes-2-l2.png",
+      "paletteMask": "homes-2-l2-mask.png",
+      "thumbnail": "homes-2-l2-thumb.png",
+      "spriteHash": "ffce2f5d64794b7d2de5201d13027b96a8ad6b76661486944c4ec50db58731a8",
+      "paletteMaskHash": "31eaa436a65ee76052bec24d7d032c7deb4357c378b41170d0d464a89fb1852c",
+      "thumbnailHash": "507c6268dcb27b9f430bbde9551454f14f5970e0eb1c8f32111be31e9f834bf2",
+      "alphaBounds": {
+        "x": 35.25,
+        "y": 68.25,
+        "width": 71.5,
+        "height": 90.5
+      },
+      "logoRect": {
+        "x": 49,
+        "y": 98,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": null,
+      "nameRect": {
+        "x": 42,
+        "y": 113,
+        "width": 57,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Homes",
+      "variant": 2,
+      "level": 3,
+      "sprite": "homes-2-l3.png",
+      "paletteMask": "homes-2-l3-mask.png",
+      "thumbnail": "homes-2-l3-thumb.png",
+      "spriteHash": "327af7985a7ae894c7a2c9a416c330ecb3a6387045e2b6941bc525e8bc924cf0",
+      "paletteMaskHash": "dd6e9f221ff698e7d247fbf04ee174716768d98cc96e6b0ef9007dcd51b12fc0",
+      "thumbnailHash": "cc0a880f649709b20a2957bb7e996d835f112bbc5448c85b3a2f14b57450a2ce",
+      "alphaBounds": {
+        "x": 35.25,
+        "y": 38.25,
+        "width": 71.5,
+        "height": 120.5
+      },
+      "logoRect": {
+        "x": 49,
+        "y": 68,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": null,
+      "nameRect": {
+        "x": 42,
+        "y": 113,
+        "width": 57,
+        "height": 12
+      }
+    },
+    {
+      "buildingType": "Homes",
+      "variant": 2,
+      "level": 4,
+      "sprite": "homes-2-l4.png",
+      "paletteMask": "homes-2-l4-mask.png",
+      "thumbnail": "homes-2-l4-thumb.png",
+      "spriteHash": "9068d097dd5673b3c1a65587278b47597e81b7b86c1929926854e05ecae9c666",
+      "paletteMaskHash": "c29cda8583edd93c9d5c4969d3836f2881742b28bbcfbd3b510b91c63585bd46",
+      "thumbnailHash": "74c0e8a17e04a8be3dcea45e080beaef717def3ad6882c16df75120e91b2f86b",
+      "alphaBounds": {
+        "x": 35.25,
+        "y": 8.25,
+        "width": 71.5,
+        "height": 150.5
+      },
+      "logoRect": {
+        "x": 49,
+        "y": 38,
+        "width": 20,
+        "height": 20
+      },
+      "billboardRect": null,
+      "nameRect": {
+        "x": 42,
+        "y": 113,
+        "width": 57,
+        "height": 12
+      }
+    }
+  ]
+}
