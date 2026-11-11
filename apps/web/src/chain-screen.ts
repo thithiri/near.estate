@@ -460,6 +460,14 @@ export class ChainScreen {
         seconds > 0
           ? `Full payout in ${Math.floor(seconds / 60)}m ${seconds % 60}s`
           : "Full payout ready";
+      const advice = this.host.querySelector<HTMLElement>(
+        "[data-collect-advice]",
+      );
+      if (advice)
+        advice.textContent =
+          seconds > 0
+            ? "Collect sooner for partial earnings"
+            : "Full payout reached";
     }
     const expiresAt = this.host.querySelector<HTMLElement>(
       "[data-park-expires]",
@@ -470,6 +478,15 @@ export class ChainScreen {
         seconds > 0
           ? `Parking expires in ${Math.floor(seconds / 60)}m ${seconds % 60}s`
           : "Parking expired; settle to free the car";
+      const collect =
+        this.host.querySelector<HTMLButtonElement>("#chain-collect");
+      if (collect)
+        collect.textContent =
+          seconds === 0
+            ? "Settle expired parking"
+            : earnUntil && now >= Number(earnUntil.dataset.earnUntil)
+              ? "Collect full payout"
+              : "Collect parked car";
     }
     const emergency = this.host.querySelector<HTMLButtonElement>(
       "#chain-emergency-repair",
@@ -830,8 +847,8 @@ export class ChainScreen {
         ${
           session
             ? `<p class="chain-parked">Car #${session.car_id} is parked at ${html(session.location_id)} · space ${session.slot + 1}.</p>
-          <p class="muted">Up to ${sessionFullPayout(session)} coins for this park · <span data-earn-until="${session.earn_until}"></span> · <span data-park-expires="${session.expires_at}"></span>. Collect sooner for partial earnings${session.legal ? "" : "; illegal parking can be ticketed"}.</p>
-          <button id="chain-collect" class="primary" ${!keyReady || this.busy ? "disabled" : ""}>${now >= session.expires_at ? "Settle expired parking" : "Collect parked car"}</button>`
+          <p class="muted">Up to ${sessionFullPayout(session)} coins for this park · <span data-earn-until="${session.earn_until}"></span> · <span data-park-expires="${session.expires_at}"></span>. <span data-collect-advice>${now < session.earn_until ? "Collect sooner for partial earnings" : "Full payout reached"}</span>${session.legal ? "" : "; illegal parking can be ticketed"}.</p>
+          <button id="chain-collect" class="primary" ${!keyReady || this.busy ? "disabled" : ""}>${now >= session.expires_at ? "Settle expired parking" : now >= session.earn_until ? "Collect full payout" : "Collect parked car"}</button>`
             : ""
         }
         <div class="chain-purchase"><label>New body <select id="chain-buy-body">${carOptions}</select></label>
