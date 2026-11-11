@@ -31,13 +31,16 @@ if (
   mode !== "--prepare" &&
   mode !== "--approve" &&
   mode !== "--prepare-shared" &&
-  mode !== "--approve-shared"
+  mode !== "--approve-shared" &&
+  mode !== "--prepare-shared-billboard" &&
+  mode !== "--approve-shared-billboard"
 )
   throw new Error(
-    "Pass --prepare, --approve, --prepare-shared or --approve-shared",
+    "Pass --prepare/--approve, optionally with -shared or -shared-billboard",
   );
-const sharedCity = mode.endsWith("-shared");
-const prepare = mode === "--prepare" || mode === "--prepare-shared";
+const sharedCity = mode.includes("-shared");
+const kind = mode.endsWith("-billboard") ? "Billboard" : "Logo";
+const prepare = mode.startsWith("--prepare");
 const projectRoot = resolve(import.meta.dirname, "..");
 const dataDir = process.env.ESTATE_MEDIA_DATA_DIR;
 if (!dataDir || !dataDir.startsWith("/"))
@@ -110,7 +113,11 @@ const app = createApiApp({
 const plotId = sharedCity ? "plot-main-n-2" : "plot-main-n-1";
 const preparedPath = resolve(
   dataDir,
-  sharedCity ? "shared-media-prepared.json" : "prepared.json",
+  kind === "Billboard"
+    ? "shared-billboard-prepared.json"
+    : sharedCity
+      ? "shared-media-prepared.json"
+      : "prepared.json",
 );
 const transactions: Array<{ action: string; hash: string }> = [];
 
@@ -260,20 +267,25 @@ try {
       );
     }
     assert.equal(plot?.plot.owner, owner.accountId);
-    assert.equal(plot?.plot.logo.active, null);
-    assert.equal(plot?.plot.logo.pending, null);
+    const slot = kind === "Billboard" ? plot?.plot.billboard : plot?.plot.logo;
+    assert.equal(slot?.active, null);
+    assert.equal(slot?.pending, null);
     const cookie = await ownerCookie();
     const source = Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" rx="44" fill="#173F5F"/><path d="M28 184h200" stroke="#FFD166" stroke-width="13"/><text x="128" y="145" text-anchor="middle" font-family="Arial,sans-serif" font-size="100" font-weight="bold" fill="white">NE</text></svg>`,
+      kind === "Billboard"
+        ? `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="256" viewBox="0 0 512 256"><rect width="512" height="256" rx="24" fill="#F6C85F"/><circle cx="90" cy="128" r="62" fill="#B45131"/><path d="M42 128h96" stroke="#73D9A6" stroke-width="16"/><text x="180" y="112" font-family="Arial,sans-serif" font-size="44" font-weight="bold" fill="#173F5F">NEAR &amp; FAR</text><text x="180" y="165" font-family="Arial,sans-serif" font-size="38" fill="#173F5F">BURGERS</text></svg>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" rx="44" fill="#173F5F"/><path d="M28 184h200" stroke="#FFD166" stroke-width="13"/><text x="128" y="145" text-anchor="middle" font-family="Arial,sans-serif" font-size="100" font-weight="bold" fill="white">NE</text></svg>`,
     );
     const png = await sharp(source).png().toBuffer();
     const form = new FormData();
     form.set("plot_id", plotId);
     form.set(
       "file",
-      new File([png], "near-estate-logo.png", { type: "image/png" }),
+      new File([png], `near-estate-${kind.toLowerCase()}.png`, {
+        type: "image/png",
+      }),
     );
-    const uploaded = await app.request("/logos", {
+    const uploaded = await app.request(kind === "Logo" ? "/logos" : "/ads", {
       method: "POST",
       headers: { origin, cookie },
       body: form,
@@ -297,8 +309,8 @@ try {
         "propose_media",
         {
           plot_id: plotId,
-          kind: "Logo",
-          expected_media_revision: plot.plot.logo.revision,
+          kind,
+          expected_media_revision: slot.revision,
           expected_layout_revision: upload.layoutRevision,
           content: { asset_hash: upload.hash, link },
         },
@@ -317,12 +329,17 @@ try {
     });
     await requireStatus(page, 200);
     const html = await page.text();
-    assert.match(html, /Approve exact logo/);
+    assert.match(html, new RegExp(`Approve exact ${kind.toLowerCase()}`));
     const preview = html.match(
       /Facade with approved media after this decision<\/p><img src="data:image\/png;base64,([^"]+)/,
     )?.[1];
     assert(preview, "The moderator's combined facade preview is missing");
-    const previewPath = resolve(dataDir, "review-preview.png");
+    const previewPath = resolve(
+      dataDir,
+      kind === "Billboard"
+        ? "billboard-review-preview.png"
+        : "review-preview.png",
+    );
     writeFileSync(previewPath, Buffer.from(preview, "base64"), { mode: 0o600 });
     const prepared = {
       network: "testnet",
@@ -330,6 +347,7 @@ try {
       ownerId: owner.accountId,
       moderatorId: runtime.accountId,
       plotId,
+      kind,
       proposalId: proposal.id,
       uploadHash: upload.hash,
       link,
@@ -346,6 +364,7 @@ try {
       ownerId: string;
       moderatorId: string;
       plotId: string;
+      kind?: "Logo" | "Billboard";
       proposalId: string;
       uploadHash: string;
       link: string;
@@ -354,16 +373,19 @@ try {
     assert.equal(prepared.contractId, contract.accountId);
     assert.equal(prepared.ownerId, owner.accountId);
     assert.equal(prepared.moderatorId, runtime.accountId);
+    assert.equal(prepared.kind ?? "Logo", kind);
     const pending = await chain.plot(prepared.plotId);
-    assert.equal(
-      pending?.plot.logo.pending?.content.asset_hash,
-      prepared.uploadHash,
-    );
+    const pendingSlot =
+      kind === "Billboard" ? pending?.plot.billboard : pending?.plot.logo;
+    assert.equal(pendingSlot?.pending?.content.asset_hash, prepared.uploadHash);
     const page = await app.request("/moderation", {
       headers: { authorization: adminAuth },
     });
     await requireStatus(page, 200);
-    assert.match(await page.text(), /Approve exact logo/);
+    assert.match(
+      await page.text(),
+      new RegExp(`Approve exact ${kind.toLowerCase()}`),
+    );
     const approved = await app.request(
       `/moderation/media/${prepared.proposalId}/approve`,
       {
@@ -373,11 +395,10 @@ try {
     );
     await requireStatus(approved, 303);
     const finalPlot = await chain.plot(prepared.plotId);
-    assert.equal(
-      finalPlot?.plot.logo.active?.content.asset_hash,
-      prepared.uploadHash,
-    );
-    assert.equal(finalPlot?.plot.logo.active?.content.link, prepared.link);
+    const finalSlot =
+      kind === "Billboard" ? finalPlot?.plot.billboard : finalPlot?.plot.logo;
+    assert.equal(finalSlot?.active?.content.asset_hash, prepared.uploadHash);
+    assert.equal(finalSlot?.active?.content.link, prepared.link);
     const publicAsset = await app.request(`/assets/${prepared.uploadHash}`);
     assert.equal(publicAsset.status, 200);
     const bytes = Buffer.from(await publicAsset.arrayBuffer());
@@ -392,8 +413,11 @@ try {
       ownerId: owner.accountId,
       moderatorId: runtime.accountId,
       plotId: prepared.plotId,
+      kind,
       proposalId: prepared.proposalId,
-      logoHash: prepared.uploadHash,
+      ...(kind === "Billboard"
+        ? { billboardHash: prepared.uploadHash }
+        : { logoHash: prepared.uploadHash }),
       link: prepared.link,
       uploadedImageBytes: bytes.length,
       publicAssetHashVerified: true,
@@ -402,9 +426,11 @@ try {
     };
     const path = resolve(
       projectRoot,
-      sharedCity
-        ? "deployments/testnet-shared-media-journey.json"
-        : "deployments/testnet-media-api-journey.json",
+      kind === "Billboard"
+        ? "deployments/testnet-shared-billboard-journey.json"
+        : sharedCity
+          ? "deployments/testnet-shared-media-journey.json"
+          : "deployments/testnet-media-api-journey.json",
     );
     writeFileSync(path, `${JSON.stringify(evidence, null, 2)}\n`);
     console.log(JSON.stringify(evidence, null, 2));

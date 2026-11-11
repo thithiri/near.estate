@@ -7,6 +7,7 @@ use near_workspaces::{
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 const ALLOWANCE_YOCTO: u128 = 500_000_000_000_000_000_000_000;
 const MODERATION_METHODS: [&str; 6] = [
@@ -123,6 +124,24 @@ async fn verify_permission(
     Ok(())
 }
 
+async fn wait_for_key_removal(
+    moderator: &Account,
+    public_key: &near_workspaces::types::PublicKey,
+) -> Result<()> {
+    for _ in 0..15 {
+        let present = moderator
+            .view_access_keys()
+            .await?
+            .iter()
+            .any(|entry| &entry.public_key == public_key);
+        if !present {
+            return Ok(());
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+    bail!("moderator key remains on-chain after finality wait")
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let mode = std::env::args()
@@ -208,14 +227,7 @@ async fn main() -> Result<()> {
                 .await?;
             ensure!(revoked.is_success(), "moderator key revocation failed");
         }
-        ensure!(
-            !moderator
-                .view_access_keys()
-                .await?
-                .iter()
-                .any(|entry| entry.public_key == public_key),
-            "moderator key remains on-chain"
-        );
+        wait_for_key_removal(&moderator, &public_key).await?;
         std::fs::remove_file(&runtime_path)?;
         println!("{}", json!({"revoked": true, "publicKey": public_key}));
         return Ok(());

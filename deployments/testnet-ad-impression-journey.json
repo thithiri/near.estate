@@ -1,0 +1,16 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "plotId": "plot-main-n-2",
+  "surface": "Billboard",
+  "billboardHash": "1b11c8acecb84f03bb9590c5a31c72fdb62d58aca3ce6a5d3c1247d2ad192898",
+  "approvedOnChain": true,
+  "impressionsBefore": 2,
+  "impressionsAfterLostReply": 3,
+  "impressionsAfter": 3,
+  "dwellMsAdded": 1151,
+  "sameEventIdRetried": true,
+  "countedOnceAfterLostReply": true,
+  "totalsSurvivedApiReopen": true,
+  "freshnessReceivedAt": 1794368571000
+}
