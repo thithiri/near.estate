@@ -1,0 +1,23 @@
+{
+  "result": "passed",
+  "capturedAt": "2026-11-11T00:34:55.155Z",
+  "node": "v22.23.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "scenario": "Five curb park/collect pairs per block across 80 plots with a fixed block date; no RPC or provider traffic",
+  "blocks": 1000,
+  "events": 10000,
+  "insertMs": 738,
+  "eventsPerSecond": 13550,
+  "rebuildMs": 538,
+  "cursor": {
+    "height": 1000,
+    "hash": "hash-1000",
+    "timestampNs": "1794316011248367505"
+  },
+  "curbParks": 5000,
+  "collections": 5000,
+  "gross": "5000000000",
+  "replayed": 0,
+  "limits": "One local process and disk; excludes provider pagination, network throttling, concurrent API traffic and VPS operation"
+}
