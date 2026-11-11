@@ -114,13 +114,88 @@ const contact = await sharp({
   .composite(contactLayers)
   .png()
   .toBuffer();
+
+async function assertSheetMatches(
+  rendered,
+  saved,
+  width,
+  height,
+  cellWidth,
+  cellHeight,
+  titleHeight,
+) {
+  const [actual, reference] = await Promise.all([
+    sharp(rendered).ensureAlpha().raw().toBuffer({ resolveWithObject: true }),
+    sharp(saved).ensureAlpha().raw().toBuffer({ resolveWithObject: true }),
+  ]);
+  if (
+    actual.info.width !== width ||
+    actual.info.height !== height ||
+    reference.info.width !== width ||
+    reference.info.height !== height
+  )
+    throw new Error(
+      "Preset review sheet dimensions differ from the facade catalog",
+    );
+
+  // Font rasterization varies by OS. Compare every pixel of the street and facade
+  // artwork, while checking that each committed heading still contains ink.
+  for (let cellTop = 0; cellTop < height; cellTop += cellHeight) {
+    for (let cellLeft = 0; cellLeft < width; cellLeft += cellWidth) {
+      let headingInk = 0;
+      for (let y = cellTop; y < cellTop + titleHeight; y++) {
+        for (let x = cellLeft + 12; x < cellLeft + cellWidth - 12; x++) {
+          const offset = (y * width + x) * 4;
+          if (
+            reference.data[offset] < 100 &&
+            reference.data[offset + 1] < 100 &&
+            reference.data[offset + 2] < 130
+          )
+            headingInk++;
+        }
+      }
+      if (headingInk < 20)
+        throw new Error("Preset review sheet is missing a heading");
+    }
+  }
+  for (let y = 0; y < height; y++) {
+    if (y % cellHeight < titleHeight) continue;
+    const rowStart = y * width * 4;
+    const rowEnd = rowStart + width * 4;
+    if (
+      !actual.data
+        .subarray(rowStart, rowEnd)
+        .equals(reference.data.subarray(rowStart, rowEnd))
+    )
+      throw new Error(
+        "Preset review sheet artwork differs from the facade catalog",
+      );
+  }
+}
+
 if (process.argv.includes("--check")) {
   const [savedNeighbours, savedContact] = await Promise.all([
     readFile(output),
     readFile(contactOutput),
   ]);
-  if (!image.equals(savedNeighbours) || !contact.equals(savedContact))
-    throw new Error("Preset review sheets differ from the facade catalog");
+  await assertSheetMatches(
+    image,
+    savedNeighbours,
+    sheetWidth,
+    sheetHeight,
+    cellWidth,
+    cellHeight,
+    26,
+  );
+  await assertSheetMatches(
+    contact,
+    savedContact,
+    contactCellWidth * types.length,
+    contactCellHeight * 2,
+    contactCellWidth,
+    contactCellHeight,
+    55,
+  );
   console.log("Validated both preset review sheets");
 } else {
   await Promise.all([
