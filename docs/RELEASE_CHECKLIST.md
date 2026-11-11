@@ -33,6 +33,8 @@ The approved shared-city logo and billboard now render in a 1280×720 local brow
 
 The [state migration boundary and plan](STATE_MIGRATION.md) now records the persisted layout, account-map enumeration limit and rollback requirement. Its representative serialization fixture passes. The release still lacks an implemented and rehearsed schema migration; the existing code-upgrade checks cover state-preserving replacement only. A [focused security review](SECURITY_REVIEW.md) records the locally checked role, storage, wallet-key, authentication, media and moderation controls and the live release limits.
 
+A [fresh local backup and restore drill](../deployments/testnet-shared-media-backup-restore.json) preserved the active shared-city API volume, eight image assets, 121 indexed contract events and 15 impression records. The restored worker advanced its cursor with zero duplicate events. A restore on the target VPS with external TLS and alert checks is still open.
+
 ## Final release run
 
 1. Record a source revision and immutable web/API/worker image digests. Run `npm ci`, `npm run check`, `npm run build`, `npm run assets:check`, `npm run contract:test`, and the candidate-specific `npm run testnet:code:plan`. Attach outputs and hosted CI run ID. A code upgrade uses `npm run testnet:code:upgrade` only with the protected deploy key and its prepared recovery record.

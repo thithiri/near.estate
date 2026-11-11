@@ -1,0 +1,19 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "scope": "local shared-media SQLite and assets, fresh private restore directory",
+  "backupManifestSha256": "548592e35cf578399443536e2add3d13f9693f712e8ac3e32620706539afc585",
+  "archivedFiles": 51,
+  "archivedAssets": 8,
+  "indexedEventsBefore": 121,
+  "impressionEventsBefore": 15,
+  "mediaUploadsBefore": 4,
+  "cursorBefore": 277171251,
+  "restoreVerified": true,
+  "restoredIndexedEventsAfterRestart": 121,
+  "restoredImpressionEventsAfterRestart": 15,
+  "restoredMediaUploadsAfterRestart": 4,
+  "cursorAfterRestart": 277172678,
+  "newEventsOnRestart": 0,
+  "note": "The backup and restored data remain in protected local directories outside the repository. No VPS or external-network restore was tested."
+}
