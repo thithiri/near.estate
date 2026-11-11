@@ -26,8 +26,15 @@ import { NearModeratorGateway } from "../services/api/src/moderator.js";
 import { ApiStore } from "../services/api/src/store.js";
 
 const mode = process.argv[2];
-if (mode !== "--prepare" && mode !== "--approve")
-  throw new Error("Pass --prepare or --approve for the mock facade journey");
+if (
+  mode !== "--prepare" &&
+  mode !== "--approve" &&
+  mode !== "--prepare-shared" &&
+  mode !== "--approve-shared"
+)
+  throw new Error("Pass --prepare, --approve or a shared-city variant");
+const sharedCity = mode.endsWith("-shared");
+const preparing = mode.startsWith("--prepare");
 const root = resolve(import.meta.dirname, "..");
 const dataDir = process.env.ESTATE_MEDIA_DATA_DIR;
 if (!dataDir || !dataDir.startsWith("/"))
@@ -59,12 +66,31 @@ function credential(name: string) {
   return { accountId: record.account_id, secret, pair };
 }
 
-const manifest = JSON.parse(
+const deployment = JSON.parse(
   readFileSync(
-    resolve(root, "deployments/testnet-moderation-journey.json"),
+    resolve(
+      root,
+      sharedCity
+        ? "deployments/testnet.json"
+        : "deployments/testnet-moderation-journey.json",
+    ),
     "utf8",
   ),
-) as { contractId: string; ownerId: string; moderatorId: string };
+) as { contractId: string; ownerId?: string; moderatorId: string };
+const sharedOwner = sharedCity
+  ? (JSON.parse(
+      readFileSync(
+        resolve(root, "deployments/testnet-shared-owner-journey.json"),
+        "utf8",
+      ),
+    ) as { contractId: string; ownerId: string; plotId: string })
+  : null;
+if (sharedOwner) assert.equal(sharedOwner.contractId, deployment.contractId);
+const manifest = {
+  contractId: deployment.contractId,
+  moderatorId: deployment.moderatorId,
+  ownerId: sharedOwner?.ownerId ?? deployment.ownerId,
+};
 const owner = credential("ESTATE_MEDIA_OWNER_KEY_FILE");
 assert.equal(owner.accountId, manifest.ownerId);
 const runtime = credential("ESTATE_MODERATOR_RUNTIME_KEY_FILE");
@@ -89,9 +115,15 @@ const app = createApiApp({
   appOrigin: origin,
   adminCredentials: { user: "local-reviewer", password },
 });
-const plotId = "plot-main-n-0";
-const preparedPath = resolve(dataDir, "mock-facade-prepared.json");
-const proposalRecordPath = resolve(dataDir, "mock-facade-proposal.json");
+const plotId = sharedOwner?.plotId ?? "plot-main-n-0";
+const preparedPath = resolve(
+  dataDir,
+  sharedCity ? "shared-mock-facade-prepared.json" : "mock-facade-prepared.json",
+);
+const proposalRecordPath = resolve(
+  dataDir,
+  sharedCity ? "shared-mock-facade-proposal.json" : "mock-facade-proposal.json",
+);
 
 async function requireStatus(response: Response, expected: number) {
   if (response.status !== expected)
@@ -199,11 +231,14 @@ async function propose(expectedRevision: number, manifestHash: string) {
 }
 
 try {
-  if (mode === "--prepare") {
+  if (preparing) {
     const before = await reader.plot(plotId);
     assert.equal(before?.plot.owner, owner.accountId);
-    assert.equal(before.plot.building.building_type, "Cafe");
-    assert.equal(before.plot.building.level, 2);
+    assert.equal(
+      before.plot.building.building_type,
+      sharedCity ? "Restaurant" : "Cafe",
+    );
+    assert.equal(before.plot.building.level, sharedCity ? 1 : 2);
     const cookie = await ownerCookie();
     type Job = {
       id: string;
@@ -233,10 +268,12 @@ try {
         "/generations",
         {
           plotId,
-          description: "A playful blue corner cafe with a distinctive awning",
-          palette: "#69B9E9",
-          themeHint: "Playful",
-          materialHints: ["Tile", "Timber"],
+          description: sharedCity
+            ? "A welcoming green neighbourhood restaurant with a garden terrace"
+            : "A playful blue corner cafe with a distinctive awning",
+          palette: sharedCity ? "#73D9A6" : "#69B9E9",
+          themeHint: sharedCity ? "Garden" : "Playful",
+          materialHints: sharedCity ? ["Timber", "Brick"] : ["Tile", "Timber"],
         },
         cookie,
       );
@@ -433,7 +470,12 @@ try {
       ownerJobStatus: job.status,
     };
     writeFileSync(
-      resolve(root, "deployments/testnet-mock-facade-journey.json"),
+      resolve(
+        root,
+        sharedCity
+          ? "deployments/testnet-shared-facade-journey.json"
+          : "deployments/testnet-mock-facade-journey.json",
+      ),
       `${JSON.stringify(evidence, null, 2)}\n`,
     );
     console.log(JSON.stringify(evidence, null, 2));

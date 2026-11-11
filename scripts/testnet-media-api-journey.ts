@@ -33,12 +33,17 @@ if (
   mode !== "--prepare-shared" &&
   mode !== "--approve-shared" &&
   mode !== "--prepare-shared-billboard" &&
-  mode !== "--approve-shared-billboard"
+  mode !== "--approve-shared-billboard" &&
+  mode !== "--prepare-shared-revalidate" &&
+  mode !== "--approve-shared-revalidate" &&
+  mode !== "--prepare-shared-revalidate-billboard" &&
+  mode !== "--approve-shared-revalidate-billboard"
 )
   throw new Error(
-    "Pass --prepare/--approve, optionally with -shared or -shared-billboard",
+    "Pass --prepare/--approve, optionally with -shared, -revalidate or -billboard",
   );
 const sharedCity = mode.includes("-shared");
+const revalidating = mode.includes("-revalidate");
 const kind = mode.endsWith("-billboard") ? "Billboard" : "Logo";
 const prepare = mode.startsWith("--prepare");
 const projectRoot = resolve(import.meta.dirname, "..");
@@ -113,11 +118,15 @@ const app = createApiApp({
 const plotId = sharedCity ? "plot-main-n-2" : "plot-main-n-1";
 const preparedPath = resolve(
   dataDir,
-  kind === "Billboard"
-    ? "shared-billboard-prepared.json"
-    : sharedCity
-      ? "shared-media-prepared.json"
-      : "prepared.json",
+  revalidating
+    ? kind === "Billboard"
+      ? "shared-billboard-revalidation-prepared.json"
+      : "shared-logo-revalidation-prepared.json"
+    : kind === "Billboard"
+      ? "shared-billboard-prepared.json"
+      : sharedCity
+        ? "shared-media-prepared.json"
+        : "prepared.json",
 );
 const transactions: Array<{ action: string; hash: string }> = [];
 
@@ -268,7 +277,14 @@ try {
     }
     assert.equal(plot?.plot.owner, owner.accountId);
     const slot = kind === "Billboard" ? plot?.plot.billboard : plot?.plot.logo;
-    assert.equal(slot?.active, null);
+    if (revalidating) {
+      assert(slot?.active, "Existing approved media is missing");
+      assert(
+        slot.active.approved_layout_revision <
+          plot.plot.building.layout_revision,
+        "Media is already approved for the current layout",
+      );
+    } else assert.equal(slot?.active, null);
     assert.equal(slot?.pending, null);
     const cookie = await ownerCookie();
     const source = Buffer.from(
@@ -296,6 +312,8 @@ try {
       hash: string;
       layoutRevision: number;
     };
+    if (revalidating)
+      assert.equal(upload.hash, slot.active?.content.asset_hash);
     const link = "https://near.org";
     const created = await postJson(
       "/media/proposals",
@@ -399,6 +417,12 @@ try {
       kind === "Billboard" ? finalPlot?.plot.billboard : finalPlot?.plot.logo;
     assert.equal(finalSlot?.active?.content.asset_hash, prepared.uploadHash);
     assert.equal(finalSlot?.active?.content.link, prepared.link);
+    assert.equal(
+      kind === "Billboard"
+        ? finalPlot?.billboard_eligible
+        : finalPlot?.logo_eligible,
+      true,
+    );
     const publicAsset = await app.request(`/assets/${prepared.uploadHash}`);
     assert.equal(publicAsset.status, 200);
     const bytes = Buffer.from(await publicAsset.arrayBuffer());
@@ -426,11 +450,15 @@ try {
     };
     const path = resolve(
       projectRoot,
-      kind === "Billboard"
-        ? "deployments/testnet-shared-billboard-journey.json"
-        : sharedCity
-          ? "deployments/testnet-shared-media-journey.json"
-          : "deployments/testnet-media-api-journey.json",
+      revalidating
+        ? kind === "Billboard"
+          ? "deployments/testnet-shared-billboard-revalidation.json"
+          : "deployments/testnet-shared-logo-revalidation.json"
+        : kind === "Billboard"
+          ? "deployments/testnet-shared-billboard-journey.json"
+          : sharedCity
+            ? "deployments/testnet-shared-media-journey.json"
+            : "deployments/testnet-media-api-journey.json",
     );
     writeFileSync(path, `${JSON.stringify(evidence, null, 2)}\n`);
     console.log(JSON.stringify(evidence, null, 2));

@@ -1,0 +1,24 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "plotId": "plot-main-n-2",
+  "facadeManifestHash": "5edd64607de41959d7b17dbf65c88a62da9aff8ba94a6b02d1671ec045918a44",
+  "facadeSpriteHash": "ec0189523901b1926445fdadbdd851c5af24c7ef507321706c4a0b5cac202900",
+  "logoHash": "a7ceb962124bd4f3c1b6db35e8f47f6e5cfc0c6bd9e0596b613750084cbc4ef8",
+  "billboardHash": "1b11c8acecb84f03bb9590c5a31c72fdb62d58aca3ce6a5d3c1247d2ad192898",
+  "layoutRevision": 3,
+  "anonymousStreetView": {
+    "facadeActive": true,
+    "logoEligible": true,
+    "billboardEligible": true,
+    "bothMediaMatchNewLayout": true,
+    "originalMediaAndLinksRestored": true
+  },
+  "anonymousManifestReadable": true,
+  "anonymousAssetHashesVerified": {
+    "facade": true,
+    "logo": true,
+    "billboard": true
+  },
+  "temporaryModeratorKeyRevoked": true
+}
