@@ -23,9 +23,9 @@
     },
     "freshness": {
       "impressionReceivedAt": null,
-      "indexedThroughHeight": 277168117,
-      "indexedThroughAt": 1794372588176,
-      "indexerCheckedAt": 1794372665168
+      "indexedThroughHeight": 277168722,
+      "indexedThroughAt": 1794372941644,
+      "indexerCheckedAt": 1794373012209
     }
   }
 }
