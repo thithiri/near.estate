@@ -6,6 +6,7 @@ import {
   mkdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
   statSync,
   writeFileSync,
 } from "node:fs";
@@ -15,6 +16,7 @@ import { KeyPairSigner } from "@near-js/signers";
 import {
   actionCreators,
   createTransaction,
+  decodeSignedTransaction,
   encodeTransaction,
 } from "@near-js/transactions";
 import { baseDecode, baseEncode } from "@near-js/utils";
@@ -194,49 +196,108 @@ async function ownerCookie() {
 }
 
 async function propose(expectedRevision: number, manifestHash: string) {
-  const access = await reader.accessKey(
-    owner.accountId,
-    owner.pair.getPublicKey().toString(),
-  );
-  const transaction = createTransaction(
-    owner.accountId,
-    owner.pair.getPublicKey(),
-    manifest.contractId,
-    access.nonce + 1n,
-    [
-      actionCreators.functionCall(
-        "propose_appearance",
-        {
-          plot_id: plotId,
-          expected_revision: expectedRevision,
-          manifest_hash: manifestHash,
-        },
-        60n * 10n ** 12n,
-        0n,
+  const args = {
+    plot_id: plotId,
+    expected_revision: expectedRevision,
+    manifest_hash: manifestHash,
+  };
+  const actions = [
+    actionCreators.functionCall(
+      "propose_appearance",
+      args,
+      60n * 10n ** 12n,
+      0n,
+    ),
+  ];
+  let hash: string;
+  let bytes: string;
+  if (sharedLevel2 && existsSync(proposalRecordPath)) {
+    const saved = JSON.parse(readFileSync(proposalRecordPath, "utf8")) as {
+      plotId: string;
+      expectedRevision: number;
+      manifestHash: string;
+      hash: string;
+      signedBase64: string;
+    };
+    assert.equal(saved.plotId, plotId);
+    assert.equal(saved.expectedRevision, expectedRevision);
+    assert.equal(saved.manifestHash, manifestHash);
+    hash = saved.hash;
+    bytes = saved.signedBase64;
+    const decoded = decodeSignedTransaction(Buffer.from(bytes, "base64"));
+    const exact = createTransaction(
+      owner.accountId,
+      owner.pair.getPublicKey(),
+      manifest.contractId,
+      decoded.transaction.nonce,
+      actions,
+      decoded.transaction.blockHash,
+    );
+    assert.deepEqual(
+      Buffer.from(encodeTransaction(decoded.transaction)),
+      Buffer.from(encodeTransaction(exact)),
+      "Saved facade proposal differs from the selected design",
+    );
+    assert.equal(
+      baseEncode(
+        createHash("sha256")
+          .update(encodeTransaction(decoded.transaction))
+          .digest(),
       ),
-    ],
-    baseDecode(access.blockHash),
-  );
-  const [hashBytes, signed] = await KeyPairSigner.fromSecretKey(
-    owner.secret,
-  ).signTransaction(transaction);
-  const hash = baseEncode(hashBytes);
-  writeFileSync(
-    proposalRecordPath,
-    `${JSON.stringify({ plotId, expectedRevision, manifestHash, hash }, null, 2)}\n`,
-    { mode: 0o600 },
-  );
-  const bytes = Buffer.from(encodeTransaction(signed)).toString("base64");
-  let outcome: "success" | "failure" | "pending" = "pending";
-  try {
-    outcome = await reader.sendSignedTransaction(bytes);
-  } catch {
-    // The exact hash can still finalize after the RPC reply is lost.
+      hash,
+      "Saved facade proposal hash mismatch",
+    );
+  } else {
+    const access = await reader.accessKey(
+      owner.accountId,
+      owner.pair.getPublicKey().toString(),
+    );
+    const transaction = createTransaction(
+      owner.accountId,
+      owner.pair.getPublicKey(),
+      manifest.contractId,
+      access.nonce + 1n,
+      actions,
+      baseDecode(access.blockHash),
+    );
+    const [hashBytes, signed] = await KeyPairSigner.fromSecretKey(
+      owner.secret,
+    ).signTransaction(transaction);
+    hash = baseEncode(hashBytes);
+    bytes = Buffer.from(encodeTransaction(signed)).toString("base64");
+    const record = {
+      plotId,
+      expectedRevision,
+      manifestHash,
+      hash,
+      ...(sharedLevel2 ? { signedBase64: bytes } : {}),
+    };
+    const target = sharedLevel2
+      ? `${proposalRecordPath}.tmp`
+      : proposalRecordPath;
+    writeFileSync(target, `${JSON.stringify(record, null, 2)}\n`, {
+      mode: 0o600,
+    });
+    if (sharedLevel2) {
+      chmodSync(target, 0o600);
+      renameSync(target, proposalRecordPath);
+    }
   }
-  for (let attempt = 0; outcome === "pending" && attempt < 8; attempt++) {
+  let outcome = await reader.transactionStatus(hash, owner.accountId);
+  if (outcome === "unknown") {
+    try {
+      outcome = await reader.sendSignedTransaction(bytes);
+    } catch {
+      // Retry the saved bytes after a lost RPC reply.
+    }
+  }
+  for (
+    let attempt = 0;
+    (outcome === "unknown" || outcome === "pending") && attempt < 8;
+    attempt++
+  ) {
     await new Promise((done) => setTimeout(done, 1_000));
-    const status = await reader.transactionStatus(hash, owner.accountId);
-    if (status !== "unknown") outcome = status;
+    outcome = await reader.transactionStatus(hash, owner.accountId);
   }
   if (outcome !== "success")
     throw new Error(`Appearance proposal ${hash} is ${outcome}`);
@@ -261,6 +322,8 @@ try {
       mode: string;
       status: string;
       selectedCandidateId?: number | null;
+      layoutRevision: number;
+      appearanceRevision: number | null;
       candidates: Array<{
         id: number;
         manifestHash: string;
@@ -275,8 +338,20 @@ try {
         before.plot.building.pending_appearance?.manifest_hash ===
           existing.candidates[selectedCandidateIndex]?.manifestHash,
     );
+    const resuming = Boolean(
+      sharedLevel2 &&
+        (existing?.status === "ready" ||
+          (existing?.status === "selected" &&
+            existing.selectedCandidateId === selectedCandidateId)) &&
+        existing.buildingType === "Restaurant" &&
+        existing.level === 2 &&
+        existing.layoutRevision === before.plot.building.layout_revision &&
+        existing.appearanceRevision ===
+          before.plot.building.appearance_revision &&
+        before.plot.building.pending_appearance === null,
+    );
     let job: Job;
-    if (recovering) {
+    if (recovering || resuming) {
       job = existing as Job;
     } else {
       assert.equal(before.plot.building.pending_appearance, null);
@@ -320,19 +395,28 @@ try {
         );
       }
       if (existsSync(proposalRecordPath)) {
-        const record = JSON.parse(readFileSync(proposalRecordPath, "utf8")) as {
-          plotId: string;
-          expectedRevision: number;
-          manifestHash: string;
-          hash: string;
-        };
-        if (
-          record.plotId === plotId &&
-          record.expectedRevision ===
-            before.plot.building.appearance_revision - 1 &&
-          record.manifestHash === candidate.manifestHash
-        )
-          proposalTransaction = record.hash;
+        if (sharedLevel2) {
+          proposalTransaction = await propose(
+            before.plot.building.appearance_revision - 1,
+            candidate.manifestHash,
+          );
+        } else {
+          const record = JSON.parse(
+            readFileSync(proposalRecordPath, "utf8"),
+          ) as {
+            plotId: string;
+            expectedRevision: number;
+            manifestHash: string;
+            hash: string;
+          };
+          if (
+            record.plotId === plotId &&
+            record.expectedRevision ===
+              before.plot.building.appearance_revision - 1 &&
+            record.manifestHash === candidate.manifestHash
+          )
+            proposalTransaction = record.hash;
+        }
       }
     } else {
       const selected = await postJson(
