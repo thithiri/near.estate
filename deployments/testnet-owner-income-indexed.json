@@ -1,0 +1,31 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "plotId": "plot-river-s-0",
+  "verifiedCycles": [
+    {
+      "sessionId": 6,
+      "plotId": "plot-river-s-0",
+      "parkBlock": 277164932,
+      "settlementBlock": 277168031,
+      "settlementEvent": "collected",
+      "driverPayoutAtomic": "30000000"
+    }
+  ],
+  "publicPlotStats": {
+    "totals": {
+      "impressions": 0,
+      "dwellMs": 0,
+      "averageVisibleMs": 0,
+      "parks": 2,
+      "tickets": 0
+    },
+    "freshness": {
+      "impressionReceivedAt": null,
+      "indexedThroughHeight": 277168117,
+      "indexedThroughAt": 1794372588176,
+      "indexerCheckedAt": 1794372665168
+    }
+  }
+}

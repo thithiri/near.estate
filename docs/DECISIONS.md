@@ -248,6 +248,8 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 
 - The live car panel now shows the maximum driver payout and countdowns to the earning cap and expiry for its active parking session. It uses the session's on-chain snapshot terms through the same fixed-point settlement calculation as the game, so later config changes do not alter the preview. The displayed time is estimated from the last finalized chain time and the local clock; final coin amounts still come from the contract. Web tests cover a free curb, a meter split and a tower half-rate session.
 
+- The shared-media event worker caught up after the first owner-income settlement: 11 account transactions contributed nine new event-bearing blocks, including the legal park for session 6, its `collected` event with 30,000,000 atomic gross and driver payout, and the next park for session 7. A repeatable verifier checked the completed session against the indexed payload and the public API's two parks and zero tickets on the Free River Street plot. [Indexed evidence](../deployments/testnet-owner-income-indexed.json) contains finalized block heights and public totals only. The second session is still earning; this does not prove the paid building upgrade yet.
+
 ## Open risks
 
 - Browser wallet sign-in, redirects, session-key setup/recovery/revocation and local key storage security on both named wallets; the patched dependency compatibility and wallet bundle size. Protocol permission, allowance exhaustion and revocation passed separately on testnet.
