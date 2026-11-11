@@ -25,4 +25,6 @@ The authoritative V1 rules are in [V1_SPEC](V1_SPEC.md#parking-economy-and-rules
 
 Parking terms are snapshotted when a session starts. Later config, rule, or plot ownership changes cannot rewrite an existing payout. Expired sessions remain settleable while new economic actions are paused.
 
+Emergency repair is free once per rolling 24 hours only when every owned car lacks the durability to park and the player cannot afford the least expensive repair that would make one parkable. It restores the starter car to the current parking durability cost (two points by default).
+
 Storage funding defaults to 4,096 reserved bytes per registered player and 4,096 bytes per purchased plot, charged at the chain's current storage-byte price. The plot reserve covers two bounded logo/billboard records and their moderation history. Sandbox measurements found a maximal plot uses 3,493 reserved bytes, and registration and purchase deltas fit their reserves. These sizes are configurable within documented bounds; longer account IDs and future schema growth still need review.

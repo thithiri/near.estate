@@ -44,6 +44,8 @@ Coin and yoctoNEAR amounts are decimal strings in JSON. Mutating calls attach ze
 | `remove_media(plot_id, kind, expected_media_revision)`                                     | current plot owner                                    | gas, zero deposit; always allowed, including during cooldown; retains replacement time                                                | implemented, unit-tested                 |
 | `revoke_media(plot_id, kind, expected_media_revision, expected_content, reason)`           | moderator                                             | gas, zero deposit; exact active content and revision; 240-byte reason; hides media and retains replacement time                       | implemented, unit-tested                 |
 
+`emergency_repair()` is free and requires no attached deposit. It is available after the rolling cooldown only when no owned car can park and the player cannot afford the least expensive repair that would make one parkable. It restores the starter car to the configured parking durability cost.
+
 ## HTTP API
 
 The API serves the game through the same origin at `/api/*` (Caddy removes the prefix before proxying). `APP_ORIGIN` must be the exact browser origin, including scheme and port. Unsafe requests require a matching `Origin` header. Errors use `{ "code": "MACHINE_CODE", "message": "Readable explanation" }`. Successful sign-in, upload and design-job responses use `Cache-Control: no-store`.

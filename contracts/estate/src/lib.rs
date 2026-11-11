@@ -1799,20 +1799,29 @@ impl Contract {
         self.require_not_paused();
         let caller = env::predecessor_account_id();
         let mut account = self.registered_account(&caller);
+        let park_cost = self.config.park_durability_cost;
         require!(
             account.active_session_id.is_none(),
             "cannot emergency repair while parked"
         );
+        let mut fewest_missing_points = park_cost;
+        for car_id in &account.car_ids {
+            let car = self.owned_car(*car_id, &caller);
+            require!(
+                car.durability < park_cost,
+                "a car still has parking durability"
+            );
+            fewest_missing_points = fewest_missing_points.min(park_cost - car.durability);
+        }
+        let cheapest_repair = self
+            .config
+            .repair_cost_per_point
+            .0
+            .checked_mul(u128::from(fewest_missing_points))
+            .unwrap_or_else(|| env::panic_str("emergency repair price overflow"));
         require!(
-            account.balance.0 < 2_000_000,
-            "balance too high for emergency repair"
-        );
-        require!(
-            account
-                .car_ids
-                .iter()
-                .all(|id| self.cars.get(id).is_some_and(|car| car.durability < 2)),
-            "a car still has parking durability"
+            account.balance.0 < cheapest_repair,
+            "can afford a repair to parking durability"
         );
         let now = env::block_timestamp_ms() / 1_000;
         if let Some(last) = account.last_emergency_repair_at {
@@ -1822,13 +1831,16 @@ impl Contract {
             require!(now >= eligible_at, "emergency repair cooldown active");
         }
         let mut car = self.owned_car(account.starter_car_id, &caller);
-        car.durability = 2;
+        let points = park_cost
+            .checked_sub(car.durability)
+            .unwrap_or_else(|| env::panic_str("starter car already has parking durability"));
+        car.durability = park_cost;
         account.last_emergency_repair_at = Some(now);
         self.accounts.insert(caller, account);
         self.cars.insert(car.id, car.clone());
         self.emit(
             "car_repaired",
-            near_sdk::serde_json::json!({"car_id": car.id, "points": 2, "emergency": true}),
+            near_sdk::serde_json::json!({"car_id": car.id, "points": points, "emergency": true}),
         );
         car
     }
@@ -2450,6 +2462,61 @@ mod tests {
             .expect("config serializes for JSON views");
         assert!(json["plot_base_price_yocto"].is_string());
         assert!(json["base_rate_per_hour"].is_string());
+    }
+
+    #[test]
+    fn emergency_repair_restores_configured_parking_durability() {
+        let mut contract = seeded_contract();
+        let admin = account("admin.testnet");
+        context(&admin, 0, 1_001);
+        let mut config = contract.get_config();
+        config.version = 2;
+        config.park_durability_cost = 4;
+        contract.update_config(config);
+
+        let player = account("driver.testnet");
+        let mut car = register_at(&mut contract, &player, 1_002);
+        car.durability = 3;
+        contract.cars.insert(car.id, car.clone());
+        let mut state = contract
+            .get_account(player.clone())
+            .expect("registered player");
+        state.balance.0 = 0;
+        contract.accounts.insert(player.clone(), state);
+
+        context(&player, 0, 1_003);
+        let repaired = contract.emergency_repair();
+        assert_eq!(repaired.durability, 4);
+        let logs = get_logs();
+        let event = logs
+            .last()
+            .and_then(|line| line.strip_prefix("EVENT_JSON:"))
+            .expect("repair event");
+        let payload: near_sdk::serde_json::Value =
+            near_sdk::serde_json::from_str(event).expect("valid event JSON");
+        assert_eq!(payload["data"][0]["points"], 1);
+
+        let session = contract.park(car.id, "plot-main-n-0".to_string(), 0);
+        assert_eq!(session.car_id, car.id);
+        assert_eq!(contract.get_car(car.id).expect("parked car").durability, 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "can afford a repair to parking durability")]
+    fn emergency_repair_rejects_player_who_can_afford_to_park() {
+        let mut contract = seeded_contract();
+        let player = account("driver.testnet");
+        let mut car = register_at(&mut contract, &player, 1_002);
+        car.durability = 1;
+        contract.cars.insert(car.id, car);
+        let mut state = contract
+            .get_account(player.clone())
+            .expect("registered player");
+        state.balance.0 = contract.get_config().repair_cost_per_point.0;
+        contract.accounts.insert(player.clone(), state);
+
+        context(&player, 0, 1_003);
+        contract.emergency_repair();
     }
 
     #[test]

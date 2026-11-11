@@ -62,7 +62,7 @@ All monetary game amounts use integer subunits: 1 displayed coin equals 1,000,00
 | Inspector patrol limit | At most 8 attempts per five-minute interval globally |
 | Logo and billboard replacement cooldown | 72 hours after an approved replacement |
 | Custom facade publication cooldown | 24 hours after approval; one exemption per paid level upgrade |
-| Starter emergency repair | Restore to 2 durability once per rolling 24 hours under the conditions below |
+| Starter emergency repair | Restore to the configured parking durability cost once per rolling 24 hours under the conditions below |
 
 A five-minute tier-1 free curb park earns 5 coins gross, leaving 3 after replacing durability. A full 30-minute free park earns 30 gross, or 28 after repair. A full NPC tower park earns 15 gross, or 13 after repair. The colour and body type are cosmetic except that colour determines access to ColorOnly rules. Tier changes earnings and practice-race performance.
 
@@ -80,7 +80,7 @@ Driving, exploring, cinema visits and the basic burger interaction are free and 
 
 **Inspector.** The inspector cannot call the owner's ticket method. Inspection requires the expected session ID and a present, illegal, nonexpired session at least five minutes old. Its restricted method uses env::random_seed() for the success roll and records every valid attempt, including failures, against the session and the fixed five-minute global patrol window. Success settles to the treasury using the ticket split. It is an operator-run NPC with contract-enforced limits; random success does not prevent the operator from choosing targets or withholding patrols.
 
-**Recovery.** Emergency repair is allowed only when all owned cars have less than 2 durability, the balance is below 2 coins, no car is parked, and the rolling cooldown has elapsed. It tops up the original starter car to 2 without minting coins. Cars must be unparked for normal repair or upgrades.
+**Recovery.** Emergency repair is allowed only when all owned cars have less durability than parking requires, the balance cannot pay for the cheapest repair that would make any car parkable, no car is parked, and the rolling cooldown has elapsed. It tops up the original starter car to the configured parking cost without minting coins. At the defaults, a car at zero durability needs two coins to park; a car at one durability needs one. Cars must be unparked for normal repair or upgrades.
 
 These settings intentionally replace the original 24-hour cap, 10-coin hourly base rate and 5-durability parking cost. Short sessions and explicit expiry make scarce parking usable in a small city. Per-account limits are not proof of one human; V1 remains a nonredeemable testnet economy.
 
