@@ -200,8 +200,14 @@ async function confirmPending() {
 if (journal.pending) await confirmPending();
 const player = await reader.player(credential.account_id);
 assert(player.account, "Owner is not registered");
+const unsettledCycle = journal.cycles.find((entry) => !entry.settleHash);
 if (mode === "--park") {
   if (player.active_session) {
+    assert.equal(
+      player.active_session.id,
+      unsettledCycle?.sessionId,
+      "The active session does not match the private journey journal",
+    );
     console.log(
       JSON.stringify({
         status: "already_parked",
@@ -211,6 +217,10 @@ if (mode === "--park") {
       }),
     );
   } else {
+    assert(
+      !unsettledCycle,
+      `Session ${unsettledCycle?.sessionId} was settled externally; reconcile its chain event and payout before another park`,
+    );
     const car = player.cars.find((entry) => entry.parked_session_id === null);
     assert(car && car.durability >= 2, "No parkable owner car");
     const street = await reader.streetSide("river", "South");
@@ -235,7 +245,12 @@ if (mode === "--park") {
   }
 } else {
   const session = player.active_session;
-  assert(session, "Owner has no active session to settle");
+  assert(
+    session,
+    unsettledCycle
+      ? `Session ${unsettledCycle.sessionId} was settled externally; reconcile its chain event and payout`
+      : "Owner has no active session to settle",
+  );
   const cycle = journal.cycles.find((entry) => entry.sessionId === session.id);
   assert(cycle && !cycle.settleHash, "Active session is not in this journey");
   const chainNow = await reader.chainTimeSeconds();
