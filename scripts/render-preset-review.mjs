@@ -7,7 +7,11 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const catalog = JSON.parse(
   await readFile(join(root, "apps/web/src/preset-catalog.json"), "utf8"),
 );
+const worldCatalog = JSON.parse(
+  await readFile(join(root, "apps/web/src/world-sprites.json"), "utf8"),
+);
 const sprites = join(root, "apps/web/public/presets");
+const civicSprites = join(root, "apps/web/public/world");
 const output = join(root, "docs/images/near-estate-level-neighbours-v1.png");
 const contactOutput = join(
   root,
@@ -24,6 +28,10 @@ const entries = new Map(
     entry,
   ]),
 );
+const burgerStop = worldCatalog.sites.find(
+  (entry) => entry.role === "BurgerStop",
+);
+if (!burgerStop) throw new Error("Missing fixed burger-stop neighbour");
 
 function titleImage(title) {
   return Buffer.from(
@@ -47,8 +55,15 @@ for (let row = 0; row < 10; row++) {
       left,
       top,
     });
+    layers.push({
+      input: await sharp(join(civicSprites, burgerStop.sprite))
+        .resize(140, 160)
+        .png()
+        .toBuffer(),
+      left: left + 15,
+      top: top + 30,
+    });
     for (const [offset, key] of [
-      [0, "Restaurant:1:3"],
       [170, `${type}:${variant}:${level}`],
       [340, "Homes:1:1"],
     ]) {

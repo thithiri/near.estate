@@ -6,13 +6,13 @@ These are the latest saved visuals for the curated-only near.estate beta. The fi
 
 667 × 375 landscape. The driving buttons, parking action, curb spaces, rule signs and cross-street control are visible.
 
-![near.estate street on a landscape phone](images/near-estate-curated-street-phone-v4.png)
+![near.estate street on a landscape phone](images/near-estate-curated-street-phone-v5.png)
 
 ## Street on a computer
 
 1280 × 720. The plot details sit beside the street and can be dismissed.
 
-![near.estate street with the desktop plot panel](images/near-estate-curated-street-desktop-v4.png)
+![near.estate street with the desktop plot panel](images/near-estate-curated-street-desktop-v5.png)
 
 ## Building studio on a phone
 
@@ -22,7 +22,7 @@ These are the latest saved visuals for the curated-only near.estate beta. The fi
 
 ## Building variations and upgrades
 
-The sheet below places each of the 40 implemented curated facade sprites beside the same neighbours. It covers five building types, two shapes per type and four levels. The current local art pass gives each type a stronger material color and adds foliage inside the greenhouse cafe. It is an asset review sheet; the street renderer adds names, logos, billboards and parking signs separately.
+The sheet below places each of the 40 implemented curated facade sprites between the same game-owned burger stop and level-1 home. It covers five building types, two shapes per type and four levels. Higher levels now add type-specific features such as market gable windows, cafe vines, a diner awning and residential balconies. It is an asset review sheet; the street renderer adds names, logos, billboards and parking signs separately.
 
 ![near.estate curated facade variations across four levels](images/near-estate-level-neighbours-v1.png)
 

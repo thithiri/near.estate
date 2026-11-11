@@ -313,6 +313,59 @@ function design(type, variant, level) {
     throw new Error(`Unknown preset ${type} ${variant}`);
   }
 
+  // Upper levels earn a recognizable architectural feature in addition to height.
+  // Keep these details away from the separate logo and billboard rectangles.
+  if (level >= 3) {
+    if (type === "Retail" && variant === 1) {
+      base += rect(14, top + 3, 42, 5, "#c87566", 1);
+      for (const x of [21, 33, 45])
+        base += rect(x, top + 3, 4, 5, pale, 0, "none", 0);
+    } else if (type === "Retail") {
+      for (const x of [27, 62, 97])
+        base += circle(x, top + 17, 3, glass, ink, 1);
+    } else if (type === "Cafe" && variant === 1) {
+      for (const x of [45, 70, 95])
+        base += line(x, top + 17, x, top + 27, "#e7faf0", 1.5);
+      for (const x of [17, 123]) {
+        base += line(x, top + 62, x, top + 105, "#39845f", 2);
+        for (const y of [top + 71, top + 85, top + 99])
+          base += circle(x + (x < 70 ? 3 : -3), y, 4, "#5caa75", "none", 0);
+      }
+    } else if (type === "Cafe") {
+      for (const x of [20, 120]) {
+        base += line(x, top + 48, x, top + 66, "#426b57", 2);
+        base += circle(x - 3, top + 60, 4, "#5eaa70", "none", 0);
+        base += circle(x + 3, top + 64, 4, "#5eaa70", "none", 0);
+      }
+    } else if (type === "Restaurant" && variant === 1) {
+      base += rect(60, top + 1, 20, 6, "#b9655a", 2);
+      base += line(64, top + 4, 76, top + 4, pale, 1);
+      base += rect(16, 110, 108, 8, "#c86261", 1);
+      for (let stripe = 0; stripe < 7; stripe++)
+        base += rect(20 + stripe * 15, 110, 7, 8, pale, 0, "none", 0);
+    } else if (type === "Restaurant") {
+      base += line(59, top + 73, 81, top + 73, timber, 3);
+      for (const x of [61, 70, 79])
+        base += line(x, top + 64, x, top + 72, pale, 1.5);
+    } else if (type === "Office" && variant === 1) {
+      base += rect(29, top + 2, 82, 6, "#435f74", 1);
+      base += line(70, top - 2, 70, top + 4, "#435f74", 2);
+      base += circle(70, top - 2, 2, "#ffce62", "none", 0);
+    } else if (type === "Office") {
+      base += rect(57, top + 2, 26, 7, "#45677a", 1);
+      base += line(63, top + 5, 77, top + 5, pale, 1);
+    } else if (type === "Homes" && variant === 1) {
+      base += line(51, top + 70, 91, top + 70, timber, 2);
+      for (const x of [55, 67, 79, 88])
+        base += line(x, top + 61, x, top + 69, timber, 1);
+    } else if (type === "Homes") {
+      for (const x of [52, 83]) {
+        base += rect(x - 5, top + 63, 18, 4, "#6d9c6f", 1);
+        base += circle(x, top + 61, 3, "#72b47a", "none", 0);
+      }
+    }
+  }
+
   base += rect(
     logoRect.x,
     logoRect.y,

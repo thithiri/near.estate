@@ -78,14 +78,14 @@
       "sprite": "retail-1-l3.png",
       "paletteMask": "retail-1-l3-mask.png",
       "thumbnail": "retail-1-l3-thumb.png",
-      "spriteHash": "8f4ce295d19435140aa4b088e322af5bd9fea2ac034b85d036c8384cb21da7fe",
+      "spriteHash": "05410a84048c13896701dfc4b2a487f983bc41fd31807a21debcda4c2f08758f",
       "paletteMaskHash": "e1f368f401a7b0d7fd5ed1800e3e6b116337762a260447a28a01fe14eee8dbc6",
-      "thumbnailHash": "c4aa6219dbd5906cbc80f0a973a59c3083ae73cd8124527e19a91340f6019469",
+      "thumbnailHash": "61b449c35969b9f07e4d30cea41db4f5b9789e95bae6ad3cb3cd09f5732d2bf0",
       "alphaBounds": {
         "x": 6.25,
-        "y": 39.25,
+        "y": 36.25,
         "width": 128.5,
-        "height": 119.5
+        "height": 122.5
       },
       "logoRect": {
         "x": 22,
@@ -113,14 +113,14 @@
       "sprite": "retail-1-l4.png",
       "paletteMask": "retail-1-l4-mask.png",
       "thumbnail": "retail-1-l4-thumb.png",
-      "spriteHash": "56d4cc47d81b310d6dc8e8c383308b344dfc8a72f4cb43f6758c6fa409e73877",
+      "spriteHash": "04027150aae60b47da638cc5f1c80760c0f7634a0fc539e9baa216ad46ae905f",
       "paletteMaskHash": "dd7c2d4aae52f4444c6e6db7c7a1d1abff2c31176b258064eaad30e3dfed8605",
-      "thumbnailHash": "a193138df5af7655f619b0daa10932970c0f8d2ae3f0e502b5599fad9f9a91aa",
+      "thumbnailHash": "6de8f2e6c1cd4fb00cc1256329ac69908b2ac41cec062faf952fafb51e93074a",
       "alphaBounds": {
         "x": 6.25,
-        "y": 9.25,
+        "y": 6.25,
         "width": 128.5,
-        "height": 149.5
+        "height": 152.5
       },
       "logoRect": {
         "x": 22,
@@ -218,9 +218,9 @@
       "sprite": "retail-2-l3.png",
       "paletteMask": "retail-2-l3-mask.png",
       "thumbnail": "retail-2-l3-thumb.png",
-      "spriteHash": "8d098a8e403d8c017076b6e547055d6e848382c5260aaf2cb5821a9779fc078c",
+      "spriteHash": "edcb0e593be7fb58b7e4c221a0ad28585761e4b4ae90f2c68286cd8ddecf9aae",
       "paletteMaskHash": "efa0d7ecac53f4427485a67073698bf04dd994477ce23346493c03bdef100f45",
-      "thumbnailHash": "36278cea81796b2dd5ac22ddd3fc12cbfca6485d054efc9fa955d91ed9f6f5de",
+      "thumbnailHash": "526e44e9c064e4a22e28ad499a03e7101614361ef7ccced6493563a31b415c35",
       "alphaBounds": {
         "x": 7.25,
         "y": 39.25,
@@ -253,9 +253,9 @@
       "sprite": "retail-2-l4.png",
       "paletteMask": "retail-2-l4-mask.png",
       "thumbnail": "retail-2-l4-thumb.png",
-      "spriteHash": "57ad22f6dad2e8cf160049a4c4b2527821439dbc906d4c2f7b56d9eb805a1a9e",
+      "spriteHash": "a95701e33c19e301c68cf4147e518a3620a37d255fd04c5bd9cf0358f3c9c835",
       "paletteMaskHash": "a6d60fce8c4ce9bc5c811cb2c73ac435c8bdff17ae077460e412fcf4fca981ff",
-      "thumbnailHash": "2e75675458bf1218a4c041cb4f7baa88df2a62f60b5996769a39bc47c20f52c7",
+      "thumbnailHash": "a161f1706b85cb43aca5a25341dbf6d633eeed1ae9eff468874913cded7c11f3",
       "alphaBounds": {
         "x": 7.25,
         "y": 9.25,
@@ -358,9 +358,9 @@
       "sprite": "cafe-1-l3.png",
       "paletteMask": "cafe-1-l3-mask.png",
       "thumbnail": "cafe-1-l3-thumb.png",
-      "spriteHash": "b52241d7e9a097f144224065b841955c9cb62dff2c37a816e538e19663d96adc",
+      "spriteHash": "48223ac61209da5e04cc6ec4d7ab660e77bd3e14977d7328e849503660ed9410",
       "paletteMaskHash": "4dd38d542551af03145dd45534c267801f84fc821b807367b51c0896ee92c63c",
-      "thumbnailHash": "de02012db378c8d41ba4bcc262443a4660e8c438ada5cc0934b309d10e0de30e",
+      "thumbnailHash": "585f3fab816d3dfe0ca7b045595ee8192a5a8e703f6b0793b4a6557570f118d3",
       "alphaBounds": {
         "x": 10.25,
         "y": 37.25,
@@ -393,9 +393,9 @@
       "sprite": "cafe-1-l4.png",
       "paletteMask": "cafe-1-l4-mask.png",
       "thumbnail": "cafe-1-l4-thumb.png",
-      "spriteHash": "b8ec32aec4e0f44ab6aa5781b54e3cfca389e518752a669a535e0dcadaa31613",
+      "spriteHash": "5888220707f397007532749702825a7de22b08924f1fc3636bb5c090ab03625c",
       "paletteMaskHash": "4ae08adebb824ff23bde4df9acb9d2a22a455764ccf732695f95d719dff3d480",
-      "thumbnailHash": "223d1e1b3867af32d0aa92e7db1603394bb82428d77c77c3dfd0477c8bd65f5b",
+      "thumbnailHash": "b251b6e3e004cae69ae2784b9bfcfbfc890ee4ecaa1b31b928da1a60da04e473",
       "alphaBounds": {
         "x": 10.25,
         "y": 7.25,
@@ -498,9 +498,9 @@
       "sprite": "cafe-2-l3.png",
       "paletteMask": "cafe-2-l3-mask.png",
       "thumbnail": "cafe-2-l3-thumb.png",
-      "spriteHash": "c3e99e97afb55345b067756666cc4771db2dc636f69ec23423067b1d666637d6",
+      "spriteHash": "6f9e1b14a572e037706881ff07f1e5db1a201ed032742622c94e174ef3817e31",
       "paletteMaskHash": "93fc600d7a32a24d62b85954864a21b7f7d7f26f43f155aa0ea4dda0e255a1b0",
-      "thumbnailHash": "4c96d937d135ae9a69635449acaf523c5d9cdf761ffd9f6eb6650199d078b362",
+      "thumbnailHash": "0c113fe1b9e31b07d0e31878cd39f93839a77ddb8a7bc4af7c75209ae07dc2f6",
       "alphaBounds": {
         "x": 4.25,
         "y": 46.25,
@@ -533,9 +533,9 @@
       "sprite": "cafe-2-l4.png",
       "paletteMask": "cafe-2-l4-mask.png",
       "thumbnail": "cafe-2-l4-thumb.png",
-      "spriteHash": "9e5fee062ce808b7c0600085665eaf5209be73b78b1b7f3c46383a8e80049f87",
+      "spriteHash": "81012c15a3dc4df9dc3b6d7783ce4c85162ad2b4540ebe3d40f50d26519b3f68",
       "paletteMaskHash": "bae88c0405b4ca0185ff8471e2a6a2af122f0e2e6bf125d8f2938c894cb18386",
-      "thumbnailHash": "d2b03cc71a17430b65bd8fde8a5d7d43ff253f43dc763c8befae8cdb055bcfeb",
+      "thumbnailHash": "a636750296ef6ac544b9936ef9ee1235a2f1dbc2cac670707ca7df3345d157b9",
       "alphaBounds": {
         "x": 4.25,
         "y": 16.25,
@@ -638,14 +638,14 @@
       "sprite": "restaurant-1-l3.png",
       "paletteMask": "restaurant-1-l3-mask.png",
       "thumbnail": "restaurant-1-l3-thumb.png",
-      "spriteHash": "3d5eed14df9b4f1d1f8bee497ffc1819a8cf3c5c8a9237a6e1dc106e17b7b384",
+      "spriteHash": "6802a95f9684a76227e12e3241c0cd07302f66e8557eccfc2d9179ae2526f42b",
       "paletteMaskHash": "1942de67bc7531400ada872811a98fe8a0b87370640be4adc9d6067d40b20243",
-      "thumbnailHash": "2f5d1e6b2a42631dc2ed93a67aecd6ce3fdb0ebdad127afb3571eb2a0903a476",
+      "thumbnailHash": "45ebe488987b929581c9295f932900fe537f629df9ce99723cc093b921ad8c44",
       "alphaBounds": {
         "x": 7,
-        "y": 38.25,
+        "y": 34.25,
         "width": 126,
-        "height": 120.5
+        "height": 124.5
       },
       "logoRect": {
         "x": 18,
@@ -673,14 +673,14 @@
       "sprite": "restaurant-1-l4.png",
       "paletteMask": "restaurant-1-l4-mask.png",
       "thumbnail": "restaurant-1-l4-thumb.png",
-      "spriteHash": "39df23c27f58e516b8b807c889f57b90bc4238f4051617dd786dd457f2a3590e",
+      "spriteHash": "982b6e31c20b4576d5b39902992750560b05c6c83f5ac5628694f43e06c52262",
       "paletteMaskHash": "61f9a388861887e1ed2473325c5cf295ee0b6f26342f4dac9b0497fb0575f799",
-      "thumbnailHash": "1c80233334caeed8704631a27b6d0df528a97c1f2e8855cf85f77507df40a54e",
+      "thumbnailHash": "1608e76e664fd5c2ce407eaedfeb0aa9fe48be2a363a6d113af358e35c6ece6a",
       "alphaBounds": {
         "x": 7,
-        "y": 8.25,
+        "y": 4.25,
         "width": 126,
-        "height": 150.5
+        "height": 154.5
       },
       "logoRect": {
         "x": 18,
@@ -778,9 +778,9 @@
       "sprite": "restaurant-2-l3.png",
       "paletteMask": "restaurant-2-l3-mask.png",
       "thumbnail": "restaurant-2-l3-thumb.png",
-      "spriteHash": "97ce519713d09b0bd35916e5961997ee182b059a4b6abed8be297950005d5cdc",
+      "spriteHash": "3a50f3f5000a65e4cd7f716d8bfa95244a5c52a4cbf2c443617924e2c86e511d",
       "paletteMaskHash": "c564babe5a2d9327ce376b3a4724b8176e8e67bc87b178268752a9048ee6c73a",
-      "thumbnailHash": "e9be3cc446ab27dfbdf320e7e8b83288bb8b666d9cb62aef2a90736a9cfd9fdf",
+      "thumbnailHash": "f98f0e7fc8a1727820836390e34561af9393a74c162f5c19322187a051bf1d98",
       "alphaBounds": {
         "x": 6.25,
         "y": 44.25,
@@ -813,9 +813,9 @@
       "sprite": "restaurant-2-l4.png",
       "paletteMask": "restaurant-2-l4-mask.png",
       "thumbnail": "restaurant-2-l4-thumb.png",
-      "spriteHash": "5a6867ce4e63b772a414fcd16b031ea8d114f93abcd3659a0a1ca55858d0a07e",
+      "spriteHash": "eed9dfbe9e5f3a725fda653c20ef633bd3c5b61337b23b0f7966c941367c0677",
       "paletteMaskHash": "18e103a88c5b83f6d23ade9673a1e002f72184b09110897bc2dc2f92d84c35f5",
-      "thumbnailHash": "0d7a0297c549af78f54ca59a5ff25f3cf4d2b203a8f31b4da532440a0fe6b54c",
+      "thumbnailHash": "7da666dd99ef96f0088f54d78d7d46f3a6adca33ba2dcc8152bfecc481de9189",
       "alphaBounds": {
         "x": 6.25,
         "y": 14.25,
@@ -918,14 +918,14 @@
       "sprite": "office-1-l3.png",
       "paletteMask": "office-1-l3-mask.png",
       "thumbnail": "office-1-l3-thumb.png",
-      "spriteHash": "9580b0ba637e738197f0e186f7b8a4c920edcab402af3ddef61b58f7613f8b00",
+      "spriteHash": "350c1cd767794ab89fe91ba7f80fc69ba5aa88b40c4e3b552c0343c5e1747ede",
       "paletteMaskHash": "ae36feecef7880ec5f26fc3eaa81a80ca807e570b313d8f6f84e4e6580d71fcb",
-      "thumbnailHash": "5d615f4f0166ad26a2f01cb7d1702acde214d8d03d02bcd5043454fa4317ff59",
+      "thumbnailHash": "6ee40e5668ee37f8308446a09f484ec118c3fb5f38202051f5df05a0cf272069",
       "alphaBounds": {
-        "x": 33.25,
-        "y": 37.25,
-        "width": 73.5,
-        "height": 121.5
+        "x": 28.25,
+        "y": 30,
+        "width": 83.5,
+        "height": 128.75
       },
       "logoRect": {
         "x": 41,
@@ -953,14 +953,14 @@
       "sprite": "office-1-l4.png",
       "paletteMask": "office-1-l4-mask.png",
       "thumbnail": "office-1-l4-thumb.png",
-      "spriteHash": "59c1de6743ff1954453b3b71aefeb702f4428c02cf80b648eedaf047064b3394",
+      "spriteHash": "73b64d9e948e0a2399369b1e396021d1698d87a334f074591cff2347117f4557",
       "paletteMaskHash": "91e3a52054154f9b0b9b8b1872b7a0573e9bf80ba97de75e26744a14e03421dc",
-      "thumbnailHash": "e50d6390b7bd007f76cb5e7ab5348dd3bbcd09a177bf8adbf76c58a52838f04c",
+      "thumbnailHash": "9f85783394adac3913a9f638f7b4ac92d847f1e5287148209831a10959f7f0bd",
       "alphaBounds": {
-        "x": 33.25,
-        "y": 7.25,
-        "width": 73.5,
-        "height": 151.5
+        "x": 28.25,
+        "y": 0,
+        "width": 83.5,
+        "height": 158.75
       },
       "logoRect": {
         "x": 41,
@@ -1058,14 +1058,14 @@
       "sprite": "office-2-l3.png",
       "paletteMask": "office-2-l3-mask.png",
       "thumbnail": "office-2-l3-thumb.png",
-      "spriteHash": "3b778d7d67cab3abf0c788ab98a357c5788cf00776def4dac055558eaf897038",
+      "spriteHash": "887ce4a0661e6cdca6688f8e290018d64eae55ab79deb3b3bd4b538fe570fc78",
       "paletteMaskHash": "7fc424fcd1d411d26d750d763601952c519be09b0730694a1f05ec39f740ff02",
-      "thumbnailHash": "835f729aa38d868d1e6b8f71bcc9c8b58848288255559b09ded1b7f49cbb96f1",
+      "thumbnailHash": "11c9850ff47a82a068f5d68233f73a92e2a77915d29332a04cb3da19de0a6f0d",
       "alphaBounds": {
         "x": 7.25,
-        "y": 42.25,
+        "y": 35.25,
         "width": 125.5,
-        "height": 116.5
+        "height": 123.5
       },
       "logoRect": {
         "x": 23,
@@ -1093,14 +1093,14 @@
       "sprite": "office-2-l4.png",
       "paletteMask": "office-2-l4-mask.png",
       "thumbnail": "office-2-l4-thumb.png",
-      "spriteHash": "4ecad8c6ae2802397c89700261bd46768447c5dd5132714286b66d444c10017c",
+      "spriteHash": "b8a5be6b55843dbdb008ae4bd0942f4aa6a3ba21b37f89d7ecfbbc9a402b0a18",
       "paletteMaskHash": "e38b139043b14d8cb940a24744c732b3c2656e5a66da1e1b795f8205c6f48a55",
-      "thumbnailHash": "30e7e848dcf89623af8cf9c72c8d5bea41d945c581e62519935bbf2090119c40",
+      "thumbnailHash": "da68de30ab4ff305c91e7003a72908218404cd9ceced842d1d8768fc81b2d020",
       "alphaBounds": {
         "x": 7.25,
-        "y": 12.25,
+        "y": 5.25,
         "width": 125.5,
-        "height": 146.5
+        "height": 153.5
       },
       "logoRect": {
         "x": 23,
@@ -1198,9 +1198,9 @@
       "sprite": "homes-1-l3.png",
       "paletteMask": "homes-1-l3-mask.png",
       "thumbnail": "homes-1-l3-thumb.png",
-      "spriteHash": "588cd3d263ca1c0eca6bfe6da8c6034d6b79a7ecef4651f377f9b48c95c8b8c6",
+      "spriteHash": "0434da537589273b73839b19114e07dbbc8bfed8df970102c0ec17cff739a98a",
       "paletteMaskHash": "4d2f271917b7eaaedc5831d935b6269eda0bffb4559f575ff9fb0cf25ebd9d75",
-      "thumbnailHash": "a95d3a77ca46dfb10e7520e04369523f1104c8b8728a2f64b84b02377186b292",
+      "thumbnailHash": "6855b236cafd45d14b8f31d8a20198d8b297cffb2e0e56dbb124080628782d85",
       "alphaBounds": {
         "x": 6.25,
         "y": 37.25,
@@ -1233,9 +1233,9 @@
       "sprite": "homes-1-l4.png",
       "paletteMask": "homes-1-l4-mask.png",
       "thumbnail": "homes-1-l4-thumb.png",
-      "spriteHash": "66ed2a8cd91574190a63d6d422497e15a6ad72b863ab21ff1c03bbda68a453ff",
+      "spriteHash": "9a07b397eae6b987671fa42525ad7f37a78e8879c3048e7259a691981d9dbe05",
       "paletteMaskHash": "24de45fb225c78692fc63b8928fb9dc28b59534d2538d4438d13aadfb8a62f17",
-      "thumbnailHash": "653fd46f18160a23566aad07af31d93ebc9c69217e11c6b8091745de102b28fd",
+      "thumbnailHash": "75d448ad9e34fc43bb91c2ddc16667f02cadcafe21ace82def05229852360826",
       "alphaBounds": {
         "x": 6.25,
         "y": 7.25,
@@ -1328,9 +1328,9 @@
       "sprite": "homes-2-l3.png",
       "paletteMask": "homes-2-l3-mask.png",
       "thumbnail": "homes-2-l3-thumb.png",
-      "spriteHash": "8d867efcc52df33b777d2c50c75c82df675f4a7c60d41591e37ec296297935ce",
+      "spriteHash": "500bfe57a5a554771ca7b6c12919c4911c416d5780b4994d7c496553a11dc7de",
       "paletteMaskHash": "dd6e9f221ff698e7d247fbf04ee174716768d98cc96e6b0ef9007dcd51b12fc0",
-      "thumbnailHash": "e9f75ec0bec06096350de951f05feae8784b171c839a8a0ba7fb3570d3aa1984",
+      "thumbnailHash": "5785fc51b36536a76369385096ed2567d712b22173e71ea7a5e605739a48bbc6",
       "alphaBounds": {
         "x": 35.25,
         "y": 38.25,
@@ -1358,9 +1358,9 @@
       "sprite": "homes-2-l4.png",
       "paletteMask": "homes-2-l4-mask.png",
       "thumbnail": "homes-2-l4-thumb.png",
-      "spriteHash": "8f304f21b7174821bc53393c148b189f86a4162e29c6c2a4c0c2f3d74650e603",
+      "spriteHash": "fe44c1d8ce37a356437dc9f6018db67cd53e2d31e0cbcd6825bdcfcce4596bde",
       "paletteMaskHash": "c29cda8583edd93c9d5c4969d3836f2881742b28bbcfbd3b510b91c63585bd46",
-      "thumbnailHash": "221f5f63e73e0940c0f158dcfae532c69d0504e7d9bf53faed4f69e200082917",
+      "thumbnailHash": "c888d70c270b3ade46cf1020aff93148801efa57e38fc3d75cc1e12568fe2665",
       "alphaBounds": {
         "x": 35.25,
         "y": 8.25,
