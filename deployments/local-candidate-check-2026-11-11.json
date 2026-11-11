@@ -1,0 +1,36 @@
+{
+  "result": "passed",
+  "scope": "local source and container checks only; no hosted CI, named-wallet signature, device, VPS or paid provider test",
+  "sourceRevision": "821f2469a7619e079964d8fb86f9e9081d0a72ee",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "commandsPassed": [
+    "npm ci",
+    "npm run check",
+    "npm run test:browser",
+    "npm run build",
+    "npm run assets:check",
+    "npm run seed:check",
+    "npm run config:check",
+    "npm run format:check",
+    "npm run contract:test",
+    "npm run testnet:code:plan",
+    "npm audit --omit=dev --audit-level=high",
+    "docker compose --profile indexer build api indexer web",
+    "node scripts/verify-container-revisions.mjs"
+  ],
+  "guestBrowserJourneys": 6,
+  "contractUnitTests": 38,
+  "contractSandboxSuites": 3,
+  "productionAudit": { "high": 0, "low": 17 },
+  "seed": { "roads": 5, "playerPlots": 80, "npcSites": 7 },
+  "assets": { "facadePresets": 40, "carSprites": 24, "civicSprites": 5 },
+  "configDefaultsMatched": 34,
+  "deployedContractCode": "current release WASM already deployed and verified by read-only plan",
+  "images": {
+    "api": "sha256:9543d199b83cf6ed80c0bd8d918ad81afeb2c1f79a4713c198aa5945c631338d",
+    "indexer": "sha256:d1b6b09c52d539553011ee84ab741919c99ce63838618daf8d2ed07e87582e0c",
+    "web": "sha256:9d3f8924a30b9b7b686ef4340960979c499d56df6c264e5147508318ddfe9a24"
+  },
+  "imagesPushedToRegistry": false,
+  "hostedCiRun": null
+}
