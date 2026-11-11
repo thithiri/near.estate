@@ -9,9 +9,22 @@
   "beforeAndRestoredStateSha256": "036249aa91634c3605427df4d20b696003a9d3a7dd15e135d0d6ae571b45e424",
   "migratedStateSha256": "61651f4a92994a6cf625f3bc553dc77812787ebd2894ea3edc1fef43c7c5ba43",
   "storageKeys": 181,
+  "storedRecords": {
+    "accounts": 3,
+    "cars": 3,
+    "plots": 80,
+    "plotIndexes": 80,
+    "npcSites": 7,
+    "npcIndexes": 7,
+    "activeSessions": 0,
+    "occupiedSpaces": 0,
+    "accountAndTreasuryCoins": "252164997"
+  },
   "schemaVersion": 2,
   "unauthorizedRejected": true,
   "secondMigrationRejected": true,
   "nonRootStorageUnchanged": true,
-  "oldViewsRestored": true
+  "oldViewsRestored": true,
+  "activeSandboxSessionAudited": true,
+  "collectedSandboxSessionAudited": true
 }
