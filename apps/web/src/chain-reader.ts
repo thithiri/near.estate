@@ -53,11 +53,14 @@ export class ChainReader {
     readonly rpcUrl = "https://test.rpc.fastnear.com",
     private readonly fetcher: typeof fetch = (input, init) =>
       globalThis.fetch(input, init),
+    private readonly rpcTimeoutMs = 10_000,
   ) {
     if (!/^[a-z0-9._-]+\.testnet$/.test(contractId))
       throw new Error("Expected a testnet contract account ID");
     if (!rpcUrl.startsWith("https://"))
       throw new Error("RPC URL must use HTTPS");
+    if (!Number.isSafeInteger(rpcTimeoutMs) || rpcTimeoutMs < 1)
+      throw new Error("RPC timeout must be positive");
   }
 
   private async viewAt<T>(
@@ -66,25 +69,37 @@ export class ChainReader {
     schema: z.ZodType<T>,
     blockId?: string,
   ): Promise<{ value: T; blockHash: string }> {
-    const response = await this.fetcher(this.rpcUrl, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: "near-estate-view",
-        method: "query",
-        params: {
-          request_type: "call_function",
-          ...(blockId ? { block_id: blockId } : { finality: "final" }),
-          account_id: this.contractId,
-          method_name: method,
-          args_base64: encodeArguments(args),
-        },
-      }),
-    });
-    if (!response.ok)
-      throw new Error(`NEAR RPC request failed (${response.status})`);
-    const envelope = RpcEnvelope.parse(await response.json());
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.rpcTimeoutMs);
+    let envelope: z.infer<typeof RpcEnvelope>;
+    try {
+      const response = await this.fetcher(this.rpcUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: "near-estate-view",
+          method: "query",
+          params: {
+            request_type: "call_function",
+            ...(blockId ? { block_id: blockId } : { finality: "final" }),
+            account_id: this.contractId,
+            method_name: method,
+            args_base64: encodeArguments(args),
+          },
+        }),
+      });
+      if (!response.ok)
+        throw new Error(`NEAR RPC request failed (${response.status})`);
+      envelope = RpcEnvelope.parse(await response.json());
+    } catch (error) {
+      if (controller.signal.aborted)
+        throw new Error("NEAR RPC timed out; retry the street view");
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
     if (envelope.error !== undefined) {
       throw new Error(
         `NEAR RPC rejected ${method}: ${JSON.stringify(envelope.error)}`,

@@ -32,6 +32,27 @@ function missingMethod(): Response {
   });
 }
 
+test("a stalled RPC read times out and the next read can recover", async () => {
+  let attempts = 0;
+  const reader = new ChainReader(
+    "estate-game.testnet",
+    undefined,
+    (async (_url, init) => {
+      attempts++;
+      if (attempts === 1)
+        return new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("Aborted", "AbortError"));
+          });
+        });
+      return result(123);
+    }) as typeof fetch,
+    5,
+  );
+  await assert.rejects(reader.chainTimeSeconds(), /NEAR RPC timed out/);
+  assert.equal(await reader.chainTimeSeconds(), 123);
+});
+
 test("loads a finalized player snapshot and encodes JSON arguments", async () => {
   const requested: string[] = [];
   const reader = new ChainReader(
