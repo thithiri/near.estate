@@ -145,3 +145,27 @@ test("burger decal is a one-time cosmetic purchase with no parking effect", () =
   assert.equal(game.car.durability, durability);
   assert.throws(() => game.buyBurgerDecal(), /already owned/);
 });
+
+test("guest emergency repair restores a stranded starter car once per cooldown", () => {
+  const clock = new MockClock(10_000);
+  const game = new MockGame(city, () => clock.nowSeconds());
+  game.car.durability = 1;
+  game.balance = 0n;
+  assert.equal(game.recoveryStatus().eligible, true);
+  assert.equal(game.emergencyRepair(), 1);
+  assert.equal(game.car.durability, DEFAULT_CONFIG.parkDurabilityCost);
+  game.park("plot-main-n-0");
+  assert.equal(game.car.durability, 0);
+  assert.equal(game.recoveryStatus().eligible, false);
+  clock.advance(
+    DEFAULT_CONFIG.earnCapSeconds + DEFAULT_CONFIG.expiryGraceSeconds,
+  );
+  game.settleExpired();
+  game.balance = 0n;
+  assert.equal(game.recoveryStatus().stranded, true);
+  assert.equal(game.recoveryStatus().eligible, false);
+  assert.throws(() => game.emergencyRepair(), /cooldown/);
+  clock.advance(DEFAULT_CONFIG.emergencyRepairCooldownSeconds);
+  assert.equal(game.recoveryStatus().eligible, true);
+  assert.equal(game.emergencyRepair(), DEFAULT_CONFIG.parkDurabilityCost);
+});

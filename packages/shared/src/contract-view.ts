@@ -205,6 +205,10 @@ export type ChainPlotPurchaseBreakdown = z.infer<
 
 export const ChainOwnerConfig = z.object({
   version: z.number().int().positive(),
+  park_durability_cost: z.number().int().min(1).max(100),
+  max_durability: z.number().int().min(2).max(100),
+  repair_cost_per_point: CoinString,
+  emergency_repair_cooldown_seconds: z.number().int().nonnegative(),
   meter_rate_max_per_hour: CoinString,
   rule_delay_seconds: z.number().int().nonnegative(),
   change_building_type_cost: CoinString,

@@ -1496,6 +1496,7 @@ function destinationMarkup(site: NPCSite): string {
 
 function carsMarkup(): string {
   const parked = game.playerSession();
+  const recovery = game.recoveryStatus();
   const buyCost = BigInt(DEFAULT_CONFIG.buyCarCost);
   const canBuy =
     game.cars.length < DEFAULT_CONFIG.maxCars && game.balance >= buyCost;
@@ -1509,17 +1510,28 @@ function carsMarkup(): string {
           car.tier < 3
             ? DEFAULT_CONFIG.tierUpgradeCosts[car.tier - 1]
             : undefined;
+        const fullPoints = DEFAULT_CONFIG.maxDurability - car.durability;
+        const parkPoints = Math.max(
+          0,
+          DEFAULT_CONFIG.parkDurabilityCost - car.durability,
+        );
+        const fullCost =
+          BigInt(fullPoints) * BigInt(DEFAULT_CONFIG.repairCostPerPoint);
+        const parkCost =
+          BigInt(parkPoints) * BigInt(DEFAULT_CONFIG.repairCostPerPoint);
         return `<article class="card car-card">
           <img src="${import.meta.env.BASE_URL}world/${carSpriteFile(car.body, car.color)}" alt="${car.color} ${car.body}" width="192" height="96" />
           <h2>${car.body}</h2>
           <p>${car.color} · Tier ${car.tier} · ${car.durability}% durability</p>
           <p><span class="tag">${isParked ? "Parked and earning" : isActive ? "Driving now" : "In garage"}</span></p>
           <button data-select-car="${car.id}" ${isActive ? "disabled" : ""}>${isActive ? "Selected" : "Drive this car"}</button>
-          <button data-repair-car="${car.id}" ${car.durability === 100 || isParked ? "disabled" : ""}>Repair to full · ${100 - car.durability} coins</button>
+          <button data-repair-car="${car.id}" ${fullPoints === 0 || isParked || game.balance < fullCost ? "disabled" : ""}>${fullPoints === 0 ? "Fully repaired" : `Repair to full · ${formatCoins(fullCost.toString())} coins`}</button>
+          ${parkPoints > 0 && parkPoints < fullPoints ? `<button data-repair-to-park="${car.id}" ${isParked || game.balance < parkCost ? "disabled" : ""}>Repair to park · ${formatCoins(parkCost.toString())} coins</button>` : ""}
           <button data-upgrade-car="${car.id}" ${!upgradeCost || isParked || game.balance < BigInt(upgradeCost) ? "disabled" : ""}>${upgradeCost ? `Upgrade · ${formatCoins(upgradeCost)} coins` : "Max tier"}</button>
         </article>`;
       })
       .join("")}</div>
+    ${recovery.stranded ? `<section class="card"><h2>Free starter repair</h2><p class="muted">When no car can park and you cannot afford a repair, restore your starter car to parking durability once per cooldown.</p><button id="guest-emergency-repair" ${recovery.eligible ? "" : "disabled"}>${recovery.eligible ? "Restore starter car" : `Available after ${new Date(recovery.availableAt! * 1000).toLocaleString()}`}</button></section>` : ""}
     <section class="card car-showroom">
       <h2>Choose your next car</h2>
       <div class="car-purchase-controls">
@@ -1727,10 +1739,30 @@ function showScreen(screen: string): void {
         button.addEventListener("click", () =>
           garageAction(() => {
             game.selectCar(button.dataset.repairCar!);
-            const points = 100 - game.car.durability;
+            const points = DEFAULT_CONFIG.maxDurability - game.car.durability;
             game.repair(points);
             return `Repaired ${game.car.body} by ${points} points`;
           }),
+        ),
+      );
+    otherScreen
+      .querySelectorAll<HTMLButtonElement>("[data-repair-to-park]")
+      .forEach((button) =>
+        button.addEventListener("click", () =>
+          garageAction(() => {
+            game.selectCar(button.dataset.repairToPark!);
+            const points =
+              DEFAULT_CONFIG.parkDurabilityCost - game.car.durability;
+            game.repair(points);
+            return `${game.car.body} is ready to park`;
+          }),
+        ),
+      );
+    otherScreen
+      .querySelector<HTMLButtonElement>("#guest-emergency-repair")
+      ?.addEventListener("click", () =>
+        garageAction(
+          () => `Restored starter car by ${game.emergencyRepair()} points`,
         ),
       );
     otherScreen

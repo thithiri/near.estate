@@ -569,6 +569,10 @@ test("loads paged owner data at one finalized block and validates purchase amoun
     if (method === "get_config")
       return result({
         version: 1,
+        park_durability_cost: 2,
+        max_durability: 100,
+        repair_cost_per_point: "1000000",
+        emergency_repair_cooldown_seconds: 86400,
         base_rate_per_hour: "60000000",
         tier_multiplier_bps: [10000, 15000, 22000],
         illegal_multiplier_bps: 15000,

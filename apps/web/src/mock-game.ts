@@ -10,6 +10,7 @@ import {
   type ParkingTerms,
   type PlayerPlot,
 } from "@estate/shared";
+import { garageRecovery } from "./garage-recovery.js";
 
 export interface MockCar {
   id: string;
@@ -39,7 +40,7 @@ export class MockGame {
       body: "Hatchback",
       color: "Red",
       tier: 1,
-      durability: 100,
+      durability: DEFAULT_CONFIG.maxDurability,
     },
   ];
   activeCarId = "starter";
@@ -53,6 +54,7 @@ export class MockGame {
   private nextSession = 1;
   private nextCar = 2;
   private ticketCooldownUntil = 0;
+  private lastEmergencyRepairAt: number | null = null;
 
   constructor(
     readonly city: CitySeed,
@@ -120,7 +122,7 @@ export class MockGame {
       body,
       color,
       tier: 1,
-      durability: 100,
+      durability: DEFAULT_CONFIG.maxDurability,
     };
     this.cars.push(car);
     this.activeCarId = car.id;
@@ -351,13 +353,45 @@ export class MockGame {
     if (
       !Number.isSafeInteger(points) ||
       points <= 0 ||
-      this.car.durability + points > 100
+      this.car.durability + points > DEFAULT_CONFIG.maxDurability
     )
       throw new Error("Invalid repair amount");
     const price = BigInt(DEFAULT_CONFIG.repairCostPerPoint) * BigInt(points);
     if (this.balance < price) throw new Error("Not enough coins");
     this.balance -= price;
     this.car.durability += points;
+  }
+
+  recoveryStatus(): ReturnType<typeof garageRecovery> {
+    return garageRecovery(
+      {
+        balance: this.balance.toString(),
+        active_session_id: this.playerSession() ? 1 : null,
+        last_emergency_repair_at: this.lastEmergencyRepairAt,
+      },
+      this.cars,
+      {
+        park_durability_cost: DEFAULT_CONFIG.parkDurabilityCost,
+        repair_cost_per_point: DEFAULT_CONFIG.repairCostPerPoint,
+        emergency_repair_cooldown_seconds:
+          DEFAULT_CONFIG.emergencyRepairCooldownSeconds,
+      },
+      this.nowSeconds(),
+    );
+  }
+
+  emergencyRepair(): number {
+    const status = this.recoveryStatus();
+    if (!status.stranded)
+      throw new Error("Repair a car normally or collect your parked car first");
+    if (!status.eligible)
+      throw new Error("Emergency repair cooldown is active");
+    const starter = this.cars.find((car) => car.id === "starter");
+    if (!starter) throw new Error("Starter car is missing");
+    const points = DEFAULT_CONFIG.parkDurabilityCost - starter.durability;
+    starter.durability = DEFAULT_CONFIG.parkDurabilityCost;
+    this.lastEmergencyRepairAt = this.nowSeconds();
+    return points;
   }
 
   private sessionKey(session: MockSession): string {

@@ -18,6 +18,7 @@ import {
   type ChainStreetSide,
 } from "@estate/shared";
 import { ChainReader } from "./chain-reader.js";
+import { garageRecovery } from "./garage-recovery.js";
 import { PRESET_PALETTES } from "./preset-catalog.js";
 import { buildingMarkup } from "./studio-screen.js";
 import {
@@ -451,6 +452,23 @@ export class ChainScreen {
             ? `Starts in ${Math.floor(seconds / 60)}m ${seconds % 60}s`
             : "Active now; refresh to confirm";
       });
+    const emergency = this.host.querySelector<HTMLButtonElement>(
+      "#chain-emergency-repair",
+    );
+    if (emergency) {
+      const availableAt = Number(emergency.dataset.availableAt);
+      const seconds = Math.max(0, availableAt - now);
+      emergency.disabled =
+        this.busy || this.keyStatus !== "ready" || seconds > 0;
+      const countdown = this.host.querySelector<HTMLElement>(
+        "#chain-emergency-countdown",
+      );
+      if (countdown)
+        countdown.textContent =
+          seconds > 0
+            ? `Available in ${Math.floor(seconds / 60)}m ${seconds % 60}s`
+            : "Ready now";
+    }
   }
 
   private mockStudioMarkup(selected: ChainPlot, accountId: string): string {
@@ -706,6 +724,26 @@ export class ChainScreen {
     const car = player?.cars.find((entry) => entry.id === this.selectedCarId);
     const session = player?.active_session;
     const now = Math.floor(Date.now() / 1000);
+    const garageConfig = this.ownerConfig;
+    const fullRepairPoints =
+      car && garageConfig
+        ? Math.max(0, garageConfig.max_durability - car.durability)
+        : 0;
+    const parkRepairPoints =
+      car && garageConfig
+        ? Math.max(0, garageConfig.park_durability_cost - car.durability)
+        : 0;
+    const repairRate = BigInt(garageConfig?.repair_cost_per_point ?? "0");
+    const fullRepairCost = BigInt(fullRepairPoints) * repairRate;
+    const parkRepairCost = BigInt(parkRepairPoints) * repairRate;
+    const balance = BigInt(player?.account?.balance ?? "0");
+    const chainNow = this.chainTimeReadAt
+      ? this.chainTime + Math.floor((Date.now() - this.chainTimeReadAt) / 1000)
+      : now;
+    const recovery =
+      player?.account && garageConfig
+        ? garageRecovery(player.account, player.cars, garageConfig, chainNow)
+        : null;
     const { roadId, side } = this.getRoadSide();
     const tower = this.sites.find(
       (site) =>
@@ -752,8 +790,11 @@ export class ChainScreen {
       ${
         registered
           ? `<section class="card"><h2>My cars</h2>
-        <label>Driving <select id="chain-car">${player!.cars.map((entry) => `<option value="${entry.id}" ${entry.id === this.selectedCarId ? "selected" : ""}>#${entry.id} ${entry.color} ${entry.body} · tier ${entry.tier} · ${entry.durability}%</option>`).join("")}</select></label>
-        ${car && car.durability < 100 && car.parked_session_id === null ? `<button id="chain-repair" ${!keyReady || this.busy ? "disabled" : ""}>Repair ${100 - car.durability} points</button>` : ""}
+        <label>Driving <select id="chain-car">${player!.cars.map((entry) => `<option value="${entry.id}" ${entry.id === this.selectedCarId ? "selected" : ""}>#${entry.id} ${entry.color} ${entry.body} · tier ${entry.tier} · ${entry.durability}${garageConfig ? `/${garageConfig.max_durability}` : ""} durability</option>`).join("")}</select></label>
+        ${car && !garageConfig ? `<p class="muted">Loading current repair costs…</p>` : ""}
+        ${car && garageConfig && fullRepairPoints > 0 && car.parked_session_id === null ? `<button id="chain-repair" ${!keyReady || this.busy || balance < fullRepairCost ? "disabled" : ""}>Repair to full · ${formatCoins(fullRepairCost.toString())} coins</button>` : ""}
+        ${car && garageConfig && parkRepairPoints > 0 && parkRepairPoints < fullRepairPoints && car.parked_session_id === null ? `<button id="chain-repair-to-park" ${!keyReady || this.busy || balance < parkRepairCost ? "disabled" : ""}>Repair to park · ${formatCoins(parkRepairCost.toString())} coins</button>` : ""}
+        ${recovery?.stranded ? `<button id="chain-emergency-repair" data-available-at="${recovery.availableAt ?? 0}" ${!keyReady || this.busy || !recovery.eligible ? "disabled" : ""}>Free starter repair</button><p class="muted" id="chain-emergency-countdown">${recovery.eligible ? "Ready now" : "Waiting for recovery cooldown"}</p>` : ""}
         ${car && car.tier < 3 && car.parked_session_id === null ? `<button id="chain-upgrade" ${busy}>Upgrade selected car</button>` : ""}
         ${
           session
@@ -1380,12 +1421,35 @@ export class ChainScreen {
           const car = this.player?.cars.find(
             (entry) => entry.id === this.selectedCarId,
           );
-          if (car)
+          const config = this.ownerConfig;
+          if (car && config)
             await this.wallet?.gameplayCall("repair", {
               car_id: car.id,
-              points: 100 - car.durability,
+              points: config.max_durability - car.durability,
             });
         }),
+    );
+    on(
+      "#chain-repair-to-park",
+      () =>
+        void this.mutate(async () => {
+          const car = this.player?.cars.find(
+            (entry) => entry.id === this.selectedCarId,
+          );
+          const config = this.ownerConfig;
+          if (car && config)
+            await this.wallet?.gameplayCall("repair", {
+              car_id: car.id,
+              points: config.park_durability_cost - car.durability,
+            });
+        }),
+    );
+    on(
+      "#chain-emergency-repair",
+      () =>
+        void this.mutate(async () =>
+          this.wallet?.gameplayCall("emergency_repair", {}),
+        ),
     );
     on(
       "#chain-upgrade",
