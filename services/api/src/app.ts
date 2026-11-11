@@ -1755,6 +1755,28 @@ export function createApiApp({
     return c.json(validatedManifest);
   });
 
+  app.get("/moderation/status", async (c) => {
+    c.header("Cache-Control", "no-store");
+    const denied = requireModerator(c);
+    if (denied) return denied;
+    try {
+      await moderator!.checkAuthorization();
+      return c.json({ status: "ok", role: "moderator" });
+    } catch (error) {
+      console.warn(
+        "Moderator authorization check failed:",
+        error instanceof Error ? error.message : String(error),
+      );
+      return c.json(
+        {
+          code: "MODERATOR_KEY_UNAVAILABLE",
+          message: "Moderator role or restricted key is unavailable",
+        },
+        503,
+      );
+    }
+  });
+
   app.get("/moderation", async (c) => {
     const denied = requireModerator(c);
     if (denied) return denied;

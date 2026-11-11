@@ -1,0 +1,41 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "moderatorId": "dev-20261110121820-76563125621460.testnet",
+  "serviceHandover": {
+    "scope": "isolated local Compose API volume; no content decision",
+    "firstKey": {
+      "publicKey": "ed25519:DxtsBN3MDzFDBNzZqeSF8r6jNiVJcVW197zmXfY6XjcY",
+      "addedTransaction": "3vruddNQbf2SQBuPiK7bL6rnU5cQmeat9savrxADNeeB",
+      "revokedTransaction": "6PuRF2949EgGqSxCRjmRfGy8F7bBdRQ3hRe5ww42NvK8"
+    },
+    "replacementKey": {
+      "publicKey": "ed25519:Gduk4pV7gZg1rFn2ZcdQaGDsYUFyv9v1XGQxuX2ggGW",
+      "addedTransaction": "EQ4H6UufUDkZHGtMYrAcY1VDmADkC9kTz9btNzy7zsQm",
+      "revokedTransaction": "8Z9ttiLkVM28xJbkkQyUB991ora3Tb971Fn9QeJtHa8t"
+    },
+    "overlapVerifiedAtHeight": 277204131,
+    "apiHealthyWithFirstKey": true,
+    "apiRecreatedWithReplacementMount": true,
+    "replacementAuthorizedBeforeAndAfterOldKeyRevocation": true,
+    "apiUserId": 1000,
+    "cleanupFinalizedHeight": 277204248
+  },
+  "moderationStatusRoute": {
+    "containerImageId": "sha256:cd9b5fc4e8ec7c3e52b73170783a78d55470135f77a3622cf540d81cf67249d0",
+    "temporaryKeyPublic": "ed25519:DHUmyvP8TLN8ensSeiVUCVYjXhioqy8LNvwK3RkM5tkc",
+    "addedTransaction": "CeBX48WmHAMeHE8dRUfUsSvhGrvk4F6PRLrn7nRdWT4u",
+    "revokedTransaction": "B3GJoQwsRtVSoRUAN8sxiamWEiq51LLxQd3ttX7kDYgC",
+    "withoutBasicAuth": 401,
+    "withValidRestrictedKey": 200,
+    "afterOnChainRevocation": 503,
+    "apiHealthAfterRevocation": 200,
+    "cleanupFinalizedHeight": 277204577
+  },
+  "cleanup": {
+    "remainingRoleAccountKeys": 1,
+    "temporaryRuntimeFilesRemoved": true,
+    "temporaryComposeVolumeRemoved": true
+  },
+  "limitation": "Local service restart and read-only role/key check. No moderator decision was signed by this container; no VPS TLS or external availability proof."
+}

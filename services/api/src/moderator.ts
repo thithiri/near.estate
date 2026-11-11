@@ -30,6 +30,7 @@ const ModeratorAccessKey = z.object({
 });
 
 export interface ModeratorGateway {
+  checkAuthorization(): Promise<void>;
   approveAppearance(
     plotId: string,
     expected: ChainAppearanceReference,

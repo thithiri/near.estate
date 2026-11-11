@@ -54,6 +54,7 @@ async function setup(paid = false) {
   let now = 1_000;
   let activeKey = true;
   let keyLookupFails = false;
+  let moderatorKeyReady = true;
   let plotOwner: string | null = ACCOUNT;
   let layoutRevision = 1;
   let buildingLevel = 1;
@@ -117,6 +118,9 @@ async function setup(paid = false) {
     },
   };
   const moderator: ModeratorGateway = {
+    async checkAuthorization() {
+      if (!moderatorKeyReady) throw new Error("restricted key unavailable");
+    },
     async approveAppearance(plotId, expected) {
       assert.equal(plotId, PLOT);
       assert.deepEqual(pendingAppearance, expected);
@@ -299,6 +303,9 @@ async function setup(paid = false) {
     setKeyLookupFails(value: boolean) {
       keyLookupFails = value;
     },
+    setModeratorKeyReady(value: boolean) {
+      moderatorKeyReady = value;
+    },
     setOwner(value: string | null) {
       plotOwner = value;
     },
@@ -424,6 +431,33 @@ test("an owner can reuse only their intact approved image after a layout change"
       context.store.latestUpload(ACCOUNT, PLOT, "Logo")?.id,
       upload.uploadId,
     );
+  } finally {
+    await context.close();
+  }
+});
+
+test("moderator status checks the live restricted key behind Basic auth", async () => {
+  const context = await setup();
+  try {
+    const path = "/moderation/status";
+    const admin = `Basic ${Buffer.from("reviewer:test-only-password").toString("base64")}`;
+    assert.equal((await context.app.request(path)).status, 401);
+    const ready = await context.app.request(path, {
+      headers: { authorization: admin },
+    });
+    assert.equal(ready.status, 200);
+    assert.deepEqual(await ready.json(), { status: "ok", role: "moderator" });
+    assert.equal(ready.headers.get("cache-control"), "no-store");
+    context.setModeratorKeyReady(false);
+    const unavailable = await context.app.request(path, {
+      headers: { authorization: admin },
+    });
+    assert.equal(unavailable.status, 503);
+    assert.deepEqual(await unavailable.json(), {
+      code: "MODERATOR_KEY_UNAVAILABLE",
+      message: "Moderator role or restricted key is unavailable",
+    });
+    assert.equal((await context.app.request("/health")).status, 200);
   } finally {
     await context.close();
   }

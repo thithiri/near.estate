@@ -19,3 +19,5 @@ A targeted pre-push check of the current 101-commit history found no tracked env
 This review found no new code change required in the paths inspected. It does **not** close Phase 8: the named-wallet, physical-device, hosted TLS, external restore and operator sign-off gates remain open. Paid-provider evidence remains a gate only for enabling generated art; the curated-only beta keeps that feature disabled. Re-run the review if authentication, storage accounting, moderation or contract serialization changes.
 
 After this snapshot, a [live testnet key-only handover](../deployments/testnet-role-key-handover.json) added and removed overlapping restricted moderator and inspector keys, returning both accounts to one full-access key. The hosted service restart and controlled role action still need separate evidence.
+
+A later [local moderator-container handover](../deployments/testnet-moderator-container-rotation.json) restarted the API with the replacement key and verified its live role and permission. The authenticated status route also detected revocation without marking the whole API unhealthy. No container-signed content decision or VPS restart has been verified.
