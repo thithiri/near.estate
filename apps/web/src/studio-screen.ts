@@ -7,6 +7,7 @@ import {
 import {
   facadeAssetUrl,
   facadePreset,
+  paletteName,
   PRESET_PALETTES,
 } from "./preset-catalog.js";
 import { illustratedPreviewForType } from "./illustrated-preview.js";
@@ -167,7 +168,7 @@ export class MockStudio {
           <label>Type<select id="studio-type">${BuildingType.options.map((type) => `<option value="${type}" ${type === this.type ? "selected" : ""}>${type}</option>`).join("")}</select></label>
           ${illustratedStudyMarkup(this.type)}
           <label>Level to preview<select id="studio-level">${[1, 2, 3, 4].map((level) => `<option value="${level}" ${level === this.level ? "selected" : ""}>Level ${level} · ${[70, 100, 130, 160][level - 1]}px limit</option>`).join("")}</select></label>
-          <fieldset class="studio-palette"><legend>Colour</legend>${PRESET_PALETTES.map((palette) => `<button type="button" data-studio-palette="${palette}" aria-label="${palette} colour" aria-pressed="${palette === this.palette}" style="background:${palette}"></button>`).join("")}</fieldset>
+          <fieldset class="studio-palette"><legend>Colour</legend>${PRESET_PALETTES.map((palette) => `<button type="button" data-studio-palette="${palette}" aria-label="${paletteName(palette)} colour" aria-pressed="${palette === this.palette}" style="background:${palette}"></button>`).join("")}</fieldset>
           <label>Your idea<textarea id="studio-description" maxlength="800" rows="4" placeholder="A greenhouse cafe with a tall glass peak and hanging plants…">${escapeHtml(this.description)}</textarea></label>
           <p class="muted">Your idea previews the future generation flow. The three selectable looks are curated designs for now.</p>
           <button class="primary" id="explore-presets">Explore 3 preset looks</button>

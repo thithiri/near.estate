@@ -1,8 +1,16 @@
 import rawCatalog from "./preset-catalog.json";
+import { CURATED_PALETTES } from "@estate/shared";
 
 export type FacadePreset = (typeof rawCatalog.facades)[number];
 
-export { CURATED_PALETTES as PRESET_PALETTES } from "@estate/shared";
+export { CURATED_PALETTES as PRESET_PALETTES };
+
+const paletteNames = ["Coral", "Sky blue", "Mint", "Yellow"] as const;
+
+export function paletteName(palette: string): string {
+  const index = CURATED_PALETTES.findIndex((entry) => entry === palette);
+  return index < 0 ? palette : paletteNames[index]!;
+}
 
 const presets = new Map(
   rawCatalog.facades.map((entry) => [

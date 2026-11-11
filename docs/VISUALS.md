@@ -34,6 +34,16 @@ The Choose step now has Previous and Next buttons so a player can compare all th
 
 ![near.estate studio Choose step with design navigation](images/near-estate-studio-choose-320-v1.png)
 
+## Owner building choices
+
+The wallet-backed owner editor now shows all five curated building types as visual choices. Selecting Office on a Cafe plot changes the preview and reveals the 50-coin type-change action; it does not change the plot until the owner confirms. The phone and [desktop](images/near-estate-owner-building-types-desktop-v2.png) captures use a local owner-state fixture, so they verify layout and draft controls rather than wallet signing.
+
+![near.estate owner choosing an Office building on a phone](images/near-estate-owner-building-types-phone-v2.png)
+
+For the current building type, four named colour choices update the curated preview. A type change keeps the current colour and name on-chain, so those controls appear after the change has confirmed.
+
+![near.estate owner choosing a coral building colour on a phone](images/near-estate-owner-building-colours-phone-v1.png)
+
 ## Building variations and upgrades
 
 The sheet below places each of the 40 implemented curated facade sprites between the same game-owned burger stop and level-1 home. It covers five building types, two shapes per type and four levels. Higher levels now add type-specific features such as market gable windows, cafe vines, a diner awning and residential balconies. It is an asset review sheet; the street renderer adds names, logos, billboards and parking signs separately.

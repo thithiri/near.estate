@@ -23,6 +23,10 @@ import { PRESET_PALETTES } from "./preset-catalog.js";
 import { sessionFullPayout } from "./plot-earnings.js";
 import { buildingMarkup } from "./studio-screen.js";
 import {
+  ownerPalettePickerMarkup,
+  ownerTypePickerMarkup,
+} from "./owner-type-picker.js";
+import {
   GameWalletClient,
   type ArtworkUpload,
   type GameplayKeyStatus,
@@ -725,6 +729,9 @@ export class ChainScreen {
         ? (levelCost - BigInt(balance)).toString()
         : null;
     const changingType = draft.buildingType !== building.building_type;
+    const previewPalette = changingType
+      ? building.primary_color
+      : draft.palette;
     const affectedMedia = (["logo", "billboard"] as const).filter(
       (kind) => plot[kind].active || plot[kind].pending,
     );
@@ -742,13 +749,13 @@ export class ChainScreen {
           ${!keyReady ? `<p class="muted">Enable the gameplay key above to change parking rules.</p>` : ""}
         </div>
         <div class="owner-section"><h3>Building</h3>
-          <p>${html(building.building_type)} · level ${building.level} · shape ${building.variant}</p>
-          <div class="owner-building-preview">${buildingMarkup(draft.buildingType, draft.variant, building.level, draft.palette)}</div>
-          <label>Type <select id="owner-building-type">${BuildingType.options.map((type) => `<option value="${type}" ${type === draft.buildingType ? "selected" : ""}>${type}</option>`).join("")}</select></label>
+          <p>Current: ${html(building.building_type)} · level ${building.level} · shape ${building.variant}</p>
+          ${ownerTypePickerMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}
+          <p class="owner-preview-label"><strong>Preview:</strong> ${draft.buildingType} · level ${building.level} · shape ${draft.variant}</p>
+          <div class="owner-building-preview" aria-label="Selected building preview">${buildingMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}</div>
           <label>Shape <select id="owner-building-variant"><option value="1" ${draft.variant === 1 ? "selected" : ""}>Shape 1</option><option value="2" ${draft.variant === 2 ? "selected" : ""}>Shape 2</option></select></label>
-          <label>Colour <select id="owner-building-palette">${PRESET_PALETTES.map((palette) => `<option value="${palette}" ${palette === draft.palette ? "selected" : ""}>${palette}</option>`).join("")}</select></label>
-          <label>Name <input id="owner-building-name" maxlength="24" value="${html(draft.name)}" /></label>
-          ${changingType ? `<button id="owner-change-type" ${this.busy || BigInt(balance) < typeCost ? "disabled" : ""}>Change type · ${formatCoins(config.change_building_type_cost)} coins</button><p class="muted">Changing type uses its curated preset and keeps level ${building.level}. Choose colour and name afterward.</p>` : `<button id="owner-save-preset" ${this.busy ? "disabled" : ""}>Use this preset</button>`}
+          ${changingType ? `<p class="muted">This change keeps the current colour and name (${html(building.name)}). Edit them after the type change confirms.</p>` : `${ownerPalettePickerMarkup(draft.palette)}<label>Name <input id="owner-building-name" maxlength="24" value="${html(draft.name)}" /></label>`}
+          ${changingType ? `<button id="owner-change-type" ${this.busy || BigInt(balance) < typeCost ? "disabled" : ""}>Change to ${draft.buildingType} · ${formatCoins(config.change_building_type_cost)} coins</button><p class="muted">Changing type uses its curated preset and keeps level ${building.level}. Choose colour and name afterward.</p>` : `<button id="owner-save-preset" ${this.busy ? "disabled" : ""}>Use this preset</button>`}
           ${levelCost === null ? `<p>Maximum level reached.</p>` : `<button id="owner-upgrade-building" ${this.busy || BigInt(balance) < levelCost ? "disabled" : ""}>Upgrade to level ${building.level + 1} · ${formatCoins(config.building_upgrade_costs[building.level - 1]!)} coins</button>`}
           ${levelShortfall ? `<p class="muted">Earn ${formatCoins(levelShortfall)} more coins by parking and collecting before this upgrade is available.</p>` : ""}
           <p class="muted">Using a preset, changing type or upgrading immediately replaces the current facade with a curated design. Any custom facade must be reviewed again.</p>
@@ -1068,24 +1075,49 @@ export class ChainScreen {
             (event.target as HTMLSelectElement).value,
           );
       });
-    for (const [selector, field] of [
-      ["#owner-building-type", "buildingType"],
-      ["#owner-building-variant", "variant"],
-      ["#owner-building-palette", "palette"],
-    ] as const) {
-      this.host
-        .querySelector<HTMLSelectElement>(selector)
-        ?.addEventListener("change", (event) => {
+    this.host
+      .querySelectorAll<HTMLButtonElement>("[data-owner-building-type]")
+      .forEach((button) =>
+        button.addEventListener("click", () => {
           if (!this.ownerDraft) return;
-          const value = (event.target as HTMLSelectElement).value;
-          if (field === "buildingType")
-            this.ownerDraft.buildingType = BuildingType.parse(value);
-          else if (field === "variant")
-            this.ownerDraft.variant = Number(value) as 1 | 2;
-          else this.ownerDraft.palette = value;
+          const type = BuildingType.parse(button.dataset.ownerBuildingType);
+          if (this.ownerDraft.buildingType === type) return;
+          this.ownerDraft.buildingType = type;
           this.render();
-        });
-    }
+          this.host
+            .querySelector<HTMLButtonElement>(
+              `[data-owner-building-type="${type}"]`,
+            )
+            ?.focus();
+        }),
+      );
+    this.host
+      .querySelector<HTMLSelectElement>("#owner-building-variant")
+      ?.addEventListener("change", (event) => {
+        if (!this.ownerDraft) return;
+        this.ownerDraft.variant = Number(
+          (event.target as HTMLSelectElement).value,
+        ) as 1 | 2;
+        this.render();
+      });
+    this.host
+      .querySelectorAll<HTMLButtonElement>("[data-owner-building-palette]")
+      .forEach((button) =>
+        button.addEventListener("click", () => {
+          if (!this.ownerDraft) return;
+          const palette = PRESET_PALETTES.find(
+            (entry) => entry === button.dataset.ownerBuildingPalette,
+          );
+          if (!palette || this.ownerDraft.palette === palette) return;
+          this.ownerDraft.palette = palette;
+          this.render();
+          this.host
+            .querySelector<HTMLButtonElement>(
+              `[data-owner-building-palette="${palette}"]`,
+            )
+            ?.focus();
+        }),
+      );
     this.host
       .querySelector<HTMLInputElement>("#owner-building-name")
       ?.addEventListener("input", (event) => {
