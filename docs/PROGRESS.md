@@ -299,3 +299,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-12 — Remove unusable candidate billboards
 
 - The moderator can suppress an automatically proposed billboard when it covers unsuitable facade art, without discarding an otherwise usable generated candidate. Approval recomputes the exact manifest hash atomically and the owner selection/reconciliation flow uses that revised hash. The focused API tests cover candidate approval through the selected design; semantic logo repositioning, real-provider review and the phase-6 testnet gate remain open.
+
+## 2026-11-12 — Previewed logo placement
+
+- Added a basic-auth candidate placement preview and adjusted approval flow. A moderator can move a generated candidate's logo to whole-pixel coordinates, inspect the exact outline and optionally remove the billboard before releasing the candidate. Transparent, overlapping and unpreviewed adjustments are rejected; the promoted owner design carries the revised manifest hash. The focused owner-to-moderator API journey passes locally. Real provider output, human semantic review and the Phase-6 testnet gate remain open.

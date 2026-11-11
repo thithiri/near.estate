@@ -457,6 +457,7 @@ export class PaidGenerationLedger {
     now: number;
     reviewer: string;
     suppressBillboard?: boolean;
+    logoRectOverride?: NonNullable<AssetManifest["logoRect"]>;
   }): PaidCandidate {
     if (
       !Number.isSafeInteger(input.now) ||
@@ -493,9 +494,37 @@ export class PaidGenerationLedger {
         throw new Error("Candidate manifest fingerprint is invalid");
       if (input.suppressBillboard && !originalManifest.billboardRect)
         throw new Error("Candidate has no billboard to remove");
-      const manifest = input.suppressBillboard
-        ? validateAssetManifest({ ...originalManifest, billboardRect: null })
-        : originalManifest;
+      const proposedLogo = input.logoRectOverride;
+      if (
+        proposedLogo &&
+        (input.decision !== "approved" ||
+          !originalManifest.logoRect ||
+          proposedLogo.width !== originalManifest.logoRect.width ||
+          proposedLogo.height !== originalManifest.logoRect.height ||
+          !Number.isInteger(proposedLogo.x) ||
+          !Number.isInteger(proposedLogo.y))
+      )
+        throw new Error("Invalid candidate logo adjustment");
+      const manifest = validateAssetManifest({
+        ...originalManifest,
+        logoRect: proposedLogo ?? originalManifest.logoRect,
+        billboardRect: input.suppressBillboard
+          ? null
+          : originalManifest.billboardRect,
+      });
+      if (
+        manifest.logoRect &&
+        manifest.billboardRect &&
+        manifest.logoRect.x <
+          manifest.billboardRect.x + manifest.billboardRect.width &&
+        manifest.logoRect.x + manifest.logoRect.width >
+          manifest.billboardRect.x &&
+        manifest.logoRect.y <
+          manifest.billboardRect.y + manifest.billboardRect.height &&
+        manifest.logoRect.y + manifest.logoRect.height >
+          manifest.billboardRect.y
+      )
+        throw new Error("Candidate media placements overlap");
       const manifestJson = canonicalJson(manifest);
       const manifestHash = createHash("sha256")
         .update(manifestJson)

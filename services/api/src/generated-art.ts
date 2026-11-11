@@ -88,6 +88,42 @@ function intersects(left: Rect, right: Rect): boolean {
   );
 }
 
+export async function validateCandidateMediaPlacement(
+  sprite: Buffer,
+  input: AssetManifest,
+): Promise<AssetManifest> {
+  const manifest = validateAssetManifest(input);
+  const decoded = await sharp(sprite).ensureAlpha().raw().toBuffer({
+    resolveWithObject: true,
+  });
+  if (
+    decoded.info.width !== 560 ||
+    decoded.info.height !== 640 ||
+    decoded.info.channels !== 4
+  )
+    throw new GeneratedArtError("Candidate sprite has the wrong dimensions");
+  if (
+    manifest.logoRect &&
+    manifest.billboardRect &&
+    intersects(manifest.logoRect, manifest.billboardRect)
+  )
+    throw new GeneratedArtError("Candidate media placements overlap");
+  for (const rect of [manifest.logoRect, manifest.billboardRect]) {
+    if (!rect) continue;
+    if (
+      !Number.isInteger(rect.x) ||
+      !Number.isInteger(rect.y) ||
+      !Number.isInteger(rect.width) ||
+      !Number.isInteger(rect.height) ||
+      coverage(decoded.data, rect) < MIN_PLACEMENT_COVERAGE
+    )
+      throw new GeneratedArtError(
+        "Candidate media placement lacks facade coverage",
+      );
+  }
+  return manifest;
+}
+
 function placeOverlay(
   rgba: Buffer,
   alphaBounds: AssetManifest["alphaBounds"],

@@ -28,6 +28,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { ChainGateway } from "./chain.js";
 import { saveImmutablePng } from "./asset-storage.js";
+import { validateCandidateMediaPlacement } from "./generated-art.js";
 import { renderMockCandidate } from "./mock-art.js";
 import { buildGenerationPrompt } from "./prompt-builder.js";
 import {
@@ -1961,6 +1962,16 @@ export function createApiApp({
           <label><input type="checkbox" name="placement_ok" required> Remaining media spaces are usable</label>
           <button>Approve candidate for owner</button>
         </form>
+        ${
+          candidate.manifest.logoRect
+            ? `<form method="get" action="/api/moderation/paid-generations/${encodeURIComponent(job.id)}/candidates/${candidate.ordinal}/preview">
+          <label>Logo X <input type="number" name="logo_x" min="0" max="140" step="1" value="${candidate.manifest.logoRect.x}" required></label>
+          <label>Logo Y <input type="number" name="logo_y" min="0" max="160" step="1" value="${candidate.manifest.logoRect.y}" required></label>
+          ${candidate.manifest.billboardRect ? '<label><input type="checkbox" name="suppress_billboard"> Remove proposed billboard</label>' : ""}
+          <button>Preview adjusted placement</button>
+        </form>`
+            : ""
+        }
         <form method="post" action="/api/moderation/paid-generations/${encodeURIComponent(job.id)}/candidates/${candidate.ordinal}/reject"><label>Rejection reason <input name="reason" required maxlength="500"></label><button>Reject candidate</button></form>
       </section>`);
     }
@@ -1974,6 +1985,118 @@ export function createApiApp({
       <style>body{font:16px system-ui,sans-serif;margin:24px auto;padding:0 16px;max-width:900px;color:#1d3445;background:#faf6ea}h1{font-size:24px}h2{font-size:18px}.review{border:1px solid #bdc7bd;border-radius:12px;padding:18px;margin:18px 0;background:#fff}.street{display:flex;gap:12px;align-items:end;justify-content:center;overflow:auto}.street>div{width:150px;min-width:100px;text-align:center}.street img{max-width:100%;height:auto}.chosen{background:#e8f2e8;border-radius:8px}span{display:block}form{display:inline-block;margin:12px 12px 0 0}form label{display:block;margin:6px 0}form input[type=checkbox]{display:inline;width:auto}.candidate-art{position:relative;width:280px;height:320px;background:#e8f2e8}.candidate-art img{display:block}.placement{position:absolute;box-sizing:border-box;border:2px solid #ffb900;background:#ffb90044;color:#14213d;font-size:12px;font-weight:700;line-height:1.2}.media-comparison{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}.media-comparison>div{max-width:100%}.media-comparison img{background:#e8f2e8}input{display:block;width:220px;max-width:100%;font:inherit}button{font:inherit;padding:8px 12px}code{overflow-wrap:anywhere}</style>
       <h1>Generated candidate review</h1><p>${paidCandidateCards.length} private candidate${paidCandidateCards.length === 1 ? "" : "s"} shown</p>${paidCandidateCards.join("") || "<p>No generated candidates await review.</p>"}<h1>Facade moderation</h1><p>${cards.length} pending design${cards.length === 1 ? "" : "s"} shown</p>${cards.join("") || "<p>No designs await review.</p>"}<h2>Active designs</h2>${revocations.join("") || "<p>No active custom designs in this service.</p>"}<h1>Logo and billboard moderation</h1><p>${mediaCards.length} pending image${mediaCards.length === 1 ? "" : "s"} shown</p>${mediaCards.join("") || "<p>No images await review.</p>"}<h2>Active logos and billboards</h2>${activeMediaCards.join("") || "<p>No active media in this service.</p>"}</html>`);
   });
+
+  app.get(
+    "/moderation/paid-generations/:id/candidates/:ordinal/preview",
+    async (c) => {
+      const denied = requireModerator(c);
+      if (denied) return denied;
+      if (!paidLedger)
+        return c.json(
+          {
+            code: "GENERATION_DISABLED",
+            message: "Prompt review is unavailable",
+          },
+          503,
+        );
+      const id = CHALLENGE_ID.safeParse(c.req.param("id"));
+      const ordinal = Number(c.req.param("ordinal"));
+      const rawX = c.req.query("logo_x");
+      const rawY = c.req.query("logo_y");
+      if (
+        !id.success ||
+        !Number.isInteger(ordinal) ||
+        ordinal < 1 ||
+        ordinal > 3 ||
+        !rawX ||
+        !rawY ||
+        !/^\d{1,3}$/.test(rawX) ||
+        !/^\d{1,3}$/.test(rawY)
+      )
+        return c.json(
+          { code: "INVALID_REQUEST", message: "Enter whole logo coordinates" },
+          400,
+        );
+      const candidate = paidLedger
+        .candidates(id.data)
+        .find((item) => item.ordinal === ordinal);
+      if (
+        !candidate ||
+        candidate.reviewStatus !== "pending" ||
+        paidLedger.job(id.data)?.status !== "complete" ||
+        !candidate.manifest.logoRect
+      )
+        return c.json(
+          { code: "NOT_FOUND", message: "Candidate is not awaiting review" },
+          404,
+        );
+      const suppressBillboard = c.req.query("suppress_billboard") === "on";
+      const logoRect = {
+        ...candidate.manifest.logoRect,
+        x: Number(rawX),
+        y: Number(rawY),
+      };
+      let sprite: Buffer;
+      let manifest: Awaited<ReturnType<typeof validateCandidateMediaPlacement>>;
+      try {
+        sprite = await readFile(
+          join(store.assetDir, `${candidate.spriteHash}.png`),
+        );
+        if (hash(sprite) !== candidate.spriteHash)
+          throw new Error("Candidate image hash mismatch");
+      } catch {
+        return c.json(
+          { code: "ASSET_MISSING", message: "Candidate image is unavailable" },
+          409,
+        );
+      }
+      try {
+        manifest = await validateCandidateMediaPlacement(sprite, {
+          ...candidate.manifest,
+          logoRect,
+          billboardRect: suppressBillboard
+            ? null
+            : candidate.manifest.billboardRect,
+        });
+      } catch {
+        return c.json(
+          {
+            code: "INVALID_PLACEMENT",
+            message:
+              "Logo must sit on the facade, inside this level's bounds, away from the billboard",
+          },
+          400,
+        );
+      }
+      const outline = (
+        label: string,
+        rect: NonNullable<typeof manifest.logoRect> | null,
+      ) =>
+        rect
+          ? `<span class="placement" style="left:${rect.x * 2}px;top:${rect.y * 2}px;width:${rect.width * 2}px;height:${rect.height * 2}px">${label}</span>`
+          : "";
+      const proposedHash = hash(canonicalJson(manifest));
+      c.header("Cache-Control", "no-store");
+      c.header("X-Frame-Options", "DENY");
+      c.header(
+        "Content-Security-Policy",
+        "default-src 'none'; img-src data:; style-src 'unsafe-inline'; form-action 'self'",
+      );
+      return c.html(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Candidate placement preview</title>
+        <style>body{font:16px system-ui,sans-serif;margin:24px auto;padding:0 16px;max-width:640px;color:#1d3445;background:#faf6ea}.candidate-art{position:relative;width:280px;height:320px;background:#e8f2e8}.candidate-art img{display:block}.placement{position:absolute;box-sizing:border-box;border:2px solid #ffb900;background:#ffb90044;color:#14213d;font-size:12px;font-weight:700}label{display:block;margin:10px 0}button{font:inherit;padding:8px 12px}code{overflow-wrap:anywhere}</style>
+        <h1>Review adjusted placement</h1><p>Candidate ${candidate.ordinal} · ${escapeHtml(id.data)}. Compare the outline with the actual facade before approval.</p>
+        <div class="candidate-art"><img src="data:image/png;base64,${sprite.toString("base64")}" alt="Private generated facade with adjusted media outlines" width="280" height="320">${outline("Logo", manifest.logoRect)}${outline("Billboard", manifest.billboardRect)}</div>
+        <p>Proposed manifest: <code>${proposedHash}</code></p>
+        <form method="post" action="/api/moderation/paid-generations/${encodeURIComponent(id.data)}/candidates/${ordinal}/approve">
+          <input type="hidden" name="logo_x" value="${logoRect.x}"><input type="hidden" name="logo_y" value="${logoRect.y}"><input type="hidden" name="preview_manifest_hash" value="${proposedHash}">
+          ${suppressBillboard ? '<input type="hidden" name="suppress_billboard" value="on">' : ""}
+          <label><input type="checkbox" name="content_ok" required> Content is suitable for the city</label>
+          <label><input type="checkbox" name="style_ok" required> Style and perspective match the game</label>
+          <label><input type="checkbox" name="placement_ok" required> The adjusted logo and remaining media spaces are usable</label>
+          <button>Approve adjusted candidate</button>
+        </form><p><a href="/api/moderation">Back to moderation</a></p>`);
+    },
+  );
 
   app.post(
     "/moderation/paid-generations/:id/candidates/:ordinal/:decision",
@@ -2017,6 +2140,33 @@ export function createApiApp({
       const form = await c.req.parseBody().catch(() => null);
       const rawReason = form && "reason" in form ? form.reason : null;
       const reason = typeof rawReason === "string" ? rawReason.trim() : "";
+      const rawLogoX = form?.logo_x;
+      const rawLogoY = form?.logo_y;
+      const hasLogoAdjustment =
+        rawLogoX !== undefined || rawLogoY !== undefined;
+      if (
+        hasLogoAdjustment &&
+        (typeof rawLogoX !== "string" ||
+          typeof rawLogoY !== "string" ||
+          !/^\d{1,3}$/.test(rawLogoX) ||
+          !/^\d{1,3}$/.test(rawLogoY) ||
+          !candidate.manifest.logoRect)
+      )
+        return c.json(
+          {
+            code: "INVALID_PLACEMENT",
+            message: "Enter whole logo coordinates",
+          },
+          400,
+        );
+      const logoRectOverride =
+        hasLogoAdjustment && candidate.manifest.logoRect
+          ? {
+              ...candidate.manifest.logoRect,
+              x: Number(rawLogoX),
+              y: Number(rawLogoY),
+            }
+          : undefined;
       if (decision === "approve") {
         if (
           form?.content_ok !== "on" ||
@@ -2030,11 +2180,14 @@ export function createApiApp({
             },
             400,
           );
+        let sprite: Buffer;
         try {
-          const [sprite, thumbnail] = await Promise.all([
+          const assets = await Promise.all([
             readFile(join(store.assetDir, `${candidate.spriteHash}.png`)),
             readFile(join(store.assetDir, `${candidate.thumbnailHash}.png`)),
           ]);
+          sprite = assets[0];
+          const thumbnail = assets[1];
           if (
             hash(sprite) !== candidate.spriteHash ||
             hash(thumbnail) !== candidate.thumbnailHash
@@ -2047,6 +2200,33 @@ export function createApiApp({
               message: "Candidate image is unavailable",
             },
             409,
+          );
+        }
+        try {
+          const proposedManifest = await validateCandidateMediaPlacement(
+            sprite,
+            {
+              ...candidate.manifest,
+              logoRect: logoRectOverride ?? candidate.manifest.logoRect,
+              billboardRect:
+                form?.suppress_billboard === "on"
+                  ? null
+                  : candidate.manifest.billboardRect,
+            },
+          );
+          if (
+            hasLogoAdjustment &&
+            form?.preview_manifest_hash !==
+              hash(canonicalJson(proposedManifest))
+          )
+            throw new Error("Adjusted placement was not previewed");
+        } catch {
+          return c.json(
+            {
+              code: "INVALID_PLACEMENT",
+              message: "Adjusted media placement is outside usable facade art",
+            },
+            400,
           );
         }
       } else if (reason.length < 1 || Array.from(reason).length > 500)
@@ -2064,6 +2244,7 @@ export function createApiApp({
           reviewer: adminCredentials?.user ?? "moderator",
           suppressBillboard:
             decision === "approve" && form?.suppress_billboard === "on",
+          logoRectOverride,
         });
         const reviewedJob = paidLedger.job(id.data);
         if (reviewedJob) promotePaidJob(store, paidLedger, reviewedJob);

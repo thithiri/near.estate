@@ -1833,6 +1833,9 @@ test("a completed paid candidate enters the exact owner and moderator review flo
     assert.equal(ledger.job(queuedJob.id)?.status, "complete");
     const originalCandidate = ledger.candidates(queuedJob.id)[1]!;
     assert.ok(originalCandidate.manifest.billboardRect);
+    assert.ok(originalCandidate.manifest.logoRect);
+    const adjustedLogoX = originalCandidate.manifest.logoRect.x + 4;
+    const adjustedLogoY = originalCandidate.manifest.logoRect.y + 2;
     const paidResponse = await context.app.request(
       `/paid-generations/${queuedJob.id}`,
       { headers: { cookie } },
@@ -1850,8 +1853,39 @@ test("a completed paid candidate enters the exact owner and moderator review flo
     assert.match(pendingHtml, /generated candidate 2/);
     assert.match(pendingHtml, /Logo/);
     assert.match(pendingHtml, /Remove the proposed billboard area/);
+    assert.match(pendingHtml, /Preview adjusted placement/);
     assert.match(pendingHtml, /Style and perspective match the game/);
     const reviewPath = `/moderation/paid-generations/${queuedJob.id}/candidates/2/approve`;
+    const previewPath = `/moderation/paid-generations/${queuedJob.id}/candidates/2/preview?logo_x=${adjustedLogoX}&logo_y=${adjustedLogoY}&suppress_billboard=on`;
+    assert.equal((await context.app.request(previewPath)).status, 401);
+    const preview = await context.app.request(previewPath, {
+      headers: { authorization: admin },
+    });
+    assert.equal(preview.status, 200);
+    const previewHtml = await preview.text();
+    assert.match(previewHtml, /Review adjusted placement/);
+    const previewHash = previewHtml.match(
+      /name="preview_manifest_hash" value="([a-f0-9]{64})"/,
+    )?.[1];
+    assert.ok(previewHash);
+    assert.equal(
+      (
+        await context.app.request(
+          `/moderation/paid-generations/${queuedJob.id}/candidates/2/preview?logo_x=0&logo_y=0`,
+          { headers: { authorization: admin } },
+        )
+      ).status,
+      400,
+    );
+    assert.equal(
+      (
+        await context.app.request(
+          `/moderation/paid-generations/${queuedJob.id}/candidates/2/preview?logo_x=${originalCandidate.manifest.billboardRect.x}&logo_y=${originalCandidate.manifest.billboardRect.y}`,
+          { headers: { authorization: admin } },
+        )
+      ).status,
+      400,
+    );
     assert.equal(
       (
         await context.app.request(reviewPath, {
@@ -1891,7 +1925,21 @@ test("a completed paid candidate enters the exact owner and moderator review flo
             authorization: admin,
             "content-type": "application/x-www-form-urlencoded",
           },
-          body: "content_ok=on&style_ok=on&placement_ok=on&suppress_billboard=on",
+          body: `content_ok=on&style_ok=on&placement_ok=on&suppress_billboard=on&logo_x=${adjustedLogoX}&logo_y=${adjustedLogoY}`,
+        })
+      ).status,
+      400,
+    );
+    assert.equal(
+      (
+        await context.app.request(reviewPath, {
+          method: "POST",
+          headers: {
+            origin: ORIGIN,
+            authorization: admin,
+            "content-type": "application/x-www-form-urlencoded",
+          },
+          body: `content_ok=on&style_ok=on&placement_ok=on&suppress_billboard=on&logo_x=${adjustedLogoX}&logo_y=${adjustedLogoY}&preview_manifest_hash=${previewHash}`,
         })
       ).status,
       303,
@@ -1901,6 +1949,14 @@ test("a completed paid candidate enters the exact owner and moderator review flo
     assert.equal(
       ledger.candidates(queuedJob.id)[1]?.manifest.billboardRect,
       null,
+    );
+    assert.equal(
+      ledger.candidates(queuedJob.id)[1]?.manifest.logoRect?.x,
+      adjustedLogoX,
+    );
+    assert.equal(
+      ledger.candidates(queuedJob.id)[1]?.manifest.logoRect?.y,
+      adjustedLogoY,
     );
     assert.notEqual(
       ledger.candidates(queuedJob.id)[1]?.manifestHash,
@@ -1947,6 +2003,7 @@ test("a completed paid candidate enters the exact owner and moderator review flo
     assert.equal(design.candidates.length, 1);
     assert.equal(design.candidates[0].id, 2);
     assert.equal(design.candidates[0].manifest.billboardRect, null);
+    assert.equal(design.candidates[0].manifest.logoRect.x, adjustedLogoX);
     assert.equal(
       design.candidates[0].manifestHash,
       ledger.candidates(queuedJob.id)[1]?.manifestHash,
