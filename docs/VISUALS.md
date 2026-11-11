@@ -24,9 +24,11 @@ The [image specification and generation prompt](BUILDING_IMAGE_SPEC.md) records 
 
 ## Building studio on a phone
 
-390 × 844 portrait. The owner can compare a selected building with its neighbours before submitting it for review. This capture is a guest preview; publishing requires a purchased plot and wallet.
+390 × 844 portrait. The guest studio shows the selected type's illustrated level-2 style study before the curated design choices. The style study is preview-only. The later Choose and Preview steps still compare the current curated designs beside neighbours; publishing requires a purchased plot and wallet.
 
-![near.estate building studio preview](images/near-estate-studio-preview-phone-v3.png)
+![near.estate illustrated building study in the phone studio](images/near-estate-studio-illustrated-phone-v3.png)
+
+The [desktop studio](images/near-estate-studio-illustrated-desktop-v1.png) shows the same study beside the existing candidate and neighbourhood areas.
 
 ## Building variations and upgrades
 

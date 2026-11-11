@@ -39,16 +39,24 @@ const mediaRects: Record<
   homes: { logoRect: null, nameRect: null },
 };
 
-export function illustratedPreviewForPlot(
-  plot: PlayerPlot,
+export function illustratedPreviewForType(
+  buildingType: string,
 ): IllustratedPreview | null {
-  const key = samplePlots[plot.id];
-  if (!key || key !== plot.initialType.toLowerCase()) return null;
+  const key = buildingType.toLowerCase();
   const entry = catalog.facades.find((facade) => facade.type === key);
   const rects = mediaRects[key];
   if (!entry || !rects) return null;
   return {
-    spriteUrl: `${import.meta.env.BASE_URL}illustrated/${entry.sprite}?v=${entry.sha256.slice(0, 16)}`,
+    spriteUrl: `${import.meta.env?.BASE_URL ?? "/"}illustrated/${entry.sprite}?v=${entry.sha256.slice(0, 16)}`,
     ...rects,
   };
+}
+
+export function illustratedPreviewForPlot(
+  plot: PlayerPlot,
+): IllustratedPreview | null {
+  const key = samplePlots[plot.id];
+  return key === plot.initialType.toLowerCase()
+    ? illustratedPreviewForType(plot.initialType)
+    : null;
 }

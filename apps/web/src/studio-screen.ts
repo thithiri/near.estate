@@ -9,6 +9,7 @@ import {
   facadePreset,
   PRESET_PALETTES,
 } from "./preset-catalog.js";
+import { illustratedPreviewForType } from "./illustrated-preview.js";
 
 type StudioStep = "Describe" | "Choose" | "Preview";
 type StudioState = "Empty" | "Pending" | "Ready" | "Error";
@@ -55,6 +56,23 @@ export function buildingMarkup(
     ${logo ? `<span class="studio-logo" style="left:${logo.x}px;top:${logo.y}px;width:${logo.width}px;height:${logo.height}px">${type.slice(0, 2).toUpperCase()}</span>` : ""}
     <span class="studio-name" style="left:${name.x}px;top:${name.y}px;width:${name.width}px;height:${name.height}px;font-size:${Math.min(8, name.height * 0.7, name.width / (type.length * 0.62))}px">${type.toUpperCase()}</span>
   </div>`;
+}
+
+function illustratedStudyMarkup(type: string): string {
+  const study = illustratedPreviewForType(type);
+  if (!study) return "";
+  const logo = study.logoRect;
+  const name = study.nameRect;
+  return `<figure class="studio-art-direction">
+    <div class="studio-art-frame">
+      <div class="studio-building" role="img" aria-label="${type} illustrated level 2 style study">
+        <img src="${study.spriteUrl}" alt="" width="140" height="160" />
+        ${logo ? `<span class="studio-logo" style="left:${logo.x}px;top:${logo.y}px;width:${logo.width}px;height:${logo.height}px">${type.slice(0, 2).toUpperCase()}</span>` : ""}
+        ${name ? `<span class="studio-name" style="left:${name.x}px;top:${name.y}px;width:${name.width}px;height:${name.height}px;font-size:${Math.min(8, name.height * 0.7, name.width / (type.length * 0.62))}px">${type.toUpperCase()}</span>` : ""}
+      </div>
+    </div>
+    <figcaption><strong>Illustrated style study</strong><span>Level 2 example · preview only</span></figcaption>
+  </figure>`;
 }
 
 function preload(url: string): Promise<void> {
@@ -134,16 +152,17 @@ export class MockStudio {
     const left = this.neighbours[0];
     const right = this.neighbours[1];
     this.root.innerHTML = `<div class="studio-screen" data-step="${this.step}">
-      <div class="studio-heading"><button id="studio-back" aria-label="Back to My Plots">← My Plots</button><div><h1>Build your place</h1><p>Plot ${this.plot.index + 1} · Main Street · Guest preview</p></div><span class="tag">Level ${this.level} preview</span></div>
+      <div class="studio-heading"><button id="studio-back" aria-label="Back to My Plots">←</button><div><h1>Build your place</h1><p>Plot ${this.plot.index + 1} · Main Street · Guest preview</p></div><span class="tag">Level ${this.level} preview</span></div>
       <nav class="studio-steps" aria-label="Building studio steps">${(["Describe", "Choose", "Preview"] as const).map((step) => `<button data-studio-step="${step}" aria-current="${step === this.step ? "step" : "false"}">${step}</button>`).join("")}</nav>
       <div class="studio-layout">
         <section class="card studio-controls" aria-label="Describe your building">
           <h2>Your building</h2>
           <label>Type<select id="studio-type">${BuildingType.options.map((type) => `<option value="${type}" ${type === this.type ? "selected" : ""}>${type}</option>`).join("")}</select></label>
+          ${illustratedStudyMarkup(this.type)}
           <label>Level to preview<select id="studio-level">${[1, 2, 3, 4].map((level) => `<option value="${level}" ${level === this.level ? "selected" : ""}>Level ${level} · ${[70, 100, 130, 160][level - 1]}px limit</option>`).join("")}</select></label>
           <fieldset class="studio-palette"><legend>Colour</legend>${PRESET_PALETTES.map((palette) => `<button type="button" data-studio-palette="${palette}" aria-label="${palette} colour" aria-pressed="${palette === this.palette}" style="background:${palette}"></button>`).join("")}</fieldset>
           <label>Your idea<textarea id="studio-description" maxlength="800" rows="4" placeholder="A greenhouse cafe with a tall glass peak and hanging plants…">${escapeHtml(this.description)}</textarea></label>
-          <p class="muted">Describe your idea, then compare three curated looks. Your words do not change the preview art.</p>
+          <p class="muted">Your idea previews the future generation flow. The three selectable looks are curated designs for now.</p>
           <button class="primary" id="explore-presets">Explore 3 preset looks</button>
         </section>
         <div class="studio-workspace">

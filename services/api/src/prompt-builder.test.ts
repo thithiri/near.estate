@@ -20,17 +20,21 @@ test("versioned facade prompts carry each paid height and distinct type silhouet
         buildingType,
         level: index + 1,
       });
-      assert.equal(result.version, 1);
+      assert.equal(result.version, 2);
       assert.equal(result.renderProfileVersion, 1);
       assert.match(result.prompt, new RegExp(`${height} logical pixels tall`));
       assert.match(result.prompt, /transparent 560 × 640 PNG/);
       assert.match(result.prompt, /strict front elevation/);
+      assert.match(result.prompt, /dark navy outlines/);
+      assert.match(result.prompt, /20 × 20 logical-pixel area/);
+      assert.match(result.prompt, /48 × 24 logical-pixel surface/);
       assert.match(result.prompt, /no street, sidewalk, parking spaces/);
       assert.match(result.promptHash, /^[0-9a-f]{64}$/);
     }
     const first = buildGenerationPrompt({ ...base, buildingType, variant: 1 });
     const second = buildGenerationPrompt({ ...base, buildingType, variant: 2 });
     assert.notEqual(first.promptHash, second.promptHash);
+    assert.notEqual(first.prompt, second.prompt);
   }
 });
 

@@ -79,7 +79,38 @@ for (const viewport of [
     await expect(
       page.getByRole("heading", { name: "Build your place" }),
     ).toBeVisible();
+    if (viewport.name === "desktop") {
+      for (const type of ["Retail", "Cafe", "Restaurant", "Office", "Homes"]) {
+        await page.locator("#studio-type").selectOption(type);
+        await expect(
+          page.getByRole("img", {
+            name: `${type} illustrated level 2 style study`,
+          }),
+        ).toBeVisible();
+        await expect
+          .poll(() =>
+            page
+              .locator(".studio-art-direction img")
+              .evaluate((image) =>
+                image instanceof HTMLImageElement ? image.naturalWidth : 0,
+              ),
+          )
+          .toBeGreaterThan(0);
+      }
+    }
     await page.locator("#studio-type").selectOption("Cafe");
+    await expect(
+      page.getByRole("img", { name: "Cafe illustrated level 2 style study" }),
+    ).toBeVisible();
+    await expect
+      .poll(() =>
+        page
+          .locator(".studio-art-direction img")
+          .evaluate((image) =>
+            image instanceof HTMLImageElement ? image.naturalWidth : 0,
+          ),
+      )
+      .toBeGreaterThan(0);
     await page.locator("#studio-level").selectOption("4");
     await page.locator("#explore-presets").click();
     await expect(page.locator(".candidate-grid [data-candidate]")).toHaveCount(

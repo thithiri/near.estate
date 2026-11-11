@@ -37,6 +37,11 @@ test("provider facade becomes a level-bound immutable sprite, thumbnail and mani
       candidate.manifest.alphaBounds.y >= 160 - [70, 100, 130, 160][level - 1]!,
       true,
     );
+    assert.ok(candidate.manifest.alphaBounds.x >= 5);
+    assert.ok(
+      candidate.manifest.alphaBounds.x + candidate.manifest.alphaBounds.width <=
+        135,
+    );
     assert.ok(candidate.manifest.logoRect);
     assert.equal(
       candidate.manifest.billboardRect === null ||
@@ -65,6 +70,29 @@ test("provider facade becomes a level-bound immutable sprite, thumbnail and mani
     assert.equal(thumbnail.width, 140);
     assert.equal(thumbnail.height, 160);
     assert.equal(sprite.exif, undefined);
+  }
+});
+
+test("illustrated style samples fit the actual owner-generation image envelope", async () => {
+  for (const buildingType of [
+    "Retail",
+    "Cafe",
+    "Restaurant",
+    "Office",
+    "Homes",
+  ] as const) {
+    const source = await readFile(
+      new URL(
+        `../../../art/source/illustrated/${buildingType.toLowerCase()}-source.png`,
+        import.meta.url,
+      ),
+    );
+    const candidate = await normalizeGeneratedFacade(source, buildingType, 2);
+    assert.equal(candidate.manifest.buildingType, buildingType);
+    assert.equal(candidate.manifest.level, 2);
+    assert.ok(candidate.manifest.alphaBounds.x >= 5);
+    assert.ok(candidate.manifest.alphaBounds.y >= 60);
+    assert.ok(candidate.manifest.logoRect);
   }
 });
 

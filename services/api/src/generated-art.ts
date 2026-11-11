@@ -13,6 +13,7 @@ const MAX_SOURCE_BYTES = 16 * 1024 * 1024;
 const MAX_SOURCE_PIXELS = 8_294_400;
 const MAX_SOURCE_EDGE = 3_840;
 const MIN_VISIBLE_SIDE = 24;
+const SIDE_MARGIN_LOGICAL = 5;
 const VISIBLE_ALPHA = 8;
 const PLACEMENT_ALPHA = 224;
 const MIN_PLACEMENT_COVERAGE = 0.8;
@@ -196,7 +197,8 @@ export async function normalizeGeneratedFacade(
       height: cropHeight,
     })
     .resize({
-      width: 560,
+      width:
+        (DEFAULT_RENDER_PROFILE.logicalWidth - SIDE_MARGIN_LOGICAL * 2) * 4,
       height: maxLogicalHeight * 4,
       fit: "inside",
       kernel: "lanczos3",
@@ -226,6 +228,12 @@ export async function normalizeGeneratedFacade(
   const alphaBounds = logicalBounds(normalized.bounds);
   if (alphaBounds.y < 160 - maxLogicalHeight)
     throw new GeneratedArtError("Generated facade exceeds paid height");
+  if (
+    alphaBounds.x < SIDE_MARGIN_LOGICAL ||
+    alphaBounds.x + alphaBounds.width >
+      DEFAULT_RENDER_PROFILE.logicalWidth - SIDE_MARGIN_LOGICAL
+  )
+    throw new GeneratedArtError("Generated facade exceeds side margins");
   const logoRect = placeOverlay(rgba, alphaBounds, 20, 20, false, false, null);
   if (!logoRect)
     throw new GeneratedArtError("Generated facade lacks a usable logo area");
