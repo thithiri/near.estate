@@ -28,6 +28,7 @@
     "testnet:tower-floor:indexed": "node scripts/verify-tower-floor-indexer.mjs",
     "backup:drill": "npm run build -w @estate/shared && npm run build -w @estate/api && npm run build -w @estate/worker && node scripts/state-backup-drill.mjs",
     "indexer:load:check": "npm run build -w @estate/shared && npm run build -w @estate/worker && node scripts/measure-indexer-load.mjs",
+    "indexer:api-load:check": "npm run build -w @estate/shared && npm run build -w @estate/api && npm run build -w @estate/worker && node scripts/measure-indexer-api-load.mjs",
     "beta:metrics": "node scripts/report-beta-metrics.mjs",
     "beta:metrics:test": "node --test scripts/beta-metrics.test.mjs",
     "testnet:journey": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_journey -- --apply",

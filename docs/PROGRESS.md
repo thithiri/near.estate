@@ -149,4 +149,6 @@ Task 20 now selects nearby facade, mask, logo and billboard images by distance t
 
 Plot and economy stats now read totals and freshness from one SQLite snapshot. A deterministic two-connection test commits updated aggregates and cursor between their SELECTs and confirms each response stays internally consistent; the next request sees the new state. API type checking, formatting and all 82 API tests pass. Sustained VPS traffic and named-wallet browser journeys remain open.
 
+A separate-process local drill wrote 10,000 synthetic game events while the API completed 8,681 alternating economy/plot stats reads. Every response's counts matched its own cursor height across 975 observed intermediate heights, and the final height reached 1,000. Writer time was 856 ms; median/p95 route latency was 0.07/0.14 ms. The repeatable command and public record are `npm run indexer:api-load:check` and `deployments/local-indexer-api-load.json`. HTTP transport, FastNear, long-duration player traffic and production VPS performance remain unmeasured.
+
 The testnet contract and seeded city are deployed. The browser still needs a connected wallet journey before the testnet gameplay gate can close.
