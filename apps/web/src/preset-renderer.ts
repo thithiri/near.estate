@@ -14,6 +14,7 @@ import {
   PRESET_PALETTES,
 } from "./preset-catalog.js";
 import { selectNearTextureViews } from "./texture-budget.js";
+import type { IllustratedPreview } from "./illustrated-preview.js";
 
 type FacadeView = {
   plotId: string;
@@ -132,6 +133,7 @@ export function createPresetFacade(
     logoAssetHash?: string;
     billboardAssetHash?: string;
   },
+  illustratedPreview?: IllustratedPreview | null,
 ): FacadeView {
   // The guest preview shows the four upgrade envelopes. Chain-backed plots
   // supply their actual on-chain type, variant, level, colour and name.
@@ -160,9 +162,11 @@ export function createPresetFacade(
   mask.tint = Number.parseInt(palette.slice(1), 16);
   group.addChild(placeholder, sprite, mask);
 
-  const logo = appearance?.approvedManifest
-    ? appearance.approvedManifest.logoRect
-    : preset.logoRect;
+  const logo = illustratedPreview
+    ? illustratedPreview.logoRect
+    : appearance?.approvedManifest
+      ? appearance.approvedManifest.logoRect
+      : preset.logoRect;
   const media: MediaOverlay[] = [];
   if (logo) {
     const initials = buildingInitials(appearance?.name || plot.initialType);
@@ -214,36 +218,45 @@ export function createPresetFacade(
     });
   }
   const name = (appearance?.name || plot.initialType).toUpperCase();
-  const nameRect = preset.nameRect;
-  const nameSize = Math.min(
-    8,
-    nameRect.height * 0.7,
-    nameRect.width / (name.length * 0.62),
-  );
-  group.addChild(
-    centeredText(
-      name,
-      nameRect.x + nameRect.width / 2,
-      nameRect.y + nameRect.height / 2,
-      nameSize,
-    ),
-  );
+  const nameRect = illustratedPreview
+    ? illustratedPreview.nameRect
+    : preset.nameRect;
+  if (nameRect) {
+    const nameSize = Math.min(
+      8,
+      nameRect.height * 0.7,
+      nameRect.width / (name.length * 0.62),
+    );
+    group.addChild(
+      centeredText(
+        name,
+        nameRect.x + nameRect.width / 2,
+        nameRect.y + nameRect.height / 2,
+        nameSize,
+      ),
+    );
+  }
   return {
     plotId: plot.id,
     group,
     x,
-    spriteUrl: appearance?.approvedManifest
-      ? `/api/assets/${appearance.approvedManifest.spriteHash}`
-      : facadeAssetUrl(preset.sprite, preset.spriteHash),
-    maskUrl: appearance?.approvedManifest
-      ? null
-      : facadeAssetUrl(preset.paletteMask, preset.paletteMaskHash),
-    fallbackSpriteUrl: appearance?.approvedManifest
-      ? facadeAssetUrl(preset.sprite, preset.spriteHash)
-      : null,
-    fallbackMaskUrl: appearance?.approvedManifest
-      ? facadeAssetUrl(preset.paletteMask, preset.paletteMaskHash)
-      : null,
+    spriteUrl: illustratedPreview
+      ? illustratedPreview.spriteUrl
+      : appearance?.approvedManifest
+        ? `/api/assets/${appearance.approvedManifest.spriteHash}`
+        : facadeAssetUrl(preset.sprite, preset.spriteHash),
+    maskUrl:
+      illustratedPreview || appearance?.approvedManifest
+        ? null
+        : facadeAssetUrl(preset.paletteMask, preset.paletteMaskHash),
+    fallbackSpriteUrl:
+      illustratedPreview || appearance?.approvedManifest
+        ? facadeAssetUrl(preset.sprite, preset.spriteHash)
+        : null,
+    fallbackMaskUrl:
+      illustratedPreview || appearance?.approvedManifest
+        ? facadeAssetUrl(preset.paletteMask, preset.paletteMaskHash)
+        : null,
     sprite,
     mask,
     placeholder,

@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "facades": [
+    {
+      "type": "retail",
+      "sprite": "retail-l2.png",
+      "sha256": "864737fbff1f8fa96853701b443b7cce52d5d120b501ead3d18b219c6535af9d",
+      "source": "retail-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 6.25,
+        "y": 65,
+        "width": 127.25,
+        "height": 95
+      }
+    },
+    {
+      "type": "cafe",
+      "sprite": "cafe-l2.png",
+      "sha256": "ac5460353f3b338b3e871a4898f19a0f36fd1f37e40178feb16f06348a06a408",
+      "source": "cafe-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 66.5,
+        "width": 130,
+        "height": 93.5
+      }
+    },
+    {
+      "type": "restaurant",
+      "sprite": "restaurant-l2.png",
+      "sha256": "fcfca3896a0abb8b83a0cc52cac645e31c5720d60986fa433a453ef4409e234b",
+      "source": "restaurant-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 100.25,
+        "width": 130,
+        "height": 59.75
+      }
+    },
+    {
+      "type": "office",
+      "sprite": "office-l2.png",
+      "sha256": "7ff7b05d9dd35e40d423841df92dc93c6183ef09f10c4eec064477460a7836bd",
+      "source": "office-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 34,
+        "y": 65,
+        "width": 71.75,
+        "height": 95
+      }
+    },
+    {
+      "type": "homes",
+      "sprite": "homes-l2.png",
+      "sha256": "447d42b36cf1bb583258577bd271837d8493baaffa0f7a3fdfce65a9a8e7b01d",
+      "source": "homes-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 19.75,
+        "y": 65,
+        "width": 100.25,
+        "height": 95
+      }
+    }
+  ]
+}

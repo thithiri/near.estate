@@ -2,6 +2,8 @@
 
 Review basis: the [current visual gallery](VISUALS.md), especially the 667 × 375 guest street and the all-level neighbour sheet. The first local art pass added type-specific material colors and greenhouse foliage; the remaining items below still need work. This is not evidence from a physical phone or a signed testnet session.
 
+The newer [illustrated level-2 draft sheet](images/near-estate-illustrated-buildings-v1.png) shows a stronger range of massing and materials. In the [updated phone street](images/near-estate-illustrated-street-phone-v1.png), the greenhouse cafe reads as a new style, but its fine planting and window details become small beside the simpler procedural neighbours. Before using this style across the live city, complete both variants and all four levels with consistent line weight and simplify details that vanish at game scale. The guest preview is not an approved live facade.
+
 ## What reads well now
 
 - The five building types already have different rooflines and footprints, and the two variants within each type use different structures.

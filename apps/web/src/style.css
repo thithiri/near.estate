@@ -49,6 +49,10 @@ button:disabled {
   font-size: 29px;
   white-space: nowrap;
 }
+#mobile-car-chip,
+#mobile-street-name {
+  display: none;
+}
 .topbar nav {
   display: flex;
   gap: 5px;
@@ -522,6 +526,8 @@ button:disabled {
   min-height: 52px;
   touch-action: none;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 .controlbar .primary {
   min-width: 170px;
@@ -563,14 +569,36 @@ button:disabled {
   overflow-y: auto;
   border-left: 2px solid #15223e;
   padding: 20px 18px;
-  background: #fff9ed;
+  background: #fffaf2;
   position: relative;
 }
 .plot-panel h2 {
-  margin: 10px 0 18px;
+  margin: 10px 0 16px;
+  font-size: 22px;
+  line-height: 1.1;
 }
 .plot-panel p {
-  margin: 12px 0;
+  margin: 10px 0;
+}
+#plot-rule {
+  display: inline-block;
+  border: 1px solid #65c9a4;
+  border-radius: 100px;
+  background: #d7f6e7;
+  padding: 6px 10px;
+  font-weight: 800;
+}
+#plot-rate,
+#plot-spaces {
+  border: 1px solid #d4d9d3;
+  border-radius: 10px;
+  background: #fff;
+  padding: 9px 10px;
+  font-weight: 700;
+}
+#plot-owner-price {
+  color: #536276;
+  font-size: 13px;
 }
 .plot-links {
   display: grid;
@@ -599,6 +627,7 @@ button:disabled {
 .plot-panel .primary {
   width: 100%;
   margin: 14px 0;
+  box-shadow: 0 3px 0 #15223e;
 }
 #panel-collect {
   width: 100%;
@@ -1138,21 +1167,55 @@ footer[hidden] {
   }
   .topbar {
     height: 52px;
-    padding: 5px 10px;
+    padding: 5px max(10px, env(safe-area-inset-right)) 5px
+      max(10px, env(safe-area-inset-left));
     gap: 6px;
+  }
+  .topbar .brand {
+    display: none;
+  }
+  #mobile-car-chip {
+    display: inline-flex;
+    align-items: center;
+    order: -1;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  #mobile-street-name {
+    display: block;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    font-size: 15px;
   }
   .brand {
     font-size: 20px;
   }
   .topbar nav {
     justify-content: flex-end;
+    flex: none;
+    gap: 4px;
   }
   .topbar nav button {
-    padding: 4px 6px;
+    padding: 4px 8px;
     font-size: 11px;
     min-height: 36px;
+    border: 2px solid #15223e;
+    border-radius: 11px;
+    background: #ffca24;
+    box-shadow: 0 2px 0 #15223e;
   }
   .topbar nav button[data-screen="My Plots"] {
+    display: none;
+  }
+  .topbar nav button[data-screen="Street"] {
     display: none;
   }
   .topbar nav .menu-nav {
@@ -1162,7 +1225,12 @@ footer[hidden] {
     display: none;
   }
   .wallet {
-    font-size: 13px;
+    order: -2;
+    border: 2px solid #15223e;
+    border-radius: 100px;
+    padding: 4px 8px;
+    background: #fff;
+    font-size: 12px;
   }
   .plot-panel {
     display: none;
@@ -1212,13 +1280,23 @@ footer[hidden] {
     margin: 2px 0;
     font-size: 12px;
   }
+  .plot-panel.mobile-open:not(.closed):not(.tower-panel-open) #plot-rule,
+  .plot-panel.mobile-open:not(.closed):not(.tower-panel-open) #plot-rate,
+  .plot-panel.mobile-open:not(.closed):not(.tower-panel-open) #plot-spaces {
+    padding: 4px 7px;
+    font-size: 11px;
+  }
   .plot-panel.mobile-open:not(.closed):not(.tower-panel-open) button.primary {
-    min-height: 44px;
-    margin: 4px 0;
+    display: none;
+  }
+  .plot-panel.mobile-open:not(.closed):not(.tower-panel-open) #panel-collect,
+  .plot-panel.mobile-open:not(.closed):not(.tower-panel-open) hr,
+  .plot-panel.mobile-open:not(.closed):not(.tower-panel-open) small {
+    display: none;
   }
   .plot-panel.mobile-open:not(.closed):not(.tower-panel-open) .close-panel {
     top: 2px;
-    right: 6px;
+    right: max(30px, env(safe-area-inset-right));
   }
   .screen {
     min-height: calc(100dvh - 80px);
@@ -1231,21 +1309,29 @@ footer[hidden] {
     font-size: 11px;
   }
   .scene-wrap #street-head {
-    min-height: 32px;
-    padding: 4px 10px;
-    font-size: 11px;
-  }
-  .scene-wrap #street-head strong {
-    font-size: 14px;
+    display: none;
   }
   .controlbar {
     min-height: 66px;
     padding: 6px max(10px, env(safe-area-inset-right)) 6px
       max(10px, env(safe-area-inset-left));
   }
+  .controlbar button {
+    box-shadow: 0 3px 0 #15223e;
+  }
+  #durability {
+    border: 1px solid #15223e;
+    border-radius: 100px;
+    background: #fff;
+    padding: 6px 9px;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
   .drive-buttons button {
     min-width: 54px;
     min-height: 52px;
+    border-radius: 13px;
   }
   .controlbar .primary {
     min-width: 140px;
@@ -1277,6 +1363,13 @@ footer[hidden] {
     grid-template-areas: "brand wallet";
     gap: 6px;
   }
+  .topbar .brand {
+    display: block;
+  }
+  #mobile-car-chip,
+  #mobile-street-name {
+    display: none;
+  }
   .brand {
     grid-area: brand;
     font-size: 18px;
@@ -1286,6 +1379,10 @@ footer[hidden] {
   }
   .wallet {
     grid-area: wallet;
+    order: 0;
+    border: 0;
+    background: transparent;
+    padding: 0;
   }
   .wallet #mode-button,
   .wallet #network-button {

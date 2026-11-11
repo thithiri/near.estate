@@ -41,6 +41,7 @@ import type { LiveStreet } from "./live-street.js";
 import type { GameWalletClient } from "./wallet-client.js";
 import { createPresetFacade, PresetTextureCache } from "./preset-renderer.js";
 import { facadePreset } from "./preset-catalog.js";
+import { illustratedPreviewForPlot } from "./illustrated-preview.js";
 import { MockStudio } from "./studio-screen.js";
 import { mountCinemaShort } from "./cinema-short.js";
 import { mountPracticeCourse } from "./practice-course.js";
@@ -579,6 +580,7 @@ function drawWorld(): void {
         : plot.id === game.ownedPlotId && !liveMode
           ? { level: 1, palette: "#F6C85F" }
           : undefined,
+      !liveMode ? illustratedPreviewForPlot(plot) : null,
     );
     if (!liveMode && plot.id === "plot-main-n-2") {
       const previewLevel = (plot.index % 4) + 1;
@@ -736,6 +738,8 @@ function drawWorld(): void {
     : !game.activeCarSession();
   world.addChild(carSprite);
   document.querySelector<HTMLElement>("#street-name")!.textContent = road.name;
+  document.querySelector<HTMLElement>("#mobile-street-name")!.textContent =
+    road.name;
   document.querySelector<HTMLElement>("#street-side")!.textContent =
     `${side} side`;
   crossSideButton.textContent = `Cross to ${side === "North" ? "South" : "North"}`;
@@ -1016,6 +1020,8 @@ function updatePanel(): void {
     `🔧 ${game.car.durability}%`;
   document.querySelector<HTMLElement>("#car-name")!.textContent =
     `${game.car.body} · Tier ${game.car.tier}`;
+  document.querySelector<HTMLElement>("#mobile-car-chip")!.textContent =
+    `🚗 ${game.car.body}`;
   actionButton.textContent = mode;
   panelAction.textContent = mode;
   actionButton.disabled = !enabled;
@@ -1246,6 +1252,9 @@ function updateLivePanel(): void {
   document.querySelector<HTMLElement>("#car-name")!.textContent = car
     ? `${car.body} · Tier ${car.tier}`
     : "Connect a testnet car";
+  document.querySelector<HTMLElement>("#mobile-car-chip")!.textContent = car
+    ? `🚗 ${car.body}`
+    : "🚗 No car";
   actionButton.textContent = mode;
   panelAction.textContent = mode;
   actionButton.disabled = !enabled;
@@ -2170,14 +2179,19 @@ for (const [id, direction] of [
 ] as const) {
   const button = document.querySelector<HTMLButtonElement>(`#${id}`)!;
   button.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
     button.setPointerCapture(event.pointerId);
     closePlotPanelForDriving();
     moving = direction;
   });
+  button.addEventListener("contextmenu", (event) => event.preventDefault());
   button.addEventListener("pointerup", () => {
     moving = 0;
   });
   button.addEventListener("pointercancel", () => {
+    moving = 0;
+  });
+  button.addEventListener("lostpointercapture", () => {
     moving = 0;
   });
 }

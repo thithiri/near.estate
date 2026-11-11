@@ -45,6 +45,13 @@ for (const viewport of [
     } else {
       await expect(page.locator("#street-canvas canvas")).toBeVisible();
     }
+    if (viewport.name === "phone landscape") {
+      await page.locator("#context-details").click();
+      await expect(page.locator("#plot-panel")).toHaveClass(/mobile-open/);
+      await expect(page.locator("#panel-action")).toBeHidden();
+      await page.locator("#close-panel").click();
+      await expect(page.locator("#plot-panel")).not.toHaveClass(/mobile-open/);
+    }
     await noHorizontalOverflow(page);
 
     await navigation.getByRole("button", { name: "Map" }).click();

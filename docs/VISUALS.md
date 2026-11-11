@@ -1,18 +1,26 @@
 # Current game visuals
 
-These are the latest saved visuals for the curated-only near.estate beta. The first three are captures of the running guest game at the stated browser viewports. They show the implemented interface and generated preset art, but do not prove physical-phone performance or wallet signing. The restaurant's Near & Far Burgers billboard is a guest-only sample; live billboards require on-chain approval.
+These are the latest saved visuals for the near.estate guest game. The street captures show a first illustrated building trial and the revised controls. The five illustrated facades are operator-created guest previews on level-2 plots; the live city still uses approved artwork and procedural presets. These browser captures do not prove physical-phone performance or wallet signing. The restaurant's Near & Far Burgers billboard is a guest-only sample; live billboards require on-chain approval.
 
 ## Street on a phone
 
-667 × 375 landscape. The driving buttons, parking action, curb spaces, rule signs and cross-street control are visible.
+667 × 375 landscape. The car, coins, street and navigation share one row. The driving buttons, parking action, curb spaces, rule signs and cross-street control remain visible.
 
-![near.estate street on a landscape phone](images/near-estate-curated-street-phone-v5.png)
+![near.estate illustrated street on a landscape phone](images/near-estate-illustrated-street-phone-v1.png)
 
 ## Street on a computer
 
 1280 × 720. The plot details sit beside the street and can be dismissed.
 
-![near.estate street with the desktop plot panel](images/near-estate-curated-street-desktop-v5.png)
+![near.estate illustrated street with the desktop plot panel](images/near-estate-illustrated-street-desktop-v1.png)
+
+## Illustrated building drafts
+
+Five level-2 facades at the same game scale: retail, cafe, restaurant, office and homes. They use distinct rooflines, material cues and entrances. These are one draft per type, not the complete two-variant/four-level library.
+
+![near.estate illustrated building drafts at game scale](images/near-estate-illustrated-buildings-v1.png)
+
+The [image specification and generation prompt](BUILDING_IMAGE_SPEC.md) records the style, size limits and future owner-generation path.
 
 ## Building studio on a phone
 
