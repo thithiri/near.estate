@@ -4,7 +4,7 @@ The street has a 300 logical-pixel reference height. Plots have a 170px pitch; f
 
 Each facade source is a transparent 560×640 PNG (4× logical 140×160). Visible pixels must fit height limits 70/100/130/160px at levels 1–4. All projections must stay inside the 140px width. `packages/shared` validates metadata envelopes; decoded pixel verification is still required in the media pipeline.
 
-Types and paired silhouettes: Retail asymmetric store/sawtooth hall; Cafe glasshouse/timber pergola; Restaurant retro diner/courtyard bistro; Office glass block/cantilevered studio; Homes stepped terrace/narrow townhouse. Four palette accents: coral, sky blue, mint, yellow. Six car bodies in four colours fit 64×32 logical pixels. Logo, billboard and text render separately from facade art.
+Types and paired silhouettes: Retail asymmetric store/sawtooth hall; Cafe glasshouse/timber pergola; Restaurant curved-roof diner with round street windows/courtyard bistro; Office glass block/cantilevered studio; Homes stepped terrace/narrow townhouse. Four palette accents: coral, sky blue, mint, yellow. Six car bodies in four colours fit 64×32 logical pixels. Logo, billboard and text render separately from facade art.
 
 Reference sheets: [distinct player buildings](images/near-estate-player-buildings-distinct-v2.png) and [car bodies](images/near-estate-cars-v1.png). These are concept sheets, not validated transparent sprite assets.
 

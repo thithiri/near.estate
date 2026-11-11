@@ -568,32 +568,32 @@
       "sprite": "restaurant-1-l1.png",
       "paletteMask": "restaurant-1-l1-mask.png",
       "thumbnail": "restaurant-1-l1-thumb.png",
-      "spriteHash": "e64f5de05e22e868f27ecc74ac5e05531eaf9ea88689a4604c0a165fc13ff883",
-      "paletteMaskHash": "72e348289e15bc34acc5d4d82adacd39e745f79656b5523063d66f4d6699f984",
-      "thumbnailHash": "760bb492533e0efae96080dce54b196f3a3049765a40ba6f51c49ac284ea1229",
+      "spriteHash": "d7c89fb2ed9d500b77310eea06238e0db0d4c5ad2dd8f19c86a593ac8ccf51fe",
+      "paletteMaskHash": "4857cd5000229953aef0549e1d22081a28e079864623d2eff1ad4003143f61f1",
+      "thumbnailHash": "aa270d7bc8a3950bbd64ec7d7d3a7459e16ccfc077369600f79618190e5f6e51",
       "alphaBounds": {
-        "x": 3.25,
-        "y": 101.25,
-        "width": 133.5,
-        "height": 57.5
+        "x": 7,
+        "y": 98.25,
+        "width": 126,
+        "height": 60.5
       },
       "logoRect": {
-        "x": 20,
-        "y": 126,
+        "x": 18,
+        "y": 128,
         "width": 20,
         "height": 20
       },
       "billboardRect": {
-        "x": 75,
-        "y": 126,
+        "x": 77,
+        "y": 128,
         "width": 48,
         "height": 24
       },
       "nameRect": {
         "x": 40,
-        "y": 104,
+        "y": 109,
         "width": 60,
-        "height": 13
+        "height": 12
       }
     },
     {
@@ -603,32 +603,32 @@
       "sprite": "restaurant-1-l2.png",
       "paletteMask": "restaurant-1-l2-mask.png",
       "thumbnail": "restaurant-1-l2-thumb.png",
-      "spriteHash": "334e57e71af5e67e306ab16ffc5ff3a2103a530f47322c53a5229c8c1417b1b3",
-      "paletteMaskHash": "dfb332754524ede8a1479d45c38b8e5ced62354384586f05f6e1b8bc85ef1a02",
-      "thumbnailHash": "4939f084f87d942a4ed8f0e034dc44191cb5dd29065a093653862d0823b70d8d",
+      "spriteHash": "01aff262ceec9f4b9b64be2c8b2ee469ea366118b3a6311985df2154d55c0924",
+      "paletteMaskHash": "e6004eee87ed52b55d499b21eda9bf28cec99ef18618c06237c46e2e4c2a406b",
+      "thumbnailHash": "e8d4ad3c258defd9a135229bd7d6bbf5409b70eabdea3aadbf6e91751bd9d181",
       "alphaBounds": {
-        "x": 3.25,
-        "y": 71.25,
-        "width": 133.5,
-        "height": 87.5
+        "x": 7,
+        "y": 68.25,
+        "width": 126,
+        "height": 90.5
       },
       "logoRect": {
-        "x": 20,
-        "y": 96,
+        "x": 18,
+        "y": 98,
         "width": 20,
         "height": 20
       },
       "billboardRect": {
-        "x": 75,
-        "y": 96,
+        "x": 77,
+        "y": 98,
         "width": 48,
         "height": 24
       },
       "nameRect": {
         "x": 40,
-        "y": 74,
+        "y": 79,
         "width": 60,
-        "height": 13
+        "height": 12
       }
     },
     {
@@ -638,32 +638,32 @@
       "sprite": "restaurant-1-l3.png",
       "paletteMask": "restaurant-1-l3-mask.png",
       "thumbnail": "restaurant-1-l3-thumb.png",
-      "spriteHash": "4c92c0417602a63c9590afb039ed8f7b52a296cad019a0b6a69acb6a9e74c907",
-      "paletteMaskHash": "982ced6d469b8c601ede8a6a33c03173b4e8127429cf9a0c91937c3fd4927bd5",
-      "thumbnailHash": "faca0fcaa0992b155b5f619b09097e3938c2ce61cc8a3fed0e8d3785ffc98c0d",
+      "spriteHash": "67901fc1a2a9d0fb72553aee3abd7e128fb0c06cd1c55d201fc26f8c79234b14",
+      "paletteMaskHash": "1942de67bc7531400ada872811a98fe8a0b87370640be4adc9d6067d40b20243",
+      "thumbnailHash": "347347f4eec26f351584396d9ad91020bc4f21c6bbe2be049c7278c06a95afda",
       "alphaBounds": {
-        "x": 3.25,
-        "y": 41.25,
-        "width": 133.5,
-        "height": 117.5
+        "x": 7,
+        "y": 38.25,
+        "width": 126,
+        "height": 120.5
       },
       "logoRect": {
-        "x": 20,
-        "y": 66,
+        "x": 18,
+        "y": 68,
         "width": 20,
         "height": 20
       },
       "billboardRect": {
-        "x": 75,
-        "y": 66,
+        "x": 77,
+        "y": 68,
         "width": 48,
         "height": 24
       },
       "nameRect": {
         "x": 40,
-        "y": 44,
+        "y": 49,
         "width": 60,
-        "height": 13
+        "height": 12
       }
     },
     {
@@ -673,32 +673,32 @@
       "sprite": "restaurant-1-l4.png",
       "paletteMask": "restaurant-1-l4-mask.png",
       "thumbnail": "restaurant-1-l4-thumb.png",
-      "spriteHash": "b858377985d2346fb5cba0fc92986fc289da5ebc4929b1e2134bbb540dcc5687",
-      "paletteMaskHash": "6c0b3c7cc1e996129edaf3840bd9f09ba86babfef24f22823427fe7374b0a74d",
-      "thumbnailHash": "851c1e26b9c010149e901b96e6392dfa67a6f7385aa43214842b5cc8d2875cfd",
+      "spriteHash": "f391ace33f24a2e62dfa97111f172765e8a02ebb4d12a8ecad9bde150bd06f2a",
+      "paletteMaskHash": "61f9a388861887e1ed2473325c5cf295ee0b6f26342f4dac9b0497fb0575f799",
+      "thumbnailHash": "1be457f2f533ea41b71c99ff9a5078c3f1ac6794df54e7769e52677fbce0d974",
       "alphaBounds": {
-        "x": 3.25,
-        "y": 11.25,
-        "width": 133.5,
-        "height": 147.5
+        "x": 7,
+        "y": 8.25,
+        "width": 126,
+        "height": 150.5
       },
       "logoRect": {
-        "x": 20,
-        "y": 36,
+        "x": 18,
+        "y": 38,
         "width": 20,
         "height": 20
       },
       "billboardRect": {
-        "x": 75,
-        "y": 36,
+        "x": 77,
+        "y": 38,
         "width": 48,
         "height": 24
       },
       "nameRect": {
         "x": 40,
-        "y": 14,
+        "y": 19,
         "width": 60,
-        "height": 13
+        "height": 12
       }
     },
     {

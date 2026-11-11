@@ -124,18 +124,18 @@ function design(type, variant, level) {
     billboardRect = { x: 77, y: top + 29, width: 48, height: 24 };
     nameRect = { x: 43, y: 115, width: 54, height: 12 };
   } else if (type === "Restaurant" && variant === 1) {
-    base += rect(6, top + 18, 128, 140 - top, wall, 12);
-    base += rect(4, top + 8, 132, 21, brick, 10);
-    base += upperWindows(9, 122, top, level, 4);
-    base += rect(14, 128, 38, 24, glass, 8);
-    base += rect(88, 128, 38, 24, glass, 8);
-    base += rect(61, 129, 18, 29, dark, 7);
-    base += line(10, 124, 130, 124, ink, 2);
-    mask += maskRect(8, top + 12, 124, 8, 4);
-    mask += maskRect(12, 123, 116, 4, 2);
-    logoRect = { x: 20, y: top + 32, width: 20, height: 20 };
-    billboardRect = { x: 75, y: top + 32, width: 48, height: 24 };
-    nameRect = { x: 40, y: top + 10, width: 60, height: 13 };
+    base += rect(8, top + 28, 124, 130 - top, wall, 7);
+    base += `<path d="M8 ${top + 31} Q10 ${top + 6} 39 ${top + 5} H101 Q130 ${top + 6} 132 ${top + 31} Z" fill="${brick}" stroke="${ink}" stroke-width="1.5"/>`;
+    base += upperWindows(10, 120, top + 10, level, 3);
+    base += line(12, 123, 128, 123, glassDeep, 4);
+    base += circle(32, 140, 12, glass);
+    base += circle(108, 140, 12, glass);
+    base += rect(63, 130, 14, 28, dark, 7);
+    mask += `<path d="M8 ${top + 31} Q10 ${top + 6} 39 ${top + 5} H101 Q130 ${top + 6} 132 ${top + 31} L132 ${top + 35} H8 Z" fill="#ffffff"/>`;
+    mask += maskRect(12, 121, 116, 4, 2);
+    logoRect = { x: 18, y: top + 34, width: 20, height: 20 };
+    billboardRect = { x: 77, y: top + 34, width: 48, height: 24 };
+    nameRect = { x: 40, y: top + 15, width: 60, height: 12 };
   } else if (type === "Restaurant" && variant === 2) {
     base += rect(8, top + 19, 52, 139 - top, wall, 2);
     base += rect(80, top + 19, 52, 139 - top, wall, 2);
