@@ -2015,7 +2015,7 @@ test("owner mock design jobs are private, bounded and tied to a plot revision", 
     assert.equal(job.description, request.description);
     assert.equal(job.layoutRevision, 1);
     assert.equal(job.appearanceRevision, 1);
-    assert.equal(job.promptSpec.version, 2);
+    assert.equal(job.promptSpec.version, 3);
     assert.equal(job.promptSpec.themeHint, "Garden");
     assert.deepEqual(job.promptSpec.materialHints, ["Timber", "Glass"]);
     assert.match(job.promptSpec.prompt, /70 logical pixels tall/);

@@ -21,9 +21,9 @@ Use friendly, crisp 2D illustrated city art: dark navy outlines, flat color fiel
 | Cafe       | Broad triangular greenhouse           | Timber kiosk and pergola         | Glass ribs, timber, plants              |
 | Restaurant | Low rounded diner                     | Courtyard bistro                 | Enamel trim, large windows, warm lights |
 | Office     | Tall narrow glass studio              | Wide cantilevered concrete block | Blue framed glazing, pale concrete      |
-| Homes      | Offset paired townhouses              | Narrow stepped terrace           | Warm plaster, balconies, planters       |
+| Homes      | Stepped residential terrace           | Narrow gabled townhouse          | Warm plaster, balconies, planters       |
 
-The two variants must differ in massing, entrance position and roof shape. Level upgrades should add a type-specific feature instead of uniformly stretching the source image. The initial illustrated guest samples cover only one direction at level 2; the remaining variant and level images need separate artwork.
+The two variants must differ in massing, entrance position and roof shape. Their variant numbers follow the curated owner choices: for Homes, 1 is Terrace and 2 is Townhouse. Level upgrades should add a type-specific feature instead of uniformly stretching the source image. The initial illustrated guest samples cover only one direction at level 2; the remaining variant and level images need separate artwork.
 
 ## Versioned generation prompt
 
@@ -42,7 +42,7 @@ Genuinely transparent background. No sky, ground, sidewalk, road, cars, people, 
 
 This prompt is a direction, not proof of fit. Decode the result, reject opaque backgrounds or embedded text, trim transparent margins, fit inside the target level envelope, pad to 560 × 640, then inspect at actual phone and desktop game scale. Reject rather than distort a silhouette that cannot fit. Record the image hash and overlay rectangles; keep raw art private until selection and approval in the future owner flow.
 
-The backend prompt builder uses profile v2 of this art direction. Its image normalizer now reserves five logical pixels on each side. All five draft sources pass the actual level-2 geometry/alpha validator. Automatic logo and billboard rectangles are only geometric suggestions: they can land over windows or decoration. The moderator's candidate view outlines them, and a human must reject poor placements. Reliable editable placement, and a rule that suppresses a billboard when no suitable blank area exists, remain necessary before owner-generated art is offered.
+The backend prompt builder uses profile v3 of this art direction; v3 aligns the Homes variant numbers with the selectable curated shapes. Saved v1 and v2 jobs keep their original prompt and hash. Its image normalizer reserves five logical pixels on each side. All five draft sources pass the actual level-2 geometry/alpha validator. Automatic logo and billboard rectangles are only geometric suggestions: they can land over windows or decoration. The moderator's candidate view outlines them, and a human must reject poor placements. Reliable editable placement, and a rule that suppresses a billboard when no suitable blank area exists, remain necessary before owner-generated art is offered.
 
 ## First illustrated guest set
 

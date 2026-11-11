@@ -36,13 +36,15 @@ The Choose step now has Previous and Next buttons so a player can compare all th
 
 ## Owner building choices
 
-The wallet-backed owner editor now shows all five curated building types as visual choices. Selecting Office on a Cafe plot changes the preview and reveals the 50-coin type-change action; it does not change the plot until the owner confirms. The phone and [desktop](images/near-estate-owner-building-types-desktop-v2.png) captures use a local owner-state fixture, so they verify layout and draft controls rather than wallet signing.
+The wallet-backed owner editor shows all five curated building types as visual choices. Each type has two named shape cards; selecting a card changes the draft preview. Selecting Office on a Cafe plot reveals the 50-coin type-change action; it does not change the plot until the owner confirms. The phone and [desktop](images/near-estate-owner-building-types-desktop-v3.png) captures use a local owner-state fixture, so they verify layout and draft controls rather than wallet signing.
 
-![near.estate owner choosing an Office building on a phone](images/near-estate-owner-building-types-phone-v2.png)
+![near.estate owner choosing an Office studio on a phone](images/near-estate-owner-building-types-phone-v3.png)
+
+The [shape comparison](images/near-estate-owner-building-shapes-phone-v1.png) shows Glass block beside Studio, followed by the selected building at game scale and the type-change action. The [320-pixel level-4 capture](images/near-estate-owner-shapes-level4-320-v1.png) checks the tallest facades without thumbnail clipping.
 
 For the current building type, four named colour choices update the curated preview. A type change keeps the current colour and name on-chain, so those controls appear after the change has confirmed.
 
-![near.estate owner choosing a coral building colour on a phone](images/near-estate-owner-building-colours-phone-v1.png)
+![near.estate owner choosing a coral building colour on a phone](images/near-estate-owner-building-colours-phone-v2.png)
 
 ## Building variations and upgrades
 

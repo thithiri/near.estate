@@ -9,7 +9,7 @@ import {
 } from "@estate/shared";
 import { z } from "zod";
 
-export const PROMPT_BUILDER_VERSION = 2 as const;
+export const PROMPT_BUILDER_VERSION = 3 as const;
 
 const PromptInput = z.object({
   buildingType: BuildingType,
@@ -34,8 +34,8 @@ const PromptInput = z.object({
 export type PromptInput = z.input<typeof PromptInput>;
 
 export type GenerationPromptSpec = {
-  // Version 1 jobs remain readable while newly reserved jobs use version 2.
-  version: 1 | typeof PROMPT_BUILDER_VERSION;
+  // Older jobs retain their stored prompt and hash while new jobs use version 3.
+  version: 1 | 2 | typeof PROMPT_BUILDER_VERSION;
   renderProfileVersion: 1;
   buildingType: z.infer<typeof BuildingType>;
   level: 1 | 2 | 3 | 4;
@@ -70,8 +70,8 @@ const shapes: Record<
     "a wide cantilevered concrete studio with horizontal glazing and a recessed entrance",
   ],
   Homes: [
-    "two attached offset townhouses with paired narrow doors and small balconies",
-    "a narrow stepped residential terrace with one entrance and planted upper levels",
+    "a stepped residential terrace with attached sections, staggered heights, several narrow entrances and planted upper levels",
+    "a narrow standalone townhouse with one centered entrance and a pitched roof",
   ],
 };
 

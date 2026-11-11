@@ -20,7 +20,7 @@ test("versioned facade prompts carry each paid height and distinct type silhouet
         buildingType,
         level: index + 1,
       });
-      assert.equal(result.version, 2);
+      assert.equal(result.version, 3);
       assert.equal(result.renderProfileVersion, 1);
       assert.match(result.prompt, new RegExp(`${height} logical pixels tall`));
       assert.match(result.prompt, /transparent 560 × 640 PNG/);
@@ -36,6 +36,22 @@ test("versioned facade prompts carry each paid height and distinct type silhouet
     assert.notEqual(first.promptHash, second.promptHash);
     assert.notEqual(first.prompt, second.prompt);
   }
+});
+
+test("generated Homes variants match the selectable terrace and townhouse shapes", () => {
+  const terrace = buildGenerationPrompt({
+    ...base,
+    buildingType: "Homes",
+    variant: 1,
+  });
+  const townhouse = buildGenerationPrompt({
+    ...base,
+    buildingType: "Homes",
+    variant: 2,
+  });
+  assert.match(terrace.prompt, /stepped residential terrace/);
+  assert.match(townhouse.prompt, /narrow standalone townhouse/);
+  assert.notEqual(terrace.promptHash, townhouse.promptHash);
 });
 
 test("prompt identity records stable style hints and an approved reference", () => {

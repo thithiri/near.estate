@@ -320,6 +320,52 @@ button:disabled {
   margin: 8px 0 0;
   font-size: 12px;
 }
+.owner-shape-picker {
+  margin: 14px 0;
+}
+.owner-shape-picker > strong {
+  display: block;
+  margin-bottom: 8px;
+}
+.owner-shape-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 320px;
+}
+.owner-shape-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
+  height: 154px;
+  margin: 0 !important;
+  padding: 6px 4px;
+  background: #fff9ed;
+}
+.owner-shape-card[aria-pressed="true"] {
+  border-color: #17b77e;
+  background: #e6f9ed;
+}
+.owner-shape-art {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+}
+.owner-shape-art .studio-building {
+  transform: scale(0.68);
+  transform-origin: bottom center;
+}
+.owner-shape-label {
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+}
 .owner-palette-picker {
   margin: 8px 0 14px;
   padding: 0;
