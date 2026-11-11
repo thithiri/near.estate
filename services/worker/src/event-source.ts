@@ -429,6 +429,8 @@ export class FastNearEventSource {
     const transactions = new Map<string, Record<string, unknown>>();
     for (let offset = 0; offset < transactionHashes.length; offset += 20) {
       const batch = transactionHashes.slice(offset, offset + 20);
+      const requested = new Set(batch);
+      const received = new Set<string>();
       const response = object(
         await this.json(`${this.historyUrl}/v0/transactions`, {
           tx_hashes: batch,
@@ -444,8 +446,17 @@ export class FastNearEventSource {
           object(transaction.transaction, "signed transaction").hash,
           "transaction hash",
         );
+        if (!requested.has(hash) || received.has(hash))
+          throw new Error(
+            "Historical transaction response has an unexpected or duplicate hash",
+          );
+        received.add(hash);
         transactions.set(hash, transaction);
       }
+      if (received.size !== batch.length)
+        throw new Error(
+          "Historical transaction response omitted a transaction",
+        );
     }
     const events: ChainEvent[] = [];
     for (const receipt of relevant) {
@@ -470,7 +481,9 @@ export class FastNearEventSource {
       );
       const outcome = object(execution.outcome, "historical receipt result");
       if (
+        execution.id !== receiptId ||
         integer(execution.block_height, "receipt block height") !== height ||
+        execution.block_hash !== canonicalHeader.hash ||
         outcome.executor_id !== this.contractId ||
         successful(outcome.status) !== receipt.is_success
       )

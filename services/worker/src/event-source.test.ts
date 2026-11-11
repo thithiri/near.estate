@@ -8,7 +8,9 @@ const log =
 const receipt = {
   receipt: { receipt_id: "receipt-a" },
   execution_outcome: {
+    id: "receipt-a",
     block_height: 10,
+    block_hash: "hash-10",
     outcome: {
       executor_id: contractId,
       status: { SuccessValue: "" },
@@ -140,6 +142,96 @@ test("historical source checks the canonical block and exact receipt", async () 
   assert.ok(paths.some((path) => path.endsWith("/v0/transactions")));
 });
 
+for (const [problem, transactions] of [
+  [
+    "receipt block hash mismatch",
+    [
+      {
+        transaction: { hash: "tx-a" },
+        receipts: [
+          {
+            ...receipt,
+            execution_outcome: {
+              ...receipt.execution_outcome,
+              block_hash: "fork-10",
+            },
+          },
+        ],
+      },
+    ],
+  ],
+  [
+    "receipt ID mismatch",
+    [
+      {
+        transaction: { hash: "tx-a" },
+        receipts: [
+          {
+            ...receipt,
+            execution_outcome: {
+              ...receipt.execution_outcome,
+              id: "another-receipt",
+            },
+          },
+        ],
+      },
+    ],
+  ],
+  [
+    "duplicate transaction",
+    [
+      { transaction: { hash: "tx-a" }, receipts: [receipt] },
+      { transaction: { hash: "tx-a" }, receipts: [receipt] },
+    ],
+  ],
+  ["missing transaction", []],
+  [
+    "unexpected transaction",
+    [{ transaction: { hash: "tx-other" }, receipts: [receipt] }],
+  ],
+] as const) {
+  test(`historical source rejects ${problem}`, async () => {
+    const fetchImpl = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("neardata")) return json(null);
+      if (url.includes("archive"))
+        return json({
+          result: {
+            header: {
+              hash: "hash-10",
+              prev_hash: "hash-9",
+              timestamp_nanosec: "1794316011248367505",
+            },
+          },
+        });
+      if (url.endsWith("/v0/block"))
+        return json({
+          block: {
+            block_height: 10,
+            block_hash: "hash-10",
+            prev_block_hash: "hash-9",
+          },
+          block_receipts: [
+            {
+              receipt_id: "receipt-a",
+              transaction_hash: "tx-a",
+              receiver_id: contractId,
+              is_success: true,
+            },
+          ],
+        });
+      return json({ transactions });
+    }) as typeof fetch;
+    const source = new FastNearEventSource(contractId, {
+      fetchImpl,
+      neardataUrl: "https://neardata.local",
+      archiveRpcUrl: "https://archive.local",
+      historyUrl: "https://history.local",
+    });
+    await assert.rejects(source.block(10));
+  });
+}
+
 test("source exposes provider retry delay without advancing a block", async () => {
   const source = new FastNearEventSource(contractId, {
     fetchImpl: (async () =>
@@ -252,6 +344,111 @@ test("account backfill validates indexed receipts against historical block hashe
     ["receipt-a:0:0"],
   );
   assert.equal(backfill.blocks[0]?.prevHash, "hash-10");
+});
+
+test("account backfill reads every page and transaction batch without losing events", async () => {
+  const hashes = Array.from({ length: 205 }, (_, index) => `tx-${index}`);
+  const tokens: Array<string | undefined> = [];
+  const batches: string[][] = [];
+  const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.endsWith("/v0/last_block/final"))
+      return json({ block: { header: { height: 210 } } });
+    if (url.includes("archive"))
+      return json({
+        result: {
+          header: {
+            hash: "hash-110",
+            timestamp_nanosec: "1794316011248367505",
+          },
+        },
+      });
+    if (url.endsWith("/v0/account")) {
+      const request = JSON.parse(String(init?.body)) as {
+        limit: number;
+        resume_token?: string;
+      };
+      assert.equal(request.limit, 200);
+      tokens.push(request.resume_token);
+      const page = request.resume_token
+        ? hashes.slice(200)
+        : hashes.slice(0, 200);
+      return json({
+        account_txs: page.map((hash, index) => ({
+          transaction_hash: hash,
+          tx_block_height: hash === "tx-204" ? 11 : 10,
+          is_receiver: true,
+          index,
+        })),
+        txs_count: hashes.length,
+        ...(!request.resume_token ? { resume_token: "page-two" } : {}),
+      });
+    }
+    if (url.endsWith("/v0/transactions")) {
+      const request = JSON.parse(String(init?.body)) as { tx_hashes: string[] };
+      batches.push(request.tx_hashes);
+      return json({
+        transactions: request.tx_hashes.map((hash) => {
+          const receiptIndex = hash === "tx-0" ? 0 : hash === "tx-204" ? 1 : -1;
+          const height = 11 + receiptIndex;
+          const receiptId = `receipt-${receiptIndex}`;
+          return {
+            transaction: { hash },
+            receipts:
+              receiptIndex < 0
+                ? []
+                : [
+                    {
+                      receipt: {
+                        receipt_id: receiptId,
+                        receiver_id: contractId,
+                        block_height: height,
+                      },
+                      execution_outcome: {
+                        id: receiptId,
+                        block_height: height,
+                        block_hash: `hash-${height}`,
+                        outcome: {
+                          executor_id: contractId,
+                          status: { SuccessValue: "" },
+                          logs: [log],
+                        },
+                      },
+                    },
+                  ],
+          };
+        }),
+      });
+    }
+    if (url.endsWith("/v0/blocks"))
+      return json({
+        blocks: [11, 12].map((height) => ({
+          block_height: height,
+          block_hash: `hash-${height}`,
+          prev_block_hash: `hash-${height - 1}`,
+          block_timestamp: "1794316011248367505",
+        })),
+      });
+    throw new Error(`Unexpected backfill URL: ${url}`);
+  }) as typeof fetch;
+  const source = new FastNearEventSource(contractId, {
+    fetchImpl,
+    neardataUrl: "https://neardata.local",
+    archiveRpcUrl: "https://archive.local",
+    historyUrl: "https://history.local",
+  });
+  const backfill = await source.accountBackfill(10);
+  assert.deepEqual(tokens, [undefined, "page-two"]);
+  assert.equal(batches.length, 11);
+  assert.deepEqual(batches.flat(), hashes);
+  assert.equal(backfill.transactions, 205);
+  assert.deepEqual(
+    backfill.blocks.map((block) => [block.height, block.events[0]?.id]),
+    [
+      [11, "receipt-0:0:0"],
+      [12, "receipt-1:0:0"],
+    ],
+  );
 });
 
 test("account backfill accepts a cursor on a skipped height only with a canonical saved hash", async () => {
