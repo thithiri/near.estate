@@ -249,7 +249,7 @@ The event indexer processes finalized successful contract execution logs, with a
 
 **Experience targets:** smooth scrolling at a target 60 FPS on the agreed desktop reference and at least 30 FPS on the agreed mid-range mobile device; only current and neighbouring street data loaded; lazy image textures and bounded GPU cache; no per-frame RPC calls. Phase 0 records the actual devices and measurements. Dynamic facade atlases are added only if profiling justifies them.
 
-A release candidate passes unit and sandbox contract tests, API integration tests, a two-account end-to-end browser journey, asset-envelope validation, wallet tests for both supported wallets, and a fresh-VPS backup/restore drill. Complete paid image generation through approval on testnet for the invite beta; mock-only generation is not the completed customization feature.
+A release candidate passes unit and sandbox contract tests, API integration tests, a two-account end-to-end browser journey, asset-envelope validation, wallet tests for both supported wallets, and a fresh-VPS backup/restore drill. The first invite beta uses curated facades and keeps paid image generation disabled, as requested. Paid generation through approval on testnet remains required before a later release can offer owner-prompted buildings; mock-only generation is not proof of that feature.
 
 # Implementation phases and numbered tasks
 
@@ -261,12 +261,12 @@ Start here.
 
 1. Record the V1 scope, NPC/player ownership boundary, five building types and proposed economy; list every deliberate change from the original handoff.
 2. Run a minimal testnet wallet spike for Meteor and a second active wallet: login, restricted key creation, zero-deposit call, allowance exhaustion and key revocation. Confirm the replacement supports the artwork signing flow before adding it to the chooser.
-3. Before any paid image spike, configure a finite spend ceiling and a maximum of six image calls. Then test transparent generation, reference-based editing and normalization; record model/version access, actual latency and measured cost.
-4. Validate generated samples for every type against all four height envelopes; prove that different silhouettes remain readable at actual game scale.
+3. Before any later paid image spike, configure a finite spend ceiling and a maximum of six image calls. Then test transparent generation, reference-based editing and normalization; record model/version access, actual latency and measured cost. Deferred at the user's request for the curated-only beta.
+4. Before enabling paid art, validate generated samples for every type against all four height envelopes; prove that different silhouettes remain readable at actual game scale. Curated samples cover the initial beta's scale review.
 5. Confirm a testnet event-data source with finalized successful execution logs, historical replay and receipt-level event identity.
 6. Fix the reference devices, movement settings, image quota/budget configuration and seed graph; document package versions and unresolved limitations.
 
-**Phase gate:** Wallet gameplay can sign without repeated popups; a generated facade renders inside its envelope; chain events can be replayed. No exact model price or API behaviour is guessed.
+**Phase gate for the curated-only beta:** Wallet gameplay can sign without repeated popups; curated facades render inside their envelopes; chain events can be replayed; paid generation remains disabled. Tasks 3–4 must pass before enabling the later paid-art release. No exact model price or API behaviour is guessed.
 
 ## Phase 1 Establish the project and shared contracts
 
@@ -340,9 +340,9 @@ After phase 4; uses the appearance methods from phase 3.
 
 **Phase gate:** An owner buys a plot, changes its rules, upgrades it, selects a mock candidate and sees exactly the approved revision in the shared city.
 
-## Phase 6 Enable prompt-generated buildings
+## Phase 6 Enable prompt-generated buildings (later paid-art release)
 
-After phases 0 and 5.
+After the applicable phase-0 wallet and event checks and phase 5. Implementation and fake-provider tests may proceed now; the real-provider gate remains deferred by the user.
 
 44. Implement the versioned prompt builder with type, paid level, theme/material hints, palette, render envelope and optional approved identity reference.
 45. Implement the real provider adapter behind backend credentials, invite eligibility and an operator-controlled generation switch.
@@ -370,23 +370,23 @@ After phase 4; owner stats require phase 5. Can overlap phase 6.
 
 **Phase gate:** The complete city remains playable when curb parking is full; activities work, NPC capacity is accurate, and stats survive a worker restart.
 
-## Phase 8 Harden and release the invite beta
+## Phase 8 Harden and release the curated-only invite beta
 
-After phases 6 and 7.
+After phases 5 and 7. Phase 6 is a separate gate before enabling paid art.
 
 60. Complete focused security review of contract roles, storage funding, key handling, API authentication, media ingestion and moderator actions.
 61. Run the full invariant/race suite and end-to-end journeys for both supported wallets across reference desktop/mobile devices.
-62. Measure first-play onboarding, earning/spending pacing, parking occupancy, NPC usage, generation approval rate, latency and actual cost.
+62. Measure first-play onboarding, earning/spending pacing, parking occupancy and NPC usage. For a later paid-art release, also measure generation approval rate, latency and actual cost.
 63. Tune only documented configuration values; rerun checks affected by changes and preserve active-session economic terms.
 64. Deploy on the target VPS with TLS, persistent volumes, protected runtime secrets, health checks, logs and budget/indexer alerts.
 65. Run a clean backup/restore drill including SQLite, immutable assets, deploy metadata and worker cursors; prove restart-safe processing.
 66. Complete operator runbooks for moderation, revocation, generation suspension, RPC failure, key rotation and contract rollback/migration.
 67. Publish the invite-beta build and a release checklist; record known limits and explicitly leave deferred features out.
 
-**Phase gate:** A fresh account can complete the driver and owner journeys, including a real generated building, on the deployed testnet game; recovery procedures have been demonstrated.
+**Phase gate:** A fresh account can complete the driver and owner journeys, including a curated building with reviewed logo and billboard, on the deployed testnet game; paid generation is off and recovery procedures have been demonstrated. A real generated building remains required before enabling paid art.
 
-# Definition of V1 completion
+# Definition of release completion
 
-A new player registers, drives, parks, earns, collects, repairs and upgrades a car. A plot buyer chooses a distinctive building type and preset, changes parking rules, upgrades within the level envelope, prompts for three alternatives, selects one, and sees the approved building in the shared city. Another account can park at that plot and see its approved billboard. Full parking lots never block access to free activities, expired cars cannot permanently occupy spaces, and the game keeps running when generation is unavailable.
+For the curated-only invite beta, a new player registers, drives, parks, earns, collects, repairs and upgrades a car. A plot buyer chooses a distinctive building type and preset, changes parking rules, upgrades within the level envelope, and sees the approved curated building, logo and billboard in the shared city. Another account can park at that plot and see its approved media. Full parking lots never block access to free activities, expired cars cannot permanently occupy spaces, and paid generation is disabled.
 
-The first playable testnet milestone is phase 4. The first release containing the promised prompt-and-choose ownership experience is phase 8, after moderation, real inference and recovery tests. Building appearance remains independent from the authority to grant coins, parking capacity or NPC services.
+Full V1 also requires an owner to prompt for three generated alternatives, select one and see its approved building in the shared city after real inference, cost, quality and recovery tests pass. The first playable testnet milestone is phase 4; the curated-only invite beta is phase 8. The promised prompt-and-choose experience follows the separate phase-6 paid-art gate. Building appearance remains independent from the authority to grant coins, parking capacity or NPC services.
