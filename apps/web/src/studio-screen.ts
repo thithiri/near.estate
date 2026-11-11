@@ -46,11 +46,11 @@ export function buildingMarkup(
   palette: string,
 ): string {
   const preset = facadePreset(type, variant, level);
-  const maskUrl = facadeAssetUrl(preset.paletteMask);
+  const maskUrl = facadeAssetUrl(preset.paletteMask, preset.paletteMaskHash);
   const logo = preset.logoRect;
   const name = preset.nameRect;
   return `<div class="studio-building" role="img" aria-label="${type} variant ${variant}, level ${level}">
-    <img src="${facadeAssetUrl(preset.sprite)}" alt="" width="140" height="160" />
+    <img src="${facadeAssetUrl(preset.sprite, preset.spriteHash)}" alt="" width="140" height="160" />
     <span class="studio-building-mask" style="background:${palette};-webkit-mask-image:url('${maskUrl}');mask-image:url('${maskUrl}')" aria-hidden="true"></span>
     ${logo ? `<span class="studio-logo" style="left:${logo.x}px;top:${logo.y}px;width:${logo.width}px;height:${logo.height}px">${type.slice(0, 2).toUpperCase()}</span>` : ""}
     <span class="studio-name" style="left:${name.x}px;top:${name.y}px;width:${name.width}px;height:${name.height}px;font-size:${Math.min(8, name.height * 0.7, name.width / (type.length * 0.62))}px">${type.toUpperCase()}</span>
@@ -244,8 +244,8 @@ export class MockStudio {
         this.candidates.flatMap((candidate) => {
           const preset = facadePreset(this.type, candidate.variant, this.level);
           return [
-            preload(facadeAssetUrl(preset.sprite)),
-            preload(facadeAssetUrl(preset.paletteMask)),
+            preload(facadeAssetUrl(preset.sprite, preset.spriteHash)),
+            preload(facadeAssetUrl(preset.paletteMask, preset.paletteMaskHash)),
           ];
         }),
       );

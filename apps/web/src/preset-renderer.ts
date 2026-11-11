@@ -196,10 +196,10 @@ export function createPresetFacade(
     x,
     spriteUrl: appearance?.approvedManifest
       ? `/api/assets/${appearance.approvedManifest.spriteHash}`
-      : facadeAssetUrl(preset.sprite),
+      : facadeAssetUrl(preset.sprite, preset.spriteHash),
     maskUrl: appearance?.approvedManifest
       ? null
-      : facadeAssetUrl(preset.paletteMask),
+      : facadeAssetUrl(preset.paletteMask, preset.paletteMaskHash),
     sprite,
     mask,
     placeholder,

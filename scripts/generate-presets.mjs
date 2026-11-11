@@ -65,9 +65,16 @@ function design(type, variant, level) {
     base += rect(10, top + 8, 50, 150 - top, brick, 1);
     base += rect(52, top + 26, 80, 132 - top, wall, 1);
     base += upperWindows(12, 47, top, level, 2);
+    for (const y of [top + 49, top + 76, top + 103]) {
+      if (y < 127) base += line(14, y, 51, y, "#bd796c", 1);
+    }
     base += storefront(53, 78);
     base += rect(7, top + 6, 58, 7, pale, 1);
     base += rect(50, top + 24, 84, 8, pale, 1);
+    base += rect(54, 130, 77, 7, "#df735f", 1);
+    for (let stripe = 0; stripe < 6; stripe++)
+      base += rect(55 + stripe * 13, 130, 7, 7, pale, 0, "none", 0);
+    base += line(54, 137, 131, 137, ink, 1.5);
     mask += maskRect(9, top + 7, 53, 4);
     mask += maskRect(53, top + 27, 79, 5);
     mask += maskRect(53, 125, 79, 7);
@@ -80,8 +87,22 @@ function design(type, variant, level) {
       `8,${top + 24} 27,${top + 6} 43,${top + 24} 62,${top + 6} 78,${top + 24} 97,${top + 6} 132,${top + 24}`,
       pale,
     );
+    for (const [left, peak, right] of [
+      [8, 27, 43],
+      [43, 62, 78],
+      [78, 97, 132],
+    ])
+      base += poly(
+        `${left},${top + 24} ${peak},${top + 6} ${right},${top + 24}`,
+        "#d5a478",
+        ink,
+        1,
+      );
     base += upperWindows(10, 120, top, level, 4, glassDeep);
     base += storefront(10, 120);
+    base += rect(14, 123, 112, 5, "#476879", 1);
+    for (let bay = 0; bay < 4; bay++)
+      base += line(16 + bay * 29, 130, 16 + bay * 29, 151, "#476879", 2);
     mask += maskPoly(
       `10,${top + 22} 27,${top + 8} 43,${top + 22} 62,${top + 8} 78,${top + 22} 97,${top + 8} 130,${top + 22} 130,${top + 27} 10,${top + 27}`,
     );
@@ -92,9 +113,15 @@ function design(type, variant, level) {
   } else if (type === "Cafe" && variant === 1) {
     base += rect(13, top + 27, 114, 131 - top, glass, 1);
     base += poly(`11,${top + 28} 70,${top + 4} 129,${top + 28}`, glassDeep);
+    for (const x of [34, 52, 88, 106])
+      base += line(x, top + 19, x, top + 28, pale, 1.5);
     base += upperWindows(15, 110, top, level, 4, glass);
     base += line(70, top + 5, 70, 158, ink, 2);
     base += line(15, top + 28, 125, top + 28, ink, 2);
+    for (const x of [17, 112]) {
+      base += rect(x, 143, 12, 12, "#a77858", 2);
+      base += circle(x + 6, 139, 7, "#4f9e76", "none", 0);
+    }
     base += rect(58, 127, 24, 31, dark, 1);
     base += rect(21, 131, 29, 20, pale, 2);
     base += rect(90, 131, 29, 20, pale, 2);
@@ -117,6 +144,14 @@ function design(type, variant, level) {
     base += rect(87, 129, 27, 24, glass, 3);
     for (let slat = 0; slat < 5; slat++)
       base += line(16 + slat * 27, top + 14, 25 + slat * 27, top + 24, pale, 2);
+    for (const x of [40, 70, 100]) {
+      base += line(x, top + 25, x, top + 34, timber, 1);
+      base += circle(x, top + 36, 3, "#f4c65e", timber, 1);
+    }
+    base += rect(24, 149, 11, 7, "#8b644b", 1);
+    base += circle(29, 146, 6, "#578c67", "none", 0);
+    base += rect(105, 149, 11, 7, "#8b644b", 1);
+    base += circle(110, 146, 6, "#578c67", "none", 0);
     mask += maskRect(5, top + 13, 130, 5, 1);
     mask += maskRect(15, top + 20, 5, 118 - top);
     mask += maskRect(120, top + 20, 5, 118 - top);
@@ -126,10 +161,15 @@ function design(type, variant, level) {
   } else if (type === "Restaurant" && variant === 1) {
     base += rect(8, top + 28, 124, 130 - top, wall, 7);
     base += `<path d="M8 ${top + 31} Q10 ${top + 6} 39 ${top + 5} H101 Q130 ${top + 6} 132 ${top + 31} Z" fill="${brick}" stroke="${ink}" stroke-width="1.5"/>`;
+    for (const x of [29, 47, 65, 83, 101, 119])
+      base += circle(x, top + 12, 2, "#ffe1a0", "none", 0);
     base += upperWindows(10, 120, top + 10, level, 3);
     base += line(12, 123, 128, 123, glassDeep, 4);
+    base += rect(13, 119, 114, 5, "#c86261", 1);
     base += circle(32, 140, 12, glass);
     base += circle(108, 140, 12, glass);
+    base += line(21, 140, 43, 140, "#5b91a2", 1);
+    base += line(97, 140, 119, 140, "#5b91a2", 1);
     base += rect(63, 130, 14, 28, dark, 7);
     mask += `<path d="M8 ${top + 31} Q10 ${top + 6} 39 ${top + 5} H101 Q130 ${top + 6} 132 ${top + 31} L132 ${top + 35} H8 Z" fill="#ffffff"/>`;
     mask += maskRect(12, 121, 116, 4, 2);
@@ -144,10 +184,14 @@ function design(type, variant, level) {
     base += line(70, top + 33, 81, top + 22, ink, 2);
     base += line(59, top + 22, 59, top + 37, ink, 2);
     base += line(81, top + 22, 81, top + 37, ink, 2);
+    base += `<path d="M59 ${top + 37} Q70 ${top + 48} 81 ${top + 37}" fill="none" stroke="${timber}" stroke-width="2"/>`;
     base += upperWindows(9, 51, top, level, 2);
     base += upperWindows(81, 51, top, level, 2);
     base += rect(15, 132, 35, 20, glass, 5);
     base += rect(90, 132, 35, 20, glass, 5);
+    for (const x of [22, 38, 102, 118]) base += line(x, 134, x, 149, pale, 1.5);
+    base += circle(70, 136, 4, "#d99b6c", timber, 1);
+    base += line(70, 140, 70, 156, timber, 2);
     base += line(60, 157, 80, 157, timber, 2);
     mask += maskRect(8, top + 12, 124, 6);
     logoRect = { x: 93, y: top + 27, width: 20, height: 20 };
@@ -156,6 +200,8 @@ function design(type, variant, level) {
   } else if (type === "Office" && variant === 1) {
     base += rect(34, top + 4, 72, 154 - top, concrete, 1);
     base += rect(40, top + 11, 60, 119 - top, glassDeep, 1);
+    base += rect(34, top + 4, 8, 151 - top, "#435f74", 1);
+    base += rect(98, top + 4, 8, 151 - top, "#435f74", 1);
     for (let floor = 0; floor < level + 1; floor++) {
       const y = top + 18 + floor * 27;
       if (y > 126) break;
@@ -164,6 +210,7 @@ function design(type, variant, level) {
     }
     base += rect(56, 130, 28, 28, dark, 1);
     base += line(70, 131, 70, 157, pale, 1);
+    base += line(39, 126, 101, 126, "#2e4c63", 3);
     mask += maskRect(36, top + 6, 68, 4);
     mask += maskRect(35, top + 10, 5, 146 - top);
     mask += maskRect(100, top + 10, 5, 146 - top);
@@ -173,6 +220,7 @@ function design(type, variant, level) {
   } else if (type === "Office" && variant === 2) {
     base += rect(28, top + 42, 84, 116 - top, concrete, 1);
     base += rect(8, top + 9, 124, 42, glassDeep, 2);
+    base += rect(8, top + 9, 124, 6, "#34566b", 1);
     base += rect(17, top + 16, 106, 26, glass, 1);
     for (let column = 0; column < 5; column++)
       base += line(
@@ -186,6 +234,8 @@ function design(type, variant, level) {
     base += rect(46, 131, 23, 27, dark, 1);
     base += rect(73, 131, 23, 27, dark, 1);
     base += line(13, top + 51, 127, top + 51, ink, 2);
+    base += rect(28, top + 52, 9, 106 - top, "#4f6c7d", 1);
+    base += rect(103, top + 52, 9, 106 - top, "#4f6c7d", 1);
     mask += maskRect(8, top + 9, 124, 5, 2);
     mask += maskRect(26, top + 49, 88, 5);
     logoRect = { x: 23, y: top + 16, width: 20, height: 20 };
@@ -204,7 +254,15 @@ function design(type, variant, level) {
         const wy = y + floor * 25;
         if (wy > 123) break;
         base += rect(x, wy, 15, 15, glass, 2);
+        base += line(x - 2, wy + 17, x + 17, wy + 17, "#5a7280", 2);
       }
+    }
+    for (const [x, y, width] of [
+      [10, top + 35, 38],
+      [48, top + 20, 45],
+      [94, top + 7, 36],
+    ]) {
+      base += line(x, y, x + width, y, pale, 2);
     }
     base += rect(20, 132, 15, 26, dark, 2);
     base += rect(63, 132, 15, 26, dark, 2);
@@ -218,14 +276,19 @@ function design(type, variant, level) {
   } else if (type === "Homes" && variant === 2) {
     base += rect(39, top + 27, 63, 131 - top, wall, 1);
     base += poly(`36,${top + 28} 70,${top + 5} 105,${top + 28}`, brick);
+    base += circle(70, top + 21, 5, pale, timber, 1);
     base += rect(97, top + 17, 9, 21, concrete, 1);
     for (let floor = 0; floor < level + 1; floor++) {
       const y = top + 39 + floor * 25;
       if (y > 122) break;
       base += rect(48, y, 13, 15, glass, 2);
       base += rect(79, y, 13, 15, glass, 2);
+      base += line(46, y + 18, 63, y + 18, timber, 2);
+      base += line(77, y + 18, 94, y + 18, timber, 2);
     }
     base += rect(64, 131, 15, 27, dark, 2);
+    base += rect(43, 151, 15, 6, "#6c986e", 2);
+    base += rect(84, 151, 15, 6, "#6c986e", 2);
     mask += maskPoly(
       `36,${top + 28} 70,${top + 5} 105,${top + 28} 105,${top + 33} 70,${top + 10} 36,${top + 33}`,
     );
