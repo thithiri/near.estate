@@ -1,0 +1,26 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "plotId": "plot-main-n-2",
+  "normalUpgradeCostAtomic": "200000000",
+  "level": 2,
+  "facadeManifestHash": "31645fe6ccac1fea2281fb868e8626b2808af3b63467defa47cc39dddff1edcb",
+  "facadeSpriteHash": "60b904d935ef05d0b9ab16d183364c64906184b5f0ebfcc52ea314485a31149c",
+  "logoHash": "a7ceb962124bd4f3c1b6db35e8f47f6e5cfc0c6bd9e0596b613750084cbc4ef8",
+  "billboardHash": "1b11c8acecb84f03bb9590c5a31c72fdb62d58aca3ce6a5d3c1247d2ad192898",
+  "layoutRevision": 5,
+  "anonymousStreetView": {
+    "facadeActive": true,
+    "logoEligible": true,
+    "billboardEligible": true,
+    "bothMediaMatchNewLayout": true,
+    "originalMediaAndLinksRestored": true
+  },
+  "anonymousManifestReadable": true,
+  "anonymousAssetHashesVerified": {
+    "facade": true,
+    "logo": true,
+    "billboard": true
+  },
+  "temporaryModeratorKeyRevoked": true
+}

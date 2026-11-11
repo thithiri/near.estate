@@ -1,0 +1,21 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "plotId": "plot-main-n-2",
+  "upgradeHash": "zAdvA7RMj5b2aueLSWFYvMjeEJK212VrtmLua1iinJP",
+  "normalCostAtomic": "200000000",
+  "balanceBefore": "220002222",
+  "balanceAfter": "20002222",
+  "levelBefore": 1,
+  "levelAfter": 2,
+  "layoutBefore": 3,
+  "layoutAfter": 4,
+  "previousFacadeHash": "5edd64607de41959d7b17dbf65c88a62da9aff8ba94a6b02d1671ec045918a44",
+  "previousLogoHash": "a7ceb962124bd4f3c1b6db35e8f47f6e5cfc0c6bd9e0596b613750084cbc4ef8",
+  "previousBillboardHash": "1b11c8acecb84f03bb9590c5a31c72fdb62d58aca3ce6a5d3c1247d2ad192898",
+  "facadeResetToPreset": true,
+  "logoEligibleAfter": false,
+  "billboardEligibleAfter": false,
+  "anonymousStreetMatches": true
+}

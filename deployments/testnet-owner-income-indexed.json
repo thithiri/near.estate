@@ -27,6 +27,14 @@
       "settlementBlock": 277174351,
       "settlementEvent": "collected",
       "driverPayoutAtomic": "30000000"
+    },
+    {
+      "sessionId": 9,
+      "plotId": "plot-river-s-0",
+      "parkBlock": 277174374,
+      "settlementBlock": 277177469,
+      "settlementEvent": "collected",
+      "driverPayoutAtomic": "30000000"
     }
   ],
   "publicPlotStats": {
@@ -39,9 +47,9 @@
     },
     "freshness": {
       "impressionReceivedAt": null,
-      "indexedThroughHeight": 277174441,
-      "indexedThroughAt": 1794376249669,
-      "indexerCheckedAt": 1794376323209
+      "indexedThroughHeight": 277177687,
+      "indexedThroughAt": 1794378150805,
+      "indexerCheckedAt": 1794378227085
     }
   }
 }

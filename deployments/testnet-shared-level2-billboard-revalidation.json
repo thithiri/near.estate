@@ -1,0 +1,22 @@
+{
+  "network": "testnet",
+  "sharedCity": true,
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "moderatorId": "dev-20261110121820-76563125621460.testnet",
+  "plotId": "plot-main-n-2",
+  "kind": "Billboard",
+  "proposalId": "8f0a9f2a-567a-4479-af13-5bd9b3c9ea82",
+  "billboardHash": "1b11c8acecb84f03bb9590c5a31c72fdb62d58aca3ce6a5d3c1247d2ad192898",
+  "link": "https://near.org",
+  "uploadedImageBytes": 9838,
+  "reusedApprovedImage": true,
+  "publicAssetHashVerified": true,
+  "activeOnChain": true,
+  "ownerTransactions": [
+    {
+      "action": "propose_media",
+      "hash": "7WxzqpB9q4oYUbwJGadTEo7zsD1rHqBng6v6WY4bze2h"
+    }
+  ]
+}
