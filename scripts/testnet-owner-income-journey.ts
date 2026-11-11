@@ -92,6 +92,28 @@ function saveJournal() {
   renameSync(temporary, journalPath);
 }
 
+function publishSettlementEvidence(balanceAtomic: string) {
+  const evidence = {
+    network: "testnet",
+    contractId: deployment.contractId,
+    ownerId: credential.account_id,
+    balanceAtomic,
+    completedCycles: journal.cycles.map(
+      ({ parkHash, settleHash, earnedAtomic, ...cycle }) => ({
+        ...cycle,
+        parkHash,
+        settleHash,
+        earnedAtomic,
+      }),
+    ),
+  };
+  writeFileSync(
+    resolve(root, "deployments/testnet-owner-income-journey.json"),
+    `${JSON.stringify(evidence, null, 2)}\n`,
+  );
+  console.log(JSON.stringify({ status: "settled", evidence }, null, 2));
+}
+
 async function prepareCall(
   method: Pending["method"],
   args: Record<string, unknown>,
@@ -197,11 +219,23 @@ async function confirmPending() {
   saveJournal();
 }
 
+const recoveredSettlementSessionId =
+  journal.pending?.method === "collect" ||
+  journal.pending?.method === "settle_expired"
+    ? journal.pending.sessionId
+    : undefined;
 if (journal.pending) await confirmPending();
 const player = await reader.player(credential.account_id);
 assert(player.account, "Owner is not registered");
 const unsettledCycle = journal.cycles.find((entry) => !entry.settleHash);
-if (mode === "--park") {
+if (mode === "--settle" && recoveredSettlementSessionId !== undefined) {
+  const recoveredCycle = journal.cycles.find(
+    (entry) => entry.sessionId === recoveredSettlementSessionId,
+  );
+  assert(recoveredCycle?.settleHash, "Recovered settlement is not recorded");
+  assert.equal(player.active_session, null, "Recovered settlement left car parked");
+  publishSettlementEvidence(player.account.balance);
+} else if (mode === "--park") {
   if (player.active_session) {
     assert.equal(
       player.active_session.id,
@@ -269,23 +303,5 @@ if (mode === "--park") {
   await confirmPending();
   const after = await reader.player(credential.account_id);
   assert(after.account);
-  const evidence = {
-    network: "testnet",
-    contractId: deployment.contractId,
-    ownerId: credential.account_id,
-    balanceAtomic: after.account.balance,
-    completedCycles: journal.cycles.map(
-      ({ parkHash, settleHash, earnedAtomic, ...cycle }) => ({
-        ...cycle,
-        parkHash,
-        settleHash,
-        earnedAtomic,
-      }),
-    ),
-  };
-  writeFileSync(
-    resolve(root, "deployments/testnet-owner-income-journey.json"),
-    `${JSON.stringify(evidence, null, 2)}\n`,
-  );
-  console.log(JSON.stringify({ status: "settled", evidence }, null, 2));
+  publishSettlementEvidence(after.account.balance);
 }
