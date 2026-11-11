@@ -1,0 +1,37 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "plotId": "plot-market-n-2",
+  "slot": 0,
+  "winnerId": "dev-20261110121829-19069405494728.testnet",
+  "loserId": "dev-20261110121826-61851458515092.testnet",
+  "loserFailureReason": "{\"ActionError\":{\"index\":0,\"kind\":{\"FunctionCallError\":{\"ExecutionError\":\"WebAssembly trap: An `unreachable` opcode was executed.\"}}}}",
+  "sessionId": 12,
+  "parks": [
+    {
+      "accountId": "dev-20261110121829-19069405494728.testnet",
+      "method": "park",
+      "hash": "Bse6WpsTrBvzAGWohxyxfddys9m7mnag5159NC4Dq4ix",
+      "outcome": "success",
+      "carId": 3,
+      "durabilityBefore": 92
+    },
+    {
+      "accountId": "dev-20261110121826-61851458515092.testnet",
+      "method": "park",
+      "hash": "DiQ8HzrAbjn7WZyfs3vdJ4fARTModvjZCCHx1qybkyqx",
+      "outcome": "failure",
+      "carId": 1,
+      "durabilityBefore": 94
+    }
+  ],
+  "collect": {
+    "accountId": "dev-20261110121829-19069405494728.testnet",
+    "hash": "z55s1w1CSomMT2B7XHq8Pqh6oXQbS9AkNUqjbWMjUdR",
+    "outcome": "success"
+  },
+  "losingCarDurabilityUnchanged": true,
+  "finalSlotFree": true,
+  "finalSessions": [null, null],
+  "loserReceiptId": "4PcpaMU2FPsNRqXWxWRoZUYSkrJ484HkP6dLh2RHDBjA"
+}

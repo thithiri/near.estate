@@ -1,0 +1,18 @@
+{
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "plotId": "plot-market-n-2",
+  "slot": 0,
+  "sessionId": 12,
+  "winnerId": "dev-20261110121829-19069405494728.testnet",
+  "loserId": "dev-20261110121826-61851458515092.testnet",
+  "loserReceiptId": "4PcpaMU2FPsNRqXWxWRoZUYSkrJ484HkP6dLh2RHDBjA",
+  "loserReceiptEventCount": 0,
+  "winnerParkReceiptId": "3LWzLqThGFh1SEMmiuhnTEukzGtMQMTyncjaQ2uGQJK2",
+  "collectionReceiptId": "3LE6iFRQT3otZLYLtHAqUDgC5NVxLY2bkxFjeGdxb4bG",
+  "eventNames": ["parked", "collected"],
+  "parks": 1,
+  "collections": 1,
+  "tickets": 0,
+  "indexedThroughHeight": 277188011,
+  "observedAt": "2026-11-11T08:05:19.842Z"
+}
