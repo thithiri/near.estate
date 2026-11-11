@@ -2,7 +2,7 @@
   "network": "testnet",
   "contractId": "dev-20261110121817-59798568433631.testnet",
   "ownerId": "dev-20261110121829-19069405494728.testnet",
-  "balanceAtomic": "160002222",
+  "balanceAtomic": "190002222",
   "completedCycles": [
     {
       "sessionId": 6,
@@ -26,6 +26,19 @@
       "expiresAt": 1794374468,
       "parkHash": "9WbNC4hpH8DeNm6gGhuCE7qN2KGAdor6D6Mc6a64Um9G",
       "settleHash": "9EGvK7L5yLU3zkWYTbysNjSost8tAtrfoTQgqUFE3Kjx",
+      "earnedAtomic": "30000000"
+    },
+    {
+      "sessionId": 8,
+      "carId": 3,
+      "plotId": "plot-river-s-0",
+      "slot": 0,
+      "startedAt": 1794374378,
+      "earnUntil": 1794376178,
+      "expiresAt": 1794376298,
+      "balanceAtPark": "160002222",
+      "parkHash": "5BmRQE64QBdkSCFP4rCLsXaHshD3VPzHnb1cyfhQCPPw",
+      "settleHash": "BVXwo5bWz1XMtTcyYip9mkTsfzULocyARzrQPfr6wcRG",
       "earnedAtomic": "30000000"
     }
   ]
