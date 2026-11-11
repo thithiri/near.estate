@@ -35,11 +35,11 @@ The contract restricts first initialization to the contract account. The seeded 
 
 ## Trust boundary
 
-Ownership, parking capacity and terms, game coins, rules, tickets, building levels and approved appearance hashes belong on-chain. The operator controls image hosting, prompt generation, moderation decisions, impression estimates, the event indexer and the inspector account. The inspector account is limited by contract rules, but can still choose or omit targets. No game coin has a redemption or transfer method in V1.
+Ownership, parking capacity and terms, game coins, rules, tickets, building levels and approved appearance hashes belong on-chain. The operator controls image hosting, prompt generation, moderation decisions, impression estimates, the event indexer, the inspector account and the expiry sweep. The inspector account is limited by contract rules, but can still choose or omit targets. The expiry account can only call the public `settle_expired` method through its runtime key; the contract decides whether a session has expired and what it pays. No game coin has a redemption or transfer method in V1.
 
 Operator setup, incident procedures and state recovery are documented in [Operations](docs/OPERATIONS.md), [Incidents](docs/INCIDENTS.md) and [Recovery](docs/RECOVERY.md).
 
-The VPS deployment uses [the production Compose override](infra/compose.prod.yaml) and [domain Caddyfile](infra/Caddyfile.prod); public TLS issuance and invite-beta release remain unverified.
+The VPS deployment uses [the production Compose override](infra/compose.prod.yaml), [optional expiry sweep](infra/compose.expiry.example.yaml) and [domain Caddyfile](infra/Caddyfile.prod); public TLS issuance and invite-beta release remain unverified.
 
 ## Layout
 

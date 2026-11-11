@@ -1,0 +1,24 @@
+services:
+  expiry:
+    profiles: [expiry]
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+      args:
+        ESTATE_SOURCE_REVISION: ${ESTATE_SOURCE_REVISION:?Set the source commit SHA}
+    command: ["node", "services/api/dist/run-expiry.js", "--run"]
+    environment:
+      ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:?Set the deployed testnet contract}
+      EXPIRY_ACCOUNT_ID: ${EXPIRY_ACCOUNT_ID:?Set the dedicated expiry account}
+      EXPIRY_KEY_FILE: /run/secrets/expiry.json
+      EXPIRY_MAX_SETTLEMENTS_PER_PASS: ${EXPIRY_MAX_SETTLEMENTS_PER_PASS:-8}
+      EXPIRY_SWEEP_INTERVAL_SECONDS: ${EXPIRY_SWEEP_INTERVAL_SECONDS:-60}
+      NEAR_RPC_URL: ${NEAR_RPC_URL:-https://test.rpc.fastnear.com}
+    volumes:
+      - ${EXPIRY_KEY_HOST_FILE:?Set an absolute protected key-file path}:/run/secrets/expiry.json:ro
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"

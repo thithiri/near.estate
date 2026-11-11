@@ -43,6 +43,7 @@ jobs:
       - run: cargo test --manifest-path contracts/estate/Cargo.toml --example deploy_testnet
       - run: cargo test --manifest-path contracts/estate/Cargo.toml --example provision_moderator_key
       - run: cargo test --manifest-path contracts/estate/Cargo.toml --example provision_inspector_key
+      - run: cargo test --manifest-path contracts/estate/Cargo.toml --example provision_expiry_key
       - run: cargo check --workspace --target wasm32-unknown-unknown
   containers:
     runs-on: ubuntu-latest
@@ -60,6 +61,11 @@ jobs:
         env:
           ESTATE_HOST: ci.invalid
           INDEXER_START_HEIGHT: 1
+      - name: Validate expiry service configuration
+        run: docker compose -f infra/compose.yaml -f infra/compose.expiry.example.yaml --profile expiry config --quiet
+        env:
+          EXPIRY_ACCOUNT_ID: expiry.testnet
+          EXPIRY_KEY_HOST_FILE: /tmp/expiry-key.json
       - run: docker compose -f infra/compose.yaml --profile indexer build api indexer web
       - run: node scripts/verify-container-revisions.mjs ${{ github.sha }}
       - run: docker compose -f infra/compose.yaml up -d api web
@@ -74,6 +80,7 @@ jobs:
           curl -fsS http://127.0.0.1:8080/presets/cafe-2-l4.png -o /dev/null
           docker compose -f infra/compose.yaml exec -T api node -e \
             'require("sharp")(Buffer.from("<svg width=\"8\" height=\"8\"><rect width=\"8\" height=\"8\" fill=\"red\"/></svg>")).png().toBuffer().then(x=>{if(x.length<50)process.exit(1)})'
+          docker compose -f infra/compose.yaml exec -T api test -f /app/services/api/dist/run-expiry.js
           docker compose -f infra/compose.yaml --profile indexer run --rm --no-deps --entrypoint node indexer \
             -e 'import("/app/services/worker/dist/event-store.js").catch(e=>{console.error(e);process.exit(1)})'
       - name: Check packaged wallet chooser and script policy
