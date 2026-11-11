@@ -6,12 +6,12 @@ V1 implementation workspace for a NEAR testnet parking city. The full [specifica
 
 ```sh
 npm ci
-npm run seed:check
-npm run build
-npm run check
-npm run contract:test
-npm run dev -w @estate/web
+npm run dev:guest
 ```
+
+`dev:guest` starts the instant local city with hot reload. To inspect the deployed testnet city and its approved artwork, stop that command and run `API_DATA_DIR=/absolute/path/to/private/media npm run dev:city`. The city command reads the contract ID from `deployments/testnet.json`, starts both the web app and API, and opens at `http://localhost:5173`. Without `API_DATA_DIR`, it uses ignored `data/local-dev`; previously approved uploads from another API volume will be unavailable. If ports are occupied, set `WEB_PORT` and `API_PORT` together, for example `WEB_PORT=5176 API_PORT=3001 npm run dev:city`. Both commands require only one terminal and stop both local processes with Ctrl-C.
+
+For the quick edit loop, keep the chosen dev command running: Vite refreshes street/UI changes and the API restarts after service edits. Run `npm run test -w @estate/web` or `npm run test -w @estate/api` for the part you changed. Run `npm run check`, `npm run assets:check`, and `npm run contract:test` at the relevant phase gate; Rust contract changes still need a new testnet deployment before Live city can show them.
 
 `npm ci` applies the two small Meteor dependency manifest patches in `patches/` so the scoped fixed versions satisfy their declared ranges. Keep install scripts enabled; `npm ls` and the production audit are checked in the [release checklist](docs/RELEASE_CHECKLIST.md).
 
