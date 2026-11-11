@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { EventIndexer } from "./event-indexer.js";
+import { throttleWaitMs, waitForRetry } from "./indexer-retry.js";
 import { FastNearEventSource, SourceThrottleError } from "./event-source.js";
 import { EventStore } from "./event-store.js";
 
@@ -55,30 +56,32 @@ if (mode === "--rebuild") {
     store.close();
   }
 } else if (mode === "--run") {
-  let stopped = false;
-  const stop = () => {
-    stopped = true;
-  };
+  const shutdown = new AbortController();
+  let consecutiveThrottles = 0;
+  const stop = () => shutdown.abort();
   process.on("SIGTERM", stop);
   process.on("SIGINT", stop);
   try {
-    while (!stopped) {
+    while (!shutdown.signal.aborted) {
       let delayMs = 5_000;
       try {
         const result = await runPass();
+        consecutiveThrottles = 0;
+        if (result.mode === "sparse_history") delayMs = 30_000;
         if (
           Number(result.events) ||
           Number(result.through) >= Number(result.from)
         )
           console.log(JSON.stringify(result));
       } catch (error) {
-        console.error("Event indexer retrying:", error);
-        if (error instanceof SourceThrottleError) delayMs = error.retryAfterMs;
+        if (error instanceof SourceThrottleError) {
+          consecutiveThrottles++;
+          delayMs = throttleWaitMs(error.retryAfterMs, consecutiveThrottles);
+        } else consecutiveThrottles = 0;
+        console.error(`Event indexer retrying in ${delayMs} ms:`, error);
       }
-      if (!stopped)
-        await new Promise<void>((resolve) => {
-          setTimeout(resolve, delayMs);
-        });
+      if (!shutdown.signal.aborted)
+        await waitForRetry(delayMs, shutdown.signal);
     }
   } finally {
     store.close();
