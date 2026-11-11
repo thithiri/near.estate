@@ -1,0 +1,49 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "inspectorId": "dev-20261110121823-64776049168223.testnet",
+  "preflight": {
+    "streetSides": 10,
+    "occupied": 0,
+    "illegal": 0
+  },
+  "container": {
+    "imageId": "sha256:1f6888f2ece69cc8fa651ee197e8dac32700533ed3de20e501bf372a76801294",
+    "userId": 1000,
+    "keyFileMode": "0600",
+    "runMode": "--once",
+    "patrol": {
+      "roadId": "harbor",
+      "side": "South",
+      "eligible": 0,
+      "attempted": 0,
+      "failed": 0
+    },
+    "heartbeat": {
+      "completedAt": 1794393274,
+      "outcome": "ok",
+      "consecutiveFailures": 0
+    }
+  },
+  "firstKey": {
+    "publicKey": "ed25519:DuRK2iVA793cVjGDcEU7ap4XwuPq4ZTzaktG3ds25crB",
+    "addedTransaction": "97uaMTn28gZeUdgXVozdCvy2mwJ7mH2hqWNGRpbQduZG",
+    "revokeOutcome": "on-chain removal succeeded; immediate finalized-key read was stale, so the command left its private file for retry",
+    "resumedRevoke": "returned transactionHash null after confirming key absent, then removed private file"
+  },
+  "cleanup": {
+    "finalizedHeight": 277203690,
+    "temporaryKeyRemoved": true,
+    "temporaryFileRemoved": true,
+    "temporaryVolumeRemoved": true
+  },
+  "revokeWaitFixVerification": {
+    "publicKey": "ed25519:83qAHcdt4iYz7eMPryEAKhivHyAqWFWhZcKSu7tjtkHz",
+    "addedTransaction": "s17HjmuZ47WtvVCxug2dGhhgG8whjoTqrpMkMChLhnr",
+    "revokedTransaction": "273nZubaSe1AWp3TuBC6QEFFZmNQzBW1h6P2ZYCadojU",
+    "finalizedHeight": 277203778,
+    "remainingKeyCount": 1,
+    "temporaryFileRemoved": true
+  },
+  "limitation": "Quiet patrol only; no inspection transaction was submitted, and this was a local container rather than a VPS."
+}

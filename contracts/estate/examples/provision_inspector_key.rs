@@ -7,6 +7,7 @@ use near_workspaces::{
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 const ALLOWANCE_YOCTO: u128 = 250_000_000_000_000_000_000_000;
 
@@ -109,6 +110,24 @@ async fn verify_permission(
     Ok(())
 }
 
+async fn wait_for_key_removal(
+    inspector: &Account,
+    public_key: &near_workspaces::types::PublicKey,
+) -> Result<()> {
+    for _ in 0..15 {
+        let present = inspector
+            .view_access_keys()
+            .await?
+            .iter()
+            .any(|entry| &entry.public_key == public_key);
+        if !present {
+            return Ok(());
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+    bail!("inspector key remains on-chain after finality wait")
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let mode = std::env::args()
@@ -196,14 +215,7 @@ async fn main() -> Result<()> {
             ensure!(revoked.is_success(), "inspector key revocation failed");
             transaction_hash = Some(revoked.outcome().transaction_hash.to_string());
         }
-        ensure!(
-            !inspector
-                .view_access_keys()
-                .await?
-                .iter()
-                .any(|entry| entry.public_key == public_key),
-            "inspector key remains on-chain"
-        );
+        wait_for_key_removal(&inspector, &public_key).await?;
         std::fs::remove_file(&runtime_path)?;
         println!(
             "{}",
