@@ -61,11 +61,17 @@ jobs:
         env:
           ESTATE_HOST: ci.invalid
           INDEXER_START_HEIGHT: 1
-      - name: Validate expiry service configuration
-        run: docker compose -f infra/compose.yaml -f infra/compose.expiry.example.yaml --profile expiry config --quiet
+      - name: Validate expiry and monitor production configuration
+        run: docker compose -f infra/compose.yaml -f infra/compose.prod.yaml -f infra/compose.monitor.example.yaml -f infra/compose.expiry.example.yaml --profile indexer --profile monitor --profile expiry config --quiet
         env:
+          ESTATE_HOST: ci.invalid
+          INDEXER_START_HEIGHT: 1
           EXPIRY_ACCOUNT_ID: expiry.testnet
           EXPIRY_KEY_HOST_FILE: /tmp/expiry-key.json
+          ESTATE_MONITOR_DAILY_BUDGET_USD_MICROS: 0
+          ESTATE_MONITOR_WEBHOOK_URL: https://alerts.example.com
+          ESTATE_MONITOR_TOKEN_HOST_FILE: /tmp/monitor-token
+          ESTATE_MONITOR_EXPIRY_STATUS_FILE: /expiry-status/sweep.json
       - run: docker compose -f infra/compose.yaml --profile indexer build api indexer web
       - run: node scripts/verify-container-revisions.mjs ${{ github.sha }}
       - run: docker compose -f infra/compose.yaml up -d api web
@@ -86,7 +92,7 @@ jobs:
       - name: Check packaged wallet chooser and script policy
         run: |
           npm ci
-          npx playwright install chromium --with-deps --only-shell
+          npx playwright install chromium --only-shell
           node scripts/check-packaged-browser.mjs
       - name: Check production HTTPS routing with local trust root
         env:
