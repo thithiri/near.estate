@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import test from "node:test";
+import { pathToFileURL } from "node:url";
 import {
   GAMEPLAY_KEY_ALLOWANCE,
   GAMEPLAY_METHODS,
@@ -13,6 +15,32 @@ test("Meteor wallet browser module and its SDK import cleanly", async () => {
     import("@meteorwallet/sdk"),
   ]);
   assert.equal(typeof wallet.setupMeteorWallet, "function");
+});
+
+test("Meteor SDK popup dependencies support its actual call shapes", async () => {
+  const meteorRequire = createRequire(
+    import.meta.resolve("@meteorwallet/sdk/package.json"),
+  );
+  const queryString = meteorRequire("query-string") as {
+    stringify: (values: Record<string, string>) => string;
+  };
+  const nanoid = (await import(
+    pathToFileURL(meteorRequire.resolve("nanoid")).href
+  )) as {
+    nanoid: () => string;
+  };
+  assert.equal(typeof queryString.stringify, "function");
+  assert.equal(
+    queryString.stringify({
+      source: "website_post_message",
+      connectionUid: "abc-123",
+      pageUri: encodeURIComponent(
+        "https://game.example/street?plot=1&side=north",
+      ),
+    }),
+    "connectionUid=abc-123&pageUri=https%253A%252F%252Fgame.example%252Fstreet%253Fplot%253D1%2526side%253Dnorth&source=website_post_message",
+  );
+  assert.match(nanoid.nanoid(), /^[A-Za-z0-9_-]{21}$/);
 });
 
 function disconnectedClient(
