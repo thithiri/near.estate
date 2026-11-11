@@ -1,0 +1,20 @@
+{
+  "result": "passed",
+  "scope": "local production Compose overlay with localhost TLS; no hosted deployment or paid provider call",
+  "sourceRevision": "3e87013376b6be1d16c7d938832b79eb0358c5ca",
+  "contractId": "ci-estate.testnet",
+  "apiImageId": "sha256:fc0018e159f4982222097beb1245bd292dd7978fa39501f1ebedf0d8787c94bd",
+  "webImageId": "sha256:eda1a66edae0cb84b623a1c52b19743c566b40992427913f4c600fbadb32fc6a",
+  "composeConfigWithHostSwitchTrue": {
+    "apiImageGenerationEnabled": "false",
+    "providerKeyPassed": false
+  },
+  "runningApiEnvironment": {
+    "imageGenerationEnabled": "false",
+    "providerKeyPresent": false
+  },
+  "httpsPaidGenerationStatus": { "enabled": false },
+  "httpsApiHealth": { "status": "ok", "service": "api", "schemaVersion": 1 },
+  "tls": "Caddy localhost certificate verified against its local root",
+  "paidProviderCalls": 0
+}
