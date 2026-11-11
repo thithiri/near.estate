@@ -2488,6 +2488,120 @@ mod tests {
         }
     }
 
+    #[test]
+    fn stored_enum_variant_tags() {
+        use near_sdk::borsh::to_vec;
+
+        // These enums are embedded in persisted map values. Reordering a
+        // variant would reinterpret existing city data after a code upgrade.
+        assert_eq!(
+            to_vec(&[
+                CarBody::Hatchback,
+                CarBody::Sedan,
+                CarBody::SportsCoupe,
+                CarBody::SUV,
+                CarBody::Pickup,
+                CarBody::Microvan,
+            ])
+            .expect("car body tags"),
+            [0, 1, 2, 3, 4, 5]
+        );
+        assert_eq!(
+            to_vec(&[
+                CarColor::Red,
+                CarColor::Blue,
+                CarColor::Yellow,
+                CarColor::Green,
+            ])
+            .expect("car color tags"),
+            [0, 1, 2, 3]
+        );
+        assert_eq!(
+            to_vec(&[
+                RoadId::Main,
+                RoadId::Market,
+                RoadId::River,
+                RoadId::Central,
+                RoadId::Harbor,
+            ])
+            .expect("road tags"),
+            [0, 1, 2, 3, 4]
+        );
+        assert_eq!(
+            to_vec(&[Side::North, Side::South]).expect("side tags"),
+            [0, 1]
+        );
+        assert_eq!(
+            to_vec(&[
+                BuildingType::Retail,
+                BuildingType::Cafe,
+                BuildingType::Restaurant,
+                BuildingType::Office,
+                BuildingType::Homes,
+            ])
+            .expect("building type tags"),
+            [0, 1, 2, 3, 4]
+        );
+        assert_eq!(to_vec(&ParkingRule::Free).expect("free rule"), [0]);
+        let mut meter_bytes = vec![1];
+        meter_bytes.extend_from_slice(&7u128.to_le_bytes());
+        assert_eq!(
+            to_vec(&ParkingRule::Meter {
+                rate_per_hour: U128(7)
+            })
+            .expect("meter rule"),
+            meter_bytes
+        );
+        assert_eq!(
+            to_vec(&ParkingRule::ColorOnly {
+                color: CarColor::Blue
+            })
+            .expect("color rule"),
+            [2, 1]
+        );
+        assert_eq!(
+            to_vec(&ParkingRule::NoParking).expect("no-parking rule"),
+            [3]
+        );
+        assert_eq!(
+            to_vec(&[MediaKind::Logo, MediaKind::Billboard]).expect("media kind tags"),
+            [0, 1]
+        );
+        assert_eq!(
+            to_vec(&[
+                MediaDecisionStatus::Approved,
+                MediaDecisionStatus::Rejected,
+                MediaDecisionStatus::Revoked,
+            ])
+            .expect("media decision tags"),
+            [0, 1, 2]
+        );
+        assert_eq!(
+            to_vec(&[
+                AppearanceStatus::Approved,
+                AppearanceStatus::Rejected,
+                AppearanceStatus::Revoked,
+            ])
+            .expect("appearance decision tags"),
+            [0, 1, 2]
+        );
+        assert_eq!(
+            to_vec(&[Facility::Curb, Facility::Tower]).expect("facility tags"),
+            [0, 1]
+        );
+        assert_eq!(
+            to_vec(&[
+                ServiceRole::ParkingTower,
+                ServiceRole::RepairGarage,
+                ServiceRole::Cinema,
+                ServiceRole::BurgerStop,
+                ServiceRole::PracticeCourse,
+            ])
+            .expect("service role tags"),
+            [0, 1, 2, 3, 4]
+        );
+    }
+
     fn owned_test_plot(contract: &mut Contract, owner: &AccountId) {
         register_at(contract, owner, 1_000);
         let quote = contract.plot_purchase_quote("plot-main-n-0".to_string()).0;
