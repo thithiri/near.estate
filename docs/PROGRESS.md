@@ -151,4 +151,6 @@ Plot and economy stats now read totals and freshness from one SQLite snapshot. A
 
 A separate-process local drill wrote 10,000 synthetic game events while the API completed 8,681 alternating economy/plot stats reads. Every response's counts matched its own cursor height across 975 observed intermediate heights, and the final height reached 1,000. Writer time was 856 ms; median/p95 route latency was 0.07/0.14 ms. The repeatable command and public record are `npm run indexer:api-load:check` and `deployments/local-indexer-api-load.json`. HTTP transport, FastNear, long-duration player traffic and production VPS performance remain unmeasured.
 
+A fresh-lockfile Meteor dependency trial used patched `nanoid@5.1.16`, `query-string@9.5.1` and `decode-uri-component@0.5.1`. The production audit fell to zero high findings, but Meteor's SDK failed its ESM import because `query-string` 9.5.1 lacks its requested named `stringify` export. The trial was reverted; a clean install and all 41 web tests pass again, with five high audit findings still open.
+
 The testnet contract and seeded city are deployed. The browser still needs a connected wallet journey before the testnet gameplay gate can close.
