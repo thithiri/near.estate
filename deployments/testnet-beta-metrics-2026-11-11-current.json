@@ -1,0 +1,84 @@
+{
+  "windowUtc": {
+    "firstDay": "2026-11-05",
+    "lastDay": "2026-11-11"
+  },
+  "source": {
+    "contractId": "dev-20261110121817-59798568433631.testnet",
+    "startHeight": 277066408,
+    "indexedThroughHeight": 277205914,
+    "indexedThroughAt": 1794394607,
+    "completeThroughNow": true,
+    "matchesDeployedCity": true
+  },
+  "onboarding": {
+    "registrations": 3,
+    "firstParks": 3,
+    "medianSecondsToFirstPark": 9,
+    "note": "First parking after a registration indexed in this seven-day window; wallet sign-in time is not recorded."
+  },
+  "parking": {
+    "curbParks": 14,
+    "towerParks": 1,
+    "towerShareOfParks": 0.06666666666666667,
+    "indexedOccupancy": {
+      "asOf": 1794394607,
+      "curbs": {
+        "occupied": 0,
+        "capacity": 160,
+        "percent": 0
+      },
+      "towers": {
+        "occupied": 0,
+        "capacity": 96,
+        "percent": 0
+      }
+    },
+    "timeWeightedOccupancy": {
+      "windowStart": 1793836800,
+      "indexedThroughAt": 1794394607,
+      "curbs": {
+        "occupiedSlotSeconds": 9313,
+        "availableSlotSeconds": 12965996,
+        "percent": 0.0007182633713599788
+      },
+      "towers": {
+        "occupiedSlotSeconds": 5,
+        "availableSlotSeconds": 7769344,
+        "percent": 6.435549770997397e-7
+      },
+      "combinedPercent": 0.00044937772903651447
+    },
+    "timeWeightedOccupancyPercent": 0.00044937772903651447,
+    "note": "Current and time-weighted occupancy are reconstructed from indexed park, settlement and expiry times. Time-weighted figures require every launch-city seed event and end at the last indexed block; stale or incomplete indexing limits the measurement."
+  },
+  "coinPacing": {
+    "grossEarnedSubunits": "152224997",
+    "knownSpentSubunits": "200000000",
+    "amountCoverageComplete": false,
+    "unpricedCostEvents": 2,
+    "unpricedGrantEvents": 2,
+    "note": "Coin totals cover indexed events only; unpriced historical purchases and starter grants are excluded from their respective totals."
+  },
+  "generation": {
+    "reviewedPaidCandidates": 0,
+    "approvedPaidCandidates": 0,
+    "paidCandidateApprovalRate": null,
+    "note": "A paid candidate review rate requires real provider jobs and human review."
+  },
+  "provider": {
+    "completedAttempts": 0,
+    "tokenUsage": {
+      "reportedAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "totalTokens": null
+    },
+    "medianAttemptSeconds": null,
+    "conservativeBudgetDebitUsdMicros": "0",
+    "actualProviderCostUsdMicros": null,
+    "actualInvoicedCostUsdMicros": null,
+    "costSource": null,
+    "note": "The ledger records a conservative budget debit. Attach a complete Costs API export from a dedicated provider project for actual reported cost; invoice cost requires separate reconciliation."
+  }
+}
