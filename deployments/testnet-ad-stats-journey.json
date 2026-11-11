@@ -1,0 +1,21 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "plotId": "plot-main-n-2",
+  "sessionId": 5,
+  "parkTransactionHash": "CWHojq7nkHYTkHeS3QD2LqcHsRrUkNeZfUnL3y83uxoN",
+  "collectTransactionHash": "245CeSR4785WWe3Kq9wEvGLMRiVqHNnz1rdsAJpkuaPJ",
+  "ownerMeterPayoutAtomic": "2222",
+  "apiStatsStatus": 200,
+  "totals": {
+    "impressions": 3,
+    "dwellMs": 3743,
+    "averageVisibleMs": 1248,
+    "parks": 1,
+    "tickets": 0
+  },
+  "indexedThroughHeight": 277162102,
+  "indexedThroughAt": 1794369072820,
+  "secondCatchupEvents": 0,
+  "secondCatchupEventBlocks": 0
+}

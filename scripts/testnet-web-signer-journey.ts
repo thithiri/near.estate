@@ -16,8 +16,10 @@ import { baseDecode, baseEncode } from "@near-js/utils";
 import { ChainReader } from "../apps/web/src/chain-reader.js";
 import { GameWalletClient } from "../apps/web/src/wallet-client.js";
 
-if (process.argv.slice(2).join(" ") !== "--apply")
-  throw new Error("Pass --apply to run the disposable testnet journey");
+const mode = process.argv.slice(2).join(" ");
+if (mode !== "--apply" && mode !== "--ad-journey")
+  throw new Error("Pass --apply or --ad-journey");
+const adJourney = mode === "--ad-journey";
 
 const keyFile = process.env.ESTATE_DRIVER_KEY_FILE;
 if (!keyFile || !keyFile.startsWith("/"))
@@ -172,24 +174,49 @@ if (!gameplayKeyPublic) {
 assert(gameplayKeyPublic, "Gameplay key public ID is missing");
 
 let selected: { plotId: string; slot: number } | null = null;
-for (const road of ["main", "market", "river", "central", "harbor"] as const) {
-  for (const side of ["North", "South"] as const) {
-    const street = await reader.streetSide(road, side);
-    const open = street.plots.find(
-      ({ plot, slots }) =>
-        plot.plot.owner === null &&
-        plot.effective_rule.kind === "Free" &&
-        slots.some((session) => session === null),
-    );
-    if (open) {
-      selected = {
-        plotId: open.plot.plot.id,
-        slot: open.slots.findIndex((session) => session === null),
-      };
-      break;
+let ownerId: string | null = null;
+let ownerCoinsBefore: string | null = null;
+if (adJourney) {
+  const plotId = "plot-main-n-2";
+  const street = await reader.streetSide("main", "North");
+  const target = street.plots.find((entry) => entry.plot.plot.id === plotId);
+  assert(target, "Published-ad plot is missing from the shared street");
+  assert.equal(target.plot.effective_rule.kind, "Meter");
+  assert.equal(target.plot.billboard_eligible, true);
+  ownerId = target.plot.plot.owner;
+  assert(ownerId, "Published-ad plot has no owner");
+  const ownerBefore = await reader.player(ownerId);
+  assert(ownerBefore.account, "Plot owner is not registered");
+  ownerCoinsBefore = ownerBefore.account.balance;
+  const slot = target.slots.findIndex((session) => session === null);
+  assert(slot >= 0, "Published-ad curb has no open slot");
+  selected = { plotId, slot };
+} else {
+  for (const road of [
+    "main",
+    "market",
+    "river",
+    "central",
+    "harbor",
+  ] as const) {
+    for (const side of ["North", "South"] as const) {
+      const street = await reader.streetSide(road, side);
+      const open = street.plots.find(
+        ({ plot, slots }) =>
+          plot.plot.owner === null &&
+          plot.effective_rule.kind === "Free" &&
+          slots.some((session) => session === null),
+      );
+      if (open) {
+        selected = {
+          plotId: open.plot.plot.id,
+          slot: open.slots.findIndex((session) => session === null),
+        };
+        break;
+      }
     }
+    if (selected) break;
   }
-  if (selected) break;
 }
 assert(selected, "No open free curb slot was found");
 const parkArgs = {
@@ -231,11 +258,25 @@ const parked = await reader.player(credential.account_id);
 assert(parked.active_session, "Parking did not finalize");
 assert.equal(parked.active_session.location_id, selected.plotId);
 assert.equal(parked.active_session.slot, selected.slot);
+if (adJourney) {
+  assert.equal(parked.active_session.legal, true);
+  assert.equal(parked.active_session.terms.meter_rate_per_hour, "1000000");
+  assert.equal(parked.active_session.terms.meter_recipient, ownerId);
+  await new Promise((done) => setTimeout(done, 2_200));
+}
 await reopenedClient.gameplayCall("collect", {
   expected_session_id: parked.active_session.id,
 });
 const collected = await reader.player(credential.account_id);
 assert.equal(collected.active_session, null, "Collection did not free the car");
+let ownerMeterPayoutAtomic: string | null = null;
+if (adJourney && ownerId && ownerCoinsBefore) {
+  const ownerAfter = await reader.player(ownerId);
+  assert(ownerAfter.account);
+  const payout = BigInt(ownerAfter.account.balance) - BigInt(ownerCoinsBefore);
+  assert(payout > 0n, "Metered parking did not pay the plot owner");
+  ownerMeterPayoutAtomic = payout.toString();
+}
 assert.equal(await reopenedClient.revokeGameplayKey(), "revoked");
 const listedKeys = await reader.accessKeyList(credential.account_id);
 assert(
@@ -263,10 +304,20 @@ const evidence = {
   gameplayKeyRevoked: true,
   simulatedReplyLossRecoveredWithoutRebroadcast: true,
   finalActiveSession: collected.active_session,
+  ...(adJourney
+    ? {
+        billboardEligible: true,
+        legalMeterRateAtomicPerHour: "1000000",
+        ownerId,
+        ownerMeterPayoutAtomic,
+      }
+    : {}),
 };
 const evidenceFile = resolve(
   projectRoot,
-  "deployments/testnet-web-signer-journey.json",
+  adJourney
+    ? "deployments/testnet-ad-parking-journey.json"
+    : "deployments/testnet-web-signer-journey.json",
 );
 writeFileSync(evidenceFile, `${JSON.stringify(evidence, null, 2)}\n`);
 console.log(JSON.stringify(evidence, null, 2));

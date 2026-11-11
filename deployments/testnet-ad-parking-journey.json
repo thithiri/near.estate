@@ -1,0 +1,31 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "driverId": "dev-20261111023445-31126278967987.testnet",
+  "carId": 2,
+  "plotId": "plot-main-n-2",
+  "slot": 0,
+  "sessionId": 5,
+  "fullAccessTransactionHashes": [
+    "89sNUSXJNx7HK611bnZsf6Qj4QkrLWbvgdy2MqXWsZLn",
+    "HAfEqtiEZRToAURpdkksS1M3YoePjqP8dKbE49zddbiT"
+  ],
+  "gameplayTransactions": [
+    {
+      "method": "park",
+      "hash": "CWHojq7nkHYTkHeS3QD2LqcHsRrUkNeZfUnL3y83uxoN"
+    },
+    {
+      "method": "collect",
+      "hash": "245CeSR4785WWe3Kq9wEvGLMRiVqHNnz1rdsAJpkuaPJ"
+    }
+  ],
+  "gameplayKeyPublic": "ed25519:G79hr8qm9AeRSTei7WJdDV7J32XLzhcDjj3MJ2fwes2N",
+  "gameplayKeyRevoked": true,
+  "simulatedReplyLossRecoveredWithoutRebroadcast": true,
+  "finalActiveSession": null,
+  "billboardEligible": true,
+  "legalMeterRateAtomicPerHour": "1000000",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "ownerMeterPayoutAtomic": "2222"
+}

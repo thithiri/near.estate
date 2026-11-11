@@ -1,4 +1,5 @@
 import { parseGameEventLog } from "@estate/shared";
+import { isDeepStrictEqual } from "node:util";
 import type { ChainEvent, FinalizedBlock } from "./event-store.js";
 
 type SourceOptions = {
@@ -268,23 +269,57 @@ export class FastNearEventSource {
         }),
         "backfill transactions response",
       );
-      const received = new Set<string>();
+      const received = new Map<
+        string,
+        {
+          transaction: Record<string, unknown>;
+          executionOutcome: unknown;
+          receipts: Map<string, Record<string, unknown>>;
+        }
+      >();
       for (const raw of array(response.transactions, "backfill transactions")) {
         const transaction = object(raw, "backfill transaction");
-        const hash = string(
-          object(transaction.transaction, "signed transaction").hash,
-          "transaction hash",
-        );
-        if (!batch.includes(hash) || received.has(hash))
-          throw new Error(
-            "Backfill transaction response was incomplete or duplicated",
-          );
-        received.add(hash);
+        const signed = object(transaction.transaction, "signed transaction");
+        const hash = string(signed.hash, "transaction hash");
+        if (!batch.includes(hash))
+          throw new Error("Backfill returned an unrequested transaction");
+        let merged = received.get(hash);
+        if (merged) {
+          if (
+            !isDeepStrictEqual(merged.transaction, signed) ||
+            !isDeepStrictEqual(
+              merged.executionOutcome,
+              transaction.execution_outcome,
+            )
+          )
+            throw new Error("Backfill repeated a conflicting transaction");
+        } else {
+          merged = {
+            transaction: signed,
+            executionOutcome: transaction.execution_outcome,
+            receipts: new Map(),
+          };
+          received.set(hash, merged);
+        }
         for (const item of array(
           transaction.receipts,
           "transaction receipts",
         )) {
           const receipt = object(item, "transaction receipt");
+          const receiptId = string(
+            object(receipt.receipt, "receipt envelope").receipt_id,
+            "receipt ID",
+          );
+          const prior = merged.receipts.get(receiptId);
+          if (prior && !isDeepStrictEqual(prior, receipt))
+            throw new Error("Backfill repeated a conflicting receipt");
+          merged.receipts.set(receiptId, receipt);
+        }
+      }
+      if (received.size !== batch.length)
+        throw new Error("Backfill transaction response omitted a transaction");
+      for (const merged of received.values()) {
+        for (const receipt of merged.receipts.values()) {
           const envelope = object(receipt.receipt, "receipt envelope");
           if (envelope.receiver_id !== this.contractId) continue;
           const execution = object(
@@ -317,8 +352,6 @@ export class FastNearEventSource {
           else eventsByHeight.set(height, { hash: blockHash, events });
         }
       }
-      if (received.size !== batch.length)
-        throw new Error("Backfill transaction response omitted a transaction");
     }
 
     const heights = [...eventsByHeight.keys()].sort((a, b) => a - b);

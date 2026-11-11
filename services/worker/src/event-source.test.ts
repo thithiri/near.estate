@@ -313,6 +313,10 @@ test("account backfill validates indexed receipts against historical block hashe
               },
             ],
           },
+          {
+            transaction: { hash: "tx-a" },
+            receipts: [],
+          },
           { transaction: { hash: "tx-extra" }, receipts: [] },
         ],
       });
@@ -344,6 +348,57 @@ test("account backfill validates indexed receipts against historical block hashe
     ["receipt-a:0:0"],
   );
   assert.equal(backfill.blocks[0]?.prevHash, "hash-10");
+});
+
+test("account backfill rejects conflicting copies of a transaction receipt", async () => {
+  const first = {
+    ...receipt,
+    receipt: { ...receipt.receipt, receiver_id: contractId },
+  };
+  const conflicting = {
+    ...first,
+    execution_outcome: {
+      ...first.execution_outcome,
+      block_hash: "conflicting-block",
+    },
+  };
+  const fetchImpl = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith("/v0/last_block/final"))
+      return json({ block: { header: { height: 210 } } });
+    if (url.includes("archive"))
+      return json({
+        result: {
+          header: {
+            hash: "hash-110",
+            timestamp_nanosec: "1794316011248367505",
+          },
+        },
+      });
+    if (url.endsWith("/v0/account"))
+      return json({
+        account_txs: [{ transaction_hash: "tx-a", tx_block_height: 10 }],
+        txs_count: 1,
+      });
+    if (url.endsWith("/v0/transactions"))
+      return json({
+        transactions: [
+          { transaction: { hash: "tx-a" }, receipts: [first] },
+          { transaction: { hash: "tx-a" }, receipts: [conflicting] },
+        ],
+      });
+    throw new Error(`Unexpected backfill URL: ${url}`);
+  }) as typeof fetch;
+  const source = new FastNearEventSource(contractId, {
+    fetchImpl,
+    neardataUrl: "https://neardata.local",
+    archiveRpcUrl: "https://archive.local",
+    historyUrl: "https://history.local",
+  });
+  await assert.rejects(
+    source.accountBackfill(10),
+    /Backfill repeated a conflicting receipt/,
+  );
 });
 
 test("account backfill reads every page and transaction batch without losing events", async () => {

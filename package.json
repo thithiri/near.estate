@@ -35,6 +35,7 @@
     "testnet:journey": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_journey -- --apply",
     "testnet:gameplay-key": "cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_gameplay_key -- --apply",
     "testnet:web-signer:journey": "tsx scripts/testnet-web-signer-journey.ts --apply",
+    "testnet:ad-parking:journey": "tsx scripts/testnet-web-signer-journey.ts --ad-journey",
     "testnet:web-signer:check": "tsc --noEmit --module esnext --moduleResolution bundler --target es2022 --types vite/client,node --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --strict scripts/testnet-web-signer-journey.ts",
     "testnet:media-api:prepare": "tsx scripts/testnet-media-api-journey.ts --prepare",
     "testnet:media-api:approve": "tsx scripts/testnet-media-api-journey.ts --approve",
