@@ -142,7 +142,11 @@ async function confirmPending() {
       // Keep the exact signed bytes for a later status check or rebroadcast.
     }
   }
-  for (let attempt = 0; outcome === "unknown" && attempt < 8; attempt++) {
+  for (
+    let attempt = 0;
+    (outcome === "unknown" || outcome === "pending") && attempt < 8;
+    attempt++
+  ) {
     await new Promise((done) => setTimeout(done, 1_000));
     outcome = await reader.transactionStatus(
       pending.hash,

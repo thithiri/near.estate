@@ -37,13 +37,18 @@ if (
   mode !== "--prepare-shared-revalidate" &&
   mode !== "--approve-shared-revalidate" &&
   mode !== "--prepare-shared-revalidate-billboard" &&
-  mode !== "--approve-shared-revalidate-billboard"
+  mode !== "--approve-shared-revalidate-billboard" &&
+  mode !== "--prepare-shared-level2-revalidate" &&
+  mode !== "--approve-shared-level2-revalidate" &&
+  mode !== "--prepare-shared-level2-revalidate-billboard" &&
+  mode !== "--approve-shared-level2-revalidate-billboard"
 )
   throw new Error(
     "Pass --prepare/--approve, optionally with -shared, -revalidate or -billboard",
   );
 const sharedCity = mode.includes("-shared");
 const revalidating = mode.includes("-revalidate");
+const level2Revalidation = mode.includes("-level2-revalidate");
 const kind = mode.endsWith("-billboard") ? "Billboard" : "Logo";
 const prepare = mode.startsWith("--prepare");
 const projectRoot = resolve(import.meta.dirname, "..");
@@ -118,15 +123,19 @@ const app = createApiApp({
 const plotId = sharedCity ? "plot-main-n-2" : "plot-main-n-1";
 const preparedPath = resolve(
   dataDir,
-  revalidating
+  level2Revalidation
     ? kind === "Billboard"
-      ? "shared-billboard-revalidation-prepared.json"
-      : "shared-logo-revalidation-prepared.json"
-    : kind === "Billboard"
-      ? "shared-billboard-prepared.json"
-      : sharedCity
-        ? "shared-media-prepared.json"
-        : "prepared.json",
+      ? "shared-level2-billboard-revalidation-prepared.json"
+      : "shared-level2-logo-revalidation-prepared.json"
+    : revalidating
+      ? kind === "Billboard"
+        ? "shared-billboard-revalidation-prepared.json"
+        : "shared-logo-revalidation-prepared.json"
+      : kind === "Billboard"
+        ? "shared-billboard-prepared.json"
+        : sharedCity
+          ? "shared-media-prepared.json"
+          : "prepared.json",
 );
 const transactions: Array<{ action: string; hash: string }> = [];
 
@@ -276,6 +285,13 @@ try {
       );
     }
     assert.equal(plot?.plot.owner, owner.accountId);
+    if (level2Revalidation) {
+      assert.equal(plot.plot.building.level, 2);
+      assert(
+        plot.plot.building.approved_manifest_hash,
+        "Approve the level-2 facade first",
+      );
+    }
     const slot = kind === "Billboard" ? plot?.plot.billboard : plot?.plot.logo;
     if (revalidating) {
       assert(slot?.active, "Existing approved media is missing");
@@ -450,15 +466,19 @@ try {
     };
     const path = resolve(
       projectRoot,
-      revalidating
+      level2Revalidation
         ? kind === "Billboard"
-          ? "deployments/testnet-shared-billboard-revalidation.json"
-          : "deployments/testnet-shared-logo-revalidation.json"
-        : kind === "Billboard"
-          ? "deployments/testnet-shared-billboard-journey.json"
-          : sharedCity
-            ? "deployments/testnet-shared-media-journey.json"
-            : "deployments/testnet-media-api-journey.json",
+          ? "deployments/testnet-shared-level2-billboard-revalidation.json"
+          : "deployments/testnet-shared-level2-logo-revalidation.json"
+        : revalidating
+          ? kind === "Billboard"
+            ? "deployments/testnet-shared-billboard-revalidation.json"
+            : "deployments/testnet-shared-logo-revalidation.json"
+          : kind === "Billboard"
+            ? "deployments/testnet-shared-billboard-journey.json"
+            : sharedCity
+              ? "deployments/testnet-shared-media-journey.json"
+              : "deployments/testnet-media-api-journey.json",
     );
     writeFileSync(path, `${JSON.stringify(evidence, null, 2)}\n`);
     console.log(JSON.stringify(evidence, null, 2));

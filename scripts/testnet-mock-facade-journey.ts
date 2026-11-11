@@ -30,10 +30,13 @@ if (
   mode !== "--prepare" &&
   mode !== "--approve" &&
   mode !== "--prepare-shared" &&
-  mode !== "--approve-shared"
+  mode !== "--approve-shared" &&
+  mode !== "--prepare-shared-level2" &&
+  mode !== "--approve-shared-level2"
 )
   throw new Error("Pass --prepare, --approve or a shared-city variant");
-const sharedCity = mode.endsWith("-shared");
+const sharedCity = mode.includes("-shared");
+const sharedLevel2 = mode.endsWith("-shared-level2");
 const preparing = mode.startsWith("--prepare");
 const root = resolve(import.meta.dirname, "..");
 const dataDir = process.env.ESTATE_MEDIA_DATA_DIR;
@@ -118,11 +121,19 @@ const app = createApiApp({
 const plotId = sharedOwner?.plotId ?? "plot-main-n-0";
 const preparedPath = resolve(
   dataDir,
-  sharedCity ? "shared-mock-facade-prepared.json" : "mock-facade-prepared.json",
+  sharedLevel2
+    ? "shared-level2-mock-facade-prepared.json"
+    : sharedCity
+      ? "shared-mock-facade-prepared.json"
+      : "mock-facade-prepared.json",
 );
 const proposalRecordPath = resolve(
   dataDir,
-  sharedCity ? "shared-mock-facade-proposal.json" : "mock-facade-proposal.json",
+  sharedLevel2
+    ? "shared-level2-mock-facade-proposal.json"
+    : sharedCity
+      ? "shared-mock-facade-proposal.json"
+      : "mock-facade-proposal.json",
 );
 
 async function requireStatus(response: Response, expected: number) {
@@ -238,7 +249,10 @@ try {
       before.plot.building.building_type,
       sharedCity ? "Restaurant" : "Cafe",
     );
-    assert.equal(before.plot.building.level, sharedCity ? 1 : 2);
+    assert.equal(
+      before.plot.building.level,
+      sharedLevel2 ? 2 : sharedCity ? 1 : 2,
+    );
     const cookie = await ownerCookie();
     type Job = {
       id: string;
@@ -268,9 +282,11 @@ try {
         "/generations",
         {
           plotId,
-          description: sharedCity
-            ? "A welcoming green neighbourhood restaurant with a garden terrace"
-            : "A playful blue corner cafe with a distinctive awning",
+          description: sharedLevel2
+            ? "A taller green restaurant with a planted roof and a distinct rounded corner"
+            : sharedCity
+              ? "A welcoming green neighbourhood restaurant with a garden terrace"
+              : "A playful blue corner cafe with a distinctive awning",
           palette: sharedCity ? "#73D9A6" : "#69B9E9",
           themeHint: sharedCity ? "Garden" : "Playful",
           materialHints: sharedCity ? ["Timber", "Brick"] : ["Tile", "Timber"],
@@ -472,9 +488,11 @@ try {
     writeFileSync(
       resolve(
         root,
-        sharedCity
-          ? "deployments/testnet-shared-facade-journey.json"
-          : "deployments/testnet-mock-facade-journey.json",
+        sharedLevel2
+          ? "deployments/testnet-shared-level2-facade-journey.json"
+          : sharedCity
+            ? "deployments/testnet-shared-facade-journey.json"
+            : "deployments/testnet-mock-facade-journey.json",
       ),
       `${JSON.stringify(evidence, null, 2)}\n`,
     );
