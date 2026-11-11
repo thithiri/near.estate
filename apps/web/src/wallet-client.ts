@@ -263,6 +263,11 @@ function pendingGameplayAction(value: string): PendingGameplayAction {
 
 export class GameWalletClient {
   private lastCall: Promise<unknown> = Promise.resolve();
+  private lastGameplayFailureReason: string | null = null;
+
+  get failedGameplayReason(): string | null {
+    return this.lastGameplayFailureReason;
+  }
   private readonly selectedCars = new Map<string, number>();
 
   private constructor(
@@ -1318,6 +1323,7 @@ export class GameWalletClient {
   async checkPendingGameplayAction(): Promise<
     "success" | "failure" | "pending" | "expired" | "none"
   > {
+    this.lastGameplayFailureReason = null;
     const accountId = this.requiredAccount();
     const name = this.actionName(accountId);
     const raw = localStorage.getItem(name);
@@ -1332,6 +1338,17 @@ export class GameWalletClient {
       throw new Error("A pending gameplay action belongs to another key");
     const state = await this.settleGameplayAction(action, true);
     if (state !== "pending") localStorage.removeItem(name);
+    if (state === "failure") {
+      try {
+        this.lastGameplayFailureReason =
+          await this.reader.transactionFailureMessage(
+            action.hash,
+            action.accountId,
+          );
+      } catch {
+        // Final failure remains known when the explanation read fails.
+      }
+    }
     if (this.accountId !== accountId) throw new Error("Wallet account changed");
     return state;
   }

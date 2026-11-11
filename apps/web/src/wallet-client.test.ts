@@ -159,18 +159,16 @@ test("pending action checker keeps an in-flight transaction until final", async 
       secretKey: pair.toString(),
     }),
   );
-  values.set(
-    `${keyName}:action`,
-    JSON.stringify({
-      version: 1,
-      accountId: "driver.testnet",
-      publicKey: pair.getPublicKey().toString(),
-      method: "park",
-      argsJson: '{"car_id":7}',
-      hash: "1".repeat(44),
-      signedTxBase64: "c2lnbmVk",
-    }),
-  );
+  const savedAction = JSON.stringify({
+    version: 1,
+    accountId: "driver.testnet",
+    publicKey: pair.getPublicKey().toString(),
+    method: "park",
+    argsJson: '{"car_id":7}',
+    hash: "1".repeat(44),
+    signedTxBase64: "c2lnbmVk",
+  });
+  values.set(`${keyName}:action`, savedAction);
   let checks = 0;
   const client = Object.assign(Object.create(GameWalletClient.prototype), {
     reader: {
@@ -228,18 +226,16 @@ test("a failed gameplay action shows the contract's final error", async () => {
       secretKey: pair.toString(),
     }),
   );
-  values.set(
-    `${keyName}:action`,
-    JSON.stringify({
-      version: 1,
-      accountId: "driver.testnet",
-      publicKey: pair.getPublicKey().toString(),
-      method: "park",
-      argsJson: '{"car_id":7}',
-      hash: "1".repeat(44),
-      signedTxBase64: "c2lnbmVk",
-    }),
-  );
+  const savedAction = JSON.stringify({
+    version: 1,
+    accountId: "driver.testnet",
+    publicKey: pair.getPublicKey().toString(),
+    method: "park",
+    argsJson: '{"car_id":7}',
+    hash: "1".repeat(44),
+    signedTxBase64: "c2lnbmVk",
+  });
+  values.set(`${keyName}:action`, savedAction);
   const client = Object.assign(Object.create(GameWalletClient.prototype), {
     reader: {
       contractId: "estate.testnet",
@@ -264,6 +260,10 @@ test("a failed gameplay action shows the contract's final error", async () => {
       client.gameplayCall("park", { car_id: 7 }),
       /parking space is occupied/,
     );
+    assert.equal(values.has(`${keyName}:action`), false);
+    values.set(`${keyName}:action`, savedAction);
+    assert.equal(await client.checkPendingGameplayAction(), "failure");
+    assert.equal(client.failedGameplayReason, "parking space is occupied");
     assert.equal(values.has(`${keyName}:action`), false);
   } finally {
     if (originalStorage)

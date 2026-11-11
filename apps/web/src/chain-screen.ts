@@ -1001,7 +1001,9 @@ export class ChainScreen {
           return state === "success"
             ? "The previous gameplay action confirmed. The game state has refreshed."
             : state === "failure"
-              ? "The previous gameplay action failed on-chain. You can retry it."
+              ? this.wallet?.failedGameplayReason
+                ? `${this.wallet.failedGameplayReason}. Review the game state before trying again.`
+                : "The previous gameplay action failed on-chain. Review the game state before trying again."
               : state === "expired"
                 ? "The previous gameplay action expired without landing. Review the game state, then retry."
                 : state === "pending"
