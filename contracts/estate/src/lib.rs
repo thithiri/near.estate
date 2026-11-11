@@ -2834,6 +2834,82 @@ mod tests {
     }
 
     #[test]
+    fn rule_deadlines_and_config_updates_keep_each_parking_session_terms() {
+        let mut contract = seeded_contract();
+        let owner = account("owner.testnet");
+        let driver = account("driver.testnet");
+        owned_test_plot(&mut contract, &owner);
+        let car = register_at(&mut contract, &driver, 1_000);
+
+        context(&owner, 0, 1_000);
+        contract.set_rule(
+            "plot-main-n-0".to_string(),
+            ParkingRule::Meter {
+                rate_per_hour: U128(30_000_000),
+            },
+        );
+        context(&driver, 0, 1_299);
+        let before_deadline = contract.park(car.id, "plot-main-n-0".to_string(), 0);
+        assert!(before_deadline.legal);
+        assert_eq!(before_deadline.terms.meter_rate_per_hour.0, 0);
+
+        context(&driver, 0, 1_300);
+        let first_payout = contract.collect(before_deadline.id);
+        assert_eq!(first_payout.recipient_payout.0, 0);
+        context(&owner, 0, 1_300);
+        let replaced = contract.set_rule("plot-main-n-0".to_string(), ParkingRule::NoParking);
+        assert!(matches!(replaced.effective_rule, ParkingRule::Meter { .. }));
+        assert_eq!(
+            replaced
+                .plot
+                .pending_rule
+                .as_ref()
+                .map(|rule| rule.effective_at),
+            Some(1_600)
+        );
+
+        context(&driver, 0, 1_300);
+        let at_deadline = contract.park(car.id, "plot-main-n-0".to_string(), 0);
+        assert!(at_deadline.legal);
+        assert_eq!(at_deadline.terms.meter_rate_per_hour.0, 30_000_000);
+        assert_eq!(at_deadline.terms.base_rate_per_hour.0, 60_000_000);
+        assert_eq!(at_deadline.terms.earn_cap_seconds, 1_800);
+
+        context(&account("admin.testnet"), 0, 1_301);
+        let mut config = contract.get_config();
+        config.version = 2;
+        config.base_rate_per_hour = U128(120_000_000);
+        config.earn_cap_seconds = 600;
+        contract.update_config(config);
+        context(&driver, 0, 1_599);
+        assert!(matches!(
+            contract
+                .get_plot("plot-main-n-0".to_string())
+                .expect("plot exists")
+                .effective_rule,
+            ParkingRule::Meter { .. }
+        ));
+        context(&driver, 0, 1_600);
+        assert!(matches!(
+            contract
+                .get_plot("plot-main-n-0".to_string())
+                .expect("plot exists")
+                .effective_rule,
+            ParkingRule::NoParking
+        ));
+        let payout = contract.collect(at_deadline.id);
+        assert_eq!(payout.gross.0, 5_000_000);
+        assert_eq!(payout.recipient_payout.0, 2_500_000);
+        assert_eq!(payout.driver_payout.0, 2_500_000);
+
+        let after_deadline = contract.park(car.id, "plot-main-n-0".to_string(), 0);
+        assert!(!after_deadline.legal);
+        assert_eq!(after_deadline.terms.base_rate_per_hour.0, 120_000_000);
+        assert_eq!(after_deadline.terms.earn_cap_seconds, 600);
+        assert_eq!(after_deadline.terms.config_version, 2);
+    }
+
+    #[test]
     fn expired_space_reuse_pays_old_driver_once() {
         let mut contract = seeded_contract();
         let first = account("first.testnet");
