@@ -438,3 +438,7 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 ## 2026-11-11 — Fresh-volume container restore
 
 - A verified backup of the current shared-city indexed snapshot was restored into a new data directory and copied into a fresh external Docker volume. The packaged API opened it with 146 events and cursor 277205914. One packaged worker pass started at 277205915, reached finalized height 277206694, added zero events, and left the API's 14 curb and one tower park totals intact. [The local record](../deployments/local-compose-restore-drill.json) includes the backup manifest hash, image IDs, cursor and cleanup. The indexed snapshot has no PNG assets; earlier file-level backup tests cover asset hash preservation. This is a container restart and volume-swap rehearsal, not the required VPS/offsite recovery drill.
+
+## 2026-11-11 — Restored media through packaged API
+
+- To cover the prior drill's missing asset, a disposable copy of the same indexed snapshot received a 256×256 PNG and a synthetic approved-upload row. The backup verifier included one hash-named PNG and 146 events; after restore into a new external volume, the packaged API served the PNG over HTTP with status 200, the immutable cache header, and bytes hashing exactly to the file name. [The media restore record](../deployments/local-compose-media-restore-drill.json) also confirms the cursor and parking totals. The row was approved only in the local fixture, with no chain transaction. Hosted media recovery and offsite transfer remain open.

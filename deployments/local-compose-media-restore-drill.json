@@ -1,0 +1,39 @@
+{
+  "scope": "local fresh-volume restore of an indexed city snapshot with a synthetic approved media upload",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "fixture": {
+    "approval": "synthetic local API-store record; no on-chain approval was submitted",
+    "assetHash": "851b2476ed82272256c5a90bef352da3f0179f04d66c3ac0cde550c8ee5fe646",
+    "assetBytes": 1832,
+    "imageSize": "256x256 PNG"
+  },
+  "backup": {
+    "manifestSha256": "f78e334b06fae1c4a4517d48f9ed374b206282c97b1c90a8d58354ad40d9e9fb",
+    "files": 68,
+    "assetPngFiles": 1,
+    "eventCount": 146,
+    "cursorHeight": 277205914
+  },
+  "container": {
+    "apiImageId": "sha256:9292d4e725d294c208ed5eab15a913580e6dd780378f8338d1ab97508d8d077e",
+    "sourceRevision": "5b7f0294240b96c5b62b8456438e45ffc68b6dcf",
+    "restoredExternalVolume": true,
+    "apiHealthy": true,
+    "assetHttpStatus": 200,
+    "assetContentType": "image/png",
+    "assetCacheControl": "public, max-age=31536000, immutable",
+    "servedBytes": 1832,
+    "servedSha256": "851b2476ed82272256c5a90bef352da3f0179f04d66c3ac0cde550c8ee5fe646",
+    "indexedThroughHeight": 277205914,
+    "curbParks": 14,
+    "towerParks": 1
+  },
+  "cleanup": {
+    "containersRemoved": true,
+    "temporaryVolumeRemoved": true
+  },
+  "limits": [
+    "The approved media row was created only for this local restore fixture; it does not prove moderator signing or on-chain media approval.",
+    "The drill did not copy backups offsite or restart services on the target VPS."
+  ]
+}
