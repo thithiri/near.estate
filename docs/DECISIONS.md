@@ -382,3 +382,8 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 
 - The wallet-backed owner's candidate cards and street comparison retained 140px images scaled to about 101px at a 320px viewport, but their grid cells were only about 83px wide. Overflow clipping cut off the facade sides. At widths up to 375px, those images now scale to 77px and fit inside the cells; the centre label is shortened to “Selected” so it remains readable. A [representative 320px CSS fixture](images/near-estate-owner-preview-narrow-layout-v1.png) and measured bounds show the result. The fixture does not sign in or prove the complete owner journey.
 - The web TypeScript build, 58 web tests and six guest browser journeys pass. Named-wallet and paid-candidate owner checks remain open.
+
+## 2026-11-11 — Repository publication check
+
+- Before connecting hosted CI, the local checkout and all 101 commits were checked for tracked environment, database, credential and key files and for literal PEM, OpenAI project-key and NEAR secret-key patterns. No credential file or literal key pattern was found; four Rust examples contain code that reads or writes `private_key`/`secret_key` fields in protected runtime files. The largest tracked visual files are about 2.2 MB each. This is a targeted repository check, not a general security audit.
+- The full local `npm run check` passed on the current branch; `npm audit --omit=dev --audit-level=high` reports zero high or critical findings and 17 low findings. Hosted CI cannot run yet because this local repository has no Git remote and the connected GitHub search found no existing near-estate repository. The requested destination choice is pending; do not mark the hosted gate passed from local checks.
