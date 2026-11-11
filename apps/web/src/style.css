@@ -1015,6 +1015,9 @@ button:disabled {
 .studio-preview > button {
   width: 100%;
 }
+.studio-mobile-action {
+  display: none;
+}
 .mobile-candidate {
   display: none;
 }
@@ -1581,6 +1584,28 @@ footer[hidden] {
   .studio-neighbourhood {
     --studio-scale: 0.7;
     gap: 6px;
+  }
+}
+@media (max-width: 700px) and (orientation: portrait) {
+  .studio-screen[data-step="Describe"] {
+    padding-bottom: 68px;
+  }
+  .studio-screen[data-step="Describe"] #explore-presets {
+    display: none;
+  }
+  .studio-screen[data-step="Describe"] .studio-mobile-action {
+    position: fixed;
+    z-index: 19;
+    left: 0;
+    right: 0;
+    bottom: calc(56px + env(safe-area-inset-bottom));
+    display: block;
+    padding: 8px 14px;
+    border-top: 2px solid #15223e;
+    background: #fff9ed;
+  }
+  .studio-mobile-action button {
+    width: 100%;
   }
 }
 @media (max-width: 375px) {

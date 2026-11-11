@@ -112,7 +112,13 @@ for (const viewport of [
       )
       .toBeGreaterThan(0);
     await page.locator("#studio-level").selectOption("4");
-    await page.locator("#explore-presets").click();
+    await page
+      .locator(
+        viewport.name === "phone portrait"
+          ? "#explore-presets-mobile"
+          : "#explore-presets",
+      )
+      .click();
     await expect(page.locator(".candidate-grid [data-candidate]")).toHaveCount(
       3,
     );
@@ -137,6 +143,14 @@ for (const viewport of [
       .all())
       await expect(neighbour).toBeVisible();
     await noHorizontalOverflow(page);
+    if (viewport.name === "desktop") {
+      await page.locator("#studio-type").selectOption("Homes");
+      await expect(page.locator(".studio-screen")).toHaveAttribute(
+        "data-step",
+        "Describe",
+      );
+      await expect(page.locator('[data-studio-step="Preview"]')).toBeDisabled();
+    }
     await page.locator("#studio-back").click();
     await page.locator("#open-stats").click();
     await expect(
@@ -166,3 +180,54 @@ for (const viewport of [
     expect(pageErrors).toEqual([]);
   });
 }
+
+test("narrow phone studio keeps its next action above navigation", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto("/");
+  await page
+    .getByRole("navigation", { name: "Phone navigation" })
+    .getByRole("button", { name: "Plots" })
+    .click();
+  await page.locator("#open-studio").click();
+  const action = page.locator("#explore-presets-mobile");
+  const navigation = page.getByRole("navigation", {
+    name: "Phone navigation",
+  });
+  await expect(action).toBeVisible();
+  await expect(action).toHaveText("See 3 level 1 designs →");
+  await expect(page.locator('[data-studio-step="Choose"]')).toBeDisabled();
+  await expect(page.locator('[data-studio-step="Preview"]')).toBeDisabled();
+  const actionBox = await action.boundingBox();
+  const navigationBox = await navigation.boundingBox();
+  expect(actionBox).not.toBeNull();
+  expect(navigationBox).not.toBeNull();
+  expect(actionBox!.y + actionBox!.height).toBeLessThanOrEqual(
+    navigationBox!.y,
+  );
+  await page.locator("#studio-description").fill("A rooftop garden cafe");
+  const ideaBox = await page.locator("#studio-description").boundingBox();
+  const scrolledActionBox = await action.boundingBox();
+  expect(ideaBox).not.toBeNull();
+  expect(scrolledActionBox).not.toBeNull();
+  expect(ideaBox!.y + ideaBox!.height).toBeLessThanOrEqual(
+    scrolledActionBox!.y,
+  );
+  await page.locator("#studio-level").selectOption("2");
+  await expect(action).toHaveText("See 3 level 2 designs →");
+  await expect(action).toBeVisible();
+  await action.click();
+  await expect(page.locator(".studio-screen")).toHaveAttribute(
+    "data-step",
+    "Choose",
+  );
+  await expect(action).toBeHidden();
+  await expect(page.locator('[data-studio-step="Preview"]')).toBeEnabled();
+  await page.locator('[data-studio-step="Describe"]').click();
+  await page.locator("#studio-type").selectOption("Cafe");
+  await expect(page.locator('[data-studio-step="Choose"]')).toBeDisabled();
+  await expect(page.locator('[data-studio-step="Preview"]')).toBeDisabled();
+  await expect(action).toBeVisible();
+  await noHorizontalOverflow(page);
+});

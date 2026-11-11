@@ -24,11 +24,11 @@ The [image specification and generation prompt](BUILDING_IMAGE_SPEC.md) records 
 
 ## Building studio on a phone
 
-390 × 844 portrait. The guest studio shows the selected type's illustrated level-2 style study before the curated design choices. The style study is preview-only. The later Choose and Preview steps still compare the current curated designs beside neighbours; publishing requires a purchased plot and wallet.
+390 × 844 portrait. The guest studio shows the selected type's illustrated level-2 style study before the curated design choices. A persistent button names the selected preview level and stays above the phone navigation while Describe is open, so the next step remains visible while scrolling the form. The style study is preview-only. The later Choose and Preview steps still compare the current curated designs beside neighbours; publishing requires a purchased plot and wallet.
 
-![near.estate illustrated building study in the phone studio](images/near-estate-studio-illustrated-phone-v3.png)
+![near.estate illustrated building study and next action in the phone studio](images/near-estate-studio-next-action-390-v1.png)
 
-The [desktop studio](images/near-estate-studio-illustrated-desktop-v1.png) shows the same study beside the existing candidate and neighbourhood areas.
+The [320-pixel phone capture](images/near-estate-studio-next-action-320-v1.png) checks the narrow layout. The [desktop studio](images/near-estate-studio-illustrated-desktop-v1.png) shows the same study beside the existing candidate and neighbourhood areas.
 
 ## Building variations and upgrades
 

@@ -127,6 +127,12 @@ export class MockStudio {
     );
   }
 
+  private canOpenStep(step: StudioStep): boolean {
+    if (step === "Describe") return true;
+    if (step === "Choose") return this.state !== "Empty";
+    return this.state === "Ready";
+  }
+
   private candidateMarkup(candidate: Candidate, index: number): string {
     return `<button class="studio-candidate ${index === this.selected ? "selected" : ""}" data-candidate="${index}" aria-pressed="${index === this.selected}">
       ${buildingMarkup(this.type, candidate.variant, this.level, candidate.palette)}
@@ -153,7 +159,7 @@ export class MockStudio {
     const right = this.neighbours[1];
     this.root.innerHTML = `<div class="studio-screen" data-step="${this.step}">
       <div class="studio-heading"><button id="studio-back" aria-label="Back to My Plots">←</button><div><h1>Build your place</h1><p>Plot ${this.plot.index + 1} · Main Street · Guest preview</p></div><span class="tag">Level ${this.level} preview</span></div>
-      <nav class="studio-steps" aria-label="Building studio steps">${(["Describe", "Choose", "Preview"] as const).map((step) => `<button data-studio-step="${step}" aria-current="${step === this.step ? "step" : "false"}">${step}</button>`).join("")}</nav>
+      <nav class="studio-steps" aria-label="Building studio steps">${(["Describe", "Choose", "Preview"] as const).map((step) => `<button data-studio-step="${step}" aria-current="${step === this.step ? "step" : "false"}" ${this.canOpenStep(step) ? "" : "disabled"}>${step}</button>`).join("")}</nav>
       <div class="studio-layout">
         <section class="card studio-controls" aria-label="Describe your building">
           <h2>Your building</h2>
@@ -179,6 +185,7 @@ export class MockStudio {
           </section>
         </div>
       </div>
+      <div class="studio-mobile-action"><button class="primary" id="explore-presets-mobile">See 3 level ${this.level} designs →</button></div>
     </div>`;
     this.bind();
   }
@@ -227,6 +234,11 @@ export class MockStudio {
         void this.explore();
       });
     root
+      .querySelector<HTMLButtonElement>("#explore-presets-mobile")!
+      .addEventListener("click", () => {
+        void this.explore();
+      });
+    root
       .querySelector<HTMLButtonElement>("#retry-presets")
       ?.addEventListener("click", () => {
         void this.explore();
@@ -248,6 +260,7 @@ export class MockStudio {
     this.state = "Empty";
     this.candidates = [];
     this.selected = 0;
+    this.step = "Describe";
     this.render();
   }
 
