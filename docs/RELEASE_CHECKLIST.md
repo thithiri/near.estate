@@ -13,6 +13,8 @@ Snapshot: 2026-11-11. This checklist follows the [V1 phase gates](V1_SPEC.md#imp
 
 ## Phase gates
 
+The current local facade pass has regenerated all 40 curated sprites and their catalog hashes. Its [phone](images/near-estate-curated-street-phone-v3.png), [desktop](images/near-estate-curated-street-desktop-v3.png), [studio](images/near-estate-studio-preview-phone-v3.png) and [all-level neighbour](images/near-estate-level-neighbours-v1.png) captures show stronger material colors by type. The asset-envelope and sheet checks pass. This pass has not been pushed or measured on a physical phone, so Phase 2 remains open.
+
 The last hosted feature-branch run 43037646513 (earlier private CI) passed contract and container checks, including the packaged browser and combined expiry/monitor production configuration. Its app check stopped before browser tests when Ubuntu package hosts failed DNS during Playwright's optional dependency install. A local workflow edit now uses the browser-only install that passed in the container job, but it remains unpushed and unverified while build runs are deferred. `main` remains at the earlier green `ad551c9`; the feature branch is at `8fe8732`, with the visual gallery and app workflow fix saved only in the local checkout. None of this closes the wallet, real-device or VPS gates.
 
 The [local container provenance record](../deployments/local-container-provenance.json) ties all three rebuilt images to source revision `5b7f0294240b96c5b62b8456438e45ffc68b6dcf` and records their immutable local image IDs. The verifier also rejected an intentionally wrong SHA. These images have not been pushed to a registry, so the release-candidate identity remains open.

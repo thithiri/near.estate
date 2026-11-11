@@ -10,7 +10,13 @@ const catalogPath = join(root, "apps/web/src/preset-catalog.json");
 const types = ["Retail", "Cafe", "Restaurant", "Office", "Homes"];
 const heights = [70, 100, 130, 160];
 const ink = "#1e2d49";
-const wall = "#f5e9d4";
+const retailPlaster = "#e8bb8d";
+const marketStone = "#c9aa88";
+const cafeStucco = "#cce6bb";
+const dinerEnamel = "#ffd1a8";
+const bistroStucco = "#dba985";
+const officeConcrete = "#9fb8c6";
+const homePlaster = "#dec899";
 const pale = "#fff8eb";
 const glass = "#bce7ec";
 const glassDeep = "#7cb8c5";
@@ -63,7 +69,7 @@ function design(type, variant, level) {
 
   if (type === "Retail" && variant === 1) {
     base += rect(10, top + 8, 50, 150 - top, brick, 1);
-    base += rect(52, top + 26, 80, 132 - top, wall, 1);
+    base += rect(52, top + 26, 80, 132 - top, retailPlaster, 1);
     base += upperWindows(12, 47, top, level, 2);
     for (const y of [top + 49, top + 76, top + 103]) {
       if (y < 127) base += line(14, y, 51, y, "#bd796c", 1);
@@ -82,7 +88,7 @@ function design(type, variant, level) {
     billboardRect = { x: 76, y: top + 37, width: 48, height: 24 };
     nameRect = { x: 56, y: top + 26, width: 74, height: 10 };
   } else if (type === "Retail" && variant === 2) {
-    base += rect(8, top + 23, 124, 135 - top, concrete, 1);
+    base += rect(8, top + 23, 124, 135 - top, marketStone, 1);
     base += poly(
       `8,${top + 24} 27,${top + 6} 43,${top + 24} 62,${top + 6} 78,${top + 24} 97,${top + 6} 132,${top + 24}`,
       pale,
@@ -111,7 +117,7 @@ function design(type, variant, level) {
     billboardRect = { x: 76, y: top + 31, width: 48, height: 24 };
     nameRect = { x: 43, y: 112, width: 90, height: 11 };
   } else if (type === "Cafe" && variant === 1) {
-    base += rect(13, top + 27, 114, 131 - top, glass, 1);
+    base += rect(13, top + 27, 114, 131 - top, "#8fcfd0", 1);
     base += poly(`11,${top + 28} 70,${top + 4} 129,${top + 28}`, glassDeep);
     for (const x of [34, 52, 88, 106])
       base += line(x, top + 19, x, top + 28, pale, 1.5);
@@ -125,6 +131,13 @@ function design(type, variant, level) {
     base += rect(58, 127, 24, 31, dark, 1);
     base += rect(21, 131, 29, 20, pale, 2);
     base += rect(90, 131, 29, 20, pale, 2);
+    for (const x of [34, 103]) {
+      base += line(x, 150, x, 137, "#397a5f", 2);
+      base += line(x, 146, x - 6, 140, "#397a5f", 2);
+      base += line(x, 143, x + 6, 138, "#397a5f", 2);
+      base += circle(x - 6, 140, 3, "#68a979", "none", 0);
+      base += circle(x + 6, 138, 3, "#68a979", "none", 0);
+    }
     mask += maskPoly(
       `11,${top + 28} 70,${top + 4} 129,${top + 28} 129,${top + 33} 70,${top + 9} 11,${top + 33}`,
     );
@@ -134,7 +147,7 @@ function design(type, variant, level) {
     billboardRect = { x: 76, y: top + 35, width: 48, height: 24 };
     nameRect = { x: 43, y: 113, width: 54, height: 12 };
   } else if (type === "Cafe" && variant === 2) {
-    base += rect(11, top + 22, 118, 136 - top, wall, 1);
+    base += rect(11, top + 22, 118, 136 - top, cafeStucco, 1);
     base += rect(5, top + 13, 130, 12, timber, 2);
     base += rect(17, top + 24, 8, 134 - top, timber, 1);
     base += rect(115, top + 24, 8, 134 - top, timber, 1);
@@ -159,7 +172,7 @@ function design(type, variant, level) {
     billboardRect = { x: 77, y: top + 29, width: 48, height: 24 };
     nameRect = { x: 43, y: 115, width: 54, height: 12 };
   } else if (type === "Restaurant" && variant === 1) {
-    base += rect(8, top + 28, 124, 130 - top, wall, 7);
+    base += rect(8, top + 28, 124, 130 - top, dinerEnamel, 7);
     base += `<path d="M8 ${top + 31} Q10 ${top + 6} 39 ${top + 5} H101 Q130 ${top + 6} 132 ${top + 31} Z" fill="${brick}" stroke="${ink}" stroke-width="1.5"/>`;
     for (const x of [29, 47, 65, 83, 101, 119])
       base += circle(x, top + 12, 2, "#ffe1a0", "none", 0);
@@ -177,8 +190,8 @@ function design(type, variant, level) {
     billboardRect = { x: 77, y: top + 34, width: 48, height: 24 };
     nameRect = { x: 40, y: top + 15, width: 60, height: 12 };
   } else if (type === "Restaurant" && variant === 2) {
-    base += rect(8, top + 19, 52, 139 - top, wall, 2);
-    base += rect(80, top + 19, 52, 139 - top, wall, 2);
+    base += rect(8, top + 19, 52, 139 - top, bistroStucco, 2);
+    base += rect(80, top + 19, 52, 139 - top, bistroStucco, 2);
     base += rect(7, top + 11, 126, 11, timber, 1);
     base += line(59, top + 22, 70, top + 33, ink, 2);
     base += line(70, top + 33, 81, top + 22, ink, 2);
@@ -198,7 +211,7 @@ function design(type, variant, level) {
     billboardRect = { x: 10, y: top + 27, width: 48, height: 24 };
     nameRect = { x: 38, y: top + 12, width: 64, height: 10 };
   } else if (type === "Office" && variant === 1) {
-    base += rect(34, top + 4, 72, 154 - top, concrete, 1);
+    base += rect(34, top + 4, 72, 154 - top, officeConcrete, 1);
     base += rect(40, top + 11, 60, 119 - top, glassDeep, 1);
     base += rect(34, top + 4, 8, 151 - top, "#435f74", 1);
     base += rect(98, top + 4, 8, 151 - top, "#435f74", 1);
@@ -218,7 +231,7 @@ function design(type, variant, level) {
     billboardRect = { x: 50, y: top + 39, width: 48, height: 24 };
     nameRect = { x: 41, y: 115, width: 58, height: 12 };
   } else if (type === "Office" && variant === 2) {
-    base += rect(28, top + 42, 84, 116 - top, concrete, 1);
+    base += rect(28, top + 42, 84, 116 - top, officeConcrete, 1);
     base += rect(8, top + 9, 124, 42, glassDeep, 2);
     base += rect(8, top + 9, 124, 6, "#34566b", 1);
     base += rect(17, top + 16, 106, 26, glass, 1);
@@ -243,7 +256,7 @@ function design(type, variant, level) {
     nameRect = { x: 42, y: top + 19, width: 32, height: 10 };
   } else if (type === "Homes" && variant === 1) {
     base += rect(7, top + 32, 43, 126 - top, brick, 1);
-    base += rect(45, top + 17, 51, 141 - top, wall, 1);
+    base += rect(45, top + 17, 51, 141 - top, homePlaster, 1);
     base += rect(91, top + 4, 42, 154 - top, concrete, 1);
     for (const [x, y] of [
       [17, top + 42],
@@ -274,7 +287,7 @@ function design(type, variant, level) {
     billboardRect = { x: 46, y: top + 29, width: 48, height: 24 };
     nameRect = { x: 12, y: 116, width: 36, height: 12 };
   } else if (type === "Homes" && variant === 2) {
-    base += rect(39, top + 27, 63, 131 - top, wall, 1);
+    base += rect(39, top + 27, 63, 131 - top, homePlaster, 1);
     base += poly(`36,${top + 28} 70,${top + 5} 105,${top + 28}`, brick);
     base += circle(70, top + 21, 5, pale, timber, 1);
     base += rect(97, top + 17, 9, 21, concrete, 1);
