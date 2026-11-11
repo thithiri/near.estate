@@ -148,10 +148,10 @@ test("pending gameplay key survives a closed tab and recovers after chain confir
     const reopenedTab = Object.assign(
       Object.create(GameWalletClient.prototype),
       {
-        reader: { contractId: "estate.testnet" },
-        selector,
-        provider: {
-          viewAccessKeyList: async () => ({
+        reader: {
+          contractId: "estate.testnet",
+          accessKeyList: async () => ({
+            block_hash: "test-final-block",
             keys: [
               {
                 public_key: pending.publicKey,
@@ -168,6 +168,7 @@ test("pending gameplay key survives a closed tab and recovers after chain confir
             ],
           }),
         },
+        selector,
       },
     ) as GameWalletClient;
     assert.equal(await reopenedTab.resumePendingKey(), "ready");

@@ -24,14 +24,36 @@ import { z } from "zod";
 
 const RpcEnvelope = z.object({
   jsonrpc: z.literal("2.0"),
-  result: z
-    .object({
-      result: z.array(z.number().int().min(0).max(255)).optional(),
-      error: z.string().optional(),
-      block_hash: z.string().min(1),
-    })
-    .optional(),
+  result: z.unknown().optional(),
   error: z.unknown().optional(),
+});
+const RpcFunctionResult = z.object({
+  result: z.array(z.number().int().min(0).max(255)).optional(),
+  error: z.string().optional(),
+  block_hash: z.string().min(1),
+});
+const RpcAccessKeys = z.object({
+  block_hash: z.string().min(1),
+  keys: z.array(
+    z.object({
+      public_key: z.string().min(1),
+      access_key: z.object({
+        permission: z
+          .union([
+            z.literal("FullAccess"),
+            z.object({
+              FunctionCall: z.object({
+                receiver_id: z.string(),
+                method_names: z.array(z.string()),
+                allowance: z.string().nullable(),
+              }),
+            }),
+            z.null(),
+          ])
+          .catch(null),
+      }),
+    }),
+  ),
 });
 
 function encodeArguments(args: object): string {
@@ -63,15 +85,9 @@ export class ChainReader {
       throw new Error("RPC timeout must be positive");
   }
 
-  private async viewAt<T>(
-    method: string,
-    args: object,
-    schema: z.ZodType<T>,
-    blockId?: string,
-  ): Promise<{ value: T; blockHash: string }> {
+  private async rpcQuery(params: object, name: string): Promise<unknown> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.rpcTimeoutMs);
-    let envelope: z.infer<typeof RpcEnvelope>;
     try {
       const response = await this.fetcher(this.rpcUrl, {
         method: "POST",
@@ -81,18 +97,19 @@ export class ChainReader {
           jsonrpc: "2.0",
           id: "near-estate-view",
           method: "query",
-          params: {
-            request_type: "call_function",
-            ...(blockId ? { block_id: blockId } : { finality: "final" }),
-            account_id: this.contractId,
-            method_name: method,
-            args_base64: encodeArguments(args),
-          },
+          params,
         }),
       });
       if (!response.ok)
         throw new Error(`NEAR RPC request failed (${response.status})`);
-      envelope = RpcEnvelope.parse(await response.json());
+      const envelope = RpcEnvelope.parse(await response.json());
+      if (envelope.error !== undefined)
+        throw new Error(
+          `NEAR RPC rejected ${name}: ${JSON.stringify(envelope.error)}`,
+        );
+      if (envelope.result === undefined)
+        throw new Error(`NEAR RPC omitted the ${name} result`);
+      return envelope.result;
     } catch (error) {
       if (controller.signal.aborted)
         throw new Error("NEAR RPC timed out; retry the street view");
@@ -100,27 +117,55 @@ export class ChainReader {
     } finally {
       clearTimeout(timer);
     }
-    if (envelope.error !== undefined) {
-      throw new Error(
-        `NEAR RPC rejected ${method}: ${JSON.stringify(envelope.error)}`,
-      );
-    }
-    if (!envelope.result)
-      throw new Error(`NEAR RPC omitted the ${method} result`);
-    if (envelope.result.error) {
-      const explanation = envelope.result.error.includes("CodeDoesNotExist")
+  }
+
+  private async viewAt<T>(
+    method: string,
+    args: object,
+    schema: z.ZodType<T>,
+    blockId?: string,
+  ): Promise<{ value: T; blockHash: string }> {
+    const result = RpcFunctionResult.parse(
+      await this.rpcQuery(
+        {
+          request_type: "call_function",
+          ...(blockId ? { block_id: blockId } : { finality: "final" }),
+          account_id: this.contractId,
+          method_name: method,
+          args_base64: encodeArguments(args),
+        },
+        method,
+      ),
+    );
+    if (result.error) {
+      const explanation = result.error.includes("CodeDoesNotExist")
         ? `No game contract is deployed at ${this.contractId}`
-        : envelope.result.error;
+        : result.error;
       throw new Error(`NEAR RPC rejected ${method}: ${explanation}`);
     }
-    if (!envelope.result.result)
+    if (!result.result)
       throw new Error(`NEAR RPC omitted the ${method} return value`);
-    if (blockId && envelope.result.block_hash !== blockId)
+    if (blockId && result.block_hash !== blockId)
       throw new Error(`NEAR RPC returned a different block for ${method}`);
     return {
-      value: schema.parse(decodeResult(envelope.result.result)),
-      blockHash: envelope.result.block_hash,
+      value: schema.parse(decodeResult(result.result)),
+      blockHash: result.block_hash,
     };
+  }
+
+  async accessKeyList(
+    accountId: string,
+  ): Promise<z.infer<typeof RpcAccessKeys>> {
+    return RpcAccessKeys.parse(
+      await this.rpcQuery(
+        {
+          request_type: "view_access_key_list",
+          finality: "final",
+          account_id: accountId,
+        },
+        "view_access_key_list",
+      ),
+    );
   }
 
   async view<T>(

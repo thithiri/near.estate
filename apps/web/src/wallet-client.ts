@@ -1013,22 +1013,21 @@ export class GameWalletClient {
   private async keyState(
     record: KeyRecord,
   ): Promise<"ready" | "inactive" | "absent"> {
-    const listed = await this.provider.viewAccessKeyList(record.accountId, {
-      finality: "final",
-    });
+    const listed = await this.reader.accessKeyList(record.accountId);
     const access = listed.keys.find(
       (key) => key.public_key === record.publicKey,
     )?.access_key;
     if (!access) return "absent";
-    if (access.permission === "FullAccess") return "inactive";
+    if (access.permission === "FullAccess" || access.permission === null)
+      return "inactive";
     const permission = access.permission.FunctionCall;
     return permission.receiver_id === this.reader.contractId &&
       GAMEPLAY_METHODS.every((method) =>
         permission.method_names.includes(method),
       ) &&
       permission.method_names.length === GAMEPLAY_METHODS.length &&
-      BigInt(permission.allowance) > 0n &&
-      BigInt(permission.allowance) <= GAMEPLAY_KEY_ALLOWANCE
+      BigInt(permission.allowance ?? 0) > 0n &&
+      BigInt(permission.allowance ?? 0) <= GAMEPLAY_KEY_ALLOWANCE
       ? "ready"
       : "inactive";
   }

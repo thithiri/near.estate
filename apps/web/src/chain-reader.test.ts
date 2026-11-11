@@ -53,6 +53,58 @@ test("a stalled RPC read times out and the next read can recover", async () => {
   assert.equal(await reader.chainTimeSeconds(), 123);
 });
 
+test("access-key checks use finalized bounded RPC reads", async () => {
+  let attempts = 0;
+  const reader = new ChainReader(
+    "estate-game.testnet",
+    undefined,
+    (async (_url, init) => {
+      attempts++;
+      const request = JSON.parse(String(init?.body));
+      assert.deepEqual(request.params, {
+        request_type: "view_access_key_list",
+        finality: "final",
+        account_id: "driver.testnet",
+      });
+      if (attempts === 1)
+        return new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("Aborted", "AbortError"));
+          });
+        });
+      return Response.json({
+        jsonrpc: "2.0",
+        result: {
+          block_hash: "test-final-block",
+          keys: [
+            {
+              public_key: "ed25519:gameplay",
+              access_key: {
+                permission: {
+                  FunctionCall: {
+                    receiver_id: "estate-game.testnet",
+                    method_names: ["park"],
+                    allowance: "250000000000000000000000",
+                  },
+                },
+              },
+            },
+            {
+              public_key: "ed25519:other",
+              access_key: { permission: { GasKey: {} } },
+            },
+          ],
+        },
+      });
+    }) as typeof fetch,
+    5,
+  );
+  await assert.rejects(reader.accessKeyList("driver.testnet"), /timed out/);
+  const keys = await reader.accessKeyList("driver.testnet");
+  assert.equal(keys.keys[0]?.public_key, "ed25519:gameplay");
+  assert.equal(keys.keys[1]?.access_key.permission, null);
+});
+
 test("loads a finalized player snapshot and encodes JSON arguments", async () => {
   const requested: string[] = [];
   const reader = new ChainReader(
