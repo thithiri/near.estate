@@ -1,0 +1,20 @@
+{
+  "project": "infra",
+  "images": [
+    {
+      "service": "api",
+      "imageId": "sha256:9292d4e725d294c208ed5eab15a913580e6dd780378f8338d1ab97508d8d077e",
+      "sourceRevision": "5b7f0294240b96c5b62b8456438e45ffc68b6dcf"
+    },
+    {
+      "service": "indexer",
+      "imageId": "sha256:6be344d8f712aaee536a6f650378d7dbd324d669c14919dde72424cf33d76bed",
+      "sourceRevision": "5b7f0294240b96c5b62b8456438e45ffc68b6dcf"
+    },
+    {
+      "service": "web",
+      "imageId": "sha256:de988b94fcabebd587d00149bbadcd6e92cfdef438e79fd3306e99019431ef28",
+      "sourceRevision": "5b7f0294240b96c5b62b8456438e45ffc68b6dcf"
+    }
+  ]
+}
