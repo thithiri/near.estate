@@ -6,8 +6,9 @@
   "liveCodeSha256": "03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19",
   "forwardProbeSha256": "709a56f47f284f2f6819ea2588720188273f873674bce19069fb398b6675df5d",
   "reverseProbeSha256": "7a12f6f7a200883c2313b8e8dbe37d7f59dadbeac4b0cb083c0ac7804011b973",
-  "beforeAndRestoredStateSha256": "036249aa91634c3605427df4d20b696003a9d3a7dd15e135d0d6ae571b45e424",
-  "migratedStateSha256": "61651f4a92994a6cf625f3bc553dc77812787ebd2894ea3edc1fef43c7c5ba43",
+  "liveImportedStateSha256": "036249aa91634c3605427df4d20b696003a9d3a7dd15e135d0d6ae571b45e424",
+  "activeBeforeAndRestoredStateSha256": "c5d8e633dc13f73bebaf94eaed20149d4f30d1b0ad6f420a6f93a225843bb43b",
+  "migratedStateSha256": "139d046a88f77ef494b953ab043387cf731af236aaab54460e0efe3fccd9512d",
   "storageKeys": 181,
   "storedRecords": {
     "accounts": 3,
@@ -20,11 +21,23 @@
     "occupiedSpaces": 0,
     "accountAndTreasuryCoins": "252164997"
   },
+  "activeFixtureStoredRecords": {
+    "accounts": 4,
+    "cars": 4,
+    "plots": 80,
+    "plotIndexes": 80,
+    "npcSites": 7,
+    "npcIndexes": 7,
+    "activeSessions": 1,
+    "occupiedSpaces": 1,
+    "accountAndTreasuryCoins": "352164997"
+  },
+  "activeSessionId": 16,
   "schemaVersion": 2,
   "unauthorizedRejected": true,
   "secondMigrationRejected": true,
   "nonRootStorageUnchanged": true,
   "oldViewsRestored": true,
-  "activeSandboxSessionAudited": true,
+  "activeSessionPreservedThroughMigration": true,
   "collectedSandboxSessionAudited": true
 }

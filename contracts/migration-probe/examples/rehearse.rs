@@ -385,83 +385,19 @@ async fn main() -> Result<()> {
         old_views(&sandbox, &id, &owner).await? == expected_views,
         "sandbox views differ"
     );
-    let deploy_forward = copy.as_account().deploy(&forward_wasm).await?;
-    ensure!(deploy_forward.is_success(), "forward probe deploy failed");
-    let outsider = sandbox.dev_create_account().await?;
-    let unauthorized = outsider.call(&id, "migrate").transact().await?;
-    ensure!(
-        !unauthorized.is_success(),
-        "outsider migrated contract state"
-    );
-    ensure!(
-        state_hash(&sandbox.view_state(&id).await?) == before_hash,
-        "failed migration changed state"
-    );
-    let migrated = copy.as_account().call(&id, "migrate").transact().await?;
-    ensure!(migrated.is_success(), "migration failed: {migrated:?}");
-    let migrated_state = sandbox.view_state(&id).await?;
-    let new_root_bytes = migrated_state
-        .get(b"STATE".as_slice())
-        .context("V2 root missing")?;
-    let new_root: RootV2 =
-        borsh::from_slice(new_root_bytes).context("V2 root cannot be decoded")?;
-    ensure!(new_root.schema_version == 2, "V2 marker differs");
-    ensure!(
-        audit_live_records(&migrated_state, &new_root.old)? == record_audit,
-        "migrated records or economic totals differ"
-    );
-    let mut expected_root = root_bytes.clone();
-    expected_root.extend_from_slice(&2u32.to_le_bytes());
-    ensure!(
-        *new_root_bytes == expected_root,
-        "migration changed V1 root fields"
-    );
-    ensure!(
-        migrated_state.len() == live_state.len()
-            && live_state
-                .iter()
-                .all(|(key, value)| key.as_slice() == b"STATE"
-                    || migrated_state.get(key) == Some(value)),
-        "migration changed a non-root storage key"
-    );
-    let version: u32 = sandbox.view(&id, "get_schema_version").await?.json()?;
-    ensure!(version == 2, "V2 view differs");
-    let snapshot: Value = sandbox.view(&id, "get_root_snapshot").await?.json()?;
-    ensure!(
-        snapshot[0] == id.as_str() && snapshot[4] == 80 && snapshot[5] == 7,
-        "V2 root view differs"
-    );
-    let second = copy.as_account().call(&id, "migrate").transact().await?;
-    ensure!(!second.is_success(), "second migration succeeded");
-    ensure!(
-        sandbox.view_state(&id).await? == migrated_state,
-        "second migration changed state"
-    );
-    let deploy_reverse = copy.as_account().deploy(&reverse_wasm).await?;
-    ensure!(deploy_reverse.is_success(), "reverse probe deploy failed");
-    let reversed = copy.as_account().call(&id, "reverse").transact().await?;
-    ensure!(
-        reversed.is_success(),
-        "reverse migration failed: {reversed:?}"
-    );
-    ensure!(
-        sandbox.view_state(&id).await? == live_state,
-        "reverse migration did not restore exact state"
-    );
-    let restore_code = copy.as_account().deploy(&old_wasm).await?;
-    ensure!(restore_code.is_success(), "old code restore failed");
-    ensure!(
-        hash(&sandbox.view_code(&id).await?) == expected_old_hash,
-        "old code hash not restored"
-    );
-    ensure!(
-        old_views(&sandbox, &id, &owner).await? == expected_views,
-        "restored game views differ"
-    );
+    // Add a sandbox-only active session so the migration exercises the stored
+    // parking terms and occupancy links absent from the live snapshot.
+    let occupied_live: HashMap<String, u64> = decode_map(&live_state, b'o')?;
+    let live_session_count = record_audit["activeSessions"]
+        .as_u64()
+        .context("live session count missing")?;
     let free_plot = decode_map::<String, Plot>(&live_state, b'p')?
         .into_values()
         .find(|plot| {
-            plot.owner.is_none() && plot.pending_rule.is_none() && plot.rule == ParkingRule::Free
+            plot.owner.is_none()
+                && plot.pending_rule.is_none()
+                && plot.rule == ParkingRule::Free
+                && !occupied_live.contains_key(&format!("c:{}:0", plot.id))
         })
         .context("no unowned Free plot for sandbox mutation")?;
     let driver = sandbox.dev_create_account().await?;
@@ -490,16 +426,108 @@ async fn main() -> Result<()> {
     let session_id = parked_session["id"]
         .as_u64()
         .context("parked session ID missing")?;
-    let parked_state = sandbox.view_state(&id).await?;
-    let parked_root: RootV1 = borsh::from_slice(
-        parked_state
-            .get(b"STATE".as_slice())
-            .context("parked root missing")?,
-    )?;
-    let parked_audit = audit_live_records(&parked_state, &parked_root)?;
+    let active_state = sandbox.view_state(&id).await?;
+    let active_hash = state_hash(&active_state);
+    let active_root_bytes = active_state
+        .get(b"STATE".as_slice())
+        .context("active root missing")?;
+    let active_root: RootV1 = borsh::from_slice(active_root_bytes)?;
+    let active_audit = audit_live_records(&active_state, &active_root)?;
     ensure!(
-        parked_audit["activeSessions"] == 1 && parked_audit["occupiedSpaces"] == 1,
+        active_audit["activeSessions"] == live_session_count + 1
+            && active_audit["occupiedSpaces"] == live_session_count + 1,
         "active sandbox session was not audited"
+    );
+    let mut session_key = vec![b's'];
+    session_key.extend_from_slice(&borsh::to_vec(&session_id)?);
+    let active_session_bytes = active_state
+        .get(&session_key)
+        .context("active session storage missing")?;
+    let deploy_forward = copy.as_account().deploy(&forward_wasm).await?;
+    ensure!(deploy_forward.is_success(), "forward probe deploy failed");
+    let outsider = sandbox.dev_create_account().await?;
+    let unauthorized = outsider.call(&id, "migrate").transact().await?;
+    ensure!(
+        !unauthorized.is_success(),
+        "outsider migrated contract state"
+    );
+    ensure!(
+        state_hash(&sandbox.view_state(&id).await?) == active_hash,
+        "failed migration changed state"
+    );
+    let migrated = copy.as_account().call(&id, "migrate").transact().await?;
+    ensure!(migrated.is_success(), "migration failed: {migrated:?}");
+    let migrated_state = sandbox.view_state(&id).await?;
+    let new_root_bytes = migrated_state
+        .get(b"STATE".as_slice())
+        .context("V2 root missing")?;
+    let new_root: RootV2 =
+        borsh::from_slice(new_root_bytes).context("V2 root cannot be decoded")?;
+    ensure!(new_root.schema_version == 2, "V2 marker differs");
+    ensure!(
+        audit_live_records(&migrated_state, &new_root.old)? == active_audit,
+        "migrated records or economic totals differ"
+    );
+    let mut expected_root = active_root_bytes.clone();
+    expected_root.extend_from_slice(&2u32.to_le_bytes());
+    ensure!(
+        *new_root_bytes == expected_root,
+        "migration changed V1 root fields"
+    );
+    ensure!(
+        migrated_state.len() == active_state.len()
+            && active_state
+                .iter()
+                .all(|(key, value)| key.as_slice() == b"STATE"
+                    || migrated_state.get(key) == Some(value)),
+        "migration changed a non-root storage key"
+    );
+    ensure!(
+        migrated_state.get(&session_key) == Some(active_session_bytes),
+        "migration changed active session bytes"
+    );
+    let version: u32 = sandbox.view(&id, "get_schema_version").await?.json()?;
+    ensure!(version == 2, "V2 view differs");
+    let snapshot: Value = sandbox.view(&id, "get_root_snapshot").await?.json()?;
+    ensure!(
+        snapshot[0] == id.as_str() && snapshot[4] == 80 && snapshot[5] == 7,
+        "V2 root view differs"
+    );
+    let second = copy.as_account().call(&id, "migrate").transact().await?;
+    ensure!(!second.is_success(), "second migration succeeded");
+    ensure!(
+        sandbox.view_state(&id).await? == migrated_state,
+        "second migration changed state"
+    );
+    let deploy_reverse = copy.as_account().deploy(&reverse_wasm).await?;
+    ensure!(deploy_reverse.is_success(), "reverse probe deploy failed");
+    let reversed = copy.as_account().call(&id, "reverse").transact().await?;
+    ensure!(
+        reversed.is_success(),
+        "reverse migration failed: {reversed:?}"
+    );
+    ensure!(
+        sandbox.view_state(&id).await? == active_state,
+        "reverse migration did not restore exact state"
+    );
+    let restore_code = copy.as_account().deploy(&old_wasm).await?;
+    ensure!(restore_code.is_success(), "old code restore failed");
+    ensure!(
+        hash(&sandbox.view_code(&id).await?) == expected_old_hash,
+        "old code hash not restored"
+    );
+    ensure!(
+        old_views(&sandbox, &id, &owner).await? == expected_views,
+        "restored game views differ"
+    );
+    let restored_session: Value = sandbox
+        .view(&id, "get_session")
+        .args_json(json!({"session_id": session_id}))
+        .await?
+        .json()?;
+    ensure!(
+        restored_session == parked_session,
+        "restored parking terms differ"
     );
     let collected = driver
         .call(&id, "collect")
@@ -518,7 +546,8 @@ async fn main() -> Result<()> {
     )?;
     let collected_audit = audit_live_records(&collected_state, &collected_root)?;
     ensure!(
-        collected_audit["activeSessions"] == 0 && collected_audit["occupiedSpaces"] == 0,
+        collected_audit["activeSessions"] == live_session_count
+            && collected_audit["occupiedSpaces"] == live_session_count,
         "collected sandbox session remained stored"
     );
     let record = json!({
@@ -529,16 +558,19 @@ async fn main() -> Result<()> {
         "liveCodeSha256": expected_old_hash,
         "forwardProbeSha256": hash(&forward_wasm),
         "reverseProbeSha256": hash(&reverse_wasm),
-        "beforeAndRestoredStateSha256": before_hash,
+        "liveImportedStateSha256": before_hash,
+        "activeBeforeAndRestoredStateSha256": active_hash,
         "migratedStateSha256": state_hash(&migrated_state),
         "storageKeys": live_state.len(),
         "storedRecords": record_audit,
+        "activeFixtureStoredRecords": active_audit,
+        "activeSessionId": session_id,
         "schemaVersion": version,
         "unauthorizedRejected": true,
         "secondMigrationRejected": true,
         "nonRootStorageUnchanged": true,
         "oldViewsRestored": true,
-        "activeSandboxSessionAudited": true,
+        "activeSessionPreservedThroughMigration": true,
         "collectedSandboxSessionAudited": true,
     });
     let path = root().join("deployments/testnet-root-migration-rehearsal.json");

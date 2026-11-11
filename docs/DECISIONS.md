@@ -365,7 +365,7 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 ## 2026-11-11 — Full current-state record audit
 
 - The root rehearsal now decodes and exactly reserializes all live map keys and values with the current V1 types, rejects unknown storage prefixes, and checks plot/NPC indexes, car ownership, active session/space links and prepaid storage bounds. It totals all account coin balances plus treasury coins and requires the same audit result after the root marker migration. The [updated record](../deployments/testnet-root-migration-rehearsal.json) reports three accounts, three cars, 80 plots, seven NPC sites, no live active sessions and 252164997 atomic coins across accounts and treasury.
-- Because that snapshot had no active parking session, the restored old code was exercised with a new sandbox-only registered driver: park created one linked session and occupancy entry, and collect cleared both. No testnet account or state was changed. This strengthens evidence for the current deployed data, but it does not cover absent variants or a future map-value conversion.
+- Because that snapshot had no active parking session, a new sandbox-only driver parked **before** the forward probe. The migration preserved the exact session bytes, occupied-space link, economic totals and stored parking terms; reverse migration restored every byte of the active fixture. The restored old code returned the same session view and collected it, clearing both links. No testnet account or state was changed. This strengthens the root-only rehearsal, but it does not cover a future map-value conversion or a live snapshot with an active player session.
 
 ## 2026-11-11 — More legible curated buildings
 
