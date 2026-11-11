@@ -980,14 +980,6 @@ button:disabled {
   left: 0;
   bottom: 0;
 }
-.studio-art-studies.single .studio-art-frame {
-  width: 245px;
-  height: 190px;
-}
-.studio-art-studies.single .studio-art-frame .studio-building {
-  transform: scale(1.75);
-  transform-origin: bottom left;
-}
 .studio-art-direction figcaption {
   display: grid;
   gap: 2px;

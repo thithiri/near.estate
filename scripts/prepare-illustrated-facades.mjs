@@ -15,7 +15,18 @@ const catalogPath = path.join(
   "illustrated-catalog.json",
 );
 const facades = [
-  { type: "retail", source: "retail-source.png", sprite: "retail-l2.png" },
+  {
+    type: "retail",
+    variant: 1,
+    source: "retail-source.png",
+    sprite: "retail-l2.png",
+  },
+  {
+    type: "retail",
+    variant: 2,
+    source: "retail-market-source.png",
+    sprite: "retail-market-l2.png",
+  },
   {
     type: "cafe",
     variant: 1,
@@ -30,11 +41,40 @@ const facades = [
   },
   {
     type: "restaurant",
+    variant: 1,
     source: "restaurant-source.png",
     sprite: "restaurant-l2.png",
   },
-  { type: "office", source: "office-source.png", sprite: "office-l2.png" },
-  { type: "homes", source: "homes-source.png", sprite: "homes-l2.png" },
+  {
+    type: "restaurant",
+    variant: 2,
+    source: "restaurant-bistro-source.png",
+    sprite: "restaurant-bistro-l2.png",
+  },
+  {
+    type: "office",
+    variant: 1,
+    source: "office-source.png",
+    sprite: "office-l2.png",
+  },
+  {
+    type: "office",
+    variant: 2,
+    source: "office-wide-source.png",
+    sprite: "office-wide-l2.png",
+  },
+  {
+    type: "homes",
+    variant: 1,
+    source: "homes-source.png",
+    sprite: "homes-l2.png",
+  },
+  {
+    type: "homes",
+    variant: 2,
+    source: "homes-townhouse-source.png",
+    sprite: "homes-townhouse-l2.png",
+  },
 ];
 const canvas = { width: 560, height: 640 };
 const maxArt = { width: 520, height: 380 };
@@ -90,7 +130,7 @@ for (const facade of facades) {
     },
   });
 }
-const content = `${JSON.stringify({ version: 1, facades: catalog }, null, 2)}\n`;
+const content = `${JSON.stringify({ version: 2, facades: catalog }, null, 2)}\n`;
 if (check) {
   if ((await readFile(catalogPath, "utf8")) !== content)
     throw new Error("Illustrated facade catalog is out of date");

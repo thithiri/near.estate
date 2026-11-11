@@ -1,23 +1,13 @@
 import { BuildingType } from "@estate/shared";
 import { paletteName, PRESET_PALETTES } from "./preset-catalog.js";
 import { buildingMarkup } from "./studio-screen.js";
-
-const shapeNames: Record<
-  (typeof BuildingType.options)[number],
-  readonly [string, string]
-> = {
-  Retail: ["Corner shop", "Market hall"],
-  Cafe: ["Glasshouse", "Pergola"],
-  Restaurant: ["Diner", "Bistro"],
-  Office: ["Glass block", "Studio"],
-  Homes: ["Terrace", "Townhouse"],
-};
+import { buildingShapeName } from "./building-shapes.js";
 
 export function ownerShapeName(
   type: (typeof BuildingType.options)[number],
   variant: 1 | 2,
 ): string {
-  return shapeNames[type][variant - 1]!;
+  return buildingShapeName(type, variant);
 }
 
 export function ownerTypePickerMarkup(

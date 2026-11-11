@@ -1,28 +1,40 @@
 # Current game visuals
 
-These are the latest saved visuals for the near.estate guest game. The street captures show an illustrated building trial and the revised controls. Six illustrated facades are operator-created guest previews across five building types; the live city still uses approved artwork and procedural presets. These browser captures do not prove physical-phone performance or wallet signing. The restaurant's Near & Far Burgers billboard is a guest-only sample; live billboards require on-chain approval.
+These are the latest saved visuals for the near.estate guest game. The street captures show the revised controls and ten illustrated level-2 facades: two shapes for each of five building types. These are operator-created guest previews; the live city still uses approved artwork and procedural presets. These browser captures do not prove physical-phone performance or wallet signing. The restaurant's Near & Far Burgers billboard is a guest-only sample; live billboards require on-chain approval.
 
 ## Street on a phone
 
 667 × 375 landscape. The car, coins, street and navigation share one row. The driving buttons, parking action, curb spaces, rule signs and cross-street control remain visible.
 
-![near.estate illustrated street on a landscape phone](images/near-estate-illustrated-street-phone-v1.png)
+![near.estate illustrated Main Street on a landscape phone](images/near-estate-illustrated-pairs-main-phone-v2.png)
+
+Driving further along Main Street reveals the Market hall's sawtooth roof beside the triangular Glasshouse Cafe.
+
+![near.estate market hall and glasshouse on Main Street](images/near-estate-illustrated-pairs-main-market-phone-v2.png)
 
 ## Street on a computer
 
 1280 × 720. The plot details sit beside the street and can be dismissed.
 
-![near.estate illustrated street with the desktop plot panel](images/near-estate-illustrated-street-desktop-v1.png)
+![near.estate illustrated street with the desktop plot panel](images/near-estate-illustrated-street-desktop-v2.png)
 
 ## Illustrated building drafts
 
-The new Cafe Pergola appears on Main Street with its blank logo and name panels filled by the game. Its low horizontal roof contrasts with the earlier triangular Glasshouse. The portrait builder shows both at game size so the two shapes can be compared before exploring the curated owner choices.
+The portrait builder shows both illustrated directions for the selected type at game size, with labels shared with the owner shape picker. These are read-only style studies; the three selectable looks below remain the curated presets. The pair views show clear changes in roofline, width, entrance position and materials.
 
-![near.estate Pergola cafe on the landscape phone street](images/near-estate-cafe-variants-street-phone-v2.png)
+![near.estate Corner shop and Market hall style studies](images/near-estate-illustrated-retail-pair-phone-v2.png)
 
-![near.estate Glasshouse and Pergola cafe style studies in the portrait builder](images/near-estate-cafe-variants-studio-phone-v2.png)
+![near.estate Glasshouse and Pergola style studies](images/near-estate-illustrated-cafe-pair-phone-v2.png)
 
-The earlier equal-scale sheet has one level-2 facade per type: retail, Glasshouse cafe, restaurant, office and homes. These are art direction studies, not the complete two-variant/four-level owner library.
+![near.estate Diner and Bistro style studies](images/near-estate-illustrated-restaurant-pair-phone-v2.png)
+
+![near.estate Glass block and Studio style studies](images/near-estate-illustrated-office-pair-phone-v2.png)
+
+![near.estate Terrace and Townhouse style studies](images/near-estate-illustrated-homes-pair-phone-v2.png)
+
+The alternate Bistro, Studio and Townhouse also appear in the [Market Street](images/near-estate-illustrated-pairs-market-phone-v2.png), [River Street](images/near-estate-illustrated-pairs-river-phone-v2.png) and [Central Avenue](images/near-estate-illustrated-pairs-central-phone-v2.png) captures.
+
+The earlier equal-scale sheet has one level-2 facade per type. The ten-image trial covers both shapes at level 2, not the complete four-level illustrated library.
 
 ![near.estate illustrated building drafts at game scale](images/near-estate-illustrated-buildings-v1.png)
 
@@ -30,7 +42,7 @@ The [image specification and generation prompt](BUILDING_IMAGE_SPEC.md) records 
 
 ## Building studio on a phone
 
-390 × 844 portrait. The guest studio shows the selected type's illustrated level-2 style study before the curated design choices. A persistent button names the selected preview level and stays above the phone navigation while Describe is open, so the next step remains visible while scrolling the form. The style study is preview-only. The later Choose and Preview steps still compare the current curated designs beside neighbours; publishing requires a purchased plot and wallet.
+390 × 844 portrait. The guest studio shows the selected type's two illustrated level-2 style studies before the curated design choices. A persistent button names the selected preview level and stays above the phone navigation while Describe is open, so the next step remains visible while scrolling the form. The style studies are preview-only. The later Choose and Preview steps still compare the current curated designs beside neighbours; publishing requires a purchased plot and wallet.
 
 ![near.estate illustrated building study and next action in the phone studio](images/near-estate-studio-next-action-390-v1.png)
 

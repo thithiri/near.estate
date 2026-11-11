@@ -80,26 +80,34 @@ for (const viewport of [
       page.getByRole("heading", { name: "Build your place" }),
     ).toBeVisible();
     if (viewport.name === "desktop") {
-      for (const type of ["Retail", "Cafe", "Restaurant", "Office", "Homes"]) {
+      for (const [type, shapes] of [
+        ["Retail", ["Corner shop", "Market hall"]],
+        ["Cafe", ["Glasshouse", "Pergola"]],
+        ["Restaurant", ["Diner", "Bistro"]],
+        ["Office", ["Glass block", "Studio"]],
+        ["Homes", ["Terrace", "Townhouse"]],
+      ] as const) {
         await page.locator("#studio-type").selectOption(type);
-        await expect(
-          page.getByRole("img", {
-            name:
-              type === "Cafe"
-                ? "Cafe Glasshouse illustrated level 2 style study"
-                : `${type} illustrated level 2 style study`,
-          }),
-        ).toBeVisible();
+        for (const shape of shapes)
+          await expect(
+            page.getByRole("img", {
+              name: `${type} ${shape} illustrated level 2 style study`,
+            }),
+          ).toBeVisible();
         await expect
           .poll(() =>
             page
               .locator(".studio-art-direction img")
-              .first()
-              .evaluate((image) =>
-                image instanceof HTMLImageElement ? image.naturalWidth : 0,
+              .evaluateAll(
+                (images) =>
+                  images.filter(
+                    (image) =>
+                      image instanceof HTMLImageElement &&
+                      image.naturalWidth > 0,
+                  ).length,
               ),
           )
-          .toBeGreaterThan(0);
+          .toBe(2);
       }
     }
     await page.locator("#studio-type").selectOption("Cafe");

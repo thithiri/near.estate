@@ -11,6 +11,7 @@ import {
   PRESET_PALETTES,
 } from "./preset-catalog.js";
 import { illustratedPreviewForType } from "./illustrated-preview.js";
+import { buildingShapeName } from "./building-shapes.js";
 
 type StudioStep = "Describe" | "Choose" | "Preview";
 type StudioState = "Empty" | "Pending" | "Ready" | "Error";
@@ -60,22 +61,16 @@ export function buildingMarkup(
 }
 
 function illustratedStudyMarkup(type: string): string {
-  const variants = type === "Cafe" ? [1, 2] : [undefined];
+  const parsed = BuildingType.safeParse(type);
+  if (!parsed.success) return "";
+  const variants = [1, 2] as const;
   const studies = variants.map((variant) => {
     const study = illustratedPreviewForType(type, variant);
     if (!study) return "";
     const logo = study.logoRect;
     const name = study.nameRect;
-    const label =
-      variant === 1
-        ? "Glasshouse"
-        : variant === 2
-          ? "Pergola"
-          : "Illustrated style study";
-    const imageLabel =
-      variant === undefined
-        ? `${type} illustrated level 2 style study`
-        : `${type} ${label} illustrated level 2 style study`;
+    const label = buildingShapeName(parsed.data, variant);
+    const imageLabel = `${type} ${label} illustrated level 2 style study`;
     return `<figure class="studio-art-direction">
     <div class="studio-art-frame">
       <div class="studio-building" role="img" aria-label="${imageLabel}">
@@ -87,7 +82,7 @@ function illustratedStudyMarkup(type: string): string {
     <figcaption><strong>${label}</strong><span>Level 2 study · preview only</span></figcaption>
   </figure>`;
   });
-  return `<div class="studio-art-studies ${variants.length === 1 ? "single" : "pair"}">${studies.join("")}</div>`;
+  return `<div class="studio-art-studies pair">${studies.join("")}</div>`;
 }
 
 function preload(url: string): Promise<void> {
