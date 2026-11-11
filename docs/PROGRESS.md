@@ -147,4 +147,6 @@ Task 20 now selects nearby facade, mask, logo and billboard images by distance t
 3. Complete Phase 4 on testnet: verify MyNearWallet and Meteor sign-in, capped gameplay-key setup/revoke, and the browser two-account journey against the deployed contract. Durable finalized-event indexing and recovery remain Phase 7 work.
 4. Profile the specified desktop and mobile reference devices, inspect all four facade levels beside their neighbours, and close the remaining mock screen-state gaps. Road navigation, parked browsing and collection, garage selection, curated studio, empty stats and civic destination entry now work in the preview.
 
+Plot and economy stats now read totals and freshness from one SQLite snapshot. A deterministic two-connection test commits updated aggregates and cursor between their SELECTs and confirms each response stays internally consistent; the next request sees the new state. API type checking, formatting and all 82 API tests pass. Sustained VPS traffic and named-wallet browser journeys remain open.
+
 The testnet contract and seeded city are deployed. The browser still needs a connected wallet journey before the testnet gameplay gate can close.

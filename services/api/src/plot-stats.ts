@@ -1,5 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { PlotStats } from "@estate/shared";
+import { withReadSnapshot } from "./read-snapshot.js";
 
 function exists(db: DatabaseSync, name: string): boolean {
   return Boolean(
@@ -9,7 +10,7 @@ function exists(db: DatabaseSync, name: string): boolean {
   );
 }
 
-export function readPlotStats(
+function readPlotStatsUnwrapped(
   db: DatabaseSync,
   plotId: string,
   nowSeconds: number,
@@ -103,4 +104,14 @@ export function readPlotStats(
       indexerCheckedAt: cursor?.updated_at ?? null,
     },
   };
+}
+
+export function readPlotStats(
+  db: DatabaseSync,
+  plotId: string,
+  nowSeconds: number,
+): PlotStats {
+  return withReadSnapshot(db, () =>
+    readPlotStatsUnwrapped(db, plotId, nowSeconds),
+  );
 }

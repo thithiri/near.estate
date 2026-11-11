@@ -3,11 +3,35 @@ import { randomUUID } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { PlotStats } from "@estate/shared";
 import { createApiApp } from "./app.js";
+import { readEconomyStats } from "./economy-stats.js";
 import { ImpressionLedger } from "./impression-ledger.js";
+import { readPlotStats } from "./plot-stats.js";
 import { ApiStore } from "./store.js";
+
+function updateBeforeCursorRead(
+  db: DatabaseSync,
+  update: () => void,
+): DatabaseSync {
+  let updated = false;
+  return new Proxy(db, {
+    get(target, property) {
+      if (property === "prepare")
+        return (sql: string) => {
+          if (!updated && sql.includes("SELECT last_height")) {
+            updated = true;
+            update();
+          }
+          return target.prepare(sql);
+        };
+      const value = Reflect.get(target, property);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+}
 
 test("plot statistics combine persisted ad and chain totals with freshness", async () => {
   const dir = mkdtempSync(join(tmpdir(), "estate-stats-"));
@@ -160,6 +184,63 @@ test("economy telemetry keeps exact large coin sums and labels incomplete costs"
     assert.equal(complete.amountCoverageComplete, true);
     assert.equal(complete.indexedThroughHeight, 123);
   } finally {
+    store.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("stats totals and cursor stay on one snapshot while the indexer commits", () => {
+  const dir = mkdtempSync(join(tmpdir(), "estate-stats-snapshot-"));
+  const dbPath = join(dir, "estate.sqlite");
+  const store = new ApiStore(dbPath, join(dir, "assets"));
+  const writer = new DatabaseSync(dbPath);
+  const now = Math.floor(Date.UTC(2026, 10, 11, 12) / 1_000);
+  const timestamp = (seconds: number) =>
+    String(BigInt(seconds) * 1_000_000_000n);
+  try {
+    new ImpressionLedger(store.db);
+    store.db.exec(`
+      CREATE TABLE indexer_state (id INTEGER PRIMARY KEY, last_height INTEGER, last_timestamp_ns TEXT, updated_at INTEGER);
+      CREATE TABLE plot_daily_stats (plot_id TEXT, day TEXT, parks INTEGER, tickets INTEGER);
+      CREATE TABLE economy_daily_stats (day TEXT, curb_parks INTEGER, tower_parks INTEGER,
+        collections INTEGER, expiries INTEGER, tickets INTEGER, inspector_attempts INTEGER,
+        inspector_successes INTEGER, gross TEXT, driver_payout TEXT, recipient_payout TEXT,
+        forfeited TEXT, known_coin_costs TEXT, starter_grants TEXT,
+        unpriced_cost_events INTEGER, unpriced_grant_events INTEGER);
+      INSERT INTO plot_daily_stats VALUES ('plot-main-n-0', '2026-11-11', 1, 0);
+      INSERT INTO economy_daily_stats VALUES ('2026-11-11', 1, 0, 0, 0, 0, 0, 0,
+        '10', '10', '0', '0', '0', '0', 0, 0);
+    `);
+    store.db
+      .prepare("INSERT INTO indexer_state VALUES (1, 100, ?, ?)")
+      .run(timestamp(now - 2), now * 1_000);
+    const plotReader = updateBeforeCursorRead(store.db, () => {
+      writer.exec(`
+        BEGIN;
+        UPDATE plot_daily_stats SET parks = 2;
+        UPDATE indexer_state SET last_height = 101, last_timestamp_ns = '${timestamp(now - 1)}';
+        COMMIT;
+      `);
+    });
+    const plot = readPlotStats(plotReader, "plot-main-n-0", now);
+    assert.equal(plot.totals.parks, 1);
+    assert.equal(plot.freshness.indexedThroughHeight, 100);
+    assert.equal(readPlotStats(store.db, "plot-main-n-0", now).totals.parks, 2);
+
+    const economyReader = updateBeforeCursorRead(store.db, () => {
+      writer.exec(`
+        BEGIN;
+        UPDATE economy_daily_stats SET curb_parks = 2;
+        UPDATE indexer_state SET last_height = 102, last_timestamp_ns = '${timestamp(now)}';
+        COMMIT;
+      `);
+    });
+    const economy = readEconomyStats(economyReader, now);
+    assert.equal(economy.totals.curbParks, 1);
+    assert.equal(economy.indexedThroughHeight, 101);
+    assert.equal(readEconomyStats(store.db, now).totals.curbParks, 2);
+  } finally {
+    writer.close();
     store.close();
     rmSync(dir, { recursive: true, force: true });
   }

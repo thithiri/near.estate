@@ -1,4 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
+import { withReadSnapshot } from "./read-snapshot.js";
 
 type EconomyDay = {
   day: string;
@@ -46,7 +47,7 @@ function hasTable(db: DatabaseSync, name: string): boolean {
   );
 }
 
-export function readEconomyStats(
+function readEconomyStatsUnwrapped(
   db: DatabaseSync,
   nowSeconds: number,
 ): {
@@ -162,4 +163,11 @@ export function readEconomyStats(
         ? "Some historical registration, car or cosmetic events lack amounts. Costs and starter grants are partial for this seven-day window."
         : "Recorded costs and starter grants cover indexed events in this seven-day window; activity after the indexer cursor is not included.",
   };
+}
+
+export function readEconomyStats(
+  db: DatabaseSync,
+  nowSeconds: number,
+): ReturnType<typeof readEconomyStatsUnwrapped> {
+  return withReadSnapshot(db, () => readEconomyStatsUnwrapped(db, nowSeconds));
 }
