@@ -1,5 +1,8 @@
 services:
   api:
+    build:
+      args:
+        ESTATE_SOURCE_REVISION: ${ESTATE_SOURCE_REVISION:?Set the source commit SHA for production images}
     environment:
       APP_ORIGIN: https://${ESTATE_HOST:?Set the public hostname without a scheme}
       ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:?Set the deployed testnet contract}
@@ -9,6 +12,9 @@ services:
         max-size: 10m
         max-file: "5"
   indexer:
+    build:
+      args:
+        ESTATE_SOURCE_REVISION: ${ESTATE_SOURCE_REVISION:?Set the source commit SHA for production images}
     environment:
       ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:?Set the deployed testnet contract}
       INDEXER_START_HEIGHT: ${INDEXER_START_HEIGHT:?Set the contract creation height}
@@ -20,6 +26,7 @@ services:
   web:
     build:
       args:
+        ESTATE_SOURCE_REVISION: ${ESTATE_SOURCE_REVISION:?Set the source commit SHA for production images}
         VITE_ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:?Set the deployed testnet contract}
     environment:
       ESTATE_HOST: ${ESTATE_HOST:?Set the public hostname without a scheme}
