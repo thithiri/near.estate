@@ -133,6 +133,18 @@ for (const viewport of [
     await choice.click();
     await expect(page.locator(".studio-screen")).toHaveAttribute(
       "data-step",
+      "Choose",
+    );
+    await expect(choice).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Next design" }).click();
+    await expect(choice).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator("#studio-next-design")).toBeFocused();
+    await page.getByRole("button", { name: "Previous design" }).click();
+    await expect(choice).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator("#studio-previous-design")).toBeFocused();
+    await page.locator("#studio-open-preview").click();
+    await expect(page.locator(".studio-screen")).toHaveAttribute(
+      "data-step",
       "Preview",
     );
     await expect(
@@ -224,6 +236,14 @@ test("narrow phone studio keeps its next action above navigation", async ({
   );
   await expect(action).toBeHidden();
   await expect(page.locator('[data-studio-step="Preview"]')).toBeEnabled();
+  await page.locator("#studio-previous-design").click();
+  await expect(
+    page.locator('.candidate-thumbnails [data-candidate="2"]'),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.locator("#studio-next-design").click();
+  await expect(
+    page.locator('.candidate-thumbnails [data-candidate="0"]'),
+  ).toHaveAttribute("aria-pressed", "true");
   await page.locator('[data-studio-step="Describe"]').click();
   await page.locator("#studio-type").selectOption("Cafe");
   await expect(page.locator('[data-studio-step="Choose"]')).toBeDisabled();

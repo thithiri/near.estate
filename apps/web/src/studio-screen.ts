@@ -149,7 +149,8 @@ export class MockStudio {
       return `<div class="studio-state error" role="alert"><strong>Could not load designs</strong><p>${escapeHtml(this.error)}</p><button id="retry-presets">Try again</button></div>`;
     return `<div class="candidate-grid">${this.candidates.map((candidate, index) => this.candidateMarkup(candidate, index)).join("")}</div>
       <div class="mobile-candidate">${buildingMarkup(this.type, this.selectedLook().variant, this.level, this.selectedLook().palette)}<p>Design ${this.selected + 1} of ${this.candidates.length}</p>
-      <div class="candidate-thumbnails">${this.candidates.map((candidate, index) => `<button data-candidate="${index}" aria-label="Choose design ${index + 1}" aria-pressed="${index === this.selected}">${buildingMarkup(this.type, candidate.variant, this.level, candidate.palette)}</button>`).join("")}</div></div>`;
+      <div class="candidate-thumbnails">${this.candidates.map((candidate, index) => `<button data-candidate="${index}" aria-label="Choose design ${index + 1}" aria-pressed="${index === this.selected}">${buildingMarkup(this.type, candidate.variant, this.level, candidate.palette)}</button>`).join("")}</div></div>
+      <div class="studio-choice-actions"><button type="button" id="studio-previous-design" aria-label="Previous design">←</button><button type="button" class="primary" id="studio-open-preview">Street preview →</button><button type="button" id="studio-next-design" aria-label="Next design">→</button></div>`;
   }
 
   private render(): void {
@@ -249,10 +250,43 @@ export class MockStudio {
         button.addEventListener("click", () => {
           this.selected = Number(button.dataset.candidate);
           this.variant = this.selectedLook().variant;
-          this.step = "Preview";
+          const group = button.closest(".candidate-thumbnails")
+            ? ".candidate-thumbnails"
+            : ".candidate-grid";
           this.render();
+          this.root
+            ?.querySelector<HTMLButtonElement>(
+              `${group} [data-candidate="${this.selected}"]`,
+            )
+            ?.focus();
         }),
       );
+    root
+      .querySelector<HTMLButtonElement>("#studio-previous-design")
+      ?.addEventListener("click", () => this.moveCandidate(-1));
+    root
+      .querySelector<HTMLButtonElement>("#studio-next-design")
+      ?.addEventListener("click", () => this.moveCandidate(1));
+    root
+      .querySelector<HTMLButtonElement>("#studio-open-preview")
+      ?.addEventListener("click", () => {
+        this.step = "Preview";
+        this.render();
+      });
+  }
+
+  private moveCandidate(direction: -1 | 1): void {
+    if (!this.candidates.length) return;
+    this.selected =
+      (this.selected + direction + this.candidates.length) %
+      this.candidates.length;
+    this.variant = this.selectedLook().variant;
+    this.render();
+    this.root
+      ?.querySelector<HTMLButtonElement>(
+        direction === 1 ? "#studio-next-design" : "#studio-previous-design",
+      )
+      ?.focus();
   }
 
   private resetOptions(): void {

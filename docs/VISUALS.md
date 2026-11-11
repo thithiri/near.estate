@@ -30,6 +30,10 @@ The [image specification and generation prompt](BUILDING_IMAGE_SPEC.md) records 
 
 The [320-pixel phone capture](images/near-estate-studio-next-action-320-v1.png) checks the narrow layout. The [desktop studio](images/near-estate-studio-illustrated-desktop-v1.png) shows the same study beside the existing candidate and neighbourhood areas.
 
+The Choose step now has Previous and Next buttons so a player can compare all three looks before opening the street preview. Selecting a thumbnail stays on Choose. This 320-pixel capture shows the controls with a level-2 cafe.
+
+![near.estate studio Choose step with design navigation](images/near-estate-studio-choose-320-v1.png)
+
 ## Building variations and upgrades
 
 The sheet below places each of the 40 implemented curated facade sprites between the same game-owned burger stop and level-1 home. It covers five building types, two shapes per type and four levels. Higher levels now add type-specific features such as market gable windows, cafe vines, a diner awning and residential balconies. It is an asset review sheet; the street renderer adds names, logos, billboards and parking signs separately.

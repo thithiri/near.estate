@@ -921,6 +921,23 @@ button:disabled {
   border-color: #17b77e;
   background: #e6f9ed;
 }
+.studio-choice-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.studio-choice-actions button:first-child,
+.studio-choice-actions button:last-child {
+  width: 44px;
+  min-width: 44px;
+  padding: 0;
+  font-size: 20px;
+}
+.studio-choice-actions .primary {
+  flex: 1;
+  min-width: 0;
+  padding-inline: 4px;
+}
 .studio-building {
   position: relative;
   flex: none;
