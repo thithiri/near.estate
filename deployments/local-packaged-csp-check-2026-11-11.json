@@ -1,0 +1,32 @@
+{
+  "scope": "local packaged Chromium check with mocked read-only street RPC; no wallet signature",
+  "sourceRevision": "4258c37d75b62d48237b6d941b9da2ef0b99883b",
+  "webImageId": "sha256:d8ba0538d333113dbfacf5654f4fdf6d4354c78e2a6146a410ad48fc8bd747c1",
+  "buildContractId": "ci-estate.testnet",
+  "beforeFix": {
+    "meteorChooserVisible": true,
+    "blockedScriptUri": "eval",
+    "blockedScriptSource": "wallet chunk's bundled Zod Function() probe",
+    "reason": "The prior smoke watched console and page errors but did not listen for securitypolicyviolation events"
+  },
+  "fix": {
+    "pinnedZodVersion": "4.6.7",
+    "configuration": "A same-origin classic script sets __zod_globalConfig.jitless before loading the game module",
+    "configScriptHttpStatus": 200,
+    "configScriptContentType": "text/javascript; charset=utf-8"
+  },
+  "afterFix": {
+    "gameHtmlLoaded": true,
+    "meteorChooserVisible": true,
+    "scriptPolicyViolations": [],
+    "pageErrors": [],
+    "guestBrowserJourneysPassed": 6
+  },
+  "cleanup": {
+    "temporaryContainersAndVolumeRemoved": true
+  },
+  "limits": [
+    "The street and tower views were mocked so the test does not depend on a live testnet RPC.",
+    "No Meteor account connected or signed a transaction; the second wallet is still experimental."
+  ]
+}

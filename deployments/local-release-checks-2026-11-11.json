@@ -42,7 +42,7 @@
     "meteorChooserVisible": true,
     "pageErrors": [],
     "consoleErrors": [],
-    "note": "The pinned js-sha256 dependency triggers a build warning for eval in its Node branch; the packaged browser reached the chooser without a CSP error. Wallet signing was not exercised."
+    "note": "The pinned js-sha256 dependency triggers a build warning for eval in its Node branch. This first browser smoke watched page and console errors only; a later securitypolicyviolation listener found a separate blocked Zod Function() probe. Wallet signing was not exercised."
   },
   "cleanup": {
     "temporaryContainersAndVolumeRemoved": true
