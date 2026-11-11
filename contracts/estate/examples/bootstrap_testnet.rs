@@ -76,9 +76,22 @@ async fn account_for_role(
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    if std::env::args().skip(1).collect::<Vec<_>>() != ["--apply"] {
-        bail!("pass --apply to create disposable testnet accounts");
-    }
+    let args = std::env::args().skip(1).collect::<Vec<_>>();
+    let roles: Vec<&str> = match args.as_slice() {
+        [apply] if apply == "--apply" =>
+            vec!["contract", "moderator", "inspector", "driver", "owner"],
+        [apply, role_flag, role] if apply == "--apply" && role_flag == "--role" => {
+            match role.as_str() {
+                "contract" => vec!["contract"],
+                "moderator" => vec!["moderator"],
+                "inspector" => vec!["inspector"],
+                "driver" => vec!["driver"],
+                "owner" => vec!["owner"],
+                _ => bail!("unknown testnet role: {role}"),
+            }
+        }
+        _ => bail!("pass --apply [--role contract|moderator|inspector|driver|owner]"),
+    };
     let directory = private_directory()?;
     let rpc_url = std::env::var("ESTATE_TESTNET_RPC_URL")
         .unwrap_or_else(|_| "https://test.rpc.fastnear.com".to_string());
@@ -91,7 +104,7 @@ async fn main() -> Result<()> {
         worker.status().await?.chain_id == "testnet",
         "RPC is not testnet"
     );
-    for role in ["contract", "moderator", "inspector", "driver", "owner"] {
+    for role in roles {
         let account = account_for_role(&worker, &directory, role).await?;
         println!("{role}: {}", account.id());
     }

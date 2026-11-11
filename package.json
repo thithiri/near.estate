@@ -10,7 +10,7 @@
   "scripts": {
     "postinstall": "patch-package",
     "build": "npm run build -w @estate/shared && npm run build -w @estate/web && npm run build -w @estate/api && npm run build -w @estate/worker",
-    "check": "npm run check --workspaces --if-present && npm run test --workspaces --if-present && npm run beta:metrics:test",
+    "check": "npm run check --workspaces --if-present && npm run test --workspaces --if-present && npm run beta:metrics:test && npm run testnet:web-signer:check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "assets:generate": "node scripts/generate-presets.mjs && node scripts/generate-world-sprites.mjs",
@@ -34,6 +34,8 @@
     "beta:metrics:test": "node --test scripts/beta-metrics.test.mjs",
     "testnet:journey": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_journey -- --apply",
     "testnet:gameplay-key": "cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_gameplay_key -- --apply",
+    "testnet:web-signer:journey": "tsx scripts/testnet-web-signer-journey.ts --apply",
+    "testnet:web-signer:check": "tsc --noEmit --module esnext --moduleResolution bundler --target es2022 --types vite/client,node --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --strict scripts/testnet-web-signer-journey.ts",
     "testnet:inspector-journey": "npm run build -w @estate/api && cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_inspector_journey -- --apply",
     "testnet:moderation-journey": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_moderation_journey -- --apply",
     "inspector:key:plan": "cargo run --manifest-path contracts/estate/Cargo.toml --example provision_inspector_key -- --plan",

@@ -1,0 +1,26 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "driverId": "dev-20261111023445-31126278967987.testnet",
+  "carId": 2,
+  "plotId": "plot-main-n-0",
+  "slot": 0,
+  "sessionId": 3,
+  "fullAccessTransactionHashes": [
+    "7KGvtnvaepZHCGrdMqt6Uy9Xux42d184s47hnWVYExUF",
+    "7Pw4tYaMhL64viS8MimhC7TSwXjSxQdJckKNyZL1gaAk"
+  ],
+  "gameplayTransactions": [
+    {
+      "method": "park",
+      "hash": "AKqetMNTjXGYK4dzwuJTT55hWajnCDUevFBMmMcHoc8u"
+    },
+    {
+      "method": "collect",
+      "hash": "474EtbQLw6uc4eMDtMBDPo4o9sgotMJf4YHxFypiGq6S"
+    }
+  ],
+  "gameplayKeyPublic": "ed25519:BGktt8XGj162XkkL2FbNjW1C4Ku1Ws7rZ4bePfsagySm",
+  "gameplayKeyRevoked": true,
+  "finalActiveSession": null
+}
