@@ -234,3 +234,5 @@ A clean local container build found and fixed a packaging error: server producti
 The container CI job now starts the packaged API and web and checks health, the disabled paid-image status, game HTML, preset art and image conversion, plus worker module loading. Its full command sequence passed in a temporary local Compose project and the volume was removed. Hosted execution still awaits the GitHub destination.
 
 The moderator sandbox test now rehearses restricted-key replacement: add a new exact-scope key, remove the old one, reject an old-key revocation, and revoke the active logo with the replacement. It passed locally. The moderator and inspector runbooks now give the matching overlapping-key sequence using protected paths; a hosted rotation remains open.
+
+That sandbox journey now also rotates the inspector's inspect-only key between two illegal parking sessions from a separate driver. The removed key cannot consume the second attempt; the replacement can. This passed locally, while a real service restart and live role rotation remain open.
