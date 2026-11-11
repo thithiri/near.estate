@@ -472,6 +472,9 @@ try {
       contractId: manifest.contractId,
       ownerId: owner.accountId,
       moderatorId: runtime.accountId,
+      ...(sharedLevel2
+        ? { moderatorRuntimePublicKey: runtime.pair.getPublicKey().toString() }
+        : {}),
       plotId,
       jobId: prepared.jobId,
       candidateId: prepared.candidateId,
