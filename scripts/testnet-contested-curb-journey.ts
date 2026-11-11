@@ -23,11 +23,18 @@ const mode = process.argv[2];
 if (mode !== "--plan" && mode !== "--apply")
   throw new Error("Pass --plan or --apply");
 const root = resolve(import.meta.dirname, "..");
+const runTag = process.env.ESTATE_CONTEST_RUN_TAG ?? null;
+if (runTag) assert.match(runTag, /^[a-z0-9-]{1,32}$/);
+const suffix = runTag ? `-${runTag}` : "";
+const evidencePath = resolve(
+  root,
+  `deployments/testnet-contested-curb-journey${suffix}.json`,
+);
 const plotId = "plot-market-n-2";
 const slot = 0;
 const deployment = JSON.parse(
   readFileSync(resolve(root, "deployments/testnet.json"), "utf8"),
-) as { network: string; contractId: string };
+) as { network: string; contractId: string; wasmSha256: string };
 assert.equal(deployment.network, "testnet");
 
 function credentialFrom(name: "OWNER" | "DRIVER") {
@@ -65,6 +72,7 @@ type SignedCall = {
 };
 type Journal = {
   contractId: string;
+  codeSha256?: string;
   plotId: string;
   slot: number;
   contenderIds: string[];
@@ -75,10 +83,11 @@ type Journal = {
 };
 const journalPath = resolve(
   dirname(contenders[0]!.path),
-  "contested-curb-journal.json",
+  `contested-curb-journal${suffix}.json`,
 );
 const fresh: Journal = {
   contractId: deployment.contractId,
+  ...(runTag ? { codeSha256: deployment.wasmSha256 } : {}),
   plotId,
   slot,
   contenderIds: contenders.map((entry) => entry.account_id),
@@ -91,6 +100,7 @@ const journal: Journal = existsSync(journalPath)
   ? (JSON.parse(readFileSync(journalPath, "utf8")) as Journal)
   : fresh;
 assert.equal(journal.contractId, fresh.contractId);
+if (runTag) assert.equal(journal.codeSha256, deployment.wasmSha256);
 assert.equal(journal.plotId, fresh.plotId);
 assert.equal(journal.slot, fresh.slot);
 assert.deepEqual(journal.contenderIds, fresh.contenderIds);
@@ -102,6 +112,14 @@ function saveJournal() {
   });
   chmodSync(temporary, 0o600);
   renameSync(temporary, journalPath);
+}
+
+function checkFailureReason(reason: string) {
+  if (runTag === "post-upgrade")
+    assert(
+      reason.includes("parking space is occupied"),
+      `The upgraded contract did not report the occupied curb: ${reason}`,
+    );
 }
 
 async function signCall(
@@ -212,6 +230,8 @@ async function main() {
       JSON.stringify(
         {
           contractId: deployment.contractId,
+          codeSha256: deployment.wasmSha256,
+          runTag,
           plotId,
           slot,
           owner: plot.plot.owner,
@@ -236,10 +256,6 @@ async function main() {
     );
     assert(losingCall);
     const losing = await finalFailure(losingCall);
-    const evidencePath = resolve(
-      root,
-      "deployments/testnet-contested-curb-journey.json",
-    );
     const evidence = JSON.parse(readFileSync(evidencePath, "utf8")) as Record<
       string,
       unknown
@@ -247,6 +263,7 @@ async function main() {
     evidence.loserReceiptId = losing.receiptId;
     evidence.loserFailureReason = losing.reason;
     writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
+    checkFailureReason(losing.reason);
     console.log("Contested-curb journey verified and already completed");
     return;
   }
@@ -341,11 +358,11 @@ async function main() {
     (entry) => entry.plot.plot.id === plotId,
   );
   assert.equal(finalPlot?.slots[slot], null, "Contest curb was not freed");
-  journal.completed = true;
-  saveJournal();
   const evidence = {
     network: "testnet",
     contractId: deployment.contractId,
+    codeSha256: deployment.wasmSha256,
+    runTag,
     plotId,
     slot,
     winnerId: winningCall.accountId,
@@ -363,10 +380,10 @@ async function main() {
     finalSlotFree: true,
     finalSessions: finalPlayers.map((entry) => entry.active_session),
   };
-  writeFileSync(
-    resolve(root, "deployments/testnet-contested-curb-journey.json"),
-    `${JSON.stringify(evidence, null, 2)}\n`,
-  );
+  writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
+  journal.completed = true;
+  saveJournal();
+  checkFailureReason(losing.reason);
   console.log(JSON.stringify(evidence, null, 2));
 }
 

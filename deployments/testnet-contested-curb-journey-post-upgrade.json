@@ -1,0 +1,39 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "codeSha256": "03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19",
+  "runTag": "post-upgrade",
+  "plotId": "plot-market-n-2",
+  "slot": 0,
+  "winnerId": "dev-20261110121829-19069405494728.testnet",
+  "loserId": "dev-20261110121826-61851458515092.testnet",
+  "loserFailureReason": "{\"ActionError\":{\"index\":0,\"kind\":{\"FunctionCallError\":{\"ExecutionError\":\"Smart contract panicked: parking space is occupied\"}}}}",
+  "loserReceiptId": "BuuqxdAdmnP6LkaqeXUTPiYn6cwgD1rrqg1KCsMJwV3s",
+  "sessionId": 15,
+  "parks": [
+    {
+      "accountId": "dev-20261110121829-19069405494728.testnet",
+      "method": "park",
+      "hash": "pWSr5J6MPHSpKmQXsa3SCwPyZnVUyCVH1CuH7YVRKjH",
+      "outcome": "success",
+      "carId": 3,
+      "durabilityBefore": 88
+    },
+    {
+      "accountId": "dev-20261110121826-61851458515092.testnet",
+      "method": "park",
+      "hash": "CoGNhLpZzF8YfnU9mErx6VuNderAJ5V68MxH8chiKdZd",
+      "outcome": "failure",
+      "carId": 1,
+      "durabilityBefore": 92
+    }
+  ],
+  "collect": {
+    "accountId": "dev-20261110121829-19069405494728.testnet",
+    "hash": "Di2bz3nuRsyRbngtnD6FqhGLz6TXvapHnEGUvA7BcPS3",
+    "outcome": "success"
+  },
+  "losingCarDurabilityUnchanged": true,
+  "finalSlotFree": true,
+  "finalSessions": [null, null]
+}

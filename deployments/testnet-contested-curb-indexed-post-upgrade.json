@@ -1,0 +1,20 @@
+{
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "codeSha256": "03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19",
+  "runTag": "post-upgrade",
+  "plotId": "plot-market-n-2",
+  "slot": 0,
+  "sessionId": 15,
+  "winnerId": "dev-20261110121829-19069405494728.testnet",
+  "loserId": "dev-20261110121826-61851458515092.testnet",
+  "loserReceiptId": "BuuqxdAdmnP6LkaqeXUTPiYn6cwgD1rrqg1KCsMJwV3s",
+  "loserReceiptEventCount": 0,
+  "winnerParkReceiptId": "Bx4uHg8tt7wagmAFfkwmi7nhQdrK4dvWaG3oSnv7L1T8",
+  "collectionReceiptId": "F6ikovoo1fbXibnojW2mZbXcRWo6SqLM6XGQGpYu2WLV",
+  "eventNames": ["parked", "collected"],
+  "parks": 2,
+  "collections": 2,
+  "tickets": 0,
+  "indexedThroughHeight": 277193260,
+  "observedAt": "2026-11-11T08:56:31.272Z"
+}

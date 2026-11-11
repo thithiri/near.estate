@@ -4,11 +4,14 @@ import { join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 const root = resolve(import.meta.dirname, "..");
+const runTag = process.env.ESTATE_CONTEST_RUN_TAG ?? null;
+if (runTag) assert.match(runTag, /^[a-z0-9-]{1,32}$/);
+const suffix = runTag ? `-${runTag}` : "";
 const dataDir = process.env.API_DATA_DIR;
 if (!dataDir) throw new Error("Set API_DATA_DIR to the indexed city database");
 const journey = JSON.parse(
   readFileSync(
-    resolve(root, "deployments/testnet-contested-curb-journey.json"),
+    resolve(root, `deployments/testnet-contested-curb-journey${suffix}.json`),
     "utf8",
   ),
 );
@@ -61,6 +64,8 @@ try {
   assert(totals.collections >= 1);
   const evidence = {
     contractId: journey.contractId,
+    codeSha256: journey.codeSha256 ?? null,
+    runTag,
     plotId: journey.plotId,
     slot: journey.slot,
     sessionId: journey.sessionId,
@@ -78,7 +83,7 @@ try {
     observedAt: new Date().toISOString(),
   };
   writeFileSync(
-    resolve(root, "deployments/testnet-contested-curb-indexed.json"),
+    resolve(root, `deployments/testnet-contested-curb-indexed${suffix}.json`),
     `${JSON.stringify(evidence, null, 2)}\n`,
   );
   console.log(JSON.stringify(evidence, null, 2));
