@@ -1,7 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { ChainCar, ChainStreetEconomyConfig } from "@estate/shared";
-import { plotEarningPreview, towerEarningPreview } from "./plot-earnings.js";
+import type {
+  ChainCar,
+  ChainSession,
+  ChainStreetEconomyConfig,
+} from "@estate/shared";
+import {
+  plotEarningPreview,
+  sessionFullPayout,
+  towerEarningPreview,
+} from "./plot-earnings.js";
 
 const config: ChainStreetEconomyConfig = {
   base_rate_per_hour: "60000000",
@@ -59,5 +67,52 @@ test("plot preview makes missing car or current settings explicit", () => {
   assert.equal(
     plotEarningPreview(null, { kind: "Free" }, car),
     "Loading current earnings…",
+  );
+});
+
+test("parked payout uses frozen session terms, including meter and tower rates", () => {
+  const session: ChainSession = {
+    id: 6,
+    car_id: 3,
+    driver: "driver.testnet",
+    location_id: "plot-river-s-0",
+    slot: 0,
+    facility: "Curb",
+    started_at: 1_000,
+    earn_until: 2_800,
+    expires_at: 2_920,
+    legal: true,
+    inspector_attempted: false,
+    terms: {
+      config_version: 1,
+      base_rate_per_hour: "60000000",
+      tier_multiplier_bps: 10_000,
+      legality_multiplier_bps: 10_000,
+      facility_multiplier_bps: 10_000,
+      meter_rate_per_hour: "0",
+      earn_cap_seconds: 1_800,
+      ticket_recipient_bps: 7_000,
+      meter_recipient: null,
+    },
+  };
+  assert.equal(sessionFullPayout(session), "30");
+  assert.equal(
+    sessionFullPayout({
+      ...session,
+      terms: {
+        ...session.terms,
+        meter_rate_per_hour: "10000000",
+        meter_recipient: "owner.testnet",
+      },
+    }),
+    "25",
+  );
+  assert.equal(
+    sessionFullPayout({
+      ...session,
+      facility: "Tower",
+      terms: { ...session.terms, facility_multiplier_bps: 5_000 },
+    }),
+    "15",
   );
 });

@@ -20,6 +20,7 @@ import {
 import { ChainReader } from "./chain-reader.js";
 import { garageRecovery } from "./garage-recovery.js";
 import { PRESET_PALETTES } from "./preset-catalog.js";
+import { sessionFullPayout } from "./plot-earnings.js";
 import { buildingMarkup } from "./studio-screen.js";
 import {
   GameWalletClient,
@@ -452,6 +453,24 @@ export class ChainScreen {
             ? `Starts in ${Math.floor(seconds / 60)}m ${seconds % 60}s`
             : "Active now; refresh to confirm";
       });
+    const earnUntil = this.host.querySelector<HTMLElement>("[data-earn-until]");
+    if (earnUntil) {
+      const seconds = Math.max(0, Number(earnUntil.dataset.earnUntil) - now);
+      earnUntil.textContent =
+        seconds > 0
+          ? `Full payout in ${Math.floor(seconds / 60)}m ${seconds % 60}s`
+          : "Full payout ready";
+    }
+    const expiresAt = this.host.querySelector<HTMLElement>(
+      "[data-park-expires]",
+    );
+    if (expiresAt) {
+      const seconds = Math.max(0, Number(expiresAt.dataset.parkExpires) - now);
+      expiresAt.textContent =
+        seconds > 0
+          ? `Parking expires in ${Math.floor(seconds / 60)}m ${seconds % 60}s`
+          : "Parking expired; settle to free the car";
+    }
     const emergency = this.host.querySelector<HTMLButtonElement>(
       "#chain-emergency-repair",
     );
@@ -811,6 +830,7 @@ export class ChainScreen {
         ${
           session
             ? `<p class="chain-parked">Car #${session.car_id} is parked at ${html(session.location_id)} · space ${session.slot + 1}.</p>
+          <p class="muted">Up to ${sessionFullPayout(session)} coins for this park · <span data-earn-until="${session.earn_until}"></span> · <span data-park-expires="${session.expires_at}"></span>. Collect sooner for partial earnings${session.legal ? "" : "; illegal parking can be ticketed"}.</p>
           <button id="chain-collect" class="primary" ${!keyReady || this.busy ? "disabled" : ""}>${now >= session.expires_at ? "Settle expired parking" : "Collect parked car"}</button>`
             : ""
         }

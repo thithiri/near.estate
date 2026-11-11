@@ -1,6 +1,8 @@
 import {
   formatCoins,
+  settleParking,
   type ChainCar,
+  type ChainSession,
   type ChainStreetEconomyConfig,
   type ParkingRule,
 } from "@estate/shared";
@@ -67,4 +69,26 @@ export function towerEarningPreview(
   car: ChainCar | null | undefined,
 ): string {
   return earningPreview(config, { kind: "Free" }, car, true);
+}
+
+export function sessionFullPayout(session: ChainSession): string {
+  const terms = session.terms;
+  const settlement = settleParking(
+    {
+      configVersion: terms.config_version,
+      baseRatePerHour: terms.base_rate_per_hour,
+      tierMultiplierBps: terms.tier_multiplier_bps,
+      legalityMultiplierBps: terms.legality_multiplier_bps,
+      facilityMultiplierBps: terms.facility_multiplier_bps,
+      meterRatePerHour: terms.meter_rate_per_hour,
+      earnCapSeconds: terms.earn_cap_seconds,
+      ticketRecipientBps: terms.ticket_recipient_bps,
+      recipient: terms.meter_recipient,
+      legal: session.legal,
+      tower: session.facility === "Tower",
+    },
+    terms.earn_cap_seconds,
+    "Collect",
+  );
+  return formatCoins(settlement.driverPayout.toString());
 }

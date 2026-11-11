@@ -246,6 +246,8 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 
 - Owners can now reuse an exact previously approved logo or billboard after a building layout change without finding the original local file. The API requires the same plot owner, a still-active approval from an older layout, hash-verified stored PNG bytes and an unchanged finalized plot on a second read; reuse consumes the normal upload-attempt budget and creates a private upload bound to the current layout. The owner must still submit a new on-chain proposal and wait for moderator approval. A local test covers missing authentication, wrong owner, a current-layout image, successful reuse, a layout race and corrupted bytes. The live level-2 restoration has not run yet.
 
+- The live car panel now shows the maximum driver payout and countdowns to the earning cap and expiry for its active parking session. It uses the session's on-chain snapshot terms through the same fixed-point settlement calculation as the game, so later config changes do not alter the preview. The displayed time is estimated from the last finalized chain time and the local clock; final coin amounts still come from the contract. Web tests cover a free curb, a meter split and a tower half-rate session.
+
 ## Open risks
 
 - Browser wallet sign-in, redirects, session-key setup/recovery/revocation and local key storage security on both named wallets; the patched dependency compatibility and wallet bundle size. Protocol permission, allowance exhaustion and revocation passed separately on testnet.
