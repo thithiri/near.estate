@@ -1,6 +1,6 @@
 # Current game visuals
 
-These are the latest saved visuals for the near.estate guest game. The street captures show a first illustrated building trial and the revised controls. The five illustrated facades are operator-created guest previews on level-2 plots; the live city still uses approved artwork and procedural presets. These browser captures do not prove physical-phone performance or wallet signing. The restaurant's Near & Far Burgers billboard is a guest-only sample; live billboards require on-chain approval.
+These are the latest saved visuals for the near.estate guest game. The street captures show an illustrated building trial and the revised controls. Six illustrated facades are operator-created guest previews across five building types; the live city still uses approved artwork and procedural presets. These browser captures do not prove physical-phone performance or wallet signing. The restaurant's Near & Far Burgers billboard is a guest-only sample; live billboards require on-chain approval.
 
 ## Street on a phone
 
@@ -16,7 +16,13 @@ These are the latest saved visuals for the near.estate guest game. The street ca
 
 ## Illustrated building drafts
 
-Five level-2 facades at the same game scale: retail, cafe, restaurant, office and homes. They use distinct rooflines, material cues and entrances. These are one draft per type, not the complete two-variant/four-level library.
+The new Cafe Pergola appears on Main Street with its blank logo and name panels filled by the game. Its low horizontal roof contrasts with the earlier triangular Glasshouse. The portrait builder shows both at game size so the two shapes can be compared before exploring the curated owner choices.
+
+![near.estate Pergola cafe on the landscape phone street](images/near-estate-cafe-variants-street-phone-v2.png)
+
+![near.estate Glasshouse and Pergola cafe style studies in the portrait builder](images/near-estate-cafe-variants-studio-phone-v2.png)
+
+The earlier equal-scale sheet has one level-2 facade per type: retail, Glasshouse cafe, restaurant, office and homes. These are art direction studies, not the complete two-variant/four-level owner library.
 
 ![near.estate illustrated building drafts at game scale](images/near-estate-illustrated-buildings-v1.png)
 

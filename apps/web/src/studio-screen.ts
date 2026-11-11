@@ -60,20 +60,34 @@ export function buildingMarkup(
 }
 
 function illustratedStudyMarkup(type: string): string {
-  const study = illustratedPreviewForType(type);
-  if (!study) return "";
-  const logo = study.logoRect;
-  const name = study.nameRect;
-  return `<figure class="studio-art-direction">
+  const variants = type === "Cafe" ? [1, 2] : [undefined];
+  const studies = variants.map((variant) => {
+    const study = illustratedPreviewForType(type, variant);
+    if (!study) return "";
+    const logo = study.logoRect;
+    const name = study.nameRect;
+    const label =
+      variant === 1
+        ? "Glasshouse"
+        : variant === 2
+          ? "Pergola"
+          : "Illustrated style study";
+    const imageLabel =
+      variant === undefined
+        ? `${type} illustrated level 2 style study`
+        : `${type} ${label} illustrated level 2 style study`;
+    return `<figure class="studio-art-direction">
     <div class="studio-art-frame">
-      <div class="studio-building" role="img" aria-label="${type} illustrated level 2 style study">
+      <div class="studio-building" role="img" aria-label="${imageLabel}">
         <img src="${study.spriteUrl}" alt="" width="140" height="160" />
         ${logo ? `<span class="studio-logo" style="left:${logo.x}px;top:${logo.y}px;width:${logo.width}px;height:${logo.height}px">${type.slice(0, 2).toUpperCase()}</span>` : ""}
         ${name ? `<span class="studio-name" style="left:${name.x}px;top:${name.y}px;width:${name.width}px;height:${name.height}px;font-size:${Math.min(8, name.height * 0.7, name.width / (type.length * 0.62))}px">${type.toUpperCase()}</span>` : ""}
       </div>
     </div>
-    <figcaption><strong>Illustrated style study</strong><span>Level 2 example · preview only</span></figcaption>
+    <figcaption><strong>${label}</strong><span>Level 2 study · preview only</span></figcaption>
   </figure>`;
+  });
+  return `<div class="studio-art-studies ${variants.length === 1 ? "single" : "pair"}">${studies.join("")}</div>`;
 }
 
 function preload(url: string): Promise<void> {

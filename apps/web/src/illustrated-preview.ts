@@ -8,12 +8,13 @@ export type IllustratedPreview = {
   nameRect: Rect | null;
 };
 
-const samplePlots: Record<string, string> = {
-  "plot-main-n-5": "retail",
-  "plot-main-n-1": "cafe",
-  "plot-market-n-1": "restaurant",
-  "plot-river-n-1": "office",
-  "plot-central-n-1": "homes",
+const samplePlots: Record<string, { type: string; variant?: number }> = {
+  "plot-main-n-5": { type: "retail" },
+  "plot-main-n-1": { type: "cafe", variant: 2 },
+  "plot-main-n-6": { type: "cafe", variant: 1 },
+  "plot-market-n-1": { type: "restaurant" },
+  "plot-river-n-1": { type: "office" },
+  "plot-central-n-1": { type: "homes" },
 };
 
 const mediaRects: Record<
@@ -24,9 +25,13 @@ const mediaRects: Record<
     logoRect: { x: 18, y: 78, width: 20, height: 20 },
     nameRect: { x: 51, y: 99, width: 66, height: 10 },
   },
-  cafe: {
+  "cafe:1": {
     logoRect: { x: 59, y: 82, width: 22, height: 18 },
     nameRect: { x: 48, y: 105, width: 44, height: 10 },
+  },
+  "cafe:2": {
+    logoRect: { x: 27, y: 97, width: 12, height: 12 },
+    nameRect: { x: 48, y: 97, width: 60, height: 12 },
   },
   restaurant: {
     logoRect: null,
@@ -41,10 +46,19 @@ const mediaRects: Record<
 
 export function illustratedPreviewForType(
   buildingType: string,
+  variant?: number,
 ): IllustratedPreview | null {
   const key = buildingType.toLowerCase();
-  const entry = catalog.facades.find((facade) => facade.type === key);
-  const rects = mediaRects[key];
+  const entry = catalog.facades.find(
+    (facade) =>
+      facade.type === key &&
+      (variant === undefined ||
+        ("variant" in facade && facade.variant === variant)),
+  );
+  const rects =
+    mediaRects[
+      variant === undefined && key === "cafe" ? "cafe:1" : `${key}:${variant}`
+    ] ?? mediaRects[key];
   if (!entry || !rects) return null;
   return {
     spriteUrl: `${import.meta.env?.BASE_URL ?? "/"}illustrated/${entry.sprite}?v=${entry.sha256.slice(0, 16)}`,
@@ -55,8 +69,9 @@ export function illustratedPreviewForType(
 export function illustratedPreviewForPlot(
   plot: PlayerPlot,
 ): IllustratedPreview | null {
-  const key = samplePlots[plot.id];
-  return key === plot.initialType.toLowerCase()
-    ? illustratedPreviewForType(plot.initialType)
+  const sample = samplePlots[plot.id];
+  return sample?.type === plot.initialType.toLowerCase() &&
+    (sample.variant === undefined || sample.variant === plot.initialVariant)
+    ? illustratedPreviewForType(plot.initialType, sample.variant)
     : null;
 }

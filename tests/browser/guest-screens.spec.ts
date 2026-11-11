@@ -84,13 +84,17 @@ for (const viewport of [
         await page.locator("#studio-type").selectOption(type);
         await expect(
           page.getByRole("img", {
-            name: `${type} illustrated level 2 style study`,
+            name:
+              type === "Cafe"
+                ? "Cafe Glasshouse illustrated level 2 style study"
+                : `${type} illustrated level 2 style study`,
           }),
         ).toBeVisible();
         await expect
           .poll(() =>
             page
               .locator(".studio-art-direction img")
+              .first()
               .evaluate((image) =>
                 image instanceof HTMLImageElement ? image.naturalWidth : 0,
               ),
@@ -100,17 +104,28 @@ for (const viewport of [
     }
     await page.locator("#studio-type").selectOption("Cafe");
     await expect(
-      page.getByRole("img", { name: "Cafe illustrated level 2 style study" }),
+      page.getByRole("img", {
+        name: "Cafe Glasshouse illustrated level 2 style study",
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("img", {
+        name: "Cafe Pergola illustrated level 2 style study",
+      }),
     ).toBeVisible();
     await expect
       .poll(() =>
         page
           .locator(".studio-art-direction img")
-          .evaluate((image) =>
-            image instanceof HTMLImageElement ? image.naturalWidth : 0,
+          .evaluateAll(
+            (images) =>
+              images.filter(
+                (image) =>
+                  image instanceof HTMLImageElement && image.naturalWidth > 0,
+              ).length,
           ),
       )
-      .toBeGreaterThan(0);
+      .toBe(2);
     await page.locator("#studio-level").selectOption("4");
     await page
       .locator(

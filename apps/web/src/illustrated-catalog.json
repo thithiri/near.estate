@@ -19,6 +19,7 @@
     },
     {
       "type": "cafe",
+      "variant": 1,
       "sprite": "cafe-l2.png",
       "sha256": "ac5460353f3b338b3e871a4898f19a0f36fd1f37e40178feb16f06348a06a408",
       "source": "cafe-source.png",
@@ -31,6 +32,23 @@
         "y": 66.5,
         "width": 130,
         "height": 93.5
+      }
+    },
+    {
+      "type": "cafe",
+      "variant": 2,
+      "sprite": "cafe-pergola-l2.png",
+      "sha256": "c38547d00d3671eee77af4d39a2bbd25e2c0330e99884601a1381178878ac117",
+      "source": "cafe-pergola-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5.5,
+        "y": 65,
+        "width": 128.75,
+        "height": 95
       }
     },
     {
