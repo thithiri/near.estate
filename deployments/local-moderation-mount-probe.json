@@ -1,0 +1,15 @@
+{
+  "scope": "local Docker Desktop Compose moderation override, loopback Caddy",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "key": "throwaway random key with no on-chain permission",
+  "keyFileMode": "0600",
+  "containerUserId": 1000,
+  "mountedFileOwnerId": 1000,
+  "mountedFileMode": "0600",
+  "apiHealthStatus": 200,
+  "authenticatedModerationStatus": 200,
+  "unauthenticatedModerationStatus": 401,
+  "temporaryKeyRemoved": true,
+  "temporaryVolumeRemoved": true,
+  "limitation": "Checks startup, protected-file readability and Basic auth; no signing or VPS TLS proof."
+}
