@@ -3,6 +3,8 @@ services:
     build:
       context: ..
       dockerfile: infra/Dockerfile.api
+      args:
+        ESTATE_SOURCE_REVISION: ${ESTATE_SOURCE_REVISION:-unknown}
     environment:
       PORT: 3000
       APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8080}
@@ -28,6 +30,8 @@ services:
     build:
       context: ..
       dockerfile: infra/Dockerfile.worker
+      args:
+        ESTATE_SOURCE_REVISION: ${ESTATE_SOURCE_REVISION:-unknown}
     environment:
       ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:-}
       INDEXER_START_HEIGHT: ${INDEXER_START_HEIGHT:-}
@@ -44,6 +48,7 @@ services:
       context: ..
       dockerfile: infra/Dockerfile.web
       args:
+        ESTATE_SOURCE_REVISION: ${ESTATE_SOURCE_REVISION:-unknown}
         VITE_ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:-}
     depends_on:
       api:

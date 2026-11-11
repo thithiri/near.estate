@@ -48,6 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VITE_ESTATE_CONTRACT_ID: ci-estate.testnet
+      ESTATE_SOURCE_REVISION: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
       - name: Validate production service configuration
@@ -56,6 +57,7 @@ jobs:
           ESTATE_HOST: ci.invalid
           INDEXER_START_HEIGHT: 1
       - run: docker compose -f infra/compose.yaml --profile indexer build api indexer web
+      - run: node scripts/verify-container-revisions.mjs ${{ github.sha }}
       - run: docker compose -f infra/compose.yaml up -d api web
       - name: Check packaged services
         run: |

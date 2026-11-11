@@ -12,5 +12,7 @@ ENV VITE_ESTATE_CONTRACT_ID=${VITE_ESTATE_CONTRACT_ID}
 RUN npm ci && npm run build -w @estate/shared && npm run build -w @estate/web
 
 FROM caddy:2-alpine
+ARG ESTATE_SOURCE_REVISION=unknown
+LABEL org.opencontainers.image.revision=${ESTATE_SOURCE_REVISION}
 COPY infra/Caddyfile.dev /etc/caddy/Caddyfile
 COPY --from=build /app/apps/web/dist /srv

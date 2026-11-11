@@ -4,6 +4,8 @@ services:
     build:
       context: ..
       dockerfile: infra/Dockerfile.api
+      args:
+        ESTATE_SOURCE_REVISION: ${ESTATE_SOURCE_REVISION:-unknown}
     command: ["node", "services/api/dist/run-inspector.js", "--run"]
     environment:
       ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:?Set the deployed testnet contract}
