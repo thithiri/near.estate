@@ -636,6 +636,34 @@ button:disabled {
   width: 100%;
   height: 100%;
 }
+.guest-building-preview:not([hidden]) {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: calc(100% - 16px);
+  padding: 5px 7px;
+  border: 2px solid #15223e;
+  border-radius: 11px;
+  background: #fff9edee;
+  box-shadow: 0 3px 0 #15223e;
+  font-size: 12px;
+  font-weight: 800;
+}
+.guest-building-preview span {
+  min-width: 0;
+}
+.guest-building-preview button {
+  flex: none;
+  min-height: 36px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
 .controlbar {
   min-height: 78px;
   display: flex;
@@ -968,6 +996,10 @@ button:disabled {
   border-radius: 14px;
   background: linear-gradient(#c7ecfa 0 82%, #f4e5d8 82%);
 }
+.studio-art-direction.selected {
+  border-color: #17b77e;
+  box-shadow: 0 0 0 3px #bcefd6;
+}
 .studio-art-frame {
   position: relative;
   width: 140px;
@@ -988,6 +1020,15 @@ button:disabled {
 }
 .studio-art-direction figcaption span {
   color: #536276;
+}
+.studio-art-direction > button {
+  width: 100%;
+  min-height: 44px;
+  padding: 5px;
+  font-size: 12px;
+}
+.studio-screen[data-art-preview="true"] .studio-choice {
+  display: none;
 }
 .studio-palette {
   border: 0;

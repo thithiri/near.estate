@@ -41,8 +41,12 @@ import type { LiveStreet } from "./live-street.js";
 import type { GameWalletClient } from "./wallet-client.js";
 import { createPresetFacade, PresetTextureCache } from "./preset-renderer.js";
 import { facadePreset } from "./preset-catalog.js";
-import { illustratedPreviewForPlot } from "./illustrated-preview.js";
-import { MockStudio } from "./studio-screen.js";
+import {
+  illustratedPreviewForPlot,
+  illustratedPreviewForType,
+} from "./illustrated-preview.js";
+import { buildingShapeName } from "./building-shapes.js";
+import { MockStudio, type GuestBuildingPreview } from "./studio-screen.js";
 import { mountCinemaShort } from "./cinema-short.js";
 import { mountPracticeCourse } from "./practice-course.js";
 import { AdvertiserStatsScreen } from "./advertiser-stats.js";
@@ -76,6 +80,12 @@ if (
   }
 }
 const canvasHost = document.querySelector<HTMLElement>("#street-canvas")!;
+const guestBuildingBanner = document.querySelector<HTMLElement>(
+  "#guest-building-preview",
+)!;
+const guestBuildingName = document.querySelector<HTMLElement>(
+  "#guest-building-preview-name",
+)!;
 const otherScreen = document.querySelector<HTMLElement>("#other-screen")!;
 const streetScreen = document.querySelector<HTMLElement>("#street-screen")!;
 const plotPanel = document.querySelector<HTMLElement>("#plot-panel")!;
@@ -217,6 +227,12 @@ function requestApprovedManifest(hash: string): void {
     .finally(() => loadingManifests.delete(hash));
 }
 const ownedPlot = game.plot(game.ownedPlotId);
+let guestBuildingPreview: GuestBuildingPreview | null = null;
+function updateGuestBuildingBanner(): void {
+  guestBuildingBanner.hidden = liveMode || guestBuildingPreview === null;
+  if (!guestBuildingPreview) return;
+  guestBuildingName.textContent = `Guest look · ${guestBuildingPreview.type} ${buildingShapeName(guestBuildingPreview.type, guestBuildingPreview.variant)} · Level ${guestBuildingPreview.level}`;
+}
 const studio = new MockStudio(
   ownedPlot,
   [
@@ -225,6 +241,17 @@ const studio = new MockStudio(
   ],
   () => showScreen("My Plots"),
   () => currentScreen === "Studio",
+  (preview) => {
+    guestBuildingPreview = preview;
+    const road = city.streets.find((entry) => entry.id === ownedPlot.roadId)!;
+    moveToRoad(
+      road.id,
+      ownedPlot.side,
+      frontageX(road, ownedPlot.index) + FRONTAGE_PITCH / 2,
+    );
+    showScreen("Street");
+    updateGuestBuildingBanner();
+  },
 );
 let statsInitialPlotId: string | undefined;
 const statsScreen = new AdvertiserStatsScreen(
@@ -543,17 +570,32 @@ function drawWorld(): void {
       ? approvedManifests.get(approvedHash)
       : undefined;
     const x = frontageX(road, plot.index);
-    const illustratedPreview = !liveMode
-      ? illustratedPreviewForPlot(plot)
-      : null;
-    const facade = createPresetFacade(
-      building
+    const guestOwned = !liveMode && plot.id === game.ownedPlotId;
+    const guestLook = guestOwned ? guestBuildingPreview : null;
+    const renderedPlot = guestLook
+      ? {
+          ...plot,
+          initialType: guestLook.type,
+          initialVariant: guestLook.variant,
+        }
+      : building
         ? {
             ...plot,
             initialType: building.building_type,
             initialVariant: building.variant,
           }
-        : plot,
+        : plot;
+    const illustratedPreview = liveMode
+      ? null
+      : guestOwned
+        ? illustratedPreviewForType(
+            renderedPlot.initialType,
+            renderedPlot.initialVariant as 1 | 2,
+            guestLook?.level ?? 1,
+          )
+        : illustratedPreviewForPlot(plot);
+    const facade = createPresetFacade(
+      renderedPlot,
       x,
       building
         ? {
@@ -580,8 +622,8 @@ function drawWorld(): void {
                 )
               : undefined,
           }
-        : plot.id === game.ownedPlotId && !liveMode
-          ? { level: 1, palette: "#F6C85F" }
+        : guestOwned
+          ? { level: guestLook?.level ?? 1, palette: "#F6C85F" }
           : undefined,
       illustratedPreview,
     );
@@ -956,7 +998,7 @@ function updatePanel(): void {
     }
   } else if (target.kind === "Plot") {
     const plot = game.plot(target.id);
-    title = `${plot.initialType} · Plot ${plot.index + 1}`;
+    title = `${!liveMode && plot.id === game.ownedPlotId && guestBuildingPreview ? guestBuildingPreview.type : plot.initialType} · Plot ${plot.index + 1}`;
     rule =
       game.rules.get(plot.id) === "NoParking"
         ? "No parking · owner can ticket"
@@ -1673,6 +1715,7 @@ function showScreen(screen: string): void {
     if (liveMode) liveStreet?.start();
     drawWorld();
     updatePanel();
+    updateGuestBuildingBanner();
     requestAnimationFrame(() =>
       app.renderer.resize(canvasHost.clientWidth, canvasHost.clientHeight),
     );
@@ -2035,6 +2078,7 @@ function toggleStreetMode(): void {
   if (!contractId) return;
   impressionReporter.pause();
   liveMode = !liveMode;
+  updateGuestBuildingBanner();
   if (!liveMode) liveStreet?.stop();
   modeButton.textContent = liveMode ? "Guest mode" : "Testnet street";
   status.textContent = liveMode
@@ -2153,6 +2197,17 @@ portraitDriving.addEventListener("change", () => {
 });
 networkButton.addEventListener("click", () => showScreen("Testnet"));
 modeButton.addEventListener("click", toggleStreetMode);
+document
+  .querySelector<HTMLButtonElement>("#guest-building-edit")!
+  .addEventListener("click", () => showScreen("Studio"));
+document
+  .querySelector<HTMLButtonElement>("#guest-building-reset")!
+  .addEventListener("click", () => {
+    guestBuildingPreview = null;
+    updateGuestBuildingBanner();
+    drawWorld();
+    updatePanel();
+  });
 actionButton.addEventListener("click", action);
 panelAction.addEventListener("click", action);
 towerFloorSelect.addEventListener("change", () => {

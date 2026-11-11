@@ -66,7 +66,7 @@ The level-3 Glasshouse appears on [Main Street](images/near-estate-cafe-glasshou
 
 ## Building studio on a phone
 
-390 × 844 portrait. The guest studio shows the selected type's two illustrated style studies before the curated design choices. Retail and Cafe art follow the selected level; Restaurant, Office and Homes currently show their available level-2 studies with a clear caption. A persistent button names the selected preview level and stays above the phone navigation while Describe is open, so the next step remains visible while scrolling the form. The style studies are preview-only. The later Choose and Preview steps still compare the current curated designs beside neighbours; publishing requires a purchased plot and wallet.
+390 × 844 portrait. The guest studio shows two illustrated shapes for every type at the selected level. Each shape can be previewed beside the plot's neighbours and then on the playable guest street. A persistent button names the selected preview level and stays above the phone navigation while Describe is open. The separate Choose step compares three existing curated colour/preset looks; publishing requires a purchased testnet plot and wallet.
 
 ![near.estate illustrated building study and next action in the phone studio](images/near-estate-studio-next-action-390-v1.png)
 
@@ -75,6 +75,8 @@ The [320-pixel phone capture](images/near-estate-studio-next-action-320-v1.png) 
 The Choose step now has Previous and Next buttons so a player can compare all three looks before opening the street preview. Selecting a thumbnail stays on Choose. This 320-pixel capture shows the controls with a level-2 cafe.
 
 ![near.estate studio Choose step with design navigation](images/near-estate-studio-choose-320-v1.png)
+
+The [phone neighbourhood preview](images/near-estate-illustrated-choice-phone-v1.png) shows the chosen level-4 Office Glass block beside the adjacent Diner and Homes buildings. The [desktop builder](images/near-estate-illustrated-choice-desktop-v1.png) keeps both illustrated choices visible while the street composition is open. The [playable street capture](images/near-estate-illustrated-choice-street-desktop-v1.png) shows the same image on the sample plot with a guest-only Edit look / Reset banner. This preview changes no plot ownership, paid level, parking rule or on-chain appearance.
 
 ## Owner building choices
 

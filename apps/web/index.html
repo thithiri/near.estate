@@ -51,10 +51,19 @@
               ><strong id="street-name">Main Street</strong
               ><span id="street-side">North side</span>
             </div>
-            <div
-              id="street-canvas"
-              aria-label="Side-scrolling street game"
-            ></div>
+            <div id="street-canvas" aria-label="Side-scrolling street game">
+              <div
+                id="guest-building-preview"
+                class="guest-building-preview"
+                hidden
+              >
+                <span id="guest-building-preview-name"></span>
+                <button id="guest-building-edit" type="button">
+                  Edit look
+                </button>
+                <button id="guest-building-reset" type="button">Reset</button>
+              </div>
+            </div>
             <div class="rotate-card">
               <div class="rotate-icon">↻</div>
               <h1>Rotate to drive</h1>

@@ -8,6 +8,50 @@ async function noHorizontalOverflow(page: Page): Promise<void> {
   expect(sizes.document).toBeLessThanOrEqual(sizes.viewport + 1);
 }
 
+test("illustrated building choice reaches the playable guest street", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto("/");
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("button", { name: "My Plots" })
+    .click();
+  await page.locator("#open-studio").click();
+  await page.locator("#studio-type").selectOption("Office");
+  await page.locator("#studio-level").selectOption("4");
+  await page
+    .getByRole("button", { name: "Preview Office Glass block on your plot" })
+    .click();
+  await expect(page.locator(".studio-screen")).toHaveAttribute(
+    "data-step",
+    "Preview",
+  );
+  await expect(page.locator(".studio-focus img")).toHaveAttribute(
+    "src",
+    /office-glass-l4\.png/,
+  );
+  await expect(page.locator(".studio-neighbour img")).toHaveCount(2);
+  await page.locator("#studio-view-street").click();
+  await expect(page.locator("#guest-building-preview")).toBeVisible();
+  await expect(page.locator("#guest-building-preview-name")).toContainText(
+    "Office Glass block · Level 4",
+  );
+  await expect(page.locator("#street-name")).toHaveText("Main Street");
+  await expect(page.locator("#plot-title")).toContainText("Office · Plot 4");
+  await page.locator("#guest-building-edit").click();
+  await expect(page.locator(".studio-focus img")).toHaveAttribute(
+    "src",
+    /office-glass-l4\.png/,
+  );
+  await page.locator("#studio-view-street").click();
+  await page.locator("#guest-building-reset").click();
+  await expect(page.locator("#guest-building-preview")).toBeHidden();
+  expect(pageErrors).toEqual([]);
+});
+
 for (const viewport of [
   { name: "desktop", width: 1280, height: 720, navigation: "Main navigation" },
   {

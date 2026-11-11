@@ -16,6 +16,11 @@ import { buildingShapeName } from "./building-shapes.js";
 type StudioStep = "Describe" | "Choose" | "Preview";
 type StudioState = "Empty" | "Pending" | "Ready" | "Error";
 type Candidate = { variant: 1 | 2; palette: string };
+export type GuestBuildingPreview = {
+  type: (typeof BuildingType.options)[number];
+  variant: 1 | 2;
+  level: number;
+};
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => {
@@ -60,28 +65,44 @@ export function buildingMarkup(
   </div>`;
 }
 
-function illustratedStudyMarkup(type: string, level: number): string {
+function illustratedBuildingMarkup(
+  type: string,
+  variant: 1 | 2,
+  level: number,
+  context = "style study",
+): string {
+  const study = illustratedPreviewForType(type, variant, level);
+  if (!study) return "";
+  const parsed = BuildingType.safeParse(type);
+  if (!parsed.success) return "";
+  const logo = study.logoRect;
+  const name = study.nameRect;
+  const label = buildingShapeName(parsed.data, variant);
+  return `<div class="studio-building" role="img" aria-label="${type} ${label} illustrated level ${level} ${context}">
+    <img src="${study.spriteUrl}" alt="" width="140" height="160" />
+    ${logo ? `<span class="studio-logo" style="left:${logo.x}px;top:${logo.y}px;width:${logo.width}px;height:${logo.height}px">${type.slice(0, 2).toUpperCase()}</span>` : ""}
+    ${name ? `<span class="studio-name" style="left:${name.x}px;top:${name.y}px;width:${name.width}px;height:${name.height}px;font-size:${Math.min(8, name.height * 0.7, name.width / (type.length * 0.62))}px">${type.toUpperCase()}</span>` : ""}
+  </div>`;
+}
+
+function illustratedStudyMarkup(
+  type: string,
+  level: number,
+  selected: 1 | 2 | null,
+): string {
   const parsed = BuildingType.safeParse(type);
   if (!parsed.success) return "";
   const variants = [1, 2] as const;
   const studies = variants.map((variant) => {
-    const study =
-      illustratedPreviewForType(type, variant, level) ??
-      illustratedPreviewForType(type, variant, 2);
+    const study = illustratedPreviewForType(type, variant, level);
     if (!study) return "";
-    const logo = study.logoRect;
-    const name = study.nameRect;
     const label = buildingShapeName(parsed.data, variant);
-    const imageLabel = `${type} ${label} illustrated level ${study.level} style study`;
-    return `<figure class="studio-art-direction">
+    return `<figure class="studio-art-direction ${variant === selected ? "selected" : ""}">
     <div class="studio-art-frame">
-      <div class="studio-building" role="img" aria-label="${imageLabel}">
-        <img src="${study.spriteUrl}" alt="" width="140" height="160" />
-        ${logo ? `<span class="studio-logo" style="left:${logo.x}px;top:${logo.y}px;width:${logo.width}px;height:${logo.height}px">${type.slice(0, 2).toUpperCase()}</span>` : ""}
-        ${name ? `<span class="studio-name" style="left:${name.x}px;top:${name.y}px;width:${name.width}px;height:${name.height}px;font-size:${Math.min(8, name.height * 0.7, name.width / (type.length * 0.62))}px">${type.toUpperCase()}</span>` : ""}
-      </div>
+      ${illustratedBuildingMarkup(type, variant, level)}
     </div>
-    <figcaption><strong>${label}</strong><span>Level ${study.level} study · preview only</span></figcaption>
+    <figcaption><strong>${label}</strong><span>Level ${study.level} · illustrated</span></figcaption>
+    <button type="button" data-illustrated-preview="${variant}" aria-label="Preview ${type} ${label} on your plot" aria-pressed="${variant === selected}">${variant === selected ? "Selected for preview" : "Preview on plot"}</button>
   </figure>`;
   });
   return `<div class="studio-art-studies pair">${studies.join("")}</div>`;
@@ -104,6 +125,7 @@ export class MockStudio {
   private requestId = 0;
   private candidates: Candidate[] = [];
   private selected = 0;
+  private illustratedVariant: 1 | 2 | null = null;
   private type: string;
   private variant: 1 | 2;
   private level = 1;
@@ -115,6 +137,7 @@ export class MockStudio {
     private readonly neighbours: [PlayerPlot, PlayerPlot],
     private readonly onBack: () => void,
     private readonly isCurrent: () => boolean,
+    private readonly onStreetPreview: (preview: GuestBuildingPreview) => void,
   ) {
     this.type = plot.initialType;
     this.variant = plot.initialVariant as 1 | 2;
@@ -142,7 +165,7 @@ export class MockStudio {
   private canOpenStep(step: StudioStep): boolean {
     if (step === "Describe") return true;
     if (step === "Choose") return this.state !== "Empty";
-    return this.state === "Ready";
+    return this.state === "Ready" || this.illustratedVariant !== null;
   }
 
   private candidateMarkup(candidate: Candidate, index: number): string {
@@ -170,31 +193,32 @@ export class MockStudio {
     const chosen = this.selectedLook();
     const left = this.neighbours[0];
     const right = this.neighbours[1];
-    this.root.innerHTML = `<div class="studio-screen" data-step="${this.step}">
+    const artPreview = this.illustratedVariant !== null;
+    this.root.innerHTML = `<div class="studio-screen" data-step="${this.step}" data-art-preview="${artPreview}">
       <div class="studio-heading"><button id="studio-back" aria-label="Back to My Plots">←</button><div><h1>Build your place</h1><p>Plot ${this.plot.index + 1} · Main Street · Guest preview</p></div><span class="tag">Level ${this.level} preview</span></div>
       <nav class="studio-steps" aria-label="Building studio steps">${(["Describe", "Choose", "Preview"] as const).map((step) => `<button data-studio-step="${step}" aria-current="${step === this.step ? "step" : "false"}" ${this.canOpenStep(step) ? "" : "disabled"}>${step}</button>`).join("")}</nav>
       <div class="studio-layout">
         <section class="card studio-controls" aria-label="Describe your building">
           <h2>Your building</h2>
           <label>Type<select id="studio-type">${BuildingType.options.map((type) => `<option value="${type}" ${type === this.type ? "selected" : ""}>${type}</option>`).join("")}</select></label>
-          ${illustratedStudyMarkup(this.type, this.level)}
+          ${illustratedStudyMarkup(this.type, this.level, this.illustratedVariant)}
           <label>Level to preview<select id="studio-level">${[1, 2, 3, 4].map((level) => `<option value="${level}" ${level === this.level ? "selected" : ""}>Level ${level} · ${[70, 100, 130, 160][level - 1]}px limit</option>`).join("")}</select></label>
           <fieldset class="studio-palette"><legend>Colour</legend>${PRESET_PALETTES.map((palette) => `<button type="button" data-studio-palette="${palette}" aria-label="${paletteName(palette)} colour" aria-pressed="${palette === this.palette}" style="background:${palette}"></button>`).join("")}</fieldset>
           <label>Your idea<textarea id="studio-description" maxlength="800" rows="4" placeholder="A greenhouse cafe with a tall glass peak and hanging plants…">${escapeHtml(this.description)}</textarea></label>
-          <p class="muted">Your idea previews the future generation flow. The three selectable looks are curated designs for now.</p>
+          <p class="muted">Preview either illustrated shape on your plot. Your written idea is for future generation; the colour control below applies to the three curated preset looks.</p>
           <button class="primary" id="explore-presets">Explore 3 preset looks</button>
         </section>
         <div class="studio-workspace">
           <section class="studio-choice" aria-label="Choose a design"><h2>Choose a shape</h2>${this.statusMarkup()}</section>
           <section class="studio-preview" aria-label="Preview beside neighbours"><h2>On your street</h2>
             <div class="studio-neighbourhood">
-              <div class="studio-neighbour">${buildingMarkup(left.initialType, left.initialVariant, (left.index % 4) + 1, PRESET_PALETTES[left.index % 4]!)}</div>
-              <div class="studio-focus"><span class="studio-height-line" style="--height-line-top:${160 - [70, 100, 130, 160][this.level - 1]!}px"><span>Level ${this.level} limit</span></span>${buildingMarkup(this.type, chosen.variant, this.level, chosen.palette)}</div>
-              <div class="studio-neighbour">${buildingMarkup(right.initialType, right.initialVariant, (right.index % 4) + 1, PRESET_PALETTES[right.index % 4]!)}</div>
+              <div class="studio-neighbour">${illustratedBuildingMarkup(left.initialType, left.initialVariant as 1 | 2, (left.index % 4) + 1, "street neighbour") || buildingMarkup(left.initialType, left.initialVariant, (left.index % 4) + 1, PRESET_PALETTES[left.index % 4]!)}</div>
+              <div class="studio-focus"><span class="studio-height-line" style="--height-line-top:${160 - [70, 100, 130, 160][this.level - 1]!}px"><span>Level ${this.level} limit</span></span>${artPreview ? illustratedBuildingMarkup(this.type, this.illustratedVariant!, this.level, "plot preview") : buildingMarkup(this.type, chosen.variant, this.level, chosen.palette)}</div>
+              <div class="studio-neighbour">${illustratedBuildingMarkup(right.initialType, right.initialVariant as 1 | 2, (right.index % 4) + 1, "street neighbour") || buildingMarkup(right.initialType, right.initialVariant, (right.index % 4) + 1, PRESET_PALETTES[right.index % 4]!)}</div>
               <div class="studio-curb"><span>Parking</span><span>Parking</span></div>
             </div>
             <p class="muted">${this.level > 1 ? `Level ${this.level} is a visual preview. Paid upgrades cost ${formatCoins(DEFAULT_CONFIG.buildingUpgradeCosts[this.level - 2]!)} coins for this step.` : "Your current building is level 1. Previewing leaves it unchanged."}</p>
-            <button class="primary" disabled>Submit for review</button><p class="muted">To publish a design, buy a plot on testnet and submit your choice for review.</p>
+            ${artPreview ? `<button class="primary" id="studio-view-street">View on playable street →</button><p class="muted">Guest visual preview only. Your plot and parking rules stay unchanged.</p>` : `<button class="primary" disabled>Submit for review</button><p class="muted">To publish a design, buy a plot on testnet and submit your choice for review.</p>`}
           </section>
         </div>
       </div>
@@ -213,6 +237,7 @@ export class MockStudio {
       .forEach((button) =>
         button.addEventListener("click", () => {
           this.step = button.dataset.studioStep as StudioStep;
+          if (this.step === "Choose") this.illustratedVariant = null;
           this.render();
         }),
       );
@@ -255,6 +280,29 @@ export class MockStudio {
       .querySelector<HTMLButtonElement>("#retry-presets")
       ?.addEventListener("click", () => {
         void this.explore();
+      });
+    root
+      .querySelectorAll<HTMLButtonElement>("[data-illustrated-preview]")
+      .forEach((button) =>
+        button.addEventListener("click", () => {
+          this.illustratedVariant = Number(
+            button.dataset.illustratedPreview,
+          ) as 1 | 2;
+          this.variant = this.illustratedVariant;
+          this.step = "Preview";
+          this.render();
+        }),
+      );
+    root
+      .querySelector<HTMLButtonElement>("#studio-view-street")
+      ?.addEventListener("click", () => {
+        const parsed = BuildingType.safeParse(this.type);
+        if (!parsed.success || this.illustratedVariant === null) return;
+        this.onStreetPreview({
+          type: parsed.data,
+          variant: this.illustratedVariant,
+          level: this.level,
+        });
       });
     root
       .querySelectorAll<HTMLButtonElement>("[data-candidate]")
@@ -306,6 +354,7 @@ export class MockStudio {
     this.state = "Empty";
     this.candidates = [];
     this.selected = 0;
+    this.illustratedVariant = null;
     this.step = "Describe";
     this.render();
   }
@@ -314,6 +363,7 @@ export class MockStudio {
     const requestId = ++this.requestId;
     this.candidates = presetCandidates(this.variant, this.palette);
     this.selected = 0;
+    this.illustratedVariant = null;
     this.state = "Pending";
     this.step = "Choose";
     this.render();
