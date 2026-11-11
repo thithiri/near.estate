@@ -708,9 +708,9 @@
       "sprite": "restaurant-2-l1.png",
       "paletteMask": "restaurant-2-l1-mask.png",
       "thumbnail": "restaurant-2-l1-thumb.png",
-      "spriteHash": "3c818ac5915d2684b301fa720b26af21dc7d108caaa4d48b38d0a764ed9b8a25",
-      "paletteMaskHash": "ced3c773a8deb8e5b5ccf4f106db2008c674b5281b21a04ad81e5979f6029c32",
-      "thumbnailHash": "5a5cefc9a6874846e51bc54e2e51aeec5880d0649d6c05f9bb42b9c34adcc42f",
+      "spriteHash": "f4797d74afc6e9c1dcf9f36222f6c23a0925102ae65202dd6cbf49e5d3fffccf",
+      "paletteMaskHash": "ae85ac3a99257f7d1fad5e6d74a0a88dd8d03633418a6bdf47ffd0f3f68d4cea",
+      "thumbnailHash": "1dc0c4e9ae471426a790e22f7fa7788563937e0707c688b8c8c9fd67c09c3a28",
       "alphaBounds": {
         "x": 6.25,
         "y": 104.25,
@@ -730,10 +730,10 @@
         "height": 24
       },
       "nameRect": {
-        "x": 53,
-        "y": 119,
-        "width": 34,
-        "height": 12
+        "x": 38,
+        "y": 106,
+        "width": 64,
+        "height": 10
       }
     },
     {
@@ -743,9 +743,9 @@
       "sprite": "restaurant-2-l2.png",
       "paletteMask": "restaurant-2-l2-mask.png",
       "thumbnail": "restaurant-2-l2-thumb.png",
-      "spriteHash": "00d11eb67349f47f0f486f605d730a7042c65f31cfa620ef3c7484b60002fe90",
-      "paletteMaskHash": "0ec2d100796f7e2e7da22998de825d2e486f2e3e808c47766e549b7eee3afdab",
-      "thumbnailHash": "7affdaa63a3f5b236cc568afb3a4fb1371405175776104c8ce97425699e0823e",
+      "spriteHash": "481db911847fbe044d684f9da822d911a7ee4d462a932e1936800f9e85f67cc5",
+      "paletteMaskHash": "9b33049cfe4a346d6a9bf5ec604f419c22b4022c955a272df0fc30d6ed62469f",
+      "thumbnailHash": "e2c583ef8d1ccfc38b7ca4e986422d72cc23fb23f7fcae60f417b53e737dd76c",
       "alphaBounds": {
         "x": 6.25,
         "y": 74.25,
@@ -765,10 +765,10 @@
         "height": 24
       },
       "nameRect": {
-        "x": 53,
-        "y": 119,
-        "width": 34,
-        "height": 12
+        "x": 38,
+        "y": 76,
+        "width": 64,
+        "height": 10
       }
     },
     {
@@ -778,9 +778,9 @@
       "sprite": "restaurant-2-l3.png",
       "paletteMask": "restaurant-2-l3-mask.png",
       "thumbnail": "restaurant-2-l3-thumb.png",
-      "spriteHash": "ecc96892383a1641d7c143bdd47f496bbbc27a46053e092aee2d816246acf455",
-      "paletteMaskHash": "185b2fbbfc27aab975657f42b7e2af0867c42ec8f22fa581bf8e8e2623e71a55",
-      "thumbnailHash": "cdee514cf32a34168c7db17fed45178e464a450083e6926adfc9e08f2105eab6",
+      "spriteHash": "46cad33360dc9aed88d6071113df5e77e15dbf300d24f71ba5f979935a790e09",
+      "paletteMaskHash": "c564babe5a2d9327ce376b3a4724b8176e8e67bc87b178268752a9048ee6c73a",
+      "thumbnailHash": "4f1d69714e40d69ffb70784531c2ebb3ffb202990f5b13f84f48cd842de741d3",
       "alphaBounds": {
         "x": 6.25,
         "y": 44.25,
@@ -800,10 +800,10 @@
         "height": 24
       },
       "nameRect": {
-        "x": 53,
-        "y": 119,
-        "width": 34,
-        "height": 12
+        "x": 38,
+        "y": 46,
+        "width": 64,
+        "height": 10
       }
     },
     {
@@ -813,9 +813,9 @@
       "sprite": "restaurant-2-l4.png",
       "paletteMask": "restaurant-2-l4-mask.png",
       "thumbnail": "restaurant-2-l4-thumb.png",
-      "spriteHash": "0b9b72f1cee44290f17e1095cdee34a7d9c7cb25c34dd6ff8e6a7f07934b5dc5",
-      "paletteMaskHash": "fba7c40c0913d92f682eede08ba2efa05e900389b0020d9f43bbf5cb7b53df69",
-      "thumbnailHash": "3538e0cdbb63a3b617baeaf6242f54cd165a1cd4cf06f91920a60a2ce75b1aed",
+      "spriteHash": "3a80875186ef3b9aae56de00726c20317e0ffbbfbab39f2633d60dcdb71202fa",
+      "paletteMaskHash": "18e103a88c5b83f6d23ade9673a1e002f72184b09110897bc2dc2f92d84c35f5",
+      "thumbnailHash": "d9ebab1120a0a454de5bbbfd0e64e96c14bf136b9100b94199b252854a50cf07",
       "alphaBounds": {
         "x": 6.25,
         "y": 14.25,
@@ -835,10 +835,10 @@
         "height": 24
       },
       "nameRect": {
-        "x": 53,
-        "y": 119,
-        "width": 34,
-        "height": 12
+        "x": 38,
+        "y": 16,
+        "width": 64,
+        "height": 10
       }
     },
     {

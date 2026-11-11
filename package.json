@@ -13,7 +13,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "assets:generate": "node scripts/generate-presets.mjs && node scripts/generate-world-sprites.mjs",
-    "assets:check": "node scripts/generate-presets.mjs --check && node scripts/generate-world-sprites.mjs --check",
+    "assets:check": "node scripts/generate-presets.mjs --check && node scripts/generate-world-sprites.mjs --check && node scripts/render-preset-review.mjs --check",
     "assets:review": "node scripts/render-preset-review.mjs",
     "seed:check": "npm run seed:check -w @estate/shared",
     "config:check": "npm run build -w @estate/shared && node scripts/check-config-parity.mjs",

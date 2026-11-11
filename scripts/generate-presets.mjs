@@ -140,20 +140,19 @@ function design(type, variant, level) {
     base += rect(8, top + 19, 52, 139 - top, wall, 2);
     base += rect(80, top + 19, 52, 139 - top, wall, 2);
     base += rect(7, top + 11, 126, 11, timber, 1);
-    base += poly(
-      `57,158 57,${top + 36} 70,${top + 25} 83,${top + 36} 83,158`,
-      pale,
-    );
+    base += line(59, top + 22, 70, top + 33, ink, 2);
+    base += line(70, top + 33, 81, top + 22, ink, 2);
+    base += line(59, top + 22, 59, top + 37, ink, 2);
+    base += line(81, top + 22, 81, top + 37, ink, 2);
     base += upperWindows(9, 51, top, level, 2);
     base += upperWindows(81, 51, top, level, 2);
     base += rect(15, 132, 35, 20, glass, 5);
     base += rect(90, 132, 35, 20, glass, 5);
-    base += rect(64, 131, 12, 27, dark, 1);
+    base += line(60, 157, 80, 157, timber, 2);
     mask += maskRect(8, top + 12, 124, 6);
-    mask += maskRect(58, top + 33, 24, 5, 2);
     logoRect = { x: 93, y: top + 27, width: 20, height: 20 };
     billboardRect = { x: 10, y: top + 27, width: 48, height: 24 };
-    nameRect = { x: 53, y: 119, width: 34, height: 12 };
+    nameRect = { x: 38, y: top + 12, width: 64, height: 10 };
   } else if (type === "Office" && variant === 1) {
     base += rect(34, top + 4, 72, 154 - top, concrete, 1);
     base += rect(40, top + 11, 60, 119 - top, glassDeep, 1);

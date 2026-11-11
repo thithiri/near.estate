@@ -9,6 +9,10 @@ const catalog = JSON.parse(
 );
 const sprites = join(root, "apps/web/public/presets");
 const output = join(root, "docs/images/near-estate-level-neighbours-v1.png");
+const contactOutput = join(
+  root,
+  "docs/images/near-estate-preset-contact-sheet-v1.png",
+);
 const types = ["Retail", "Cafe", "Restaurant", "Office", "Homes"];
 const cellWidth = 530;
 const cellHeight = 215;
@@ -69,5 +73,59 @@ const image = await sharp({
   .composite(layers)
   .png()
   .toBuffer();
-await writeFile(output, image);
-console.log(`Wrote ${output}`);
+
+const contactCellWidth = 240;
+const contactCellHeight = 260;
+const contactLayers = [];
+for (let variant = 1; variant <= 2; variant++) {
+  for (let column = 0; column < types.length; column++) {
+    const type = types[column];
+    const entry = entries.get(`${type}:${variant}:1`);
+    if (!entry)
+      throw new Error(`Missing contact-sheet preset ${type}:${variant}`);
+    const left = column * contactCellWidth;
+    const top = (variant - 1) * contactCellHeight;
+    contactLayers.push({
+      input: Buffer.from(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${contactCellWidth}" height="${contactCellHeight}"><rect x="9" y="9" width="221" height="235" rx="12" fill="#eaf2ed" stroke="#1e2d49" stroke-width="2"/><path d="M18 220h204" stroke="#798b91" stroke-width="3"/><text x="120" y="37" text-anchor="middle" font-family="Arial" font-size="17" font-weight="bold" fill="#1e2d49">${type} ${variant}</text></svg>`,
+      ),
+      left,
+      top,
+    });
+    contactLayers.push({
+      input: await sharp(join(sprites, entry.sprite))
+        .extract({ left: 0, top: 280, width: 560, height: 360 })
+        .resize(210, 135)
+        .png()
+        .toBuffer(),
+      left: left + 15,
+      top: top + 85,
+    });
+  }
+}
+const contact = await sharp({
+  create: {
+    width: contactCellWidth * types.length,
+    height: contactCellHeight * 2,
+    channels: 4,
+    background: "#ffffff",
+  },
+})
+  .composite(contactLayers)
+  .png()
+  .toBuffer();
+if (process.argv.includes("--check")) {
+  const [savedNeighbours, savedContact] = await Promise.all([
+    readFile(output),
+    readFile(contactOutput),
+  ]);
+  if (!image.equals(savedNeighbours) || !contact.equals(savedContact))
+    throw new Error("Preset review sheets differ from the facade catalog");
+  console.log("Validated both preset review sheets");
+} else {
+  await Promise.all([
+    writeFile(output, image),
+    writeFile(contactOutput, contact),
+  ]);
+  console.log(`Wrote ${output} and ${contactOutput}`);
+}
