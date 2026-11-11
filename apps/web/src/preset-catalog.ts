@@ -25,5 +25,5 @@ export function facadePreset(
 }
 
 export function facadeAssetUrl(filename: string, hash: string): string {
-  return `${import.meta.env.BASE_URL}presets/${filename}?v=${hash.slice(0, 16)}`;
+  return `${import.meta.env?.BASE_URL ?? "/"}presets/${filename}?v=${hash.slice(0, 16)}`;
 }

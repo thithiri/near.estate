@@ -77,3 +77,91 @@ test("facade and approved logo recover after a temporary image failure", async (
     console.warn = originalWarn;
   }
 });
+
+test("approved facade uses its curated preset while the public image retries", async () => {
+  const originalLoad = Assets.load;
+  const originalWarn = console.warn;
+  let approvedAvailable = false;
+  const attempts = new Map<string, number>();
+  const hash = "b".repeat(64);
+  const logoHash = "c".repeat(64);
+  Assets.load = (async (request: unknown) => {
+    const url =
+      typeof request === "string"
+        ? request
+        : (request as { alias: string }).alias;
+    attempts.set(url, (attempts.get(url) ?? 0) + 1);
+    if (url === `/api/assets/${hash}` && !approvedAvailable)
+      throw new Error("public image temporarily unavailable");
+    return Texture.EMPTY;
+  }) as typeof Assets.load;
+  console.warn = () => undefined;
+  try {
+    const plot: PlayerPlot = {
+      id: "plot-main-n-1",
+      roadId: "main",
+      side: "North",
+      index: 1,
+      corner: false,
+      initialType: "Cafe",
+      initialVariant: 2,
+    };
+    const manifest: AssetManifest = {
+      schemaVersion: 1,
+      renderProfileVersion: 1,
+      buildingType: "Cafe",
+      level: 2,
+      spriteHash: hash,
+      thumbnailHash: hash,
+      alphaBounds: { x: 0, y: 60, width: 140, height: 100 },
+      logoRect: { x: 20, y: 110, width: 20, height: 20 },
+      billboardRect: null,
+    };
+    const view = createPresetFacade(plot, 170, {
+      level: 2,
+      palette: "#F6C85F",
+      approvedManifest: manifest,
+      logoAssetHash: logoHash,
+    });
+    const cache = new PresetTextureCache();
+    cache.setViews([view]);
+    cache.updateVisible(0, 300);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(view.failed, true);
+    cache.updateVisible(0, 300);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(view.fallbackLoaded, true);
+    assert.equal(view.placeholder.visible, false);
+    assert.equal(view.loaded, false);
+    assert.deepEqual(view.media[0]?.rect, {
+      x: 28,
+      y: 93,
+      width: 20,
+      height: 20,
+    });
+    assert.equal(view.media[0]?.sprite.position.x, 28);
+    assert.equal(view.media[0]?.sprite.visible, true);
+    assert.equal(attempts.get(view.fallbackSpriteUrl!), 1);
+    assert.equal(attempts.get(view.fallbackMaskUrl!), 1);
+    cache.updateVisible(0, 300);
+    assert.equal(attempts.get(view.spriteUrl), 1);
+    approvedAvailable = true;
+    view.retryAt = 0;
+    cache.updateVisible(0, 300);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(view.loaded, true);
+    assert.equal(view.fallbackLoaded, false);
+    assert.equal(view.placeholder.visible, false);
+    assert.deepEqual(view.media[0]?.rect, {
+      x: 20,
+      y: 110,
+      width: 20,
+      height: 20,
+    });
+    assert.equal(view.media[0]?.sprite.position.x, 20);
+    assert.equal(attempts.get(view.spriteUrl), 2);
+  } finally {
+    Assets.load = originalLoad;
+    console.warn = originalWarn;
+  }
+});

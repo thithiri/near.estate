@@ -1,5 +1,39 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { chromium } from "@playwright/test";
+
+const catalog = JSON.parse(
+  readFileSync(new URL("../apps/web/src/preset-catalog.json", import.meta.url)),
+);
+const fallbackPreset = catalog.facades.find(
+  (entry) =>
+    entry.buildingType === "Cafe" && entry.variant === 2 && entry.level === 2,
+);
+assert.ok(fallbackPreset, "Packaged fallback preset is missing");
+const missingSpriteHash = "b".repeat(64);
+const approvedManifest = {
+  schemaVersion: 1,
+  renderProfileVersion: 1,
+  buildingType: "Cafe",
+  level: 2,
+  spriteHash: missingSpriteHash,
+  thumbnailHash: missingSpriteHash,
+  alphaBounds: { x: 0, y: 60, width: 140, height: 100 },
+  logoRect: null,
+  billboardRect: null,
+};
+function canonicalJson(value) {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  return `{${Object.keys(value)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+    .join(",")}}`;
+}
+const approvedManifestHash = createHash("sha256")
+  .update(canonicalJson(approvedManifest))
+  .digest("hex");
 
 const address = process.env.ESTATE_PACKAGED_WEB_URL ?? "http://127.0.0.1:8080";
 const emptyMedia = {
@@ -51,12 +85,27 @@ const street = {
     slots: [null, null],
   })),
 };
+Object.assign(street.plots[0].plot.plot.building, {
+  building_type: "Cafe",
+  variant: 2,
+  level: 2,
+  approved_manifest_hash: approvedManifestHash,
+});
 const browser = await chromium.launch({ headless: true });
 
 try {
   const page = await browser.newPage();
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.route(`**/api/manifests/${approvedManifestHash}`, (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(approvedManifest),
+    }),
+  );
+  await page.route(`**/api/assets/${missingSpriteHash}`, (route) =>
+    route.fulfill({ status: 503, body: "temporarily unavailable" }),
+  );
   await page.route("https://test.rpc.fastnear.com/**", async (route) => {
     const body = route.request().postDataJSON();
     const method = body?.params?.method_name;
@@ -102,7 +151,17 @@ try {
   assert.match(policy, /script-src 'self'/);
   assert.doesNotMatch(policy, /unsafe-eval/);
 
+  const failedSprite = page.waitForResponse(
+    (item) =>
+      item.url().endsWith(`/api/assets/${missingSpriteHash}`) &&
+      item.status() === 503,
+  );
+  const curatedFallback = page.waitForResponse(
+    (item) =>
+      item.url().includes(`/presets/${fallbackPreset.sprite}`) && item.ok(),
+  );
   await page.getByRole("button", { name: "Open live testnet city" }).click();
+  await Promise.all([failedSprite, curatedFallback]);
   await page.getByRole("button", { name: "Connect wallet" }).click();
   await page.getByText("Meteor Wallet", { exact: true }).waitFor();
   const scriptViolations = await page.evaluate(
@@ -114,6 +173,8 @@ try {
     JSON.stringify({
       packagedHtml: true,
       meteorChooser: true,
+      failedApprovedSprite: true,
+      curatedFallbackLoaded: true,
       scriptViolations,
       pageErrors,
     }),

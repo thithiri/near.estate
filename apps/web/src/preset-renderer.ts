@@ -21,6 +21,8 @@ type FacadeView = {
   x: number;
   spriteUrl: string;
   maskUrl: string | null;
+  fallbackSpriteUrl: string | null;
+  fallbackMaskUrl: string | null;
   sprite: Sprite;
   mask: Sprite;
   placeholder: Graphics;
@@ -31,6 +33,11 @@ type FacadeView = {
   failed: boolean;
   failures: number;
   retryAt: number;
+  fallbackLoading: boolean;
+  fallbackLoaded: boolean;
+  fallbackFailed: boolean;
+  fallbackFailures: number;
+  fallbackRetryAt: number;
   media: MediaOverlay[];
 };
 
@@ -39,13 +46,17 @@ type MediaOverlay = {
   url: string;
   sprite: Sprite;
   fallback: Text | null;
-  rect: { x: number; y: number; width: number; height: number };
+  rect: MediaRect;
+  approvedRect: MediaRect;
+  curatedRect: MediaRect | null;
   loading: boolean;
   loaded: boolean;
   failed: boolean;
   failures: number;
   retryAt: number;
 };
+
+type MediaRect = { x: number; y: number; width: number; height: number };
 
 type CacheEntry = {
   promise: Promise<Texture>;
@@ -85,6 +96,29 @@ function buildingInitials(name: string): string {
   if (words.length > 1)
     return `${words[0]![0] ?? ""}${words[1]![0] ?? ""}`.toUpperCase();
   return (words[0] ?? "").slice(0, 2).toUpperCase();
+}
+
+function positionMedia(overlay: MediaOverlay, useCuratedRect: boolean): void {
+  const rect = useCuratedRect ? overlay.curatedRect : overlay.approvedRect;
+  if (!rect) {
+    overlay.sprite.visible = false;
+    if (overlay.fallback) overlay.fallback.visible = false;
+    return;
+  }
+  overlay.rect = rect;
+  if (overlay.loaded) {
+    overlay.sprite.position.set(rect.x, rect.y);
+    overlay.sprite.width = rect.width;
+    overlay.sprite.height = rect.height;
+  }
+  overlay.sprite.visible = overlay.loaded;
+  if (overlay.fallback) {
+    overlay.fallback.position.set(
+      rect.x + rect.width / 2,
+      rect.y + rect.height / 2,
+    );
+    overlay.fallback.visible = !overlay.loaded;
+  }
 }
 
 export function createPresetFacade(
@@ -148,6 +182,8 @@ export function createPresetFacade(
         sprite: image,
         fallback,
         rect: logo,
+        approvedRect: logo,
+        curatedRect: preset.logoRect,
         loading: false,
         loaded: false,
         failed: false,
@@ -168,6 +204,8 @@ export function createPresetFacade(
       sprite: image,
       fallback: null,
       rect: billboard,
+      approvedRect: billboard,
+      curatedRect: preset.billboardRect,
       loading: false,
       loaded: false,
       failed: false,
@@ -200,6 +238,12 @@ export function createPresetFacade(
     maskUrl: appearance?.approvedManifest
       ? null
       : facadeAssetUrl(preset.paletteMask, preset.paletteMaskHash),
+    fallbackSpriteUrl: appearance?.approvedManifest
+      ? facadeAssetUrl(preset.sprite, preset.spriteHash)
+      : null,
+    fallbackMaskUrl: appearance?.approvedManifest
+      ? facadeAssetUrl(preset.paletteMask, preset.paletteMaskHash)
+      : null,
     sprite,
     mask,
     placeholder,
@@ -210,6 +254,11 @@ export function createPresetFacade(
     failed: false,
     failures: 0,
     retryAt: 0,
+    fallbackLoading: false,
+    fallbackLoaded: false,
+    fallbackFailed: false,
+    fallbackFailures: 0,
+    fallbackRetryAt: 0,
     media,
   };
 }
@@ -261,6 +310,8 @@ export class PresetTextureCache {
         urls: [
           view.spriteUrl,
           ...(view.maskUrl ? [view.maskUrl] : []),
+          ...(view.fallbackSpriteUrl ? [view.fallbackSpriteUrl] : []),
+          ...(view.fallbackMaskUrl ? [view.fallbackMaskUrl] : []),
           ...view.media.map((overlay) => overlay.url),
         ],
       })),
@@ -288,11 +339,8 @@ export class PresetTextureCache {
           .then((texture) => {
             if (!view.alive || !view.wanted) return;
             overlay.sprite.texture = texture;
-            overlay.sprite.position.set(overlay.rect.x, overlay.rect.y);
-            overlay.sprite.width = overlay.rect.width;
-            overlay.sprite.height = overlay.rect.height;
-            if (overlay.fallback) overlay.fallback.visible = false;
             overlay.loaded = true;
+            positionMedia(overlay, view.fallbackLoaded);
             overlay.failures = 0;
             overlay.retryAt = 0;
           })
@@ -305,6 +353,41 @@ export class PresetTextureCache {
           })
           .finally(() => {
             overlay.loading = false;
+          });
+      }
+      if (
+        view.failed &&
+        view.fallbackSpriteUrl &&
+        view.fallbackMaskUrl &&
+        !view.fallbackLoaded &&
+        !view.fallbackLoading &&
+        (!view.fallbackFailed || performance.now() >= view.fallbackRetryAt)
+      ) {
+        view.fallbackFailed = false;
+        view.fallbackLoading = true;
+        void Promise.all([
+          this.load(view.fallbackSpriteUrl),
+          this.load(view.fallbackMaskUrl),
+        ])
+          .then(([sprite, mask]) => {
+            if (!view.alive || !view.wanted || view.loaded) return;
+            view.sprite.texture = sprite;
+            view.mask.texture = mask;
+            view.placeholder.visible = false;
+            view.fallbackLoaded = true;
+            for (const overlay of view.media) positionMedia(overlay, true);
+            view.fallbackFailures = 0;
+            view.fallbackRetryAt = 0;
+          })
+          .catch((error: unknown) => {
+            view.fallbackFailed = true;
+            view.fallbackFailures++;
+            view.fallbackRetryAt =
+              performance.now() + textureRetryDelay(view.fallbackFailures);
+            console.warn("Curated fallback texture unavailable", error);
+          })
+          .finally(() => {
+            view.fallbackLoading = false;
           });
       }
       if (
@@ -325,6 +408,8 @@ export class PresetTextureCache {
           view.mask.texture = mask;
           view.placeholder.visible = false;
           view.loaded = true;
+          view.fallbackLoaded = false;
+          for (const overlay of view.media) positionMedia(overlay, false);
           view.failures = 0;
           view.retryAt = 0;
         })
@@ -342,11 +427,12 @@ export class PresetTextureCache {
   }
 
   private detach(view: FacadeView): void {
-    if (view.loaded) {
+    if (view.loaded || view.fallbackLoaded) {
       view.sprite.texture = Texture.EMPTY;
       view.mask.texture = Texture.EMPTY;
       view.placeholder.visible = true;
       view.loaded = false;
+      view.fallbackLoaded = false;
     }
     for (const overlay of view.media) {
       if (!overlay.loaded) continue;
@@ -406,6 +492,8 @@ export class PresetTextureCache {
               view.wanted &&
               (view.spriteUrl === url ||
                 view.maskUrl === url ||
+                view.fallbackSpriteUrl === url ||
+                view.fallbackMaskUrl === url ||
                 view.media.some((overlay) => overlay.url === url)),
           )
         )
@@ -414,6 +502,8 @@ export class PresetTextureCache {
           if (
             view.spriteUrl === url ||
             view.maskUrl === url ||
+            view.fallbackSpriteUrl === url ||
+            view.fallbackMaskUrl === url ||
             view.media.some((overlay) => overlay.url === url)
           )
             this.detach(view);
