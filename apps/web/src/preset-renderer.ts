@@ -366,7 +366,11 @@ export class PresetTextureCache {
       return existing.promise;
     }
     const entry: CacheEntry = {
-      promise: Assets.load<Texture>(url),
+      promise: Assets.load<Texture>(
+        url.startsWith("/api/assets/")
+          ? { alias: url, src: url, parser: "texture" }
+          : url,
+      ),
       loaded: false,
       lastUsed: performance.now(),
     };

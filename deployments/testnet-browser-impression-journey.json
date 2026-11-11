@@ -1,0 +1,21 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "plotId": "plot-main-n-2",
+  "browser": "ChatGPT in-app Chromium",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "liveStreet": true,
+  "approvedLogoRendered": true,
+  "approvedBillboardRendered": true,
+  "currentTextureParserVerifiedWithoutWarnings": true,
+  "impressionsBefore": 3,
+  "impressionsAfter": 6,
+  "parkCountAfter": 1,
+  "apiStatsStatus": 200,
+  "impressionReceivedAt": 1794369541000,
+  "localApi": true,
+  "namedWalletConnected": false
+}

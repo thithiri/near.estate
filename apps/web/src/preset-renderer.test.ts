@@ -8,7 +8,17 @@ test("facade and approved logo recover after a temporary image failure", async (
   const originalLoad = Assets.load;
   const originalWarn = console.warn;
   const attempts = new Map<string, number>();
-  Assets.load = (async (url: string) => {
+  Assets.load = (async (request: unknown) => {
+    const url =
+      typeof request === "string"
+        ? request
+        : (request as { alias: string; src: string; parser: string }).alias;
+    if (url.startsWith("/api/assets/"))
+      assert.deepEqual(request, {
+        alias: url,
+        src: url,
+        parser: "texture",
+      });
     const count = (attempts.get(url) ?? 0) + 1;
     attempts.set(url, count);
     if (count === 1) throw new Error("temporary image outage");
