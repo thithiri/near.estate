@@ -234,14 +234,56 @@ const facades = [
   {
     type: "homes",
     variant: 1,
+    level: 1,
+    source: "homes-terrace-l1-source.png",
+    sprite: "homes-terrace-l1.png",
+  },
+  {
+    type: "homes",
+    variant: 1,
     source: "homes-source.png",
     sprite: "homes-l2.png",
   },
   {
     type: "homes",
     variant: 2,
+    level: 1,
+    source: "homes-townhouse-l1-source.png",
+    sprite: "homes-townhouse-l1.png",
+  },
+  {
+    type: "homes",
+    variant: 1,
+    level: 3,
+    source: "homes-terrace-l3-source.png",
+    sprite: "homes-terrace-l3.png",
+  },
+  {
+    type: "homes",
+    variant: 1,
+    level: 4,
+    source: "homes-terrace-l4-source.png",
+    sprite: "homes-terrace-l4.png",
+  },
+  {
+    type: "homes",
+    variant: 2,
     source: "homes-townhouse-source.png",
     sprite: "homes-townhouse-l2.png",
+  },
+  {
+    type: "homes",
+    variant: 2,
+    level: 3,
+    source: "homes-townhouse-l3-source.png",
+    sprite: "homes-townhouse-l3.png",
+  },
+  {
+    type: "homes",
+    variant: 2,
+    level: 4,
+    source: "homes-townhouse-l4-source.png",
+    sprite: "homes-townhouse-l4.png",
   },
 ];
 const canvas = { width: 560, height: 640 };

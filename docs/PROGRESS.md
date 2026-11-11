@@ -287,3 +287,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-12 — Office level progression
 
 - Added six transparent Office sources, completing Glass block and Studio across levels 1–4. The illustrated catalog now has 34 facades. The [level-4 portrait builder](images/near-estate-office-level4-studio-phone-v1.png) compares both shapes, and the [Main Street capture](images/near-estate-office-studio-level4-street-phone-v1.png) shows the wide Studio beside the Diner at game size. The six sources pass the backend normalizer; local web type, asset and four guest browser checks pass. Homes still needs illustrated levels 1, 3 and 4. Physical-phone review, paid image testing and hosted checks remain open.
+
+## 2026-11-12 — Homes level progression
+
+- Added six transparent Homes sources, completing Terrace and Townhouse across levels 1–4. The illustrated guest catalog now has all 40 type/shape/level combinations. The [level-4 portrait builder](images/near-estate-homes-level4-studio-phone-v1.png) compares their footprints; the [Market Street capture](images/near-estate-homes-townhouse-level4-street-phone-v1.png) shows the narrow Townhouse with planted side yards beside its curb. All six sources pass the backend normalizer. Web type, asset and four focused guest browser checks pass locally. Physical-phone art review, owner generation, paid provider testing and hosted checks remain open.

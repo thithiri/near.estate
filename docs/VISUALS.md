@@ -129,3 +129,13 @@ The level-4 phone builder compares a slim Glass block with slanted roof and a br
 The level-4 Studio appears in the landscape street next to the Diner and parking signs. Its windows and roofline remain distinct at game size.
 
 ![Level-4 Office Studio on Main Street](images/near-estate-office-studio-level4-street-phone-v1.png)
+
+## Homes upgrade progression
+
+The level-4 phone builder compares the broad paired Terrace against the narrow single-gable Townhouse. Both stay on one deed and keep its two curb spaces. These are guest-only design studies.
+
+![Terrace and Townhouse level-4 building studies in the portrait builder](images/near-estate-homes-level4-studio-phone-v1.png)
+
+The level-4 Townhouse on Market Street is flanked by low planted side yards inside its plot frontage. The grass and small shrubs make the unused width part of the home composition at gameplay scale.
+
+![Level-4 Townhouse and side yards on Market Street](images/near-estate-homes-townhouse-level4-street-phone-v1.png)

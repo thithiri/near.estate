@@ -161,6 +161,26 @@ export function createPresetFacade(
   mask.scale.set(0.25);
   mask.tint = Number.parseInt(palette.slice(1), 16);
   group.addChild(placeholder, sprite, mask);
+  if (
+    illustratedPreview &&
+    plot.initialType === "Homes" &&
+    plot.initialVariant === 2
+  ) {
+    const garden = new Graphics()
+      .roundRect(4, 151, 37, 9, 2)
+      .fill(0x9cc377)
+      .roundRect(99, 151, 37, 9, 2)
+      .fill(0x9cc377)
+      .circle(12, 148, 6)
+      .circle(29, 149, 5)
+      .circle(109, 149, 5)
+      .circle(126, 148, 6)
+      .fill(0x528e55)
+      .circle(15, 145, 2)
+      .circle(123, 145, 2)
+      .fill(0xffd46a);
+    group.addChildAt(garden, 1);
+  }
 
   const logo = illustratedPreview
     ? illustratedPreview.logoRect

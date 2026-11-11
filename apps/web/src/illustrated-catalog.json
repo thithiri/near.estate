@@ -580,6 +580,24 @@
     {
       "type": "homes",
       "variant": 1,
+      "level": 1,
+      "sprite": "homes-terrace-l1.png",
+      "sha256": "1dd1d2238914cd0e33d8528f9ca29823f1ff07440a538a1555323f20c09f5ff6",
+      "source": "homes-terrace-l1-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 102.5,
+        "width": 130,
+        "height": 57.5
+      }
+    },
+    {
+      "type": "homes",
+      "variant": 1,
       "level": 2,
       "sprite": "homes-l2.png",
       "sha256": "447d42b36cf1bb583258577bd271837d8493baaffa0f7a3fdfce65a9a8e7b01d",
@@ -598,6 +616,60 @@
     {
       "type": "homes",
       "variant": 2,
+      "level": 1,
+      "sprite": "homes-townhouse-l1.png",
+      "sha256": "7c172a6feb170d98338e294e6e1e72578685b0189824c2615826724fb3043b7a",
+      "source": "homes-townhouse-l1-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 45.25,
+        "y": 90,
+        "width": 49.5,
+        "height": 70
+      }
+    },
+    {
+      "type": "homes",
+      "variant": 1,
+      "level": 3,
+      "sprite": "homes-terrace-l3.png",
+      "sha256": "eb4ca0c78164b8532f511e1be2fc2f031cc79a7abc9d614353c0effa46366db6",
+      "source": "homes-terrace-l3-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 6.5,
+        "y": 30,
+        "width": 126.75,
+        "height": 130
+      }
+    },
+    {
+      "type": "homes",
+      "variant": 1,
+      "level": 4,
+      "sprite": "homes-terrace-l4.png",
+      "sha256": "92a08a920f5fc5814569dc402fb001596a74d728801f5e8aaad5798c656ee182",
+      "source": "homes-terrace-l4-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 13.75,
+        "y": 0,
+        "width": 112.25,
+        "height": 160
+      }
+    },
+    {
+      "type": "homes",
+      "variant": 2,
       "level": 2,
       "sprite": "homes-townhouse-l2.png",
       "sha256": "42ccf8e4109ede4591b34fc59d58e6805903231c9eba15bf873025ff6d8cc200",
@@ -611,6 +683,42 @@
         "y": 65,
         "width": 44.25,
         "height": 95
+      }
+    },
+    {
+      "type": "homes",
+      "variant": 2,
+      "level": 3,
+      "sprite": "homes-townhouse-l3.png",
+      "sha256": "30137fbf05e8fa1c4746cffa226368031817e3152b7c040f64c264b8dc4a3f9a",
+      "source": "homes-townhouse-l3-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 43.5,
+        "y": 30,
+        "width": 52.75,
+        "height": 130
+      }
+    },
+    {
+      "type": "homes",
+      "variant": 2,
+      "level": 4,
+      "sprite": "homes-townhouse-l4.png",
+      "sha256": "ca1da71875ef842402ec98f7019711bda87d88db1e57ef624ad14c58c0f5ae66",
+      "source": "homes-townhouse-l4-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 46,
+        "y": 0,
+        "width": 48,
+        "height": 160
       }
     }
   ]

@@ -29,6 +29,8 @@ const samplePlots: Record<string, { type: string; variant: 1 | 2 }> = {
   "plot-main-n-3": { type: "office", variant: 2 },
   "plot-central-n-6": { type: "homes", variant: 1 },
   "plot-central-n-1": { type: "homes", variant: 2 },
+  "plot-main-n-4": { type: "homes", variant: 1 },
+  "plot-market-n-3": { type: "homes", variant: 2 },
 };
 
 const mediaRects: Record<
