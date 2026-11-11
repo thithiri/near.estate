@@ -23,7 +23,7 @@ docker run --rm \
   node:22-alpine node /scripts/state-backup.mjs backup /data /deployments /backups/<backup-id>
 ```
 
-The tool ignores an incomplete `.<uuid>.tmp` image write left after a crash. It rejects other unexpected files in `assets/`, an image still referenced by the database but missing on disk, missing deployment metadata, mismatched contract IDs and any backup whose final hashes differ from its manifest. It does not include SQLite WAL or shared-memory files because Node's backup API copies their committed state into one standalone database file. [Node 22.23 SQLite backup documentation](https://nodejs.org/download/release/v22.23.0/docs/api/sqlite.html) describes this API.
+The tool ignores an incomplete `.<uuid>.tmp` image write left after a crash. It rejects other unexpected files in `assets/`, an image still referenced by the database but missing on disk, missing deployment metadata, mismatched contract IDs and any backup whose final hashes differ from its manifest. Required images include pending paid candidates and approved paid candidates that an owner can still read before attaching them to a design. It does not include SQLite WAL or shared-memory files because Node's backup API copies their committed state into one standalone database file. [Node 22.23 SQLite backup documentation](https://nodejs.org/download/release/v22.23.0/docs/api/sqlite.html) describes this API.
 
 ## Restore into new storage
 
@@ -48,6 +48,6 @@ ESTATE_DATA_VOLUME=<new-volume-name> docker compose \
 
 ## Local drill
 
-`npm run backup:drill` creates a temporary shared API/indexer database, records a park and collection, stores an immutable PNG and upload row, rejects a backup while that referenced PNG is missing, then backs up and restores the complete state. It reopens both stores, confirms replay does not duplicate an event, advances the cursor, and rejects a tampered PNG. It cleans up the temporary files afterward.
+`npm run backup:drill` creates a temporary shared API/indexer database, records a park and collection, stores immutable PNGs and an upload row, rejects backups while a required upload or approved paid-candidate image is missing, then backs up and restores the complete state. It reopens both stores, confirms replay does not duplicate an event, advances the cursor, and rejects a tampered PNG. It cleans up the temporary files afterward. The current local result is [local-backup-drill.json](../deployments/local-backup-drill.json).
 
 A separate restore of the disposable testnet floor-3 indexer snapshot preserved 91 finalized game events, the cursor at height 277105001, and eleven deployment JSON records. Reopening the restored indexer and rebuilding its aggregates preserved the cursor and event count. This is local recovery evidence; the target VPS volume swap, protected offsite copy and live restart remain Phase 8 work.

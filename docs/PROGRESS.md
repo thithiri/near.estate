@@ -155,4 +155,6 @@ A fresh-lockfile Meteor dependency trial used patched `nanoid@5.1.16`, `query-st
 
 The API's startup and six-hour retention sweep now removes expired impression raw rows and expired owner-auth rows even when no new requests arrive. An idle-service test keeps active sessions and the aggregated daily ad count while clearing expired sessions, events, minute rows and challenges. All 83 API tests, type checking and the API build pass. The updated API container built and started locally; health and the empty economy route returned 200 without a startup cleanup error. Production service observation remains open.
 
+The backup verifier now treats owner-readable approved paid candidate images as required before they are linked to a design job. The repeatable local backup drill rejects a missing approved thumbnail, then preserves that image, the deployment records and two events through restore; replay leaves the cursor intact and advances it once. The full `npm run backup:drill` build and [local evidence](../deployments/local-backup-drill.json) pass. Target VPS restore and offsite copy remain open.
+
 The testnet contract and seeded city are deployed. The browser still needs a connected wallet journey before the testnet gameplay gate can close.

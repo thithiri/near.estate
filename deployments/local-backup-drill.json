@@ -1,0 +1,12 @@
+{
+  "result": "passed",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "backupCursorHeight": 11,
+  "resumedCursorHeight": 12,
+  "eventsPreserved": 2,
+  "assetHash": "c3310a2246e313b8b7e5523fc80cc451ea46bd1f92bcf9ce1cb05a581848e049",
+  "deploymentRecordsPreserved": 2,
+  "missingReferencedAssetRejected": true,
+  "missingApprovedPaidAssetRejected": true,
+  "tamperRejected": true
+}

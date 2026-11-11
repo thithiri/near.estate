@@ -199,6 +199,8 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 
 - The existing six-hour API asset retention worker now also prunes expired anonymous impression sessions, raw events and minute rows, plus expired owner-auth challenges and sessions at startup and on every sweep. Previously the rows only cleared when a new session/challenge was requested, so an idle service could keep them indefinitely. Daily ad aggregates remain. A startup-sweep test creates expired and active rows, confirms only expired raw/auth rows disappear without traffic, and preserves the counted daily impression. This is an idle-retention guarantee while the API runs; it is not a strict wall-clock deletion deadline during downtime.
 
+- Backup verification now requires both PNGs for an approved paid candidate when no design job has yet linked the candidate into `generation_assets`. Those images remain owner-readable and retained by the API, but the prior backup check only required `pending` paid candidates; a missing approved thumbnail could therefore pass backup verification and leave recovery incomplete. A local drill removes the approved thumbnail, confirms backup rejection, restores it, verifies the archive and reopened asset, and advances the restored event cursor without duplicate events. [Recorded local drill](../deployments/local-backup-drill.json). This improves the local recovery check; an actual VPS volume swap and offsite backup are still open.
+
 ## Open risks
 
 - Browser wallet sign-in, redirects, session-key setup/recovery/revocation and local key storage security on both named wallets; the dependency audit findings and wallet bundle size. Protocol permission, allowance exhaustion and revocation passed separately on testnet.

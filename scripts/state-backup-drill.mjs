@@ -112,6 +112,19 @@ try {
     .png()
     .toBuffer();
   const assetHash = createHash("sha256").update(png).digest("hex");
+  const paidThumbnail = await sharp({
+    create: {
+      width: 4,
+      height: 4,
+      channels: 4,
+      background: { r: 72, g: 143, b: 230, alpha: 1 },
+    },
+  })
+    .png()
+    .toBuffer();
+  const paidThumbnailHash = createHash("sha256")
+    .update(paidThumbnail)
+    .digest("hex");
   await writeFile(join(data, "assets", `${assetHash}.png`), png);
   await writeFile(
     join(data, "assets", ".11111111-1111-1111-1111-111111111111.tmp"),
@@ -151,6 +164,17 @@ try {
   api.markMediaDecided(expiredProposal.id, "rejected", 1_000_002, "Test");
   assert.equal(api.expireStaleUploads(1_800_000), 1);
   assert.equal(api.upload(expiredUpload.id), null);
+  api.db.exec(`
+    CREATE TABLE paid_generation_candidates (
+      job_id TEXT NOT NULL,
+      review_status TEXT NOT NULL,
+      sprite_hash TEXT NOT NULL,
+      thumbnail_hash TEXT NOT NULL
+    );
+  `);
+  api.db
+    .prepare("INSERT INTO paid_generation_candidates VALUES (?, ?, ?, ?)")
+    .run("approved-paid-job", "approved", assetHash, paidThumbnailHash);
   api.close();
   const indexer = new EventStore(join(data, "estate.sqlite"), contractId, 10);
   assert.equal(indexer.applyHeight(10, first), 1);
@@ -169,6 +193,20 @@ try {
   await assert.rejects(readFile(join(missingBackup, "manifest.json")));
   await writeFile(join(data, "assets", `${assetHash}.png`), png);
 
+  const missingApprovedBackup = join(root, "missing-approved-backup");
+  const missingApprovedAsset = spawnSync(
+    process.execPath,
+    [command, "backup", data, metadata, missingApprovedBackup],
+    { encoding: "utf8" },
+  );
+  assert.notEqual(missingApprovedAsset.status, 0);
+  assert.match(missingApprovedAsset.stderr, new RegExp(paidThumbnailHash));
+  await assert.rejects(readFile(join(missingApprovedBackup, "manifest.json")));
+  await writeFile(
+    join(data, "assets", `${paidThumbnailHash}.png`),
+    paidThumbnail,
+  );
+
   const backup = JSON.parse(
     execFileSync(
       process.execPath,
@@ -180,7 +218,7 @@ try {
   );
   assert.equal(backup.eventCount, 2);
   assert.equal(backup.cursor.last_height, 11);
-  assert.equal(backup.files, 4);
+  assert.equal(backup.files, 5);
   execFileSync(process.execPath, [command, "verify", archive], {
     encoding: "utf8",
   });
@@ -204,6 +242,10 @@ try {
   assert.deepEqual(
     await readFile(join(restoredData, "assets", `${assetHash}.png`)),
     png,
+  );
+  assert.deepEqual(
+    await readFile(join(restoredData, "assets", `${paidThumbnailHash}.png`)),
+    paidThumbnail,
   );
   restoredApi.close();
   assert.deepEqual(
@@ -254,6 +296,7 @@ try {
       assetHash,
       deploymentRecordsPreserved: 2,
       missingReferencedAssetRejected: true,
+      missingApprovedPaidAssetRejected: true,
       tamperRejected: true,
     }),
   );

@@ -89,7 +89,17 @@ function snapshotInfo(path) {
     if (hasTable("paid_generation_candidates"))
       for (const row of db
         .prepare(
-          "SELECT sprite_hash, thumbnail_hash FROM paid_generation_candidates WHERE review_status = 'pending'",
+          `SELECT candidate.sprite_hash, candidate.thumbnail_hash
+           FROM paid_generation_candidates AS candidate
+           WHERE candidate.review_status = 'pending'
+              OR (candidate.review_status = 'approved' AND ${
+                hasTable("generation_jobs")
+                  ? `NOT EXISTS (
+                       SELECT 1 FROM generation_jobs AS design
+                       WHERE design.id = candidate.job_id
+                     )`
+                  : "1 = 1"
+              })`,
         )
         .all()) {
         requiredAssetHashes.add(row.sprite_hash);
