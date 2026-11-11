@@ -55,6 +55,29 @@ const RpcAccessKeys = z.object({
     }),
   ),
 });
+const RpcAccessKey = z.object({
+  block_hash: z.string().min(1),
+  nonce: z.union([
+    z.string().regex(/^\d+$/),
+    z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+  ]),
+});
+const RpcTransactionOutcome = z.object({
+  final_execution_status: z.string(),
+  status: z.unknown(),
+});
+export type TransactionOutcome = "success" | "failure" | "pending";
+
+function transactionOutcome(value: unknown): TransactionOutcome {
+  const result = RpcTransactionOutcome.parse(value);
+  if (result.final_execution_status !== "FINAL") return "pending";
+  if (typeof result.status !== "object" || result.status === null)
+    return "pending";
+  if ("Failure" in result.status) return "failure";
+  if ("SuccessValue" in result.status || "SuccessReceiptId" in result.status)
+    return "success";
+  return "pending";
+}
 
 function encodeArguments(args: object): string {
   const bytes = new TextEncoder().encode(JSON.stringify(args));
@@ -85,9 +108,14 @@ export class ChainReader {
       throw new Error("RPC timeout must be positive");
   }
 
-  private async rpcQuery(params: object, name: string): Promise<unknown> {
+  private async rpcRequest(
+    method: string,
+    params: object,
+    name: string,
+    timeoutMs = this.rpcTimeoutMs,
+  ): Promise<unknown> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.rpcTimeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await this.fetcher(this.rpcUrl, {
         method: "POST",
@@ -96,7 +124,7 @@ export class ChainReader {
         body: JSON.stringify({
           jsonrpc: "2.0",
           id: "near-estate-view",
-          method: "query",
+          method,
           params,
         }),
       });
@@ -112,7 +140,7 @@ export class ChainReader {
       return envelope.result;
     } catch (error) {
       if (controller.signal.aborted)
-        throw new Error("NEAR RPC timed out; retry the street view");
+        throw new Error(`NEAR RPC timed out during ${name}`);
       throw error;
     } finally {
       clearTimeout(timer);
@@ -126,7 +154,8 @@ export class ChainReader {
     blockId?: string,
   ): Promise<{ value: T; blockHash: string }> {
     const result = RpcFunctionResult.parse(
-      await this.rpcQuery(
+      await this.rpcRequest(
+        "query",
         {
           request_type: "call_function",
           ...(blockId ? { block_id: blockId } : { finality: "final" }),
@@ -157,7 +186,8 @@ export class ChainReader {
     accountId: string,
   ): Promise<z.infer<typeof RpcAccessKeys>> {
     return RpcAccessKeys.parse(
-      await this.rpcQuery(
+      await this.rpcRequest(
+        "query",
         {
           request_type: "view_access_key_list",
           finality: "final",
@@ -166,6 +196,60 @@ export class ChainReader {
         "view_access_key_list",
       ),
     );
+  }
+
+  async accessKey(
+    accountId: string,
+    publicKey: string,
+  ): Promise<{ nonce: bigint; blockHash: string }> {
+    const result = RpcAccessKey.parse(
+      await this.rpcRequest(
+        "query",
+        {
+          request_type: "view_access_key",
+          finality: "final",
+          account_id: accountId,
+          public_key: publicKey,
+        },
+        "view_access_key",
+      ),
+    );
+    return { nonce: BigInt(result.nonce), blockHash: result.block_hash };
+  }
+
+  async sendSignedTransaction(
+    signedTxBase64: string,
+  ): Promise<TransactionOutcome> {
+    return transactionOutcome(
+      await this.rpcRequest(
+        "send_tx",
+        { signed_tx_base64: signedTxBase64, wait_until: "FINAL" },
+        "send_tx",
+        this.rpcTimeoutMs,
+      ),
+    );
+  }
+
+  async transactionStatus(
+    hash: string,
+    accountId: string,
+  ): Promise<TransactionOutcome | "unknown"> {
+    try {
+      return transactionOutcome(
+        await this.rpcRequest(
+          "tx",
+          { tx_hash: hash, sender_account_id: accountId, wait_until: "NONE" },
+          "tx",
+        ),
+      );
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        /UNKNOWN_TRANSACTION|UnknownTransaction/.test(error.message)
+      )
+        return "unknown";
+      throw error;
+    }
   }
 
   async view<T>(

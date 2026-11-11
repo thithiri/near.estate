@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
+import { KeyPair } from "@near-js/crypto";
+import { baseEncode } from "@near-js/utils";
 import {
   GAMEPLAY_KEY_ALLOWANCE,
   GAMEPLAY_METHODS,
@@ -41,6 +43,156 @@ test("Meteor SDK popup dependencies support its actual call shapes", async () =>
     "connectionUid=abc-123&pageUri=https%253A%252F%252Fgame.example%252Fstreet%253Fplot%253D1%2526side%253Dnorth&source=website_post_message",
   );
   assert.match(nanoid.nanoid(), /^[A-Za-z0-9_-]{21}$/);
+});
+
+test("uncertain gameplay submission retries only its original signed transaction", async () => {
+  const originalStorage = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "localStorage",
+  );
+  const values = new Map<string, string>();
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key),
+    },
+  });
+  const pair = KeyPair.fromRandom("ed25519");
+  const keyName =
+    "near-estate:testnet:estate.testnet:driver.testnet:gameplay-key";
+  values.set(
+    keyName,
+    JSON.stringify({
+      accountId: "driver.testnet",
+      publicKey: pair.getPublicKey().toString(),
+      secretKey: pair.toString(),
+    }),
+  );
+  const signedBytes: string[] = [];
+  let keyReads = 0;
+  let statusReads = 0;
+  const client = Object.assign(Object.create(GameWalletClient.prototype), {
+    reader: {
+      contractId: "estate.testnet",
+      accessKey: async () => {
+        keyReads++;
+        return {
+          nonce: 7n,
+          blockHash: baseEncode(new Uint8Array(32).fill(8)),
+        };
+      },
+      sendSignedTransaction: async (bytes: string) => {
+        signedBytes.push(bytes);
+        if (signedBytes.length === 1) throw new Error("network dropped reply");
+        return "success";
+      },
+      transactionStatus: async () => {
+        statusReads++;
+        return "unknown";
+      },
+    },
+    selector: {
+      store: {
+        getState: () => ({
+          contract: { contractId: "estate.testnet" },
+          accounts: [{ accountId: "driver.testnet", active: true }],
+        }),
+      },
+    },
+    lastCall: Promise.resolve(),
+  }) as GameWalletClient;
+  try {
+    await assert.rejects(
+      client.gameplayCall("park", { car_id: 7, plot_id: 2, slot: 0 }),
+      /pending/,
+    );
+    const saved = JSON.parse(values.get(`${keyName}:action`) ?? "null") as {
+      hash: string;
+      signedTxBase64: string;
+    };
+    assert.match(saved.hash, /^[1-9A-HJ-NP-Za-km-z]+$/);
+    assert.equal(saved.signedTxBase64, signedBytes[0]);
+    await client.gameplayCall("park", { car_id: 7, plot_id: 2, slot: 0 });
+    assert.equal(keyReads, 1);
+    assert.equal(statusReads, 2);
+    assert.deepEqual(signedBytes, [saved.signedTxBase64, saved.signedTxBase64]);
+    assert.equal(values.has(`${keyName}:action`), false);
+  } finally {
+    if (originalStorage)
+      Object.defineProperty(globalThis, "localStorage", originalStorage);
+    else Reflect.deleteProperty(globalThis, "localStorage");
+  }
+});
+
+test("pending action checker keeps an in-flight transaction until final", async () => {
+  const originalStorage = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "localStorage",
+  );
+  const values = new Map<string, string>();
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key),
+    },
+  });
+  const pair = KeyPair.fromRandom("ed25519");
+  const keyName =
+    "near-estate:testnet:estate.testnet:driver.testnet:gameplay-key";
+  values.set(
+    keyName,
+    JSON.stringify({
+      accountId: "driver.testnet",
+      publicKey: pair.getPublicKey().toString(),
+      secretKey: pair.toString(),
+    }),
+  );
+  values.set(
+    `${keyName}:action`,
+    JSON.stringify({
+      version: 1,
+      accountId: "driver.testnet",
+      publicKey: pair.getPublicKey().toString(),
+      method: "park",
+      argsJson: '{"car_id":7}',
+      hash: "1".repeat(44),
+      signedTxBase64: "c2lnbmVk",
+    }),
+  );
+  let checks = 0;
+  const client = Object.assign(Object.create(GameWalletClient.prototype), {
+    reader: {
+      contractId: "estate.testnet",
+      transactionStatus: async () => (++checks === 1 ? "pending" : "success"),
+      sendSignedTransaction: async () => {
+        throw new Error("An included transaction must not be rebroadcast");
+      },
+    },
+    selector: {
+      store: {
+        getState: () => ({
+          contract: { contractId: "estate.testnet" },
+          accounts: [{ accountId: "driver.testnet", active: true }],
+        }),
+      },
+    },
+  }) as GameWalletClient;
+  try {
+    assert.equal(client.hasPendingGameplayAction(), true);
+    assert.equal(await client.checkPendingGameplayAction(), "pending");
+    assert.equal(client.hasPendingGameplayAction(), true);
+    assert.equal(await client.checkPendingGameplayAction(), "success");
+    assert.equal(client.hasPendingGameplayAction(), false);
+    assert.equal(checks, 2);
+  } finally {
+    if (originalStorage)
+      Object.defineProperty(globalThis, "localStorage", originalStorage);
+    else Reflect.deleteProperty(globalThis, "localStorage");
+  }
 });
 
 function disconnectedClient(

@@ -18,6 +18,8 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) collects the current g
 
 The phase-4 protocol spike now passes on testnet: a temporary eight-method key made four allowed calls, rejected a purchase, attached deposit and wrong receiver, exhausted its 0.062 testnet NEAR gas allowance, and was revoked. See `deployments/testnet-gameplay-key.json`. MyNearWallet and Meteor browser journeys remain open.
 
+Task 33 now has bounded browser RPC reads and signed gameplay submissions. An uncertain submit keeps its exact signed bytes and hash locally; the player can check the hash or rebroadcast those same bytes before another action or key revocation. Local tests cover timeout, final success/failure, unknown status and exact-byte retry. A read-only testnet RPC query verified the nonce/block-hash response and a known final transaction. The named-wallet browser signing and interrupted transaction journeys remain open.
+
 The phase-0 event-source spike now matches a real `rule_scheduled` log from a finalized Neardata receipt and an archival RPC transaction; an older archived block is reachable, and the transaction is discoverable from its block and chunks. See `deployments/testnet-event-source.json`. The durable Phase-7 indexer remains open.
 
 A visual review of the ten curated base silhouettes beside fixed neighbours at 140px game scale found different rooflines and proportions across all four levels; the 40 facade, 24 car and five civic source assets pass their generator checks. This supports the preset part of Phase-0 task 4. Provider-generated samples and real-device readability still need evidence. A third disposable testnet moderation attempt again stopped at faucet HTTP 429 before creating an account.

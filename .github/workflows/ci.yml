@@ -13,6 +13,9 @@ jobs:
       - run: npm run seed:check
       - run: npm run assets:check
       - run: npm run build
+      - run: npm run build -w @estate/web
+        env:
+          VITE_ESTATE_CONTRACT_ID: ci-estate.testnet
       - run: npm run check
       - run: npm run format:check
   contract:

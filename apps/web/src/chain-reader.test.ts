@@ -105,6 +105,97 @@ test("access-key checks use finalized bounded RPC reads", async () => {
   assert.equal(keys.keys[1]?.access_key.permission, null);
 });
 
+test("gameplay signing reads the key nonce and a final block hash", async () => {
+  const reader = new ChainReader("estate-game.testnet", undefined, (async (
+    _url,
+    init,
+  ) => {
+    const request = JSON.parse(String(init?.body));
+    assert.equal(request.method, "query");
+    assert.deepEqual(request.params, {
+      request_type: "view_access_key",
+      finality: "final",
+      account_id: "driver.testnet",
+      public_key: "ed25519:gameplay",
+    });
+    return Response.json({
+      jsonrpc: "2.0",
+      result: { nonce: "9007199254740993", block_hash: "final-hash" },
+    });
+  }) as typeof fetch);
+  assert.deepEqual(
+    await reader.accessKey("driver.testnet", "ed25519:gameplay"),
+    {
+      nonce: 9007199254740993n,
+      blockHash: "final-hash",
+    },
+  );
+});
+
+test("signed gameplay RPC distinguishes final success, failure, and unknown status", async () => {
+  const calls: string[] = [];
+  const reader = new ChainReader("estate-game.testnet", undefined, (async (
+    _url,
+    init,
+  ) => {
+    const request = JSON.parse(String(init?.body));
+    calls.push(request.method);
+    if (request.method === "send_tx") {
+      assert.deepEqual(request.params, {
+        signed_tx_base64: "c2lnbmVk",
+        wait_until: "FINAL",
+      });
+      return Response.json({
+        jsonrpc: "2.0",
+        result: {
+          final_execution_status: "FINAL",
+          status: { SuccessValue: "" },
+        },
+      });
+    }
+    assert.equal(request.method, "tx");
+    assert.deepEqual(request.params, {
+      tx_hash: "hash",
+      sender_account_id: "driver.testnet",
+      wait_until: "NONE",
+    });
+    if (calls.length === 2)
+      return Response.json({
+        jsonrpc: "2.0",
+        result: { final_execution_status: "FINAL", status: { Failure: {} } },
+      });
+    return Response.json({
+      jsonrpc: "2.0",
+      error: { name: "UNKNOWN_TRANSACTION", message: "Unknown transaction" },
+    });
+  }) as typeof fetch);
+  assert.equal(await reader.sendSignedTransaction("c2lnbmVk"), "success");
+  assert.equal(
+    await reader.transactionStatus("hash", "driver.testnet"),
+    "failure",
+  );
+  assert.equal(
+    await reader.transactionStatus("hash", "driver.testnet"),
+    "unknown",
+  );
+  assert.deepEqual(calls, ["send_tx", "tx", "tx"]);
+});
+
+test("a stalled signed submission ends locally without claiming failure", async () => {
+  const reader = new ChainReader(
+    "estate-game.testnet",
+    undefined,
+    (async (_url, init) =>
+      new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new DOMException("Aborted", "AbortError"));
+        });
+      })) as typeof fetch,
+    5,
+  );
+  await assert.rejects(reader.sendSignedTransaction("c2lnbmVk"), /timed out/);
+});
+
 test("loads a finalized player snapshot and encodes JSON arguments", async () => {
   const requested: string[] = [];
   const reader = new ChainReader(

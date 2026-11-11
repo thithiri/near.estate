@@ -781,6 +781,7 @@ export class ChainScreen {
             <p>${formatCoins(player!.account!.balance)} coins · ${player!.cars.length} car${player!.cars.length === 1 ? "" : "s"}</p>
             <p>Gameplay key: ${this.keyStatus === "ready" ? "Ready for wallet-free play" : this.keyStatus === "pending" ? "Awaiting verification" : this.keyStatus === "inactive" ? "Inactive or out of gas" : "Off"}</p>
             ${this.keyStatus === "none" ? `<button id="chain-enable-key" ${busy}>Enable gameplay key</button>` : this.keyStatus === "ready" || this.keyStatus === "inactive" ? `<button id="chain-revoke-key" ${busy}>Revoke gameplay key</button>` : `<button id="chain-check-key" ${busy}>Retry or check key</button>`}
+            ${wallet?.hasPendingGameplayAction() ? `<p class="chain-parked">A signed gameplay action is still being checked. Check it before disconnecting or signing another action.</p><button id="chain-check-action" ${busy}>Check pending action</button>` : ""}
             <p class="muted">The gameplay key is limited to this contract, selected methods and 0.25 testnet NEAR of gas. Disconnect revokes it on-chain first and may open your wallet.</p>
           `
           }
@@ -942,6 +943,20 @@ export class ChainScreen {
             : state === "none"
               ? "Key revocation confirmed."
               : "Gameplay key action is awaiting chain confirmation.";
+        }),
+    );
+    on(
+      "#chain-check-action",
+      () =>
+        void this.mutate(async () => {
+          const state = await this.wallet?.checkPendingGameplayAction();
+          return state === "success"
+            ? "The previous gameplay action confirmed. The game state has refreshed."
+            : state === "failure"
+              ? "The previous gameplay action failed on-chain. You can retry it."
+              : state === "pending"
+                ? "The previous action is still pending. Check it again shortly."
+                : "There is no pending gameplay action.";
         }),
     );
     this.host

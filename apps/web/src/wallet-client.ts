@@ -1,8 +1,11 @@
-import { Account } from "@near-js/accounts";
 import { KeyPair } from "@near-js/crypto";
-import { JsonRpcProvider } from "@near-js/providers";
 import { KeyPairSigner } from "@near-js/signers";
-import { actionCreators } from "@near-js/transactions";
+import {
+  actionCreators,
+  createTransaction,
+  encodeTransaction,
+} from "@near-js/transactions";
+import { baseDecode, baseEncode } from "@near-js/utils";
 import {
   setupWalletSelector,
   type WalletSelector,
@@ -44,6 +47,15 @@ type KeyRecord = {
   secretKey: string;
 };
 type PendingKey = KeyRecord & { operation: "add" | "revoke" };
+type PendingGameplayAction = {
+  version: 1;
+  accountId: string;
+  publicKey: string;
+  method: GameplayMethod;
+  argsJson: string;
+  hash: string;
+  signedTxBase64: string;
+};
 export type GameplayKeyStatus = "ready" | "pending" | "inactive" | "none";
 export type ArtworkUpload = {
   uploadId: string;
@@ -209,8 +221,38 @@ function pendingRecord(value: string | null): PendingKey | null {
   }
 }
 
+function pendingGameplayAction(value: string): PendingGameplayAction {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new Error(
+      "Saved gameplay action is damaged; contact support before retrying",
+    );
+  }
+  if (typeof parsed !== "object" || parsed === null)
+    throw new Error(
+      "Saved gameplay action is damaged; contact support before retrying",
+    );
+  const record = parsed as Record<string, unknown>;
+  if (
+    record.version !== 1 ||
+    typeof record.accountId !== "string" ||
+    typeof record.publicKey !== "string" ||
+    !GAMEPLAY_METHODS.includes(record.method as GameplayMethod) ||
+    typeof record.argsJson !== "string" ||
+    typeof record.hash !== "string" ||
+    typeof record.signedTxBase64 !== "string" ||
+    !/^[1-9A-HJ-NP-Za-km-z]{40,50}$/.test(record.hash) ||
+    !/^[A-Za-z0-9+/]+={0,2}$/.test(record.signedTxBase64)
+  )
+    throw new Error(
+      "Saved gameplay action is damaged; contact support before retrying",
+    );
+  return record as PendingGameplayAction;
+}
+
 export class GameWalletClient {
-  private readonly provider: JsonRpcProvider;
   private lastCall: Promise<unknown> = Promise.resolve();
   private readonly selectedCars = new Map<string, number>();
 
@@ -218,9 +260,7 @@ export class GameWalletClient {
     readonly reader: ChainReader,
     readonly selector: WalletSelector,
     private readonly modal: WalletSelectorModal,
-  ) {
-    this.provider = new JsonRpcProvider({ url: reader.rpcUrl });
-  }
+  ) {}
 
   static async create(reader: ChainReader): Promise<GameWalletClient> {
     const selector = await setupWalletSelector({
@@ -256,6 +296,13 @@ export class GameWalletClient {
 
   async signOut(): Promise<void> {
     if (this.accountId) {
+      if (
+        typeof localStorage !== "undefined" &&
+        localStorage.getItem(this.actionName(this.accountId))
+      )
+        throw new Error(
+          "Check the pending gameplay action before disconnecting",
+        );
       const keyStatus = await this.resumePendingKey();
       if (keyStatus === "pending")
         throw new Error("Finish the gameplay key action before disconnecting");
@@ -783,6 +830,17 @@ export class GameWalletClient {
     return `${this.keyName(accountId)}:pending`;
   }
 
+  private actionName(accountId: string): string {
+    return `${this.keyName(accountId)}:action`;
+  }
+
+  hasPendingGameplayAction(): boolean {
+    const accountId = this.accountId;
+    return Boolean(
+      accountId && localStorage.getItem(this.actionName(accountId)),
+    );
+  }
+
   private requiredAccount(): string {
     const accountId = this.accountId;
     if (!accountId) throw new Error("Connect a testnet wallet first");
@@ -1115,6 +1173,10 @@ export class GameWalletClient {
 
   async revokeGameplayKey(): Promise<"revoked" | "pending"> {
     const accountId = this.requiredAccount();
+    if (localStorage.getItem(this.actionName(accountId)))
+      throw new Error(
+        "Check the pending gameplay action before removing its key",
+      );
     const record = this.storedKey(accountId);
     if (!record) throw new Error("No local gameplay key for this account");
     if ((await this.keyState(record)) === "absent") {
@@ -1169,6 +1231,62 @@ export class GameWalletClient {
     return this.resumePendingKey();
   }
 
+  private async settleGameplayAction(
+    record: PendingGameplayAction,
+    checkFirst: boolean,
+  ): Promise<"success" | "failure" | "pending"> {
+    if (checkFirst) {
+      try {
+        const state = await this.reader.transactionStatus(
+          record.hash,
+          record.accountId,
+        );
+        if (state === "success" || state === "failure" || state === "pending")
+          return state;
+      } catch {
+        // Re-broadcasting the identical signed bytes cannot execute twice.
+      }
+    }
+    try {
+      const state = await this.reader.sendSignedTransaction(
+        record.signedTxBase64,
+      );
+      if (state === "success" || state === "failure") return state;
+    } catch {
+      // A failed or timed-out response can still have reached the chain.
+    }
+    try {
+      const state = await this.reader.transactionStatus(
+        record.hash,
+        record.accountId,
+      );
+      return state === "unknown" ? "pending" : state;
+    } catch {
+      return "pending";
+    }
+  }
+
+  async checkPendingGameplayAction(): Promise<
+    "success" | "failure" | "pending" | "none"
+  > {
+    const accountId = this.requiredAccount();
+    const name = this.actionName(accountId);
+    const raw = localStorage.getItem(name);
+    if (!raw) return "none";
+    const action = pendingGameplayAction(raw);
+    const key = this.storedKey(accountId);
+    if (
+      !key ||
+      action.accountId !== accountId ||
+      action.publicKey !== key.publicKey
+    )
+      throw new Error("A pending gameplay action belongs to another key");
+    const state = await this.settleGameplayAction(action, true);
+    if (state !== "pending") localStorage.removeItem(name);
+    if (this.accountId !== accountId) throw new Error("Wallet account changed");
+    return state;
+  }
+
   async gameplayCall(method: GameplayMethod, args: object): Promise<void> {
     if (!GAMEPLAY_METHODS.includes(method))
       throw new Error("Method is not allowed by the gameplay key");
@@ -1178,17 +1296,77 @@ export class GameWalletClient {
     const run = async () => {
       if (this.accountId !== accountId)
         throw new Error("Wallet account changed");
-      const signer = KeyPairSigner.fromSecretKey(
-        record.secretKey as `ed25519:${string}`,
-      );
-      const account = new Account(accountId, this.provider, signer);
-      await account.signAndSendTransaction({
-        receiverId: this.reader.contractId,
-        actions: [actionCreators.functionCall(method, args, CALL_GAS, 0n)],
-        waitUntil: "FINAL",
-      });
+      if (this.storedKey(accountId)?.publicKey !== record.publicKey)
+        throw new Error("Gameplay key changed before signing");
+      const actionName = this.actionName(accountId);
+      const argsJson = JSON.stringify(args);
+      const prior = localStorage.getItem(actionName);
+      let action: PendingGameplayAction;
+      let checkFirst = false;
+      if (prior) {
+        action = pendingGameplayAction(prior);
+        if (
+          action.accountId !== accountId ||
+          action.publicKey !== record.publicKey
+        )
+          throw new Error("A pending gameplay action belongs to another key");
+        checkFirst = true;
+      } else {
+        const keyPair = KeyPair.fromString(
+          record.secretKey as `ed25519:${string}`,
+        );
+        const accessKey = await this.reader.accessKey(
+          accountId,
+          keyPair.getPublicKey().toString(),
+        );
+        if (this.accountId !== accountId)
+          throw new Error("Wallet account changed");
+        const transaction = createTransaction(
+          accountId,
+          keyPair.getPublicKey(),
+          this.reader.contractId,
+          accessKey.nonce + 1n,
+          [actionCreators.functionCall(method, args, CALL_GAS, 0n)],
+          baseDecode(accessKey.blockHash),
+        );
+        const signer = KeyPairSigner.fromSecretKey(
+          record.secretKey as `ed25519:${string}`,
+        );
+        const [hash, signedTransaction] =
+          await signer.signTransaction(transaction);
+        const bytes = encodeTransaction(signedTransaction);
+        action = {
+          version: 1,
+          accountId,
+          publicKey: record.publicKey,
+          method,
+          argsJson,
+          hash: baseEncode(hash),
+          signedTxBase64: btoa(String.fromCharCode(...bytes)),
+        };
+        if (this.accountId !== accountId)
+          throw new Error("Wallet account changed");
+        localStorage.setItem(actionName, JSON.stringify(action));
+      }
+      const outcome = await this.settleGameplayAction(action, checkFirst);
+      if (outcome === "pending")
+        throw new Error(
+          "Gameplay action is pending. Retry to check the same transaction before signing another.",
+        );
+      localStorage.removeItem(actionName);
+      if (outcome === "failure")
+        throw new Error(
+          `The previous ${action.method} transaction failed on-chain`,
+        );
       if (this.accountId !== accountId)
         throw new Error("Wallet account changed");
+      if (
+        checkFirst &&
+        (action.method !== method || action.argsJson !== argsJson)
+      )
+        throw new Error(
+          "The previous gameplay action confirmed. Review the updated game state, then retry.",
+        );
     };
     const serialized = () => {
       const next = this.lastCall.then(run, run);
