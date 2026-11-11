@@ -434,3 +434,7 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 ## 2026-11-11 — Production routing in container CI
 
 - After the packaged development-service smoke, CI now recreates API and web with the production Compose overlay and `ESTATE_HOST=localhost`. It reads Caddy's local test root certificate and verifies the HTTPS API health, disabled paid-generation status, and game HTML with normal certificate validation, then checks the HTTP 308 redirect and removes the temporary volumes. The same development-to-production transition and checks passed locally against the built images. This covers packaged routing and local TLS trust, not a public certificate or hosted CI run; those still require the repository and VPS.
+
+## 2026-11-11 — Fresh-volume container restore
+
+- A verified backup of the current shared-city indexed snapshot was restored into a new data directory and copied into a fresh external Docker volume. The packaged API opened it with 146 events and cursor 277205914. One packaged worker pass started at 277205915, reached finalized height 277206694, added zero events, and left the API's 14 curb and one tower park totals intact. [The local record](../deployments/local-compose-restore-drill.json) includes the backup manifest hash, image IDs, cursor and cleanup. The indexed snapshot has no PNG assets; earlier file-level backup tests cover asset hash preservation. This is a container restart and volume-swap rehearsal, not the required VPS/offsite recovery drill.

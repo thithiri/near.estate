@@ -1,0 +1,46 @@
+{
+  "scope": "local fresh Docker volume restore of the shared-city indexed snapshot; no VPS or offsite copy",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "backup": {
+    "manifestSha256": "11fb5813ba612348bb793798477a393d53f25b33d32a52e9a8c082cd50ed3e58",
+    "files": 67,
+    "deploymentJsonFiles": 66,
+    "assetPngFiles": 0,
+    "eventCount": 146,
+    "cursorHeight": 277205914,
+    "cursorHash": "HfVkACUmZ15j57zpGKYWBo4sHQwyg2GQJZeCZW9myjrD"
+  },
+  "containers": {
+    "sourceRevision": "5b7f0294240b96c5b62b8456438e45ffc68b6dcf",
+    "apiImageId": "sha256:9292d4e725d294c208ed5eab15a913580e6dd780378f8338d1ab97508d8d077e",
+    "workerImageId": "sha256:6be344d8f712aaee536a6f650378d7dbd324d669c14919dde72424cf33d76bed"
+  },
+  "restoredVolume": {
+    "newExternalVolume": true,
+    "apiHealth": "ok",
+    "cursorBeforeWorker": 277205914,
+    "eventsBeforeWorker": 146,
+    "workerPass": {
+      "mode": "sparse_history",
+      "from": 277205915,
+      "through": 277206694,
+      "events": 0,
+      "transactions": 0
+    },
+    "cursorAfterWorker": 277206694,
+    "eventsAfterWorker": 146,
+    "apiTotalsAfterWorker": {
+      "curbParks": 14,
+      "towerParks": 1,
+      "grossSubunits": "152224997"
+    }
+  },
+  "cleanup": {
+    "containersRemoved": true,
+    "temporaryVolumeRemoved": true
+  },
+  "limits": [
+    "The indexed snapshot has no media PNGs, so this drill did not exercise restored asset serving.",
+    "This did not test an offsite copy, target VPS, public TLS, inspector restart or live player traffic."
+  ]
+}
