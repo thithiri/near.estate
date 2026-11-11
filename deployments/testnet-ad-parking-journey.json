@@ -1,26 +1,26 @@
 {
   "network": "testnet",
   "contractId": "dev-20261110121817-59798568433631.testnet",
-  "driverId": "dev-20261111023445-31126278967987.testnet",
-  "carId": 2,
+  "driverId": "dev-20261110121826-61851458515092.testnet",
+  "carId": 1,
   "plotId": "plot-main-n-2",
   "slot": 0,
-  "sessionId": 5,
+  "sessionId": 10,
   "fullAccessTransactionHashes": [
-    "89sNUSXJNx7HK611bnZsf6Qj4QkrLWbvgdy2MqXWsZLn",
-    "HAfEqtiEZRToAURpdkksS1M3YoePjqP8dKbE49zddbiT"
+    "7kvMKY24KULQMRHAWpf331nsyjj4i35m97zCbTBPWq9E",
+    "2LUmEthyL6UeadXE3FXdXYEde8FDSkSYbwcz3DiQJoih"
   ],
   "gameplayTransactions": [
     {
       "method": "park",
-      "hash": "CWHojq7nkHYTkHeS3QD2LqcHsRrUkNeZfUnL3y83uxoN"
+      "hash": "rN6G24GTDWUxsKgkMgXfi49cHfstZghsScGCjFwaRMD"
     },
     {
       "method": "collect",
-      "hash": "245CeSR4785WWe3Kq9wEvGLMRiVqHNnz1rdsAJpkuaPJ"
+      "hash": "13BtMnHWCdLhrV2zcGVyxn8DHjrW2ed4D2iBecWV1eP6"
     }
   ],
-  "gameplayKeyPublic": "ed25519:G79hr8qm9AeRSTei7WJdDV7J32XLzhcDjj3MJ2fwes2N",
+  "gameplayKeyPublic": "ed25519:8Lp4uVvG7cBBNfmdPTVDutFV65drcDkdShYmFqE4zWdv",
   "gameplayKeyRevoked": true,
   "simulatedReplyLossRecoveredWithoutRebroadcast": true,
   "finalActiveSession": null,

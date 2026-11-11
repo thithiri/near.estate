@@ -1,0 +1,12 @@
+{
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "plotId": "plot-market-n-1",
+  "sessionId": 11,
+  "parkTransactionHash": "x5SgxAeR7ZPu1bvvMRJJkFYu7NgdjY252gYswyHAiA2",
+  "ticketTransactionHash": "F7Ex1cjMb1J47ZfHV687jiL3kXvMxmcUeDpPTH8j7Mew",
+  "parks": 1,
+  "tickets": 1,
+  "indexedThroughHeight": 277186743,
+  "indexedThroughAt": 1794383489463,
+  "observedAt": "2026-11-11T07:52:41.613Z"
+}

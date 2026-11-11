@@ -1,0 +1,48 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "driverId": "dev-20261110121826-61851458515092.testnet",
+  "plotId": "plot-market-n-1",
+  "sessionId": 11,
+  "legalAtPark": false,
+  "ticketPayoutAtomic": "140000",
+  "finalDriverSession": null,
+  "pendingRestoredRule": {
+    "rule": {
+      "kind": "Free"
+    },
+    "effective_at": 1794383681
+  },
+  "transactions": [
+    {
+      "accountId": "dev-20261110121829-19069405494728.testnet",
+      "method": "buy_plot",
+      "hash": "361uQLRxwF5oNfYKF7eL9inJN9WpqX2DmCmMABUb5KzD"
+    },
+    {
+      "accountId": "dev-20261110121829-19069405494728.testnet",
+      "method": "set_rule",
+      "hash": "59V15GorMrfXMM5ZHWRq4Pn5q6AeGjfYsaM1bWJooVfc"
+    },
+    {
+      "accountId": "dev-20261110121826-61851458515092.testnet",
+      "method": "park",
+      "hash": "x5SgxAeR7ZPu1bvvMRJJkFYu7NgdjY252gYswyHAiA2"
+    },
+    {
+      "accountId": "dev-20261110121829-19069405494728.testnet",
+      "method": "ticket",
+      "hash": "F7Ex1cjMb1J47ZfHV687jiL3kXvMxmcUeDpPTH8j7Mew"
+    },
+    {
+      "accountId": "dev-20261110121829-19069405494728.testnet",
+      "method": "set_rule",
+      "hash": "F4VjT2CjHoHVwZ6xPCvnn71e15jxdVUHLrkLp2VeVdey"
+    }
+  ],
+  "restoredEffectiveRule": {
+    "kind": "Free"
+  },
+  "restoredVerifiedAt": "2026-11-11T07:54:55.295Z"
+}
