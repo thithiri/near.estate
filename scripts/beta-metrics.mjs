@@ -30,6 +30,39 @@ function median(values) {
     : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
+function providerTokenUsage(attempts) {
+  let reportedAttempts = 0;
+  let input = 0n;
+  let output = 0n;
+  let total = 0n;
+  for (const attempt of attempts) {
+    if (attempt.usage_json === null) continue;
+    let usage;
+    try {
+      usage = JSON.parse(attempt.usage_json);
+    } catch {
+      throw new Error("Stored provider token usage is invalid JSON");
+    }
+    if (
+      !usage ||
+      !["inputTokens", "outputTokens", "totalTokens"].every(
+        (field) => Number.isSafeInteger(usage[field]) && usage[field] >= 0,
+      )
+    )
+      throw new Error("Stored provider token usage has invalid counts");
+    reportedAttempts++;
+    input += BigInt(usage.inputTokens);
+    output += BigInt(usage.outputTokens);
+    total += BigInt(usage.totalTokens);
+  }
+  return {
+    reportedAttempts,
+    inputTokens: reportedAttempts ? input.toString() : null,
+    outputTokens: reportedAttempts ? output.toString() : null,
+    totalTokens: reportedAttempts ? total.toString() : null,
+  };
+}
+
 function eventRows(db, firstDay, lastDay) {
   if (!hasTable(db, "chain_events") || !hasTable(db, "indexed_blocks"))
     return [];
@@ -338,10 +371,19 @@ export function readBetaMetrics(
   const approvedCandidates = paidReviews.filter(
     (row) => row.review_status === "approved",
   ).length;
-  const attempts = hasTable(db, "paid_generation_attempts")
+  const attemptColumns = hasTable(db, "paid_generation_attempts")
+    ? new Set(
+        db
+          .prepare("PRAGMA table_info(paid_generation_attempts)")
+          .all()
+          .map((row) => row.name),
+      )
+    : new Set();
+  const attempts = attemptColumns.size
     ? db
         .prepare(
-          `SELECT started_at, finished_at FROM paid_generation_attempts
+          `SELECT started_at, finished_at, ${attemptColumns.has("usage_json") ? "usage_json" : "NULL AS usage_json"}
+           FROM paid_generation_attempts
            WHERE finished_at >= ? AND finished_at < ? AND finished_at >= started_at`,
         )
         .all(firstSecond, lastSecond)
@@ -406,6 +448,7 @@ export function readBetaMetrics(
     },
     provider: {
       completedAttempts: attempts.length,
+      tokenUsage: providerTokenUsage(attempts),
       medianAttemptSeconds: median(
         attempts.map((row) => row.finished_at - row.started_at),
       ),

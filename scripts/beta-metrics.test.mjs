@@ -20,6 +20,12 @@ test("empty beta data reports missing measurements rather than zero rates", () =
     assert.equal(report.parking.timeWeightedOccupancyPercent, null);
     assert.equal(report.generation.paidCandidateApprovalRate, null);
     assert.equal(report.provider.actualInvoicedCostUsdMicros, null);
+    assert.deepEqual(report.provider.tokenUsage, {
+      reportedAttempts: 0,
+      inputTokens: null,
+      outputTokens: null,
+      totalTokens: null,
+    });
   } finally {
     db.close();
   }
@@ -139,8 +145,53 @@ test("beta report separates measured activity from incomplete amounts and invoic
     assert.equal(report.coinPacing.unpricedGrantEvents, 2);
     assert.equal(report.generation.paidCandidateApprovalRate, 0.5);
     assert.equal(report.provider.medianAttemptSeconds, 10);
+    assert.equal(report.provider.tokenUsage.reportedAttempts, 0);
     assert.equal(report.provider.conservativeBudgetDebitUsdMicros, "3000");
     assert.equal(report.provider.actualInvoicedCostUsdMicros, null);
+  } finally {
+    db.close();
+  }
+});
+
+test("beta report totals only available token usage in its seven-day window", () => {
+  const db = new DatabaseSync(":memory:");
+  try {
+    db.exec(`
+      CREATE TABLE paid_generation_attempts (started_at INTEGER, finished_at INTEGER, usage_json TEXT);
+    `);
+    const insert = db.prepare(
+      "INSERT INTO paid_generation_attempts VALUES (?, ?, ?)",
+    );
+    insert.run(
+      now - 20,
+      now - 10,
+      JSON.stringify({
+        inputTokens: 15,
+        outputTokens: 150,
+        totalTokens: 165,
+      }),
+    );
+    insert.run(now - 15, now - 5, null);
+    insert.run(
+      now - 8 * 86_400,
+      now - 8 * 86_400 + 10,
+      JSON.stringify({
+        inputTokens: 999,
+        outputTokens: 999,
+        totalTokens: 1998,
+      }),
+    );
+    const report = readBetaMetrics(db, now);
+    assert.equal(report.provider.completedAttempts, 2);
+    assert.deepEqual(report.provider.tokenUsage, {
+      reportedAttempts: 1,
+      inputTokens: "15",
+      outputTokens: "150",
+      totalTokens: "165",
+    });
+    assert.equal(report.provider.actualProviderCostUsdMicros, null);
+    insert.run(now - 3, now - 2, "{bad");
+    assert.throws(() => readBetaMetrics(db, now), /invalid JSON/);
   } finally {
     db.close();
   }
