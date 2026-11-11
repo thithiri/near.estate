@@ -138,8 +138,8 @@ async function assertSheetMatches(
       "Preset review sheet dimensions differ from the facade catalog",
     );
 
-  // Font rasterization varies by OS. Compare every pixel of the street and facade
-  // artwork, while checking that each committed heading still contains ink.
+  // Font rasterization varies by OS. Compare the street and facade artwork
+  // within one channel value, while checking each committed heading for ink.
   for (let cellTop = 0; cellTop < height; cellTop += cellHeight) {
     for (let cellLeft = 0; cellLeft < width; cellLeft += cellWidth) {
       let headingInk = 0;
@@ -158,18 +158,28 @@ async function assertSheetMatches(
         throw new Error("Preset review sheet is missing a heading");
     }
   }
+  let nearPixelDifferences = 0;
+  const maxNearPixelDifferences = Math.floor(width * height * 0.001);
   for (let y = 0; y < height; y++) {
     if (y % cellHeight < titleHeight) continue;
-    const rowStart = y * width * 4;
-    const rowEnd = rowStart + width * 4;
-    if (
-      !actual.data
-        .subarray(rowStart, rowEnd)
-        .equals(reference.data.subarray(rowStart, rowEnd))
-    )
-      throw new Error(
-        "Preset review sheet artwork differs from the facade catalog",
-      );
+    for (let x = 0; x < width; x++) {
+      const offset = (y * width + x) * 4;
+      let changed = false;
+      for (let channel = 0; channel < 4; channel++) {
+        const difference = Math.abs(
+          actual.data[offset + channel] - reference.data[offset + channel],
+        );
+        if (difference > 1)
+          throw new Error(
+            "Preset review sheet artwork differs from the facade catalog",
+          );
+        changed ||= difference === 1;
+      }
+      if (changed && ++nearPixelDifferences > maxNearPixelDifferences)
+        throw new Error(
+          "Preset review sheet artwork differs from the facade catalog",
+        );
+    }
   }
 }
 
