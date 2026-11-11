@@ -1,0 +1,24 @@
+[package]
+name = "near-estate-migration-probe"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+reverse = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(near)"] }
+
+[dependencies]
+near-sdk = { version = "=5.30.1" }
+
+[dev-dependencies]
+near-estate-contract = { path = "../estate" }
+near-sdk = { version = "=5.30.1", features = ["unit-testing"] }
+near-workspaces = { version = "=0.24.0", features = ["experimental"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+anyhow = "1"
+sha2 = "=0.10.9"

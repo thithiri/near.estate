@@ -1918,6 +1918,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "near-estate-migration-probe"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "near-estate-contract",
+ "near-sdk",
+ "near-workspaces",
+ "sha2 0.10.9",
+ "tokio",
+]
+
+[[package]]
 name = "near-fmt"
 version = "0.38.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -25,6 +25,7 @@
     "contract:test": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo test --manifest-path contracts/estate/Cargo.toml",
     "contract:check": "cargo check --manifest-path contracts/estate/Cargo.toml --target wasm32-unknown-unknown",
     "contract:layout:check": "cargo run --manifest-path contracts/estate/Cargo.toml --example upgrade_testnet -- --layout-check",
+    "contract:migration:rehearse": "cargo run --manifest-path contracts/migration-probe/Cargo.toml --example rehearse -- --live-import",
     "deploy:plan": "npm run seed:check && cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example deploy_testnet -- --plan",
     "deploy:seed:test": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo test --manifest-path contracts/estate/Cargo.toml --example deploy_testnet",
     "deploy:testnet": "npm run seed:check && cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example deploy_testnet -- --apply",
