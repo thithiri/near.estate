@@ -275,3 +275,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-12 — Cafe level progression
 
 - Added six transparent illustrated Cafe sources, completing both Glasshouse and Pergola across levels 1–4. The catalog now contains 16 facades and selects Cafe images by exact level in the guest builder and street. The [portrait level views](VISUALS.md#cafe-upgrade-progression), [level-3 Main Street](images/near-estate-cafe-glasshouse-level3-street-phone-v3.png) and [level-4 Central Avenue](images/near-estate-cafe-pergola-level4-street-phone-v3.png) show the actual local layout. All six new sources pass the level-specific normalizer; the focused web, asset and browser checks are recorded with this checkpoint. Retail, Restaurant, Office and Homes still need illustrated art for levels 1, 3 and 4. Paid image testing and hosted checks remain deferred.
+
+## 2026-11-12 — Retail level progression
+
+- Added six transparent Retail sources, completing Corner shop and Market hall across levels 1–4. The illustrated catalog now contains 22 facades. The [portrait level views](VISUALS.md#retail-upgrade-progression), [level-1 Main Street](images/near-estate-retail-corner-level1-street-phone-v3.png) and [level-4 River Street](images/near-estate-retail-market-level4-street-phone-v3.png) show actual local game fit and overlays. The plot-width recommendation is documented without changing the current one-plot ownership rule. Restaurant, Office and Homes still need illustrated levels 1, 3 and 4. Paid image testing and hosted checks remain deferred.

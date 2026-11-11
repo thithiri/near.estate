@@ -1,6 +1,6 @@
 # Current game visuals
 
-These are the latest saved visuals for the near.estate guest game. The street captures show the revised controls and illustrated facades: both shapes of all five types at level 2, plus all four levels of both Cafe shapes. These are operator-created guest previews; the live city still uses approved artwork and procedural presets. These browser captures do not prove physical-phone performance or wallet signing. The restaurant's Near & Far Burgers billboard is a guest-only sample; live billboards require on-chain approval.
+These are the latest saved visuals for the near.estate guest game. The street captures show the revised controls and illustrated facades: both shapes of all five types at level 2, plus all four levels of both Cafe and Retail shapes. These are operator-created guest previews; the live city still uses approved artwork and procedural presets. These browser captures do not prove physical-phone performance or wallet signing. The restaurant's Near & Far Burgers billboard is a guest-only sample; live billboards require on-chain approval.
 
 ## Street on a phone
 
@@ -40,6 +40,18 @@ The earlier equal-scale sheet has one level-2 facade per type. The ten-image tri
 
 The [image specification and generation prompt](BUILDING_IMAGE_SPEC.md) records the style, size limits and future owner-generation path.
 
+## Retail upgrade progression
+
+The portrait builder now changes both Retail shapes as the selected level changes. Corner shop adds showroom floors above its striped awning; Market hall adds glazed galleries while retaining two sawtooth roof peaks. Both keep separate blank logo and name areas for the game-rendered overlays.
+
+![near.estate Retail Corner shop and Market hall at level 1](images/near-estate-retail-level1-phone-v3.png)
+
+![near.estate Retail Corner shop and Market hall at level 3](images/near-estate-retail-level3-phone-v3.png)
+
+![near.estate Retail Corner shop and Market hall at level 4](images/near-estate-retail-level4-phone-v3.png)
+
+The [level-1 Corner shop on Main Street](images/near-estate-retail-corner-level1-street-phone-v3.png) and [level-4 Market hall on River Street](images/near-estate-retail-market-level4-street-phone-v3.png) show their street fit beside existing curb spaces.
+
 ## Cafe upgrade progression
 
 Selecting a Cafe preview level now switches both illustrated shapes to separate images for that level. The roofs keep their triangular Glasshouse and flat Pergola identities while the upper floors grow. The fixed bottom action still names the chosen level on a portrait phone.
@@ -54,7 +66,7 @@ The level-3 Glasshouse appears on [Main Street](images/near-estate-cafe-glasshou
 
 ## Building studio on a phone
 
-390 × 844 portrait. The guest studio shows the selected type's two illustrated style studies before the curated design choices. Cafe art follows the selected level; the other types currently show their available level-2 studies with a clear caption. A persistent button names the selected preview level and stays above the phone navigation while Describe is open, so the next step remains visible while scrolling the form. The style studies are preview-only. The later Choose and Preview steps still compare the current curated designs beside neighbours; publishing requires a purchased plot and wallet.
+390 × 844 portrait. The guest studio shows the selected type's two illustrated style studies before the curated design choices. Retail and Cafe art follow the selected level; Restaurant, Office and Homes currently show their available level-2 studies with a clear caption. A persistent button names the selected preview level and stays above the phone navigation while Describe is open, so the next step remains visible while scrolling the form. The style studies are preview-only. The later Choose and Preview steps still compare the current curated designs beside neighbours; publishing requires a purchased plot and wallet.
 
 ![near.estate illustrated building study and next action in the phone studio](images/near-estate-studio-next-action-390-v1.png)
 

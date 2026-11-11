@@ -10,8 +10,10 @@ export type IllustratedPreview = {
 };
 
 const samplePlots: Record<string, { type: string; variant: 1 | 2 }> = {
+  "plot-main-n-0": { type: "retail", variant: 1 },
   "plot-central-n-2": { type: "retail", variant: 1 },
   "plot-main-n-5": { type: "retail", variant: 2 },
+  "plot-river-n-3": { type: "retail", variant: 2 },
   "plot-main-n-1": { type: "cafe", variant: 2 },
   "plot-main-n-6": { type: "cafe", variant: 1 },
   "plot-market-n-0": { type: "cafe", variant: 1 },
@@ -35,6 +37,30 @@ const mediaRects: Record<
   "retail:2": {
     logoRect: { x: 20, y: 109, width: 12, height: 12 },
     nameRect: { x: 40, y: 110, width: 78, height: 11 },
+  },
+  "retail:1:1": {
+    logoRect: { x: 17, y: 99, width: 17, height: 17 },
+    nameRect: { x: 52, y: 108, width: 66, height: 10 },
+  },
+  "retail:1:3": {
+    logoRect: { x: 20, y: 45, width: 20, height: 20 },
+    nameRect: { x: 51, y: 99, width: 68, height: 10 },
+  },
+  "retail:1:4": {
+    logoRect: { x: 20, y: 28, width: 20, height: 20 },
+    nameRect: { x: 50, y: 100, width: 70, height: 11 },
+  },
+  "retail:2:1": {
+    logoRect: { x: 20, y: 120, width: 16, height: 13 },
+    nameRect: { x: 40, y: 122, width: 82, height: 10 },
+  },
+  "retail:2:3": {
+    logoRect: { x: 18, y: 112, width: 16, height: 16 },
+    nameRect: { x: 37, y: 112, width: 82, height: 16 },
+  },
+  "retail:2:4": {
+    logoRect: { x: 16, y: 103, width: 17, height: 16 },
+    nameRect: { x: 36, y: 103, width: 82, height: 16 },
   },
   "cafe:1": {
     logoRect: { x: 59, y: 82, width: 22, height: 18 },

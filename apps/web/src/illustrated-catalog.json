@@ -4,6 +4,24 @@
     {
       "type": "retail",
       "variant": 1,
+      "level": 1,
+      "sprite": "retail-corner-l1.png",
+      "sha256": "d57457816b2f9186d167633503fc45094f7e80c635a0b0a0e4919cb96726472e",
+      "source": "retail-corner-l1-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 90,
+        "width": 129.75,
+        "height": 70
+      }
+    },
+    {
+      "type": "retail",
+      "variant": 1,
       "level": 2,
       "sprite": "retail-l2.png",
       "sha256": "864737fbff1f8fa96853701b443b7cce52d5d120b501ead3d18b219c6535af9d",
@@ -17,6 +35,60 @@
         "y": 65,
         "width": 127.25,
         "height": 95
+      }
+    },
+    {
+      "type": "retail",
+      "variant": 1,
+      "level": 3,
+      "sprite": "retail-corner-l3.png",
+      "sha256": "ffe86a6c82a92d142d8db589956cce6ba2b5d57e9006c09ff3b8423da0cd7d06",
+      "source": "retail-corner-l3-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 10.25,
+        "y": 30,
+        "width": 119.25,
+        "height": 130
+      }
+    },
+    {
+      "type": "retail",
+      "variant": 1,
+      "level": 4,
+      "sprite": "retail-corner-l4.png",
+      "sha256": "6c38291d3cf753886067dc88e043b5994f4610c21d8f89346af125e3cf650a55",
+      "source": "retail-corner-l4-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 10.25,
+        "y": 0,
+        "width": 119.25,
+        "height": 160
+      }
+    },
+    {
+      "type": "retail",
+      "variant": 2,
+      "level": 1,
+      "sprite": "retail-market-l1.png",
+      "sha256": "4958570117641bed9207e12d1b4c987e1535a7e8c37a5b0ac204f2e916bba0fb",
+      "source": "retail-market-l1-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 94.75,
+        "width": 130,
+        "height": 65.25
       }
     },
     {
@@ -35,6 +107,42 @@
         "y": 83,
         "width": 130,
         "height": 77
+      }
+    },
+    {
+      "type": "retail",
+      "variant": 2,
+      "level": 3,
+      "sprite": "retail-market-l3.png",
+      "sha256": "d68d02a1051dd61eb1f61b2774f40af4a2d97a54dde461d125e7905dacd9a7b4",
+      "source": "retail-market-l3-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 43.5,
+        "width": 130,
+        "height": 116.5
+      }
+    },
+    {
+      "type": "retail",
+      "variant": 2,
+      "level": 4,
+      "sprite": "retail-market-l4.png",
+      "sha256": "f26cf6bc3e40b291cef74ae640cef9a813d59cca26398bbe21be0925757840f0",
+      "source": "retail-market-l4-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 5,
+        "width": 130,
+        "height": 155
       }
     },
     {
