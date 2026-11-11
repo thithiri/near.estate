@@ -10,7 +10,7 @@
   "scripts": {
     "postinstall": "patch-package",
     "build": "npm run build -w @estate/shared && npm run build -w @estate/web && npm run build -w @estate/api && npm run build -w @estate/worker",
-    "check": "npm run check --workspaces --if-present && npm run test --workspaces --if-present && npm run beta:metrics:test && npm run testnet:web-signer:check && npm run testnet:media-api:check",
+    "check": "npm run check --workspaces --if-present && npm run test --workspaces --if-present && npm run beta:metrics:test && npm run testnet:web-signer:check && npm run testnet:media-api:check && npm run testnet:owner:check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "assets:generate": "node scripts/generate-presets.mjs && node scripts/generate-world-sprites.mjs",
@@ -39,6 +39,8 @@
     "testnet:media-api:prepare": "tsx scripts/testnet-media-api-journey.ts --prepare",
     "testnet:media-api:approve": "tsx scripts/testnet-media-api-journey.ts --approve",
     "testnet:media-api:check": "tsc --noEmit --module esnext --moduleResolution bundler --target es2022 --types vite/client,node --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --strict scripts/testnet-media-api-journey.ts",
+    "testnet:owner:journey": "tsx scripts/testnet-owner-customization.ts --apply",
+    "testnet:owner:check": "tsc --noEmit --module esnext --moduleResolution bundler --target es2022 --types vite/client,node --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --strict scripts/testnet-owner-customization.ts",
     "testnet:inspector-journey": "npm run build -w @estate/api && cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_inspector_journey -- --apply",
     "testnet:moderation-journey": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo run --manifest-path contracts/estate/Cargo.toml --example testnet_moderation_journey -- --apply",
     "inspector:key:plan": "cargo run --manifest-path contracts/estate/Cargo.toml --example provision_inspector_key -- --plan",

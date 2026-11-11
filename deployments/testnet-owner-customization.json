@@ -1,0 +1,81 @@
+{
+  "network": "testnet",
+  "contractId": "cdd9e90c27e30.dev-20261111023445-31126278967987.testnet",
+  "ownerId": "odd9e90c27e30.dev-20261111023445-31126278967987.testnet",
+  "plotId": "plot-main-n-0",
+  "building": {
+    "building_type": "Cafe",
+    "variant": 1,
+    "level": 2,
+    "primary_color": "#69B9E9",
+    "name": "Near Arcade",
+    "approved_manifest_hash": null,
+    "approved_at": null,
+    "last_facade_approved_at": null,
+    "pending_appearance": null,
+    "last_appearance_decision": null,
+    "facade_exemption_level": 2,
+    "appearance_revision": 4,
+    "layout_revision": 4
+  },
+  "pendingRule": {
+    "rule": {
+      "kind": "ColorOnly",
+      "color": "Blue"
+    },
+    "effective_at": 1794366925
+  },
+  "effectiveRule": {
+    "kind": "Free"
+  },
+  "ruleEffectiveAfterDelay": {
+    "blockHeight": 277158449,
+    "rule": {
+      "kind": "ColorOnly",
+      "color": "Blue"
+    }
+  },
+  "coinDebit": "2000000",
+  "testOnlyTypeAndFirstLevelCost": "1000000",
+  "restoredTypeCost": "100000000",
+  "restoredUpgradeCosts": ["200000000", "600000000", "1500000000"],
+  "finalConfigVersion": 3,
+  "defaultCostsRestored": true,
+  "gameplayKeyRevoked": true,
+  "gameplayTransactions": [
+    {
+      "method": "set_rule",
+      "hash": "2mwv28SJ39o1SqbjQfKKC4QUGUCS6YKvrEtYuhGRDhaP"
+    }
+  ],
+  "fullAccessTransactions": [
+    {
+      "action": "add_gameplay_key",
+      "hash": "a1L8M56vg8oSV2S2ndrHWE121KQA5ssLNQM5BFcMmiE"
+    },
+    {
+      "action": "revoke_gameplay_key",
+      "hash": "Gzixfywtjhup5K1PqcdDQNrozuaQKrYixfYV7bQKEGTy"
+    },
+    {
+      "action": "choose_preset",
+      "hash": "F2cAL7pw53t39gMN1o3bmJJC4Dm4tXARKZcKxvNQ2QFT"
+    },
+    {
+      "action": "lower_isolated_build_costs",
+      "hash": "2PMSEU5G22NpYATrJkbPgDBJzNkoPKipkqJmMXYeXz4H"
+    },
+    {
+      "action": "change_building_type",
+      "hash": "FojXYuREBnNCkQJTyETSHspBPB5wU2RC1j8qqKszpnRC"
+    },
+    {
+      "action": "upgrade_building",
+      "hash": "HJGH6J4iz9DFdyh9536hg5z3nTa8Hhg1oJBNZ2N4FgEj"
+    },
+    {
+      "action": "restore_isolated_build_costs",
+      "hash": "8epoeuKbWpVKfaoRdYGCFosJ7mZM2gqoAyH79vPLAGqD"
+    }
+  ]
+}
