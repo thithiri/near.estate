@@ -893,8 +893,9 @@ button:disabled {
   font-size: 8px;
 }
 .studio-neighbourhood {
+  --studio-scale: 1;
   display: grid;
-  grid-template-columns: repeat(3, 140px);
+  grid-template-columns: repeat(3, calc(140px * var(--studio-scale)));
   justify-content: center;
   align-items: end;
   gap: 8px;
@@ -903,13 +904,22 @@ button:disabled {
   background: linear-gradient(#a6dff6 0 76%, #e8d8c9 76% 82%, #627183 82%);
   border-radius: 12px;
 }
+.studio-neighbour,
 .studio-focus {
   position: relative;
+  width: calc(140px * var(--studio-scale));
+  height: calc(160px * var(--studio-scale));
+}
+.studio-neighbour .studio-building,
+.studio-focus .studio-building {
+  transform: scale(var(--studio-scale));
+  transform-origin: top left;
 }
 .studio-height-line {
   position: absolute;
   left: 0;
   right: 0;
+  top: calc(var(--height-line-top) * var(--studio-scale));
   z-index: 2;
   height: 0;
   border-top: 2px dashed #17b77e;
@@ -1417,10 +1427,18 @@ footer[hidden] {
     transform-origin: top left;
   }
   .studio-neighbourhood {
-    grid-template-columns: 140px;
+    --studio-scale: 0.7;
+    gap: 6px;
   }
-  .studio-neighbour {
-    display: none;
+}
+@media (min-width: 500px) and (max-width: 700px) {
+  .studio-neighbourhood {
+    --studio-scale: 1;
+  }
+}
+@media (max-width: 360px) {
+  .studio-neighbourhood {
+    --studio-scale: 0.52;
   }
 }
 @media (max-height: 390px) and (orientation: landscape) {

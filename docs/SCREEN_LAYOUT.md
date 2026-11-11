@@ -50,6 +50,13 @@ and plot cards scroll vertically. Form fields and moderation details use the ful
 width. From the Street tab, show an illustrated rotate prompt and a clear
 Continue to map button. Preserve the selected street and car across rotation.
 
+The curated building studio keeps the selected facade and both neighbours in
+its portrait Preview step, scaling the three facades together at narrow widths.
+The [390 px capture](images/near-estate-studio-preview-phone-v2.png) and
+[320 px capture](images/near-estate-studio-preview-narrow-v2.png) show the actual
+guest renderer without horizontal clipping. These are browser viewport checks;
+physical phone readability is still open.
+
 If later playtesting shows strong demand for portrait driving, make it a distinct
 camera/layout mode with a shorter visible street span and one focused building,
 not a scaled-down version of the landscape scene. Defer that additional mode

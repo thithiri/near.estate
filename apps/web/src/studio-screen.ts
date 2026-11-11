@@ -151,7 +151,7 @@ export class MockStudio {
           <section class="studio-preview" aria-label="Preview beside neighbours"><h2>On your street</h2>
             <div class="studio-neighbourhood">
               <div class="studio-neighbour">${buildingMarkup(left.initialType, left.initialVariant, (left.index % 4) + 1, PRESET_PALETTES[left.index % 4]!)}</div>
-              <div class="studio-focus"><span class="studio-height-line" style="top:${160 - [70, 100, 130, 160][this.level - 1]!}px"><span>Level ${this.level} limit</span></span>${buildingMarkup(this.type, chosen.variant, this.level, chosen.palette)}</div>
+              <div class="studio-focus"><span class="studio-height-line" style="--height-line-top:${160 - [70, 100, 130, 160][this.level - 1]!}px"><span>Level ${this.level} limit</span></span>${buildingMarkup(this.type, chosen.variant, this.level, chosen.palette)}</div>
               <div class="studio-neighbour">${buildingMarkup(right.initialType, right.initialVariant, (right.index % 4) + 1, PRESET_PALETTES[right.index % 4]!)}</div>
               <div class="studio-curb"><span>Parking</span><span>Parking</span></div>
             </div>

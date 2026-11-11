@@ -82,6 +82,22 @@ for (const viewport of [
       "data-step",
       "Choose",
     );
+    const choice =
+      viewport.width <= 700
+        ? page.locator('.candidate-thumbnails [data-candidate="1"]')
+        : page.locator('.candidate-grid [data-candidate="1"]');
+    await choice.click();
+    await expect(page.locator(".studio-screen")).toHaveAttribute(
+      "data-step",
+      "Preview",
+    );
+    await expect(
+      page.locator(".studio-neighbour .studio-building"),
+    ).toHaveCount(2);
+    for (const neighbour of await page
+      .locator(".studio-neighbour .studio-building")
+      .all())
+      await expect(neighbour).toBeVisible();
     await noHorizontalOverflow(page);
     await page.locator("#studio-back").click();
     await page.locator("#open-stats").click();
