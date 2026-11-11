@@ -88,10 +88,11 @@ for (const viewport of [
         ["Homes", ["Terrace", "Townhouse"]],
       ] as const) {
         await page.locator("#studio-type").selectOption(type);
+        const studyLevel = type === "Cafe" ? 1 : 2;
         for (const shape of shapes)
           await expect(
             page.getByRole("img", {
-              name: `${type} ${shape} illustrated level 2 style study`,
+              name: `${type} ${shape} illustrated level ${studyLevel} style study`,
             }),
           ).toBeVisible();
         await expect
@@ -113,12 +114,12 @@ for (const viewport of [
     await page.locator("#studio-type").selectOption("Cafe");
     await expect(
       page.getByRole("img", {
-        name: "Cafe Glasshouse illustrated level 2 style study",
+        name: "Cafe Glasshouse illustrated level 1 style study",
       }),
     ).toBeVisible();
     await expect(
       page.getByRole("img", {
-        name: "Cafe Pergola illustrated level 2 style study",
+        name: "Cafe Pergola illustrated level 1 style study",
       }),
     ).toBeVisible();
     await expect
@@ -135,6 +136,27 @@ for (const viewport of [
       )
       .toBe(2);
     await page.locator("#studio-level").selectOption("4");
+    for (const shape of ["Glasshouse", "Pergola"])
+      await expect(
+        page.getByRole("img", {
+          name: `Cafe ${shape} illustrated level 4 style study`,
+        }),
+      ).toBeVisible();
+    await expect
+      .poll(() =>
+        page
+          .locator(".studio-art-direction img")
+          .evaluateAll(
+            (images) =>
+              images.filter(
+                (image) =>
+                  image instanceof HTMLImageElement &&
+                  image.naturalWidth > 0 &&
+                  image.src.includes("-l4.png"),
+              ).length,
+          ),
+      )
+      .toBe(2);
     await page
       .locator(
         viewport.name === "phone portrait"

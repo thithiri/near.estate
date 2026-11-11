@@ -30,14 +30,56 @@ const facades = [
   {
     type: "cafe",
     variant: 1,
+    level: 1,
+    source: "cafe-glasshouse-l1-source.png",
+    sprite: "cafe-glasshouse-l1.png",
+  },
+  {
+    type: "cafe",
+    variant: 1,
     source: "cafe-source.png",
     sprite: "cafe-l2.png",
+  },
+  {
+    type: "cafe",
+    variant: 1,
+    level: 3,
+    source: "cafe-glasshouse-l3-source.png",
+    sprite: "cafe-glasshouse-l3.png",
+  },
+  {
+    type: "cafe",
+    variant: 1,
+    level: 4,
+    source: "cafe-glasshouse-l4-source.png",
+    sprite: "cafe-glasshouse-l4.png",
+  },
+  {
+    type: "cafe",
+    variant: 2,
+    level: 1,
+    source: "cafe-pergola-l1-source.png",
+    sprite: "cafe-pergola-l1.png",
   },
   {
     type: "cafe",
     variant: 2,
     source: "cafe-pergola-source.png",
     sprite: "cafe-pergola-l2.png",
+  },
+  {
+    type: "cafe",
+    variant: 2,
+    level: 3,
+    source: "cafe-pergola-l3-source.png",
+    sprite: "cafe-pergola-l3.png",
+  },
+  {
+    type: "cafe",
+    variant: 2,
+    level: 4,
+    source: "cafe-pergola-l4-source.png",
+    sprite: "cafe-pergola-l4.png",
   },
   {
     type: "restaurant",
@@ -77,12 +119,22 @@ const facades = [
   },
 ];
 const canvas = { width: 560, height: 640 };
-const maxArt = { width: 520, height: 380 };
+// Keep the original level-2 images at 95 logical pixels; this remains below
+// their 100-pixel cap and preserves their published guest-preview hashes.
+const maxArtHeightByLevel = [280, 380, 520, 640];
 const check = process.argv.includes("--check");
 
 if (!check) await mkdir(outputDir, { recursive: true });
 const catalog = [];
+const keys = new Set();
 for (const facade of facades) {
+  const level = facade.level ?? 2;
+  const maxHeight = maxArtHeightByLevel[level - 1];
+  if (!maxHeight)
+    throw new Error(`Invalid level ${level} for ${facade.sprite}`);
+  const key = `${facade.type}:${facade.variant}:${level}`;
+  if (keys.has(key)) throw new Error(`Duplicate illustrated facade ${key}`);
+  keys.add(key);
   const source = path.join(sourceDir, facade.source);
   const input = await readFile(source);
   const metadata = await sharp(input).metadata();
@@ -93,7 +145,7 @@ for (const facade of facades) {
     .png()
     .toBuffer();
   const resized = await sharp(trimmed)
-    .resize(maxArt.width, maxArt.height, { fit: "inside" })
+    .resize(520, maxHeight, { fit: "inside" })
     .png()
     .toBuffer();
   const bounds = await sharp(resized).metadata();
@@ -118,6 +170,7 @@ for (const facade of facades) {
   catalog.push({
     type: facade.type,
     ...(facade.variant ? { variant: facade.variant } : {}),
+    level,
     sprite: filename,
     sha256: createHash("sha256").update(sprite).digest("hex"),
     source: facade.source,
@@ -130,7 +183,7 @@ for (const facade of facades) {
     },
   });
 }
-const content = `${JSON.stringify({ version: 2, facades: catalog }, null, 2)}\n`;
+const content = `${JSON.stringify({ version: 3, facades: catalog }, null, 2)}\n`;
 if (check) {
   if ((await readFile(catalogPath, "utf8")) !== content)
     throw new Error("Illustrated facade catalog is out of date");
@@ -138,5 +191,5 @@ if (check) {
   await writeFile(catalogPath, content);
 }
 console.log(
-  `${check ? "Checked" : "Prepared"} ${catalog.length} illustrated level-2 facades`,
+  `${check ? "Checked" : "Prepared"} ${catalog.length} illustrated facades`,
 );

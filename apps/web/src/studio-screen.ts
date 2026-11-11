@@ -60,17 +60,19 @@ export function buildingMarkup(
   </div>`;
 }
 
-function illustratedStudyMarkup(type: string): string {
+function illustratedStudyMarkup(type: string, level: number): string {
   const parsed = BuildingType.safeParse(type);
   if (!parsed.success) return "";
   const variants = [1, 2] as const;
   const studies = variants.map((variant) => {
-    const study = illustratedPreviewForType(type, variant);
+    const study =
+      illustratedPreviewForType(type, variant, level) ??
+      illustratedPreviewForType(type, variant, 2);
     if (!study) return "";
     const logo = study.logoRect;
     const name = study.nameRect;
     const label = buildingShapeName(parsed.data, variant);
-    const imageLabel = `${type} ${label} illustrated level 2 style study`;
+    const imageLabel = `${type} ${label} illustrated level ${study.level} style study`;
     return `<figure class="studio-art-direction">
     <div class="studio-art-frame">
       <div class="studio-building" role="img" aria-label="${imageLabel}">
@@ -79,7 +81,7 @@ function illustratedStudyMarkup(type: string): string {
         ${name ? `<span class="studio-name" style="left:${name.x}px;top:${name.y}px;width:${name.width}px;height:${name.height}px;font-size:${Math.min(8, name.height * 0.7, name.width / (type.length * 0.62))}px">${type.toUpperCase()}</span>` : ""}
       </div>
     </div>
-    <figcaption><strong>${label}</strong><span>Level 2 study · preview only</span></figcaption>
+    <figcaption><strong>${label}</strong><span>Level ${study.level} study · preview only</span></figcaption>
   </figure>`;
   });
   return `<div class="studio-art-studies pair">${studies.join("")}</div>`;
@@ -175,7 +177,7 @@ export class MockStudio {
         <section class="card studio-controls" aria-label="Describe your building">
           <h2>Your building</h2>
           <label>Type<select id="studio-type">${BuildingType.options.map((type) => `<option value="${type}" ${type === this.type ? "selected" : ""}>${type}</option>`).join("")}</select></label>
-          ${illustratedStudyMarkup(this.type)}
+          ${illustratedStudyMarkup(this.type, this.level)}
           <label>Level to preview<select id="studio-level">${[1, 2, 3, 4].map((level) => `<option value="${level}" ${level === this.level ? "selected" : ""}>Level ${level} · ${[70, 100, 130, 160][level - 1]}px limit</option>`).join("")}</select></label>
           <fieldset class="studio-palette"><legend>Colour</legend>${PRESET_PALETTES.map((palette) => `<button type="button" data-studio-palette="${palette}" aria-label="${paletteName(palette)} colour" aria-pressed="${palette === this.palette}" style="background:${palette}"></button>`).join("")}</fieldset>
           <label>Your idea<textarea id="studio-description" maxlength="800" rows="4" placeholder="A greenhouse cafe with a tall glass peak and hanging plants…">${escapeHtml(this.description)}</textarea></label>

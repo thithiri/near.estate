@@ -1,9 +1,10 @@
 {
-  "version": 2,
+  "version": 3,
   "facades": [
     {
       "type": "retail",
       "variant": 1,
+      "level": 2,
       "sprite": "retail-l2.png",
       "sha256": "864737fbff1f8fa96853701b443b7cce52d5d120b501ead3d18b219c6535af9d",
       "source": "retail-source.png",
@@ -21,6 +22,7 @@
     {
       "type": "retail",
       "variant": 2,
+      "level": 2,
       "sprite": "retail-market-l2.png",
       "sha256": "16577cba413f2b32f4d79ad8e2f1b2b3bb27edd0224fc749d934281818211db6",
       "source": "retail-market-source.png",
@@ -38,6 +40,25 @@
     {
       "type": "cafe",
       "variant": 1,
+      "level": 1,
+      "sprite": "cafe-glasshouse-l1.png",
+      "sha256": "5cc2c37c659515c9741a995474bcda98f8628fdd1ae5bbcf78bd9d0c21461801",
+      "source": "cafe-glasshouse-l1-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 15.75,
+        "y": 90,
+        "width": 108.5,
+        "height": 70
+      }
+    },
+    {
+      "type": "cafe",
+      "variant": 1,
+      "level": 2,
       "sprite": "cafe-l2.png",
       "sha256": "ac5460353f3b338b3e871a4898f19a0f36fd1f37e40178feb16f06348a06a408",
       "source": "cafe-source.png",
@@ -54,7 +75,62 @@
     },
     {
       "type": "cafe",
+      "variant": 1,
+      "level": 3,
+      "sprite": "cafe-glasshouse-l3.png",
+      "sha256": "f1752ab67eae759cd149edf90f73b564c9fa0e74332557872b2cb724c1df9a3d",
+      "source": "cafe-glasshouse-l3-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 12.25,
+        "y": 30,
+        "width": 115.25,
+        "height": 130
+      }
+    },
+    {
+      "type": "cafe",
+      "variant": 1,
+      "level": 4,
+      "sprite": "cafe-glasshouse-l4.png",
+      "sha256": "8573727030fb5132caf2f6edfe5f87a4d78ba6e24ad6a1598f6e21f133233a5a",
+      "source": "cafe-glasshouse-l4-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 17.5,
+        "y": 0,
+        "width": 105,
+        "height": 160
+      }
+    },
+    {
+      "type": "cafe",
       "variant": 2,
+      "level": 1,
+      "sprite": "cafe-pergola-l1.png",
+      "sha256": "83231d9e0e2dc22f9d11b33f9f7fdc1b1c5d7b6288297ab64f2d59ae18269126",
+      "source": "cafe-pergola-l1-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 92.25,
+        "width": 130,
+        "height": 67.75
+      }
+    },
+    {
+      "type": "cafe",
+      "variant": 2,
+      "level": 2,
       "sprite": "cafe-pergola-l2.png",
       "sha256": "c38547d00d3671eee77af4d39a2bbd25e2c0330e99884601a1381178878ac117",
       "source": "cafe-pergola-source.png",
@@ -70,8 +146,45 @@
       }
     },
     {
+      "type": "cafe",
+      "variant": 2,
+      "level": 3,
+      "sprite": "cafe-pergola-l3.png",
+      "sha256": "924fa8706bbf6d075a850716761a246698cf61431020b955a216d28c27f856dd",
+      "source": "cafe-pergola-l3-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 8.75,
+        "y": 30,
+        "width": 122.5,
+        "height": 130
+      }
+    },
+    {
+      "type": "cafe",
+      "variant": 2,
+      "level": 4,
+      "sprite": "cafe-pergola-l4.png",
+      "sha256": "ec3460b3ca0c437d16b2cba1d0aac91e4049af4f87216ebcd7b26db7cca2b6f1",
+      "source": "cafe-pergola-l4-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 8,
+        "y": 0,
+        "width": 123.75,
+        "height": 160
+      }
+    },
+    {
       "type": "restaurant",
       "variant": 1,
+      "level": 2,
       "sprite": "restaurant-l2.png",
       "sha256": "fcfca3896a0abb8b83a0cc52cac645e31c5720d60986fa433a453ef4409e234b",
       "source": "restaurant-source.png",
@@ -89,6 +202,7 @@
     {
       "type": "restaurant",
       "variant": 2,
+      "level": 2,
       "sprite": "restaurant-bistro-l2.png",
       "sha256": "caeb0fff003c29d006c4e78905b1d88651e76ffb17c7746cf626e2c0eab597de",
       "source": "restaurant-bistro-source.png",
@@ -106,6 +220,7 @@
     {
       "type": "office",
       "variant": 1,
+      "level": 2,
       "sprite": "office-l2.png",
       "sha256": "7ff7b05d9dd35e40d423841df92dc93c6183ef09f10c4eec064477460a7836bd",
       "source": "office-source.png",
@@ -123,6 +238,7 @@
     {
       "type": "office",
       "variant": 2,
+      "level": 2,
       "sprite": "office-wide-l2.png",
       "sha256": "dd548ab73d78aa71a05076545baada3b76e000a119174b484f432b0950ac2681",
       "source": "office-wide-source.png",
@@ -140,6 +256,7 @@
     {
       "type": "homes",
       "variant": 1,
+      "level": 2,
       "sprite": "homes-l2.png",
       "sha256": "447d42b36cf1bb583258577bd271837d8493baaffa0f7a3fdfce65a9a8e7b01d",
       "source": "homes-source.png",
@@ -157,6 +274,7 @@
     {
       "type": "homes",
       "variant": 2,
+      "level": 2,
       "sprite": "homes-townhouse-l2.png",
       "sha256": "42ccf8e4109ede4591b34fc59d58e6805903231c9eba15bf873025ff6d8cc200",
       "source": "homes-townhouse-source.png",

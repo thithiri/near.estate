@@ -3,6 +3,7 @@ import catalog from "./illustrated-catalog.json";
 
 type Rect = { x: number; y: number; width: number; height: number };
 export type IllustratedPreview = {
+  level: number;
   spriteUrl: string;
   logoRect: Rect | null;
   nameRect: Rect | null;
@@ -13,6 +14,8 @@ const samplePlots: Record<string, { type: string; variant: 1 | 2 }> = {
   "plot-main-n-5": { type: "retail", variant: 2 },
   "plot-main-n-1": { type: "cafe", variant: 2 },
   "plot-main-n-6": { type: "cafe", variant: 1 },
+  "plot-market-n-0": { type: "cafe", variant: 1 },
+  "plot-central-n-3": { type: "cafe", variant: 2 },
   "plot-main-n-2": { type: "restaurant", variant: 1 },
   "plot-market-n-1": { type: "restaurant", variant: 2 },
   "plot-market-n-2": { type: "office", variant: 1 },
@@ -41,6 +44,30 @@ const mediaRects: Record<
     logoRect: { x: 27, y: 97, width: 12, height: 12 },
     nameRect: { x: 48, y: 97, width: 60, height: 12 },
   },
+  "cafe:1:1": {
+    logoRect: { x: 62, y: 104, width: 16, height: 14 },
+    nameRect: { x: 47, y: 119, width: 47, height: 7 },
+  },
+  "cafe:1:3": {
+    logoRect: { x: 61, y: 53, width: 18, height: 18 },
+    nameRect: { x: 39, y: 112, width: 62, height: 8 },
+  },
+  "cafe:1:4": {
+    logoRect: { x: 61, y: 22, width: 17, height: 17 },
+    nameRect: { x: 42, y: 110, width: 57, height: 10 },
+  },
+  "cafe:2:1": {
+    logoRect: { x: 27, y: 105, width: 14, height: 13 },
+    nameRect: { x: 48, y: 106, width: 62, height: 9 },
+  },
+  "cafe:2:3": {
+    logoRect: { x: 28, y: 97, width: 13, height: 11 },
+    nameRect: { x: 50, y: 98, width: 60, height: 10 },
+  },
+  "cafe:2:4": {
+    logoRect: { x: 28, y: 98, width: 13, height: 13 },
+    nameRect: { x: 50, y: 98, width: 60, height: 12 },
+  },
   "restaurant:1": {
     logoRect: null,
     nameRect: { x: 45, y: 101, width: 50, height: 13 },
@@ -64,14 +91,20 @@ const mediaRects: Record<
 export function illustratedPreviewForType(
   buildingType: string,
   variant: 1 | 2,
+  level = 2,
 ): IllustratedPreview | null {
   const key = buildingType.toLowerCase();
   const entry = catalog.facades.find(
-    (facade) => facade.type === key && facade.variant === variant,
+    (facade) =>
+      facade.type === key &&
+      facade.variant === variant &&
+      facade.level === level,
   );
-  const rects = mediaRects[`${key}:${variant}`];
+  const rects =
+    mediaRects[`${key}:${variant}:${level}`] ?? mediaRects[`${key}:${variant}`];
   if (!entry || !rects) return null;
   return {
+    level,
     spriteUrl: `${import.meta.env?.BASE_URL ?? "/"}illustrated/${entry.sprite}?v=${entry.sha256.slice(0, 16)}`,
     ...rects,
   };
@@ -81,8 +114,16 @@ export function illustratedPreviewForPlot(
   plot: PlayerPlot,
 ): IllustratedPreview | null {
   const sample = samplePlots[plot.id];
-  return sample?.type === plot.initialType.toLowerCase() &&
-    sample.variant === plot.initialVariant
-    ? illustratedPreviewForType(plot.initialType, sample.variant)
-    : null;
+  if (
+    sample?.type !== plot.initialType.toLowerCase() ||
+    sample.variant !== plot.initialVariant
+  )
+    return null;
+  const level = (plot.index % 4) + 1;
+  return (
+    illustratedPreviewForType(plot.initialType, sample.variant, level) ??
+    (level > 2
+      ? illustratedPreviewForType(plot.initialType, sample.variant, 2)
+      : null)
+  );
 }
