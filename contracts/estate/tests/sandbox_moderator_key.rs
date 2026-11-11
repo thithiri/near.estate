@@ -173,7 +173,98 @@ async fn restricted_moderator_approves_and_revokes_logo_on_sandbox() -> Result<(
         remaining.as_yoctonear() > 0 && remaining.as_yoctonear() < ALLOWANCE_YOCTO
     }));
 
-    let revoked = restricted
+    let replacement_secret = SecretKey::from_random(KeyType::ED25519);
+    let replacement_public = replacement_secret.public_key();
+    let add_replacement = moderator
+        .batch(moderator.id())
+        .add_key(
+            replacement_public.clone(),
+            AccessKey::function_call_access(
+                contract.id(),
+                &METHODS,
+                Some(NearToken::from_yoctonear(ALLOWANCE_YOCTO)),
+            ),
+        )
+        .transact()
+        .await?;
+    ensure!(
+        add_replacement.is_success(),
+        "replacement key creation failed: {add_replacement:?}"
+    );
+    let replacement_access = moderator.view_access_key(&replacement_public).await?;
+    let AccessKeyPermission::FunctionCall(replacement_permission) = replacement_access.permission
+    else {
+        anyhow::bail!("replacement moderator key became full access")
+    };
+    ensure!(
+        replacement_permission.receiver_id == contract.id().as_str()
+            && replacement_permission
+                .method_names
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                == METHODS
+            && replacement_permission
+                .allowance
+                .is_some_and(|allowance| { allowance.as_yoctonear() == ALLOWANCE_YOCTO }),
+        "replacement key scope differs from the moderation policy"
+    );
+    let overlapping_keys = moderator.view_access_keys().await?;
+    ensure!(
+        overlapping_keys
+            .iter()
+            .any(|entry| entry.public_key == public)
+            && overlapping_keys
+                .iter()
+                .any(|entry| entry.public_key == replacement_public),
+        "old and replacement keys did not overlap on-chain"
+    );
+    let remove_old_key = moderator
+        .batch(moderator.id())
+        .delete_key(public.clone())
+        .transact()
+        .await?;
+    ensure!(
+        remove_old_key.is_success(),
+        "old key removal failed: {remove_old_key:?}"
+    );
+    ensure!(!moderator
+        .view_access_keys()
+        .await?
+        .iter()
+        .any(|entry| entry.public_key == public));
+    let rejected_old_key = restricted
+        .call(contract.id(), "revoke_media")
+        .args_json(json!({
+            "plot_id": PLOT_ID,
+            "kind": MediaKind::Logo,
+            "expected_media_revision": proposal.revision,
+            "expected_content": content,
+            "reason": "Old key must not revoke content"
+        }))
+        .transact()
+        .await;
+    ensure!(
+        !matches!(rejected_old_key, Ok(ref outcome) if outcome.is_success()),
+        "removed moderator key still signed a revocation"
+    );
+    let after_old_key_attempt: PlotView = contract
+        .view("get_plot")
+        .args_json(json!({"plot_id": PLOT_ID}))
+        .await?
+        .json()?;
+    ensure!(
+        after_old_key_attempt
+            .plot
+            .logo
+            .active
+            .as_ref()
+            .map(|entry| &entry.content)
+            == Some(&content),
+        "removed key changed active content"
+    );
+    let replacement = Account::from_secret_key(moderator.id().clone(), replacement_secret, &worker);
+    let revoked = replacement
         .call(contract.id(), "revoke_media")
         .args_json(json!({
             "plot_id": PLOT_ID,
@@ -198,7 +289,7 @@ async fn restricted_moderator_approves_and_revokes_logo_on_sandbox() -> Result<(
     );
     let remove_key = moderator
         .batch(moderator.id())
-        .delete_key(public.clone())
+        .delete_key(replacement_public.clone())
         .transact()
         .await?;
     ensure!(
@@ -209,6 +300,6 @@ async fn restricted_moderator_approves_and_revokes_logo_on_sandbox() -> Result<(
         .view_access_keys()
         .await?
         .iter()
-        .any(|entry| entry.public_key == public));
+        .any(|entry| entry.public_key == replacement_public));
     Ok(())
 }
