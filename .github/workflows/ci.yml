@@ -72,5 +72,32 @@ jobs:
             'require("sharp")(Buffer.from("<svg width=\"8\" height=\"8\"><rect width=\"8\" height=\"8\" fill=\"red\"/></svg>")).png().toBuffer().then(x=>{if(x.length<50)process.exit(1)})'
           docker compose -f infra/compose.yaml --profile indexer run --rm --no-deps --entrypoint node indexer \
             -e 'import("/app/services/worker/dist/event-store.js").catch(e=>{console.error(e);process.exit(1)})'
+      - name: Check production HTTPS routing with local trust root
+        env:
+          ESTATE_HOST: localhost
+          INDEXER_START_HEIGHT: 1
+        run: |
+          docker compose -f infra/compose.yaml -f infra/compose.prod.yaml up -d --no-build api web
+          root_cert=$(mktemp)
+          for attempt in $(seq 1 20); do
+            if docker compose -f infra/compose.yaml -f infra/compose.prod.yaml exec -T web \
+              cat /data/caddy/pki/authorities/local/root.crt > "$root_cert" 2>/dev/null && test -s "$root_cert"; then
+              break
+            fi
+            sleep 1
+          done
+          test -s "$root_cert"
+          curl --cacert "$root_cert" -fsS --retry 20 --retry-all-errors --retry-delay 2 \
+            https://localhost/api/health \
+            | python3 -c 'import json,sys; assert json.load(sys.stdin)["status"] == "ok"'
+          curl --cacert "$root_cert" -fsS https://localhost/api/paid-generations/status \
+            | python3 -c 'import json,sys; assert json.load(sys.stdin) == {"enabled": False}'
+          curl --cacert "$root_cert" -fsS https://localhost/ \
+            | python3 -c 'import sys; assert "near.estate" in sys.stdin.read()'
+          test "$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' http://localhost/)" = "308 https://localhost/"
+          rm "$root_cert"
       - if: always()
-        run: docker compose -f infra/compose.yaml down -v --remove-orphans
+        env:
+          ESTATE_HOST: localhost
+          INDEXER_START_HEIGHT: 1
+        run: docker compose -f infra/compose.yaml -f infra/compose.prod.yaml down -v --remove-orphans

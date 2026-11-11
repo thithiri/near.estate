@@ -430,3 +430,7 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 ## 2026-11-11 — Fresh shared-city economy read
 
 - A new temporary SQLite database replayed 153 finalized shared-city transactions, then caught up to height 277205914. The [seven-day report](../deployments/testnet-beta-metrics-2026-11-11-current.json) matches the deployed contract, covers all 160 curb and 96 tower spaces, and records 14 curb parks, one tower park and zero current occupancy. The one park since the prior snapshot came from the development account and was collected. The three registrations and first parks are scripted; old coin events still lack two costs and two starter grants. There is no basis to tune prices or earnings from this sample, and paid image testing remains deferred.
+
+## 2026-11-11 — Production routing in container CI
+
+- After the packaged development-service smoke, CI now recreates API and web with the production Compose overlay and `ESTATE_HOST=localhost`. It reads Caddy's local test root certificate and verifies the HTTPS API health, disabled paid-generation status, and game HTML with normal certificate validation, then checks the HTTP 308 redirect and removes the temporary volumes. The same development-to-production transition and checks passed locally against the built images. This covers packaged routing and local TLS trust, not a public certificate or hosted CI run; those still require the repository and VPS.
