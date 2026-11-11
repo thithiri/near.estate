@@ -292,6 +292,24 @@
     {
       "type": "restaurant",
       "variant": 1,
+      "level": 1,
+      "sprite": "restaurant-diner-l1.png",
+      "sha256": "9d28e3f08b1804105398f834d7b996517bc9df411b8940b89f6d03f6b42f284a",
+      "source": "restaurant-diner-l1-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 7,
+        "y": 90,
+        "width": 125.75,
+        "height": 70
+      }
+    },
+    {
+      "type": "restaurant",
+      "variant": 1,
       "level": 2,
       "sprite": "restaurant-l2.png",
       "sha256": "fcfca3896a0abb8b83a0cc52cac645e31c5720d60986fa433a453ef4409e234b",
@@ -310,6 +328,60 @@
     {
       "type": "restaurant",
       "variant": 2,
+      "level": 1,
+      "sprite": "restaurant-bistro-l1.png",
+      "sha256": "4254d6c9c6d70f9c9f7b5b6c9214482402f776b8b1c0bf09fd443c80d4b50754",
+      "source": "restaurant-bistro-l1-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 107.25,
+        "width": 130,
+        "height": 52.75
+      }
+    },
+    {
+      "type": "restaurant",
+      "variant": 1,
+      "level": 3,
+      "sprite": "restaurant-diner-l3.png",
+      "sha256": "31354bbc69eba09eaccb9b5465bcfda2599640c7219357cec3d9240ca82845b0",
+      "source": "restaurant-diner-l3-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 36.75,
+        "width": 130,
+        "height": 123.25
+      }
+    },
+    {
+      "type": "restaurant",
+      "variant": 1,
+      "level": 4,
+      "sprite": "restaurant-diner-l4.png",
+      "sha256": "f364ed6c0c614674f3ae547e4352d16bdca2fe23cd5e33a9bc33d06fb255cb9d",
+      "source": "restaurant-diner-l4-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 10,
+        "width": 130,
+        "height": 150
+      }
+    },
+    {
+      "type": "restaurant",
+      "variant": 2,
       "level": 2,
       "sprite": "restaurant-bistro-l2.png",
       "sha256": "caeb0fff003c29d006c4e78905b1d88651e76ffb17c7746cf626e2c0eab597de",
@@ -323,6 +395,42 @@
         "y": 108,
         "width": 130,
         "height": 52
+      }
+    },
+    {
+      "type": "restaurant",
+      "variant": 2,
+      "level": 3,
+      "sprite": "restaurant-bistro-l3.png",
+      "sha256": "dc4d579274ef4e4638aac4408d2bd363c1a59c54049c077b1df92677bbd1ecbf",
+      "source": "restaurant-bistro-l3-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 8,
+        "y": 30,
+        "width": 123.75,
+        "height": 130
+      }
+    },
+    {
+      "type": "restaurant",
+      "variant": 2,
+      "level": 4,
+      "sprite": "restaurant-bistro-l4.png",
+      "sha256": "4849f239dd91dd70ab9fd84937581bbd0b039d9b964b604ea8f9d2eb584db2b4",
+      "source": "restaurant-bistro-l4-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 9,
+        "y": 0,
+        "width": 122,
+        "height": 160
       }
     },
     {

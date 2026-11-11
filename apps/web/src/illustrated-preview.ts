@@ -7,6 +7,7 @@ export type IllustratedPreview = {
   spriteUrl: string;
   logoRect: Rect | null;
   nameRect: Rect | null;
+  billboardRect?: Rect;
 };
 
 const samplePlots: Record<string, { type: string; variant: 1 | 2 }> = {
@@ -19,7 +20,9 @@ const samplePlots: Record<string, { type: string; variant: 1 | 2 }> = {
   "plot-market-n-0": { type: "cafe", variant: 1 },
   "plot-central-n-3": { type: "cafe", variant: 2 },
   "plot-main-n-2": { type: "restaurant", variant: 1 },
+  "plot-river-n-0": { type: "restaurant", variant: 1 },
   "plot-market-n-1": { type: "restaurant", variant: 2 },
+  "plot-main-n-7": { type: "restaurant", variant: 2 },
   "plot-market-n-2": { type: "office", variant: 1 },
   "plot-river-n-1": { type: "office", variant: 2 },
   "plot-central-n-6": { type: "homes", variant: 1 },
@@ -28,7 +31,7 @@ const samplePlots: Record<string, { type: string; variant: 1 | 2 }> = {
 
 const mediaRects: Record<
   string,
-  { logoRect: Rect | null; nameRect: Rect | null }
+  { logoRect: Rect | null; nameRect: Rect | null; billboardRect?: Rect }
 > = {
   "retail:1": {
     logoRect: { x: 18, y: 78, width: 20, height: 20 },
@@ -101,6 +104,32 @@ const mediaRects: Record<
   "restaurant:2": {
     logoRect: { x: 30, y: 119, width: 14, height: 13 },
     nameRect: { x: 93, y: 125, width: 35, height: 8 },
+  },
+  "restaurant:1:1": {
+    logoRect: null,
+    nameRect: { x: 44, y: 118, width: 52, height: 10 },
+  },
+  "restaurant:1:3": {
+    logoRect: null,
+    nameRect: { x: 49, y: 117, width: 44, height: 10 },
+    billboardRect: { x: 34, y: 40, width: 72, height: 18 },
+  },
+  "restaurant:1:4": {
+    logoRect: null,
+    nameRect: { x: 49, y: 117, width: 44, height: 10 },
+    billboardRect: { x: 30, y: 12, width: 80, height: 18 },
+  },
+  "restaurant:2:1": {
+    logoRect: { x: 30, y: 118, width: 11, height: 11 },
+    nameRect: { x: 96, y: 128, width: 34, height: 8 },
+  },
+  "restaurant:2:3": {
+    logoRect: { x: 39, y: 46, width: 14, height: 14 },
+    nameRect: { x: 67, y: 107, width: 55, height: 10 },
+  },
+  "restaurant:2:4": {
+    logoRect: { x: 37, y: 18, width: 12, height: 14 },
+    nameRect: { x: 65, y: 101, width: 55, height: 10 },
   },
   "office:1": {
     logoRect: null,

@@ -109,3 +109,13 @@ The sheet below places each of the 40 implemented curated facade sprites between
 The [art specification](ART_SPEC.md) explains the size limits, palettes, source assets and review checks. The older [phone layout concept](images/near-estate-phone-layout-v1.png) and [car concept sheet](images/near-estate-cars-v1.png) are design references rather than current game screenshots.
 
 The [street visual review](VISUAL_REVIEW.md) records the next art changes suggested by these captures.
+
+## Restaurant upgrade progression
+
+The level-4 phone builder shows the Diner and Bistro as separate silhouettes at the same height limit. The Diner has rounded enamel dining floors and a blank rooftop billboard; the Bistro has a tiled gable, planted balconies and a roof pavilion. These are guest-only design studies.
+
+![Diner and Bistro level-4 building studies in the portrait builder](images/near-estate-restaurant-level4-studio-phone-v1.png)
+
+The level-3 Diner sits in the actual landscape street, with the Near & Far Burgers guest billboard placed on its rooftop sign. This is local preview art without a live media approval or impression event.
+
+![Level-3 Diner and guest billboard on Main Street](images/near-estate-restaurant-diner-level3-street-phone-v1.png)

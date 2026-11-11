@@ -1,13 +1,13 @@
-# Building image specification · draft 4
+# Building image specification · draft 5
 
-This is the art direction for illustrated player buildings. Ten operator-created level-2 images cover both shapes of all five player building types. Twelve more images complete levels 1, 3 and 4 for both Cafe and Retail shapes. They demonstrate possible looks in the running guest street; they are not published owner appearances. The existing curated library and on-chain approval flow remain the live path. Future owner generation can reuse this specification after provider, moderation and budget checks are enabled.
+This is the art direction for illustrated player buildings. Ten operator-created level-2 images cover both shapes of all five player building types. Eighteen more images complete levels 1, 3 and 4 for both Cafe, Retail and Restaurant shapes. They demonstrate possible looks in the running guest street; they are not published owner appearances. The existing curated library and on-chain approval flow remain the live path. Future owner generation can reuse this specification after provider, moderation and budget checks are enabled.
 
 ## Game fit
 
 - Camera: strict straight-on front elevation; no side wall, isometric angle or perspective street scene.
 - Final sprite: transparent 560 × 640 PNG, bottom-center anchored at `(70, 160)` logical pixels. The game places that anchor at sidewalk y=190.
-- Plot pitch: 170 logical pixels; all art fits inside the centered 140-pixel facade width. Keep the outer 5 logical pixels clear where possible.
-- One plot is the ownership unit and has two curb spaces. A small building may use half the facade width while the rest of its plot shows a yard or alley. The MVP keeps every facade within one plot. A future 1.5- or 2-plot building should require two adjacent deeds on the same street side and a reviewed land-merge rule; it must not spill onto a neighbor's plot. The curb spaces stay attached to their deeds.
+- Plot pitch: 170 logical pixels; all art fits inside the centered 140-pixel facade width. Keep the outer 5 logical pixels clear where possible. This is a screen-space rule, not a fixed real-world metre scale.
+- One plot is the ownership unit and has two curb spaces. A small building may use half the facade width while the rest of its plot shows a yard or alley. The MVP keeps every facade within one plot. A future 1.5- or 2-plot building should require two adjacent deeds on the same street side and a reviewed land-merge rule; it must not spill onto a neighbor's plot. The curb spaces stay attached to their deeds. A parking tower can have interior capacity independent of its two curb spaces; that capacity needs its own future rules.
 - Height caps: level 1 = 70, level 2 = 100, level 3 = 130, level 4 = 160 logical pixels. A higher level may add roof detail, balconies, terraces or a floor; it must keep the type recognizable and fit its cap.
 - At 140-pixel display width, the entrance, roofline and type-specific material must still read. Avoid tiny decorative text or dense window grids.
 - Image contains only architectural art. The renderer adds building name, approved logo, approved billboard and rule sign. Leave a clear 20 × 20 logical-pixel logo area and, if the architecture can support one, a separate blank 48 × 24 billboard area. Never bake advertising, lettering, cars, pavement, people, buttons or gameplay geometry into the sprite.
@@ -24,7 +24,7 @@ Use friendly, crisp 2D illustrated city art: dark navy outlines, flat color fiel
 | Office     | Tall narrow glass studio              | Wide cantilevered concrete block | Blue framed glazing, pale concrete      |
 | Homes      | Stepped residential terrace           | Narrow gabled townhouse          | Warm plaster, balconies, planters       |
 
-The two variants must differ in massing, entrance position and roof shape. Their variant numbers follow the curated owner choices: Retail is Corner shop / Market hall; Cafe is Glasshouse / Pergola; Restaurant is Diner / Bistro; Office is Glass block / Studio; Homes is Terrace / Townhouse. Level upgrades should add a type-specific feature instead of uniformly stretching the source image. Retail and Cafe now cover all four levels in both directions; Restaurant, Office and Homes still need their level-1, level-3 and level-4 illustrations before this style could replace the complete curated library.
+The two variants must differ in massing, entrance position and roof shape. Their variant numbers follow the curated owner choices: Retail is Corner shop / Market hall; Cafe is Glasshouse / Pergola; Restaurant is Diner / Bistro; Office is Glass block / Studio; Homes is Terrace / Townhouse. Level upgrades should add a type-specific feature instead of uniformly stretching the source image. Retail, Cafe and Restaurant now cover all four levels in both directions; Office and Homes still need their level-1, level-3 and level-4 illustrations before this style could replace the complete curated library.
 
 For each generation request, fill the shape description from the chosen type and variant before appending the player's idea. Use these fixed level instructions: level 1 has one clear entrance and one roof feature; level 2 may add a second bay, planter or sign band; level 3 adds a type-specific upper section; level 4 may add a terrace, balcony or setback. A level is a height limit, not a command to stretch the image. Retail Corner shop keeps its left brick tower and striped awning; Market hall keeps two sawtooth roof peaks and a central entrance. Cafe Glasshouse uses a triangular glass roof and central entrance; Pergola uses a low horizontal timber roof, a left-offset entrance, two glazed bays and plants. Keep the sign band and logo patch blank so the game can add approved media later.
 
@@ -60,7 +60,18 @@ All eight Retail sources are separate images and pass the normalizer at their le
 | 3     | Glazed dining mezzanine under a taller triangular roof            | Upper glazed dining floor and planted balcony            |
 | 4     | Third section with a setback conservatory and planted upper decks | Setback rooftop garden room under a second short pergola |
 
-All eight Cafe sources are separate images. The normalizer accepts their original files at the specified levels: height caps of 70, 100, 130 and 160 logical pixels. The guest builder switches the illustrated pair to the selected level; Restaurant, Office and Homes continue to show their available level-2 studies with that level stated in the caption.
+All eight Cafe sources are separate images. The normalizer accepts their original files at the specified levels: height caps of 70, 100, 130 and 160 logical pixels. The guest builder switches the illustrated pair to the selected level; Office and Homes continue to show their available level-2 studies with that level stated in the caption.
+
+### Restaurant upgrade progression
+
+| Level | Diner · rounded enamel roof                         | Bistro · tiled left gable and planted terrace   |
+| ----- | --------------------------------------------------- | ----------------------------------------------- |
+| 1     | One low dining floor and blank rooftop ad sign      | One low stucco dining floor and outdoor tables  |
+| 2     | Broader rounded dining frontage                     | Wider courtyard with warm windows and plants    |
+| 3     | Upper glazed dining floor beneath the sign          | Upper dining balcony over the courtyard         |
+| 4     | Third glazed dining section and larger rooftop sign | Setback roof pavilion and two planted balconies |
+
+All eight Restaurant sources are separate images and fit the level-specific height caps. The guest builder follows the selected level. The Diner's rooftop ad surface is blank in the image; the guest Near & Far Burgers board uses a measured overlay rectangle. The Bistro's square logo plaque and lower name panel also use measured overlay rectangles. These placements are visual studies, not approval of owner content.
 
 ## Versioned generation prompt
 
@@ -87,6 +98,6 @@ The backend prompt builder currently uses profile v3 with the same envelope, sty
 
 ## First illustrated guest set
 
-The raw images live in [`art/source/illustrated`](../art/source/illustrated). [`prepare-illustrated-facades.mjs`](../scripts/prepare-illustrated-facades.mjs) normalizes them into [`apps/web/public/illustrated`](../apps/web/public/illustrated) and writes the hash, variant and level catalog to [`apps/web/src/illustrated-catalog.json`](../apps/web/src/illustrated-catalog.json). The guest builder shows both shapes of each type side by side, using the selected level when an image exists. Main Street `plot-main-n-0` shows level-1 Retail Corner shop, and River Street `plot-river-n-3` shows level-4 Market hall. Main Street `plot-main-n-6` shows level-3 Cafe Glasshouse, and Central Avenue `plot-central-n-3` shows level-4 Pergola. Restaurant, Office and Homes still use their level-2 images on matching level-3 guest plots, remaining under the height cap. The game uses these images only in guest mode and falls back to the procedural preset if an image fails to load. No generated image is submitted on-chain by this preview.
+The raw images live in [`art/source/illustrated`](../art/source/illustrated). [`prepare-illustrated-facades.mjs`](../scripts/prepare-illustrated-facades.mjs) normalizes them into [`apps/web/public/illustrated`](../apps/web/public/illustrated) and writes the hash, variant and level catalog to [`apps/web/src/illustrated-catalog.json`](../apps/web/src/illustrated-catalog.json). The guest builder shows both shapes of each type side by side, using the selected level when an image exists. Main Street `plot-main-n-0` shows level-1 Retail Corner shop, and River Street `plot-river-n-3` shows level-4 Market hall. Main Street `plot-main-n-6` shows level-3 Cafe Glasshouse, and Central Avenue `plot-central-n-3` shows level-4 Pergola. Office and Homes still use their level-2 images on matching level-3 guest plots, remaining under the height cap. River Street `plot-river-n-0` shows level-1 Diner, Main Street `plot-main-n-2` shows level-3 Diner with its rooftop billboard, and Main Street `plot-main-n-7` shows level-4 Bistro. The game uses these images only in guest mode and falls back to the procedural preset if an image fails to load. No generated image is submitted on-chain by this preview.
 
 Before owner generation goes live, require the existing wallet-bound job, exact plot/type/level/revision checks, private candidate review beside neighbours, geometry validation, moderator approval and hash-addressed publication described in [V1_SPEC](V1_SPEC.md#prompted-building-creation). Do not treat a player's freeform prompt as a change to ownership, parking rules or billboard approval.

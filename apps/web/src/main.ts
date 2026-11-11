@@ -543,6 +543,9 @@ function drawWorld(): void {
       ? approvedManifests.get(approvedHash)
       : undefined;
     const x = frontageX(road, plot.index);
+    const illustratedPreview = !liveMode
+      ? illustratedPreviewForPlot(plot)
+      : null;
     const facade = createPresetFacade(
       building
         ? {
@@ -580,15 +583,14 @@ function drawWorld(): void {
         : plot.id === game.ownedPlotId && !liveMode
           ? { level: 1, palette: "#F6C85F" }
           : undefined,
-      !liveMode ? illustratedPreviewForPlot(plot) : null,
+      illustratedPreview,
     );
     if (!liveMode && plot.id === "plot-main-n-2") {
       const previewLevel = (plot.index % 4) + 1;
-      const rect = facadePreset(
-        plot.initialType,
-        plot.initialVariant,
-        previewLevel,
-      ).billboardRect;
+      const rect =
+        illustratedPreview?.billboardRect ??
+        facadePreset(plot.initialType, plot.initialVariant, previewLevel)
+          .billboardRect;
       if (rect) facade.group.addChild(guestBurgerBillboard(rect));
     }
     facade.group.eventMode = "static";
