@@ -570,6 +570,7 @@ export class ChainScreen {
           ${active ? `<img class="owner-upload-preview" src="/api/assets/${html(active.content.asset_hash)}" alt="Approved ${kind.toLowerCase()}" />` : ""}
           ${active?.content.link ? `<a href="${html(active.content.link)}" target="_blank" rel="noopener noreferrer">Approved link</a>` : ""}
           ${decision?.status === "Rejected" || decision?.status === "Revoked" ? `<p class="chain-parked">${decision.status}: ${html(decision.reason ?? "No reason supplied")}</p>` : ""}
+          ${slot.active && !eligible ? `<button type="button" data-owner-reuse-media="${kind}" ${this.busy ? "disabled" : ""}>Reuse approved ${kind.toLowerCase()}</button>` : ""}
           ${slot.active || slot.pending ? `<button type="button" data-owner-remove-media="${kind}" ${this.busy ? "disabled" : ""}>Remove ${kind.toLowerCase()}</button>` : ""}
         </div>`;
       })
@@ -590,7 +591,7 @@ export class ChainScreen {
       ${
         upload
           ? `<p class="chain-parked">${upload.kind} image · ${upload.hash.slice(0, 12)}…</p><img class="owner-upload-preview" src="${html(upload.url)}" alt="Uploaded ${upload.kind.toLowerCase()} preview" />
-        ${upload.layoutRevision !== plot.building.layout_revision ? `<p class="muted">This image upload belongs to an earlier building layout. Upload the image again to propose it for the current building.</p>` : ""}
+        ${upload.layoutRevision !== plot.building.layout_revision ? `<p class="muted">This upload belongs to an earlier building layout. Use Reuse approved ${upload.kind.toLowerCase()} above, or upload the image again.</p>` : ""}
         <label>Destination link (optional) <input id="owner-media-link" type="url" maxlength="256" placeholder="https://brand.example" value="${html(this.mediaLinkDraft)}" ${proposal?.status === "selected" ? "disabled" : ""} /></label>
         ${!proposal || proposal.status !== "selected" ? `<button id="owner-create-media" ${this.busy || upload.layoutRevision !== plot.building.layout_revision ? "disabled" : ""}>Prepare ${upload.kind.toLowerCase()} proposal</button>` : ""}`
           : ""
@@ -710,7 +711,7 @@ export class ChainScreen {
           ${changingType ? `<button id="owner-change-type" ${this.busy || BigInt(balance) < typeCost ? "disabled" : ""}>Change type · ${formatCoins(config.change_building_type_cost)} coins</button><p class="muted">Changing type uses its curated preset and keeps level ${building.level}. Choose colour and name afterward.</p>` : `<button id="owner-save-preset" ${this.busy ? "disabled" : ""}>Use this preset</button>`}
           ${levelCost === null ? `<p>Maximum level reached.</p>` : `<button id="owner-upgrade-building" ${this.busy || BigInt(balance) < levelCost ? "disabled" : ""}>Upgrade to level ${building.level + 1} · ${formatCoins(config.building_upgrade_costs[building.level - 1]!)} coins</button>`}
           <p class="muted">Using a preset, changing type or upgrading immediately replaces the current facade with a curated design. Any custom facade must be reviewed again.</p>
-          ${affectedMedia.length ? `<p class="chain-parked">A building change will hide the current ${affectedMedia.join(" and ")} until you upload the image again and a moderator approves it for the new layout. Pending media proposals will be cancelled.</p>` : ""}
+          ${affectedMedia.length ? `<p class="chain-parked">A building change will hide the current ${affectedMedia.join(" and ")} until a moderator approves it for the new layout. You can reuse an approved image or upload a new one. Pending media proposals will be cancelled.</p>` : ""}
           ${this.mockStudioMarkup(selected, accountId)}
           ${this.ownerMediaMarkup(selected)}
         </div>
@@ -1375,6 +1376,27 @@ export class ChainScreen {
         });
       });
     }
+    this.host
+      .querySelectorAll<HTMLButtonElement>("[data-owner-reuse-media]")
+      .forEach((button) =>
+        button.addEventListener("click", () => {
+          const kind = button.dataset.ownerReuseMedia as "Logo" | "Billboard";
+          const plotId = this.selectedOwnedPlotId;
+          const selected = this.plots.find((entry) => entry.plot.id === plotId);
+          void this.mutate(async () => {
+            if (!this.wallet || !plotId || !selected)
+              throw new Error("Select an owned plot first");
+            const slot =
+              kind === "Logo" ? selected.plot.logo : selected.plot.billboard;
+            if (!slot.active) throw new Error("No approved image to reuse");
+            const upload = await this.wallet.reuseApprovedMedia(plotId, kind);
+            this.pendingUpload = { ...upload, plotId, kind };
+            this.mediaProposal = null;
+            this.mediaLinkDraft = slot.active.content.link ?? "";
+            return `${kind} is ready for a new proposal and moderator review.`;
+          });
+        }),
+      );
     this.host
       .querySelector<HTMLInputElement>("#owner-media-link")
       ?.addEventListener("input", (event) => {

@@ -329,6 +329,92 @@ async function setup(paid = false) {
   };
 }
 
+test("an owner can reuse only their intact approved image after a layout change", async () => {
+  const context = await setup();
+  try {
+    const signedIn = await context.signIn();
+    assert.equal(signedIn.verified.status, 200);
+    const cookie = signedIn.verified.headers.get("set-cookie")?.split(";")[0];
+    assert(cookie);
+    const png = await sharp({
+      create: {
+        width: 256,
+        height: 256,
+        channels: 4,
+        background: "#73D9A6",
+      },
+    })
+      .png()
+      .toBuffer();
+    const assetHash = createHash("sha256").update(png).digest("hex");
+    await saveImmutablePng(context.store.assetDir, assetHash, png);
+    context.setMediaSlot("Logo", {
+      ...emptyMediaSlot,
+      revision: 1,
+      active: {
+        content: { asset_hash: assetHash, link: "https://near.org" },
+        approved_layout_revision: 1,
+        approved_at: 1000,
+      },
+    });
+    const request = { plotId: PLOT, kind: "Logo" };
+    assert.equal(
+      (await context.postJson("/media/uploads/reuse", request)).status,
+      401,
+    );
+    assert.equal(
+      (await context.postJson("/media/uploads/reuse", request, cookie)).status,
+      409,
+    );
+    context.setLayoutRevision(2);
+    context.setOwner("another.testnet");
+    assert.equal(
+      (await context.postJson("/media/uploads/reuse", request, cookie)).status,
+      403,
+    );
+    context.setOwner(ACCOUNT);
+    const reused = await context.postJson(
+      "/media/uploads/reuse",
+      request,
+      cookie,
+    );
+    assert.equal(reused.status, 200);
+    const upload = (await reused.json()) as {
+      uploadId: string;
+      hash: string;
+      layoutRevision: number;
+    };
+    assert.equal(upload.hash, assetHash);
+    assert.equal(upload.layoutRevision, 2);
+    assert.equal(context.store.upload(upload.uploadId)?.accountId, ACCOUNT);
+    context.setLayoutRevision(3);
+    context.flipLayoutOnSecondRead();
+    assert.equal(
+      (await context.postJson("/media/uploads/reuse", request, cookie)).status,
+      409,
+    );
+    assert.equal(
+      context.store.latestUpload(ACCOUNT, PLOT, "Logo")?.id,
+      upload.uploadId,
+    );
+    context.setLayoutRevision(3);
+    await writeFile(
+      join(context.store.assetDir, `${assetHash}.png`),
+      "corrupt",
+    );
+    assert.equal(
+      (await context.postJson("/media/uploads/reuse", request, cookie)).status,
+      503,
+    );
+    assert.equal(
+      context.store.latestUpload(ACCOUNT, PLOT, "Logo")?.id,
+      upload.uploadId,
+    );
+  } finally {
+    await context.close();
+  }
+});
+
 test("wallet challenge is one-use, account-bound, and session can be revoked", async () => {
   const context = await setup();
   try {

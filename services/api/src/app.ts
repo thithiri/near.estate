@@ -2446,6 +2446,135 @@ export function createApiApp({
     upload("Billboard"),
   );
 
+  app.post(
+    "/media/uploads/reuse",
+    bodyLimit({
+      maxSize: 1024,
+      onError: () => replyError("TOO_LARGE", "Request is too large", 413),
+    }),
+    async (c) => {
+      if (!chain)
+        return c.json(
+          {
+            code: "CHAIN_UNAVAILABLE",
+            message: "Testnet contract is not configured",
+          },
+          503,
+        );
+      const accountId = currentAccount(c.req.header("cookie"));
+      if (!accountId)
+        return c.json(
+          { code: "UNAUTHENTICATED", message: "Sign in with your wallet" },
+          401,
+        );
+      const body = z
+        .object({ plotId: PLOT_ID, kind: MediaKind })
+        .safeParse(await c.req.json().catch(() => null));
+      if (!body.success)
+        return c.json(
+          { code: "INVALID_REQUEST", message: "Choose a plot and media kind" },
+          400,
+        );
+      const { plotId, kind } = body.data;
+      let plot;
+      try {
+        plot = await chain.plot(plotId);
+      } catch {
+        return c.json(
+          {
+            code: "CHAIN_UNAVAILABLE",
+            message: "Could not check plot ownership",
+          },
+          503,
+        );
+      }
+      if (!plot || plot.plot.owner !== accountId)
+        return c.json(
+          { code: "NOT_OWNER", message: "This wallet does not own the plot" },
+          403,
+        );
+      const slot = kind === "Logo" ? plot.plot.logo : plot.plot.billboard;
+      const approved = slot.active;
+      const layoutRevision = plot.plot.building.layout_revision;
+      if (!approved || approved.approved_layout_revision >= layoutRevision)
+        return c.json(
+          {
+            code: "NOT_REUSABLE",
+            message: "No earlier approved image needs reuse",
+          },
+          409,
+        );
+      const startedAt = clock();
+      if (
+        !store.reserveUploadAttempt(
+          accountId,
+          plotId,
+          startedAt,
+          UPLOAD_WINDOW_SECONDS,
+          MAX_UPLOADS_PER_PLOT,
+          MAX_UPLOADS_PER_ACCOUNT,
+        )
+      )
+        return c.json(
+          { code: "RATE_LIMITED", message: "Try again tomorrow" },
+          429,
+        );
+      let row;
+      try {
+        row = await store.withAssetMutation(async () => {
+          const bytes = await readFile(
+            join(store.assetDir, `${approved.content.asset_hash}.png`),
+          );
+          if (hash(bytes) !== approved.content.asset_hash)
+            throw new Error("Approved image hash mismatch");
+          const current = await chain.plot(plotId);
+          const currentSlot =
+            kind === "Logo" ? current?.plot.logo : current?.plot.billboard;
+          if (
+            current?.plot.owner !== accountId ||
+            current.plot.building.layout_revision !== layoutRevision ||
+            currentSlot?.active?.content.asset_hash !==
+              approved.content.asset_hash ||
+            currentSlot.active.approved_layout_revision !==
+              approved.approved_layout_revision
+          )
+            return null;
+          return store.recordUpload({
+            accountId,
+            plotId,
+            kind,
+            hash: approved.content.asset_hash,
+            layoutRevision,
+            createdAt: startedAt,
+          });
+        });
+      } catch {
+        return c.json(
+          {
+            code: "ASSET_UNAVAILABLE",
+            message: "Approved image is unavailable",
+          },
+          503,
+        );
+      }
+      if (!row)
+        return c.json(
+          { code: "PLOT_CHANGED", message: "The plot changed; try again" },
+          409,
+        );
+      c.header("Cache-Control", "no-store");
+      return c.json({
+        uploadId: row.id,
+        hash: row.hash,
+        url: `/api/assets/${row.hash}`,
+        width: kind === "Logo" ? 256 : 512,
+        height: 256,
+        status: "pending",
+        layoutRevision: row.layoutRevision,
+      });
+    },
+  );
+
   app.get("/media/uploads/latest", (c) => {
     const accountId = currentAccount(c.req.header("cookie"));
     if (!accountId)

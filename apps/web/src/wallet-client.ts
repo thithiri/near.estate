@@ -434,6 +434,27 @@ export class GameWalletClient {
     return upload;
   }
 
+  async reuseApprovedMedia(
+    plotId: string,
+    kind: "Logo" | "Billboard",
+  ): Promise<ArtworkUpload> {
+    const accountId = this.requiredAccount();
+    await this.artworkSession();
+    if (this.accountId !== accountId)
+      throw new Error("Wallet account changed during media reuse");
+    const upload = await apiResponse<ArtworkUpload>(
+      await fetch("/api/media/uploads/reuse", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ plotId, kind }),
+      }),
+    );
+    if (!/^[0-9a-f]{64}$/.test(upload.hash) || upload.status !== "pending")
+      throw new Error("Artwork service returned an invalid reused image");
+    return upload;
+  }
+
   async createMediaProposal(
     upload: ArtworkUpload,
     plotId: string,

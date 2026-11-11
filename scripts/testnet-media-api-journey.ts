@@ -303,25 +303,34 @@ try {
     } else assert.equal(slot?.active, null);
     assert.equal(slot?.pending, null);
     const cookie = await ownerCookie();
-    const source = Buffer.from(
-      kind === "Billboard"
-        ? `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="256" viewBox="0 0 512 256"><rect width="512" height="256" rx="24" fill="#F6C85F"/><circle cx="90" cy="128" r="62" fill="#B45131"/><path d="M42 128h96" stroke="#73D9A6" stroke-width="16"/><text x="180" y="112" font-family="Arial,sans-serif" font-size="44" font-weight="bold" fill="#173F5F">NEAR &amp; FAR</text><text x="180" y="165" font-family="Arial,sans-serif" font-size="38" fill="#173F5F">BURGERS</text></svg>`
-        : `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" rx="44" fill="#173F5F"/><path d="M28 184h200" stroke="#FFD166" stroke-width="13"/><text x="128" y="145" text-anchor="middle" font-family="Arial,sans-serif" font-size="100" font-weight="bold" fill="white">NE</text></svg>`,
-    );
-    const png = await sharp(source).png().toBuffer();
-    const form = new FormData();
-    form.set("plot_id", plotId);
-    form.set(
-      "file",
-      new File([png], `near-estate-${kind.toLowerCase()}.png`, {
-        type: "image/png",
-      }),
-    );
-    const uploaded = await app.request(kind === "Logo" ? "/logos" : "/ads", {
-      method: "POST",
-      headers: { origin, cookie },
-      body: form,
-    });
+    let uploaded: Response;
+    if (level2Revalidation) {
+      uploaded = await postJson(
+        "/media/uploads/reuse",
+        { plotId, kind },
+        cookie,
+      );
+    } else {
+      const source = Buffer.from(
+        kind === "Billboard"
+          ? `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="256" viewBox="0 0 512 256"><rect width="512" height="256" rx="24" fill="#F6C85F"/><circle cx="90" cy="128" r="62" fill="#B45131"/><path d="M42 128h96" stroke="#73D9A6" stroke-width="16"/><text x="180" y="112" font-family="Arial,sans-serif" font-size="44" font-weight="bold" fill="#173F5F">NEAR &amp; FAR</text><text x="180" y="165" font-family="Arial,sans-serif" font-size="38" fill="#173F5F">BURGERS</text></svg>`
+          : `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" rx="44" fill="#173F5F"/><path d="M28 184h200" stroke="#FFD166" stroke-width="13"/><text x="128" y="145" text-anchor="middle" font-family="Arial,sans-serif" font-size="100" font-weight="bold" fill="white">NE</text></svg>`,
+      );
+      const png = await sharp(source).png().toBuffer();
+      const form = new FormData();
+      form.set("plot_id", plotId);
+      form.set(
+        "file",
+        new File([png], `near-estate-${kind.toLowerCase()}.png`, {
+          type: "image/png",
+        }),
+      );
+      uploaded = await app.request(kind === "Logo" ? "/logos" : "/ads", {
+        method: "POST",
+        headers: { origin, cookie },
+        body: form,
+      });
+    }
     await requireStatus(uploaded, 200);
     const upload = (await uploaded.json()) as {
       uploadId: string;
@@ -460,6 +469,7 @@ try {
         : { logoHash: prepared.uploadHash }),
       link: prepared.link,
       uploadedImageBytes: bytes.length,
+      reusedApprovedImage: level2Revalidation,
       publicAssetHashVerified: true,
       activeOnChain: true,
       ownerTransactions: prepared.transactions,
