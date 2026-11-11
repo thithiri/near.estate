@@ -255,8 +255,13 @@ if (mode === "--settle" && recoveredSettlementSessionId !== undefined) {
       !unsettledCycle,
       `Session ${unsettledCycle?.sessionId} was settled externally; reconcile its chain event and payout before another park`,
     );
-    const car = player.cars.find((entry) => entry.parked_session_id === null);
-    assert(car && car.durability >= 2, "No parkable owner car");
+    const config = await reader.ownerConfig();
+    const car = player.cars.find(
+      (entry) =>
+        entry.parked_session_id === null &&
+        entry.durability >= config.park_durability_cost,
+    );
+    assert(car, "No parkable owner car");
     const street = await reader.streetSide("river", "South");
     const open = street.plots.find(
       (entry) =>
