@@ -44,8 +44,24 @@ jobs:
       - run: cargo check --workspace --target wasm32-unknown-unknown
   containers:
     runs-on: ubuntu-latest
+    env:
+      VITE_ESTATE_CONTRACT_ID: ci-estate.testnet
     steps:
       - uses: actions/checkout@v4
       - run: docker compose -f infra/compose.yaml --profile indexer build api indexer web
-        env:
-          VITE_ESTATE_CONTRACT_ID: ci-estate.testnet
+      - run: docker compose -f infra/compose.yaml up -d api web
+      - name: Check packaged services
+        run: |
+          curl -fsS --retry 20 --retry-all-errors --retry-delay 2 http://127.0.0.1:8080/api/health \
+            | python3 -c 'import json,sys; assert json.load(sys.stdin)["status"] == "ok"'
+          curl -fsS http://127.0.0.1:8080/api/paid-generations/status \
+            | python3 -c 'import json,sys; assert json.load(sys.stdin) == {"enabled": False}'
+          curl -fsS http://127.0.0.1:8080/ \
+            | python3 -c 'import sys; assert "near.estate" in sys.stdin.read()'
+          curl -fsS http://127.0.0.1:8080/presets/cafe-2-l4.png -o /dev/null
+          docker compose -f infra/compose.yaml exec -T api node -e \
+            'require("sharp")(Buffer.from("<svg width=\"8\" height=\"8\"><rect width=\"8\" height=\"8\" fill=\"red\"/></svg>")).png().toBuffer().then(x=>{if(x.length<50)process.exit(1)})'
+          docker compose -f infra/compose.yaml --profile indexer run --rm --no-deps --entrypoint node indexer \
+            -e 'import("/app/services/worker/dist/event-store.js").catch(e=>{console.error(e);process.exit(1)})'
+      - if: always()
+        run: docker compose -f infra/compose.yaml down -v --remove-orphans
