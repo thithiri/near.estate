@@ -205,6 +205,7 @@ export class PaidImageWorker {
           workerId: this.workerId,
           clientRequestId: attempt.clientRequestId,
           providerRequestId: result.providerRequestId,
+          usage: result.usage,
           png: result.png,
           assetDir: this.assetDir,
           now: this.clock(),

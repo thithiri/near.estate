@@ -18,7 +18,52 @@ export type ImageGenerationResult = {
   providerRequestId: string | null;
   clientRequestId: string;
   model: string;
+  usage?: ImageTokenUsage | null;
 };
+
+export type ImageTokenUsage = {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  inputImageTokens: number | null;
+  inputTextTokens: number | null;
+  outputImageTokens: number | null;
+  outputTextTokens: number | null;
+};
+
+function tokenCount(value: unknown): number | null {
+  return Number.isSafeInteger(value) && Number(value) >= 0
+    ? Number(value)
+    : null;
+}
+
+function imageTokenUsage(value: unknown): ImageTokenUsage | null {
+  if (!value || typeof value !== "object") return null;
+  const usage = value as Record<string, unknown>;
+  const inputTokens = tokenCount(usage.input_tokens);
+  const outputTokens = tokenCount(usage.output_tokens);
+  const totalTokens = tokenCount(usage.total_tokens);
+  if (inputTokens === null || outputTokens === null || totalTokens === null)
+    return null;
+  const inputDetails =
+    usage.input_tokens_details && typeof usage.input_tokens_details === "object"
+      ? (usage.input_tokens_details as Record<string, unknown>)
+      : null;
+  const outputDetails =
+    usage.output_tokens_details &&
+    typeof usage.output_tokens_details === "object"
+      ? (usage.output_tokens_details as Record<string, unknown>)
+      : null;
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+    inputImageTokens: tokenCount(inputDetails?.image_tokens),
+    inputTextTokens: tokenCount(inputDetails?.text_tokens),
+    outputImageTokens: tokenCount(outputDetails?.image_tokens),
+    outputTextTokens: tokenCount(outputDetails?.text_tokens),
+  };
+}
 
 export class ImageProviderError extends Error {
   constructor(
@@ -213,6 +258,7 @@ export class OpenAiImageProvider {
       providerRequestId,
       clientRequestId,
       model: this.config.model,
+      usage: imageTokenUsage((payload as { usage?: unknown })?.usage),
     };
   }
 }

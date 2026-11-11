@@ -115,6 +115,15 @@ test("paid worker produces three private validated candidates within the reserve
           clientRequestId,
           providerRequestId: `provider_${calls}`,
           model: "gpt-image-2.5-flare-2026-09-08",
+          usage: {
+            inputTokens: 15,
+            outputTokens: 150,
+            totalTokens: 165,
+            inputImageTokens: 0,
+            inputTextTokens: 15,
+            outputImageTokens: 150,
+            outputTextTokens: 0,
+          },
         };
       },
     };
@@ -132,6 +141,12 @@ test("paid worker produces three private validated candidates within the reserve
     assert.equal(fixture.ledger.job(fixture.job.id)?.status, "complete");
     assert.equal(fixture.ledger.job(fixture.job.id)?.acceptedCount, 3);
     assert.equal(fixture.ledger.candidates(fixture.job.id).length, 3);
+    assert.deepEqual(
+      fixture.ledger
+        .attempts(fixture.job.id)
+        .map((attempt) => attempt.usage?.totalTokens),
+      [165, 165, 165],
+    );
     assert.equal(fixture.ledger.day(1).chargedCalls, 3);
     assert.equal(fixture.ledger.day(1).reservedCalls, 0);
   } finally {

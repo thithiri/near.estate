@@ -28,7 +28,16 @@ test("image adapter sends pinned, transparent, single-image request", async () =
   ) => {
     requests.push({ url: String(url), init: init! });
     return Response.json(
-      { data: [{ b64_json: png.toString("base64") }] },
+      {
+        data: [{ b64_json: png.toString("base64") }],
+        usage: {
+          input_tokens: 15,
+          output_tokens: 150,
+          total_tokens: 165,
+          input_tokens_details: { image_tokens: 0, text_tokens: 15 },
+          output_tokens_details: { image_tokens: 150, text_tokens: 0 },
+        },
+      },
       { headers: { "x-request-id": "provider-123" } },
     );
   }) as typeof fetch;
@@ -38,6 +47,15 @@ test("image adapter sends pinned, transparent, single-image request", async () =
   const third = await provider.generate("A cafe facade", "two.testnet");
   assert.deepEqual(first.png, png);
   assert.equal(first.providerRequestId, "provider-123");
+  assert.deepEqual(first.usage, {
+    inputTokens: 15,
+    outputTokens: 150,
+    totalTokens: 165,
+    inputImageTokens: 0,
+    inputTextTokens: 15,
+    outputImageTokens: 150,
+    outputTextTokens: 0,
+  });
   assert.match(first.clientRequestId, /^[0-9a-f-]{36}$/);
   assert.equal(
     requests[0]!.url,
@@ -166,7 +184,7 @@ test("image adapter sends approved art to the edit endpoint as an image referenc
       data: [{ b64_json: reference.toString("base64") }],
     });
   }) as typeof fetch);
-  await provider.generate(
+  const result = await provider.generate(
     "Recolour this facade",
     "one.testnet",
     "c8b192aa-6a09-46cb-9dc1-d4af038e3eb0",
@@ -180,6 +198,7 @@ test("image adapter sends approved art to the edit endpoint as an image referenc
   assert.equal(body.background, "transparent");
   assert.equal(body.output_format, "png");
   assert.equal(body.prompt, "Recolour this facade");
+  assert.equal(result.usage, null);
   await assert.rejects(
     provider.generate("Facade", "one.testnet", undefined, Buffer.from("bad")),
     (error) =>

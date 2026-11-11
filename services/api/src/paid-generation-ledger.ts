@@ -6,6 +6,7 @@ import {
   type AssetManifest,
 } from "@estate/shared";
 import type { ImageGenerationSettings } from "./image-generation-settings.js";
+import type { ImageTokenUsage } from "./image-provider.js";
 import type { GenerationPromptSpec } from "./prompt-builder.js";
 
 type EnabledSettings = Extract<ImageGenerationSettings, { enabled: true }>;
@@ -83,6 +84,7 @@ export type PaidAttempt = {
     | "confirmed_not_received"
     | "confirmed_charged";
   assetHash: string | null;
+  usage: ImageTokenUsage | null;
   resolutionNote: string | null;
   startedAt: number;
   finishedAt: number | null;
@@ -130,6 +132,7 @@ type AttemptRow = {
   provider_request_id: string | null;
   status: PaidAttempt["status"];
   asset_hash: string | null;
+  usage_json: string | null;
   resolution_note: string | null;
   started_at: number;
   finished_at: number | null;
@@ -184,6 +187,9 @@ function attemptFromRow(row: AttemptRow): PaidAttempt {
     providerRequestId: row.provider_request_id,
     status: row.status,
     assetHash: row.asset_hash,
+    usage: row.usage_json
+      ? (JSON.parse(row.usage_json) as ImageTokenUsage)
+      : null,
     resolutionNote: row.resolution_note,
     startedAt: row.started_at,
     finishedAt: row.finished_at,
@@ -258,6 +264,7 @@ export class PaidGenerationLedger {
         status TEXT NOT NULL CHECK (status IN
           ('started', 'accepted', 'rejected', 'uncertain', 'confirmed_not_received', 'confirmed_charged')),
         asset_hash TEXT,
+        usage_json TEXT,
         resolution_note TEXT,
         started_at INTEGER NOT NULL,
         finished_at INTEGER,
@@ -303,6 +310,17 @@ export class PaidGenerationLedger {
           `ALTER TABLE paid_generation_jobs ADD COLUMN ${name} ${declaration}`,
         );
     }
+    const attemptColumns = new Set(
+      (
+        this.db
+          .prepare("PRAGMA table_info(paid_generation_attempts)")
+          .all() as { name: string }[]
+      ).map((column) => column.name),
+    );
+    if (!attemptColumns.has("usage_json"))
+      this.db.exec(
+        "ALTER TABLE paid_generation_attempts ADD COLUMN usage_json TEXT",
+      );
     const candidateColumns = new Set(
       (
         this.db
@@ -699,6 +717,7 @@ export class PaidGenerationLedger {
     outcome: "accepted" | "rejected" | "uncertain";
     candidate?: PaidCandidateInput;
     providerRequestId?: string | null;
+    usage?: ImageTokenUsage | null;
     now: number;
   }): PaidJob {
     if (!Number.isSafeInteger(input.now) || input.now < 0)
@@ -723,6 +742,15 @@ export class PaidGenerationLedger {
       !/^[A-Za-z0-9_-]{1,128}$/.test(input.providerRequestId)
     )
       throw new Error("Invalid provider request ID");
+    const usageJson = input.usage ? canonicalJson(input.usage) : null;
+    if (
+      input.usage &&
+      Object.values(input.usage).some(
+        (count) =>
+          count !== null && (!Number.isSafeInteger(count) || count < 0),
+      )
+    )
+      throw new Error("Invalid image token usage");
     this.transaction(() => {
       const job = this.job(input.jobId);
       const attempt = this.db
@@ -735,7 +763,8 @@ export class PaidGenerationLedger {
         if (
           attempt.status === input.outcome &&
           attempt.asset_hash === (input.candidate?.manifestHash ?? null) &&
-          attempt.provider_request_id === (input.providerRequestId ?? null)
+          attempt.provider_request_id === (input.providerRequestId ?? null) &&
+          attempt.usage_json === usageJson
         )
           return;
         throw new Error("Image attempt already has a different outcome");
@@ -770,13 +799,14 @@ export class PaidGenerationLedger {
       this.db
         .prepare(
           `UPDATE paid_generation_attempts
-           SET status = ?, asset_hash = ?, provider_request_id = ?, finished_at = ?
+           SET status = ?, asset_hash = ?, provider_request_id = ?, usage_json = ?, finished_at = ?
            WHERE id = ? AND status = 'started'`,
         )
         .run(
           input.outcome,
           input.candidate?.manifestHash ?? null,
           input.providerRequestId ?? null,
+          usageJson,
           input.now,
           attempt.id,
         );

@@ -1,4 +1,5 @@
 import { GeneratedArtError, saveGeneratedFacade } from "./generated-art.js";
+import type { ImageTokenUsage } from "./image-provider.js";
 import {
   PaidGenerationLedger,
   type PaidJob,
@@ -10,6 +11,7 @@ export async function processPaidImageResult(input: {
   workerId: string;
   clientRequestId: string;
   providerRequestId: string | null;
+  usage?: ImageTokenUsage | null;
   png: Buffer;
   assetDir: string;
   now: number;
@@ -30,6 +32,7 @@ export async function processPaidImageResult(input: {
       workerId: input.workerId,
       clientRequestId: input.clientRequestId,
       providerRequestId: input.providerRequestId,
+      usage: input.usage,
       outcome: error instanceof GeneratedArtError ? "rejected" : "uncertain",
       now: input.now,
     });
@@ -44,6 +47,7 @@ export async function processPaidImageResult(input: {
       workerId: input.workerId,
       clientRequestId: input.clientRequestId,
       providerRequestId: input.providerRequestId,
+      usage: input.usage,
       outcome: "rejected",
       now: input.now,
     });
@@ -52,6 +56,7 @@ export async function processPaidImageResult(input: {
     workerId: input.workerId,
     clientRequestId: input.clientRequestId,
     providerRequestId: input.providerRequestId,
+    usage: input.usage,
     outcome: "accepted",
     candidate,
     now: input.now,

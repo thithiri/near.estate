@@ -183,6 +183,93 @@ test("global currency reservations survive restart and cancellation releases onl
   }
 });
 
+test("provider token usage survives restart and identical result replay", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "estate-paid-ledger-"));
+  const dbPath = join(dir, "estate.sqlite");
+  const usage = {
+    inputTokens: 15,
+    outputTokens: 150,
+    totalTokens: 165,
+    inputImageTokens: 0,
+    inputTextTokens: 15,
+    outputImageTokens: 150,
+    outputTextTokens: 0,
+  };
+  let jobId: string;
+  let clientRequestId: string;
+  const firstStore = new ApiStore(dbPath, join(dir, "assets"));
+  try {
+    const ledger = new PaidGenerationLedger(firstStore.db, settings());
+    jobId = ledger.reserve(input("one.testnet", "plot-a", "a")).id;
+    ledger.claim("worker_a", 86_402);
+    clientRequestId = ledger.beginAttempt(
+      jobId,
+      "worker_a",
+      86_403,
+    ).clientRequestId;
+    const result = {
+      jobId,
+      workerId: "worker_a",
+      clientRequestId,
+      providerRequestId: "provider_123",
+      outcome: "rejected" as const,
+      usage,
+      now: 86_404,
+    };
+    ledger.finishAttempt(result);
+    assert.deepEqual(ledger.attempts(jobId)[0]?.usage, usage);
+    ledger.finishAttempt(result);
+    assert.throws(() =>
+      ledger.finishAttempt({
+        ...result,
+        usage: { ...usage, outputTokens: -1 },
+      }),
+    );
+  } finally {
+    firstStore.close();
+  }
+  const secondStore = new ApiStore(dbPath, join(dir, "assets"));
+  try {
+    const ledger = new PaidGenerationLedger(secondStore.db, settings());
+    assert.deepEqual(ledger.attempts(jobId!)[0]?.usage, usage);
+  } finally {
+    secondStore.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("existing paid-attempt tables gain nullable token usage", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "estate-paid-ledger-"));
+  const store = new ApiStore(":memory:", join(dir, "assets"));
+  try {
+    store.db.exec(`
+      CREATE TABLE paid_generation_attempts (
+        id TEXT PRIMARY KEY,
+        job_id TEXT NOT NULL,
+        attempt_no INTEGER NOT NULL,
+        client_request_id TEXT NOT NULL UNIQUE,
+        provider_request_id TEXT,
+        status TEXT NOT NULL,
+        asset_hash TEXT,
+        resolution_note TEXT,
+        started_at INTEGER NOT NULL,
+        finished_at INTEGER,
+        UNIQUE(job_id, attempt_no)
+      ) STRICT;
+    `);
+    new PaidGenerationLedger(store.db, settings());
+    const columns = store.db
+      .prepare("PRAGMA table_info(paid_generation_attempts)")
+      .all() as {
+      name: string;
+    }[];
+    assert(columns.some((column) => column.name === "usage_json"));
+  } finally {
+    store.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("global sixty-call cap applies even when the currency budget is larger", async () => {
   const dir = await mkdtemp(join(tmpdir(), "estate-paid-ledger-"));
   const store = new ApiStore(":memory:", join(dir, "assets"));
