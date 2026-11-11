@@ -684,6 +684,10 @@ export class ChainScreen {
       building.level < 4
         ? BigInt(config.building_upgrade_costs[building.level - 1]!)
         : null;
+    const levelShortfall =
+      levelCost !== null && BigInt(balance) < levelCost
+        ? (levelCost - BigInt(balance)).toString()
+        : null;
     const changingType = draft.buildingType !== building.building_type;
     const affectedMedia = (["logo", "billboard"] as const).filter(
       (kind) => plot[kind].active || plot[kind].pending,
@@ -710,6 +714,7 @@ export class ChainScreen {
           <label>Name <input id="owner-building-name" maxlength="24" value="${html(draft.name)}" /></label>
           ${changingType ? `<button id="owner-change-type" ${this.busy || BigInt(balance) < typeCost ? "disabled" : ""}>Change type · ${formatCoins(config.change_building_type_cost)} coins</button><p class="muted">Changing type uses its curated preset and keeps level ${building.level}. Choose colour and name afterward.</p>` : `<button id="owner-save-preset" ${this.busy ? "disabled" : ""}>Use this preset</button>`}
           ${levelCost === null ? `<p>Maximum level reached.</p>` : `<button id="owner-upgrade-building" ${this.busy || BigInt(balance) < levelCost ? "disabled" : ""}>Upgrade to level ${building.level + 1} · ${formatCoins(config.building_upgrade_costs[building.level - 1]!)} coins</button>`}
+          ${levelShortfall ? `<p class="muted">Earn ${formatCoins(levelShortfall)} more coins by parking and collecting before this upgrade is available.</p>` : ""}
           <p class="muted">Using a preset, changing type or upgrading immediately replaces the current facade with a curated design. Any custom facade must be reviewed again.</p>
           ${affectedMedia.length ? `<p class="chain-parked">A building change will hide the current ${affectedMedia.join(" and ")} until a moderator approves it for the new layout. You can reuse an approved image or upload a new one. Pending media proposals will be cancelled.</p>` : ""}
           ${this.mockStudioMarkup(selected, accountId)}
