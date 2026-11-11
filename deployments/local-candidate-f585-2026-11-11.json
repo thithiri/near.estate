@@ -1,0 +1,29 @@
+{
+  "result": "passed",
+  "scope": "local candidate build and checks; no hosted CI, registry push, named-wallet signature, physical device or VPS deployment",
+  "sourceRevision": "f585b4498d3c584b49886c818da983c14c621070",
+  "contractIdInWebBuild": "dev-20261110121817-59798568433631.testnet",
+  "images": {
+    "api": "sha256:81a3d8c0b96762f192e505be571bfbfd9903548084289f96cca62d6f647a23a3",
+    "indexer": "sha256:61ed5d0a1fd7eebd781e8c007a508790a24e7b57268f4de9da142b67189c3697",
+    "web": "sha256:c911adc029aa7b3bec392136b4e5c028629ab766fde8dd325ed4a3c4657e154b"
+  },
+  "imageRevisionLabelsVerified": true,
+  "applicationChecksPassed": true,
+  "guestBrowserJourneysPassed": 6,
+  "packagedBrowser": {
+    "liveStreetLoaded": true,
+    "failedApprovedSprite": true,
+    "curatedFallbackLoaded": true,
+    "meteorChooserReached": true,
+    "scriptPolicyViolations": 0,
+    "pageErrors": 0
+  },
+  "packagedApiHealth": { "status": "ok", "service": "api", "schemaVersion": 1 },
+  "packagedPaidGenerationStatus": { "enabled": false },
+  "contractSourceUnchangedSince": "821f2469a7619e079964d8fb86f9e9081d0a72ee",
+  "contractChecks": "38 unit and 3 sandbox suites passed at the unchanged contract source revision; not rerun for this candidate",
+  "temporaryServicesAndVolumesRemoved": true,
+  "imagesPushedToRegistry": false,
+  "hostedCiRun": null
+}
