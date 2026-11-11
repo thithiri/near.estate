@@ -258,6 +258,8 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 
 - The private owner-income command now finishes its public payout record when a previously signed settlement is recovered after a lost response. It first verifies the exact transaction and finalized player state, then writes the same evidence as an uninterrupted settlement. This removes a false “no active session” error on safe retry; the targeted TypeScript check passes. The active second parking session has not settled yet.
 
+- A local browser layout check at 390×844 showed the portrait rotate prompt, city map and garage with a fixed bottom menu and no horizontal page overflow on the map. At 844×390, the playable street, signs, facades, parking stalls and controls fit without horizontal or vertical page overflow. The browser viewport was restored afterward. These are responsive browser observations, not physical phone performance or touch-input measurements.
+
 - Browser wallet sign-in, redirects, session-key setup/recovery/revocation and local key storage security on both named wallets; the patched dependency compatibility and wallet bundle size. Protocol permission, allowance exhaustion and revocation passed separately on testnet.
 - Provider retention, authentication and sustained throughput under player traffic. The current quiet contract passed one full sparse catch-up, cursor restart and aggregate replay; a longer history with many paginated transactions remains unmeasured.
 - Actual provider cost, transparent edit quality, silhouette fit and human moderation load.
