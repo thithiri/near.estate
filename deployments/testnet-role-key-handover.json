@@ -1,0 +1,43 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "scope": "role-account restricted-key handover; no contract role or game-state change",
+  "roles": [
+    {
+      "role": "moderator",
+      "accountId": "dev-20261110121820-76563125621460.testnet",
+      "publicKeys": [
+        "ed25519:8DpfFMcCgJdBvAapmi4b3ErRnHb5m9Jdqn3KUAPRr3hY",
+        "ed25519:3LPm7eShiLvNZEUm3QjTXX2BiTtykN27b8ZMKmQiZPkD"
+      ],
+      "added": [
+        "3vjANUDwTFpqwfWc7hVURRXPzpt4SPs2Yq27PJgUXAdE",
+        "BRky8FrNnW1SYhhXNpKs7xV3awEWZtPShSzuLcEKYL4X"
+      ],
+      "revoked": [
+        "3PZCdERASLVoANk7vPKks1ATUM5LzHjyVPcfGg5iKUsh",
+        "BVAy6i9hWAKn5eFtdyxoiNaGmHLgbLxxrXraWrge4pQZ"
+      ],
+      "finalizedHeight": 277203009,
+      "finalKeyCount": 1
+    },
+    {
+      "role": "inspector",
+      "accountId": "dev-20261110121823-64776049168223.testnet",
+      "publicKeys": [
+        "ed25519:CvCEjSXy19Pm9Kn6GgRRVYjziHSjcqnhaybJ34hNpxwU",
+        "ed25519:FZMm845EmZ88egTUcrrmdeRPNMrzzcdmAsqTNqUAMDeR"
+      ],
+      "added": [
+        "H2LMfmfBJx8zqY1gUctTBEf53ELDXZ4NH5TPpJTAeBDw",
+        "EJHn3KhBTcABUrtxsYEq9rBsZpk1WQFZXtCvbH7K5gFM"
+      ],
+      "revoked": [
+        "4mgrLvhELfpmvaNGNSeFTU4cXCRrrM8MyC4mudWNqkfB",
+        "FZAxkycaAZTwo615d5F8pYuWc1gkiu3xPuqNru1oWtfr"
+      ],
+      "finalizedHeight": 277203009,
+      "finalKeyCount": 1
+    }
+  ]
+}

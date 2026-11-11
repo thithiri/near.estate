@@ -213,6 +213,7 @@ async fn main() -> Result<()> {
     if mode == "--revoke" {
         let secret = existing.context("runtime key file is missing")?;
         let public_key = secret.public_key();
+        let mut transaction_hash = None;
         let present = moderator
             .view_access_keys()
             .await?
@@ -226,10 +227,14 @@ async fn main() -> Result<()> {
                 .transact()
                 .await?;
             ensure!(revoked.is_success(), "moderator key revocation failed");
+            transaction_hash = Some(revoked.outcome().transaction_hash.to_string());
         }
         wait_for_key_removal(&moderator, &public_key).await?;
         std::fs::remove_file(&runtime_path)?;
-        println!("{}", json!({"revoked": true, "publicKey": public_key}));
+        println!(
+            "{}",
+            json!({"revoked": true, "publicKey": public_key, "transactionHash": transaction_hash})
+        );
         return Ok(());
     }
     let secret = if let Some(secret) = existing {
@@ -245,6 +250,7 @@ async fn main() -> Result<()> {
         .await?
         .iter()
         .any(|entry| entry.public_key == public_key);
+    let mut transaction_hash = None;
     if !present {
         let added = moderator
             .batch(moderator.id())
@@ -259,6 +265,7 @@ async fn main() -> Result<()> {
             .transact()
             .await?;
         ensure!(added.is_success(), "moderation-only key creation failed");
+        transaction_hash = Some(added.outcome().transaction_hash.to_string());
     }
     verify_permission(&moderator, &contract_id, &public_key).await?;
     println!(
@@ -269,6 +276,7 @@ async fn main() -> Result<()> {
             "publicKey": public_key,
             "allowanceYocto": ALLOWANCE_YOCTO.to_string(),
             "created": !present,
+            "transactionHash": transaction_hash,
         })
     );
     Ok(())

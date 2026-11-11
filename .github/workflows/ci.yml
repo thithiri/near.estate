@@ -41,6 +41,8 @@ jobs:
       - run: cargo test --workspace
       - run: npm run contract:layout:check
       - run: cargo test --manifest-path contracts/estate/Cargo.toml --example deploy_testnet
+      - run: cargo test --manifest-path contracts/estate/Cargo.toml --example provision_moderator_key
+      - run: cargo test --manifest-path contracts/estate/Cargo.toml --example provision_inspector_key
       - run: cargo check --workspace --target wasm32-unknown-unknown
   containers:
     runs-on: ubuntu-latest
