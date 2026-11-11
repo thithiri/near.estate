@@ -19,7 +19,7 @@ jobs:
         env:
           VITE_ESTATE_CONTRACT_ID: ci-estate.testnet
       - run: npm run check
-      - run: npx playwright install chromium --with-deps --only-shell
+      - run: npx playwright install chromium --only-shell
       - run: npm run test:browser
       - run: npm run format:check
   contract:
