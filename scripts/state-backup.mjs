@@ -39,6 +39,12 @@ async function regularFile(path) {
   return entry;
 }
 
+async function regularDirectory(path) {
+  const entry = await lstat(path);
+  if (!entry.isDirectory() || entry.isSymbolicLink())
+    throw new Error(`Expected a regular directory: ${path}`);
+}
+
 async function sha256(path) {
   const digest = createHash("sha256");
   for await (const chunk of createReadStream(path)) digest.update(chunk);
@@ -48,6 +54,8 @@ async function sha256(path) {
 function snapshotInfo(path) {
   const db = new DatabaseSync(path, { readOnly: true });
   try {
+    if (db.prepare("PRAGMA journal_mode").get()?.journal_mode !== "delete")
+      throw new Error("Backup SQLite file is not standalone");
     const integrity = db.prepare("PRAGMA integrity_check").get();
     if (integrity?.integrity_check !== "ok")
       throw new Error("SQLite integrity check failed");
@@ -116,6 +124,7 @@ function snapshotInfo(path) {
 }
 
 async function listedFiles(dir, pattern, ignored = () => false) {
+  await regularDirectory(dir);
   const entries = await readdir(dir);
   for (const name of entries) {
     if (ignored(name)) continue;
@@ -166,6 +175,16 @@ function validateManifest(manifest) {
 }
 
 async function verifyBackup(backupDir) {
+  await regularDirectory(backupDir);
+  const rootFiles = (await readdir(backupDir)).sort();
+  if (
+    JSON.stringify(rootFiles) !==
+    JSON.stringify(["assets", "deployments", "estate.sqlite", "manifest.json"])
+  )
+    throw new Error(
+      `Unexpected file or directory in backup root: ${rootFiles.join(", ")}`,
+    );
+  await regularFile(join(backupDir, "manifest.json"));
   const manifest = JSON.parse(
     await readFile(join(backupDir, "manifest.json"), "utf8"),
   );
@@ -246,6 +265,14 @@ async function backupState(dataDir, deploymentsDir, backupDir) {
       await backup(sourceDb, join(backupDir, "estate.sqlite"));
     } finally {
       sourceDb.close();
+    }
+    const archivedDb = new DatabaseSync(join(backupDir, "estate.sqlite"));
+    try {
+      const mode = archivedDb.prepare("PRAGMA journal_mode = DELETE").get();
+      if (mode?.journal_mode !== "delete")
+        throw new Error("Could not make the SQLite backup standalone");
+    } finally {
+      archivedDb.close();
     }
     await chmod(join(backupDir, "estate.sqlite"), 0o600);
     const snapshot = snapshotInfo(join(backupDir, "estate.sqlite"));

@@ -2,7 +2,15 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  rename,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -222,6 +230,25 @@ try {
   execFileSync(process.execPath, [command, "verify", archive], {
     encoding: "utf8",
   });
+  await writeFile(join(archive, "unexpected.txt"), "untracked content");
+  const extraFile = spawnSync(process.execPath, [command, "verify", archive], {
+    encoding: "utf8",
+  });
+  assert.notEqual(extraFile.status, 0);
+  assert.match(extraFile.stderr, /Unexpected file or directory/);
+  await rm(join(archive, "unexpected.txt"));
+  const savedAssets = join(root, "saved-archive-assets");
+  await rename(join(archive, "assets"), savedAssets);
+  await symlink(savedAssets, join(archive, "assets"));
+  const linkedAssets = spawnSync(
+    process.execPath,
+    [command, "verify", archive],
+    { encoding: "utf8" },
+  );
+  assert.notEqual(linkedAssets.status, 0);
+  assert.match(linkedAssets.stderr, /Expected a regular directory/);
+  await rm(join(archive, "assets"));
+  await rename(savedAssets, join(archive, "assets"));
   execFileSync(
     process.execPath,
     [command, "restore", archive, restoredData, restoredMetadata],
@@ -297,6 +324,8 @@ try {
       deploymentRecordsPreserved: 2,
       missingReferencedAssetRejected: true,
       missingApprovedPaidAssetRejected: true,
+      unexpectedArchiveFileRejected: true,
+      symlinkedArchiveDirectoryRejected: true,
       tamperRejected: true,
     }),
   );

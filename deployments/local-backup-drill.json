@@ -8,5 +8,7 @@
   "deploymentRecordsPreserved": 2,
   "missingReferencedAssetRejected": true,
   "missingApprovedPaidAssetRejected": true,
+  "unexpectedArchiveFileRejected": true,
+  "symlinkedArchiveDirectoryRejected": true,
   "tamperRejected": true
 }
