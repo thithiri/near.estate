@@ -7,6 +7,14 @@ import {
   type GameplayKeyStatus,
 } from "./wallet-client.js";
 
+test("Meteor wallet browser module and its SDK import cleanly", async () => {
+  const [wallet] = await Promise.all([
+    import("@near-wallet-selector/meteor-wallet"),
+    import("@meteorwallet/sdk"),
+  ]);
+  assert.equal(typeof wallet.setupMeteorWallet, "function");
+});
+
 function disconnectedClient(
   status: GameplayKeyStatus,
   revokeResult: "revoked" | "pending" = "revoked",

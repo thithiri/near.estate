@@ -43,6 +43,7 @@ The current candidate's read-only upgrade plan now includes a sandbox rollback t
 - The street is played in landscape on phones; portrait provides navigation and a rotate prompt. The practice race is solo and its best time is stored in the browser.
 - Paid generation is opt-in and disabled by default. Curated facades remain usable during a provider outage. The image provider's final invoice requires separate reconciliation.
 - The current web dependency audit still has five high findings through the pinned Meteor SDK. Do not call this resolved without a compatible wallet update and both-wallet signing tests.
+- A clean-lockfile override trial removed those findings but broke Meteor SDK's ESM import. The current web test suite now checks that import; the unsafe override is not in the release tree.
 
 ## Sign-off record
 
