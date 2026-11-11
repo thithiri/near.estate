@@ -143,7 +143,7 @@ export class MockStudio {
           <label>Level to preview<select id="studio-level">${[1, 2, 3, 4].map((level) => `<option value="${level}" ${level === this.level ? "selected" : ""}>Level ${level} · ${[70, 100, 130, 160][level - 1]}px limit</option>`).join("")}</select></label>
           <fieldset class="studio-palette"><legend>Colour</legend>${PRESET_PALETTES.map((palette) => `<button type="button" data-studio-palette="${palette}" aria-label="${palette} colour" aria-pressed="${palette === this.palette}" style="background:${palette}"></button>`).join("")}</fieldset>
           <label>Your idea<textarea id="studio-description" maxlength="800" rows="4" placeholder="A greenhouse cafe with a tall glass peak and hanging plants…">${escapeHtml(this.description)}</textarea></label>
-          <p class="muted">Your description stays here. The three looks below are curated presets; custom prompt art comes in a later phase.</p>
+          <p class="muted">Describe your idea, then compare three curated looks. Your words do not change the preview art.</p>
           <button class="primary" id="explore-presets">Explore 3 preset looks</button>
         </section>
         <div class="studio-workspace">
@@ -156,7 +156,7 @@ export class MockStudio {
               <div class="studio-curb"><span>Parking</span><span>Parking</span></div>
             </div>
             <p class="muted">${this.level > 1 ? `Level ${this.level} is a visual preview. Paid upgrades cost ${formatCoins(DEFAULT_CONFIG.buildingUpgradeCosts[this.level - 2]!)} coins for this step.` : "Your current building is level 1. Previewing leaves it unchanged."}</p>
-            <button class="primary" disabled>Submit for review</button><p class="muted">Guest preview. Approval and publication connect after wallet and moderation work.</p>
+            <button class="primary" disabled>Submit for review</button><p class="muted">To publish a design, buy a plot on testnet and submit your choice for review.</p>
           </section>
         </div>
       </div>
