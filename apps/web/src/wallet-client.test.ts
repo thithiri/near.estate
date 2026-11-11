@@ -81,8 +81,10 @@ test("uncertain gameplay submission retries only its original signed transaction
         return {
           nonce: 7n,
           blockHash: baseEncode(new Uint8Array(32).fill(8)),
+          blockHeight: 100,
         };
       },
+      transactionValidityPeriod: async () => 100,
       sendSignedTransaction: async (bytes: string) => {
         signedBytes.push(bytes);
         if (signedBytes.length === 1) throw new Error("network dropped reply");
@@ -109,13 +111,19 @@ test("uncertain gameplay submission retries only its original signed transaction
       /pending/,
     );
     const saved = JSON.parse(values.get(`${keyName}:action`) ?? "null") as {
+      version: number;
       hash: string;
       signedTxBase64: string;
+      signedAtBlockHeight: number;
+      nonce: string;
     };
+    assert.equal(saved.version, 2);
+    assert.equal(saved.signedAtBlockHeight, 100);
+    assert.equal(saved.nonce, "8");
     assert.match(saved.hash, /^[1-9A-HJ-NP-Za-km-z]+$/);
     assert.equal(saved.signedTxBase64, signedBytes[0]);
     await client.gameplayCall("park", { car_id: 7, plot_id: 2, slot: 0 });
-    assert.equal(keyReads, 1);
+    assert.equal(keyReads, 2);
     assert.equal(statusReads, 2);
     assert.deepEqual(signedBytes, [saved.signedTxBase64, saved.signedTxBase64]);
     assert.equal(values.has(`${keyName}:action`), false);
@@ -188,6 +196,86 @@ test("pending action checker keeps an in-flight transaction until final", async 
     assert.equal(await client.checkPendingGameplayAction(), "success");
     assert.equal(client.hasPendingGameplayAction(), false);
     assert.equal(checks, 2);
+  } finally {
+    if (originalStorage)
+      Object.defineProperty(globalThis, "localStorage", originalStorage);
+    else Reflect.deleteProperty(globalThis, "localStorage");
+  }
+});
+
+test("expired pending action clears only when its nonce was never used", async () => {
+  const originalStorage = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "localStorage",
+  );
+  const values = new Map<string, string>();
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key),
+    },
+  });
+  const pair = KeyPair.fromRandom("ed25519");
+  const keyName =
+    "near-estate:testnet:estate.testnet:driver.testnet:gameplay-key";
+  const actionName = `${keyName}:action`;
+  values.set(
+    keyName,
+    JSON.stringify({
+      accountId: "driver.testnet",
+      publicKey: pair.getPublicKey().toString(),
+      secretKey: pair.toString(),
+    }),
+  );
+  const action = JSON.stringify({
+    version: 2,
+    accountId: "driver.testnet",
+    publicKey: pair.getPublicKey().toString(),
+    method: "park",
+    argsJson: '{"car_id":7}',
+    hash: "1".repeat(44),
+    signedTxBase64: "c2lnbmVk",
+    signedAtBlockHeight: 100,
+    nonce: "8",
+  });
+  values.set(actionName, action);
+  let chainNonce = 7n;
+  let sends = 0;
+  const client = Object.assign(Object.create(GameWalletClient.prototype), {
+    reader: {
+      contractId: "estate.testnet",
+      transactionStatus: async () => "unknown",
+      accessKey: async () => ({
+        nonce: chainNonce,
+        blockHash: "unused",
+        blockHeight: 203,
+      }),
+      transactionValidityPeriod: async () => 100,
+      sendSignedTransaction: async () => {
+        sends++;
+        return "pending";
+      },
+    },
+    selector: {
+      store: {
+        getState: () => ({
+          contract: { contractId: "estate.testnet" },
+          accounts: [{ accountId: "driver.testnet", active: true }],
+        }),
+      },
+    },
+  }) as GameWalletClient;
+  try {
+    assert.equal(await client.checkPendingGameplayAction(), "expired");
+    assert.equal(values.has(actionName), false);
+    assert.equal(sends, 0);
+    values.set(actionName, action);
+    chainNonce = 8n;
+    assert.equal(await client.checkPendingGameplayAction(), "pending");
+    assert.equal(values.has(actionName), true);
+    assert.equal(sends, 1);
   } finally {
     if (originalStorage)
       Object.defineProperty(globalThis, "localStorage", originalStorage);

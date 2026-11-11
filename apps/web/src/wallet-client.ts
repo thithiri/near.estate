@@ -40,6 +40,7 @@ export const GAMEPLAY_METHODS = [
 export type GameplayMethod = (typeof GAMEPLAY_METHODS)[number];
 export const GAMEPLAY_KEY_ALLOWANCE = 250n * 10n ** 21n; // 0.25 testnet NEAR
 const CALL_GAS = 60n * 10n ** 12n;
+const FINAL_BLOCK_SAFETY_MARGIN = 2n;
 const NETWORK = "testnet";
 type KeyRecord = {
   accountId: string;
@@ -48,14 +49,16 @@ type KeyRecord = {
 };
 type PendingKey = KeyRecord & { operation: "add" | "revoke" };
 type PendingGameplayAction = {
-  version: 1;
   accountId: string;
   publicKey: string;
   method: GameplayMethod;
   argsJson: string;
   hash: string;
   signedTxBase64: string;
-};
+} & (
+  | { version: 1 }
+  | { version: 2; signedAtBlockHeight: number; nonce: string }
+);
 export type GameplayKeyStatus = "ready" | "pending" | "inactive" | "none";
 export type ArtworkUpload = {
   uploadId: string;
@@ -236,7 +239,7 @@ function pendingGameplayAction(value: string): PendingGameplayAction {
     );
   const record = parsed as Record<string, unknown>;
   if (
-    record.version !== 1 ||
+    (record.version !== 1 && record.version !== 2) ||
     typeof record.accountId !== "string" ||
     typeof record.publicKey !== "string" ||
     !GAMEPLAY_METHODS.includes(record.method as GameplayMethod) ||
@@ -244,7 +247,13 @@ function pendingGameplayAction(value: string): PendingGameplayAction {
     typeof record.hash !== "string" ||
     typeof record.signedTxBase64 !== "string" ||
     !/^[1-9A-HJ-NP-Za-km-z]{40,50}$/.test(record.hash) ||
-    !/^[A-Za-z0-9+/]+={0,2}$/.test(record.signedTxBase64)
+    !/^[A-Za-z0-9+/]+={0,2}$/.test(record.signedTxBase64) ||
+    (record.version === 2 &&
+      (typeof record.signedAtBlockHeight !== "number" ||
+        !Number.isSafeInteger(record.signedAtBlockHeight) ||
+        record.signedAtBlockHeight < 0 ||
+        typeof record.nonce !== "string" ||
+        !/^\d+$/.test(record.nonce)))
   )
     throw new Error(
       "Saved gameplay action is damaged; contact support before retrying",
@@ -1231,10 +1240,27 @@ export class GameWalletClient {
     return this.resumePendingKey();
   }
 
+  private async expiredGameplayAction(
+    record: PendingGameplayAction,
+  ): Promise<boolean> {
+    if (record.version === 1) return false;
+    const [key, validityPeriod] = await Promise.all([
+      this.reader.accessKey(record.accountId, record.publicKey),
+      this.reader.transactionValidityPeriod(),
+    ]);
+    return (
+      key.nonce < BigInt(record.nonce) &&
+      BigInt(key.blockHeight) >
+        BigInt(record.signedAtBlockHeight) +
+          BigInt(validityPeriod) +
+          FINAL_BLOCK_SAFETY_MARGIN
+    );
+  }
+
   private async settleGameplayAction(
     record: PendingGameplayAction,
     checkFirst: boolean,
-  ): Promise<"success" | "failure" | "pending"> {
+  ): Promise<"success" | "failure" | "pending" | "expired"> {
     if (checkFirst) {
       try {
         const state = await this.reader.transactionStatus(
@@ -1243,6 +1269,8 @@ export class GameWalletClient {
         );
         if (state === "success" || state === "failure" || state === "pending")
           return state;
+        if (await this.expiredGameplayAction(record).catch(() => false))
+          return "expired";
       } catch {
         // Re-broadcasting the identical signed bytes cannot execute twice.
       }
@@ -1267,7 +1295,7 @@ export class GameWalletClient {
   }
 
   async checkPendingGameplayAction(): Promise<
-    "success" | "failure" | "pending" | "none"
+    "success" | "failure" | "pending" | "expired" | "none"
   > {
     const accountId = this.requiredAccount();
     const name = this.actionName(accountId);
@@ -1336,13 +1364,15 @@ export class GameWalletClient {
           await signer.signTransaction(transaction);
         const bytes = encodeTransaction(signedTransaction);
         action = {
-          version: 1,
+          version: 2,
           accountId,
           publicKey: record.publicKey,
           method,
           argsJson,
           hash: baseEncode(hash),
           signedTxBase64: btoa(String.fromCharCode(...bytes)),
+          signedAtBlockHeight: accessKey.blockHeight,
+          nonce: (accessKey.nonce + 1n).toString(),
         };
         if (this.accountId !== accountId)
           throw new Error("Wallet account changed");
@@ -1354,6 +1384,10 @@ export class GameWalletClient {
           "Gameplay action is pending. Retry to check the same transaction before signing another.",
         );
       localStorage.removeItem(actionName);
+      if (outcome === "expired")
+        throw new Error(
+          "The previous gameplay action expired without landing. Review the updated game state, then retry.",
+        );
       if (outcome === "failure")
         throw new Error(
           `The previous ${action.method} transaction failed on-chain`,

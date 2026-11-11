@@ -954,9 +954,11 @@ export class ChainScreen {
             ? "The previous gameplay action confirmed. The game state has refreshed."
             : state === "failure"
               ? "The previous gameplay action failed on-chain. You can retry it."
-              : state === "pending"
-                ? "The previous action is still pending. Check it again shortly."
-                : "There is no pending gameplay action.";
+              : state === "expired"
+                ? "The previous gameplay action expired without landing. Review the game state, then retry."
+                : state === "pending"
+                  ? "The previous action is still pending. Check it again shortly."
+                  : "There is no pending gameplay action.";
         }),
     );
     this.host

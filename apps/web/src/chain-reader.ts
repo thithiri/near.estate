@@ -57,10 +57,18 @@ const RpcAccessKeys = z.object({
 });
 const RpcAccessKey = z.object({
   block_hash: z.string().min(1),
+  block_height: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   nonce: z.union([
     z.string().regex(/^\d+$/),
     z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   ]),
+});
+const RpcProtocolConfig = z.object({
+  transaction_validity_period: z
+    .number()
+    .int()
+    .positive()
+    .max(Number.MAX_SAFE_INTEGER),
 });
 const RpcTransactionOutcome = z.object({
   final_execution_status: z.string(),
@@ -201,7 +209,7 @@ export class ChainReader {
   async accessKey(
     accountId: string,
     publicKey: string,
-  ): Promise<{ nonce: bigint; blockHash: string }> {
+  ): Promise<{ nonce: bigint; blockHash: string; blockHeight: number }> {
     const result = RpcAccessKey.parse(
       await this.rpcRequest(
         "query",
@@ -214,7 +222,22 @@ export class ChainReader {
         "view_access_key",
       ),
     );
-    return { nonce: BigInt(result.nonce), blockHash: result.block_hash };
+    return {
+      nonce: BigInt(result.nonce),
+      blockHash: result.block_hash,
+      blockHeight: result.block_height,
+    };
+  }
+
+  async transactionValidityPeriod(): Promise<number> {
+    const config = RpcProtocolConfig.parse(
+      await this.rpcRequest(
+        "EXPERIMENTAL_protocol_config",
+        { finality: "final" },
+        "EXPERIMENTAL_protocol_config",
+      ),
+    );
+    return config.transaction_validity_period;
   }
 
   async sendSignedTransaction(

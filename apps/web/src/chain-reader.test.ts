@@ -120,7 +120,11 @@ test("gameplay signing reads the key nonce and a final block hash", async () => 
     });
     return Response.json({
       jsonrpc: "2.0",
-      result: { nonce: "9007199254740993", block_hash: "final-hash" },
+      result: {
+        nonce: "9007199254740993",
+        block_hash: "final-hash",
+        block_height: 277153540,
+      },
     });
   }) as typeof fetch);
   assert.deepEqual(
@@ -128,8 +132,25 @@ test("gameplay signing reads the key nonce and a final block hash", async () => 
     {
       nonce: 9007199254740993n,
       blockHash: "final-hash",
+      blockHeight: 277153540,
     },
   );
+});
+
+test("transaction expiry uses the finalized protocol validity window", async () => {
+  const reader = new ChainReader("estate-game.testnet", undefined, (async (
+    _url,
+    init,
+  ) => {
+    const request = JSON.parse(String(init?.body));
+    assert.equal(request.method, "EXPERIMENTAL_protocol_config");
+    assert.deepEqual(request.params, { finality: "final" });
+    return Response.json({
+      jsonrpc: "2.0",
+      result: { transaction_validity_period: 86400 },
+    });
+  }) as typeof fetch);
+  assert.equal(await reader.transactionValidityPeriod(), 86400);
 });
 
 test("signed gameplay RPC distinguishes final success, failure, and unknown status", async () => {
