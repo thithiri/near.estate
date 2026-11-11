@@ -1,0 +1,74 @@
+{
+  "network": "testnet",
+  "capturedAt": "2026-11-11T00:42:08.637Z",
+  "contractId": "dev-20261110123019-56986259017680.testnet",
+  "startHeight": 1,
+  "checkpointHeight": 277142565,
+  "accountTransactions": 67,
+  "eventBlocks": 62,
+  "insertedEvents": 70,
+  "eventCounts": [
+    { "event_name": "car_minted", "count": 2 },
+    { "event_name": "collected", "count": 2 },
+    { "event_name": "config_updated", "count": 13 },
+    { "event_name": "expired", "count": 1 },
+    { "event_name": "inspection_attempted", "count": 6 },
+    { "event_name": "parked", "count": 10 },
+    { "event_name": "player_registered", "count": 2 },
+    { "event_name": "plot_bought", "count": 1 },
+    { "event_name": "plot_seeded", "count": 2 },
+    { "event_name": "rule_scheduled", "count": 24 },
+    { "event_name": "ticketed", "count": 7 }
+  ],
+  "plotDailyRows": 2,
+  "plotDailyStats": [
+    {
+      "plot_id": "plot-main-n-0",
+      "day": "2026-11-10",
+      "parks": 8,
+      "collections": 1,
+      "expiries": 0,
+      "tickets": 7,
+      "gross": "1033333",
+      "driver_payout": "111111",
+      "recipient_payout": "652222",
+      "forfeited": "270000"
+    },
+    {
+      "plot_id": "plot-main-n-1",
+      "day": "2026-11-10",
+      "parks": 2,
+      "collections": 1,
+      "expiries": 1,
+      "tickets": 0,
+      "gross": "1033333",
+      "driver_payout": "1033333",
+      "recipient_payout": "0",
+      "forfeited": "0"
+    }
+  ],
+  "economyDailyStats": [
+    {
+      "day": "2026-11-10",
+      "curb_parks": 10,
+      "tower_parks": 0,
+      "collections": 2,
+      "expiries": 1,
+      "tickets": 7,
+      "inspector_attempts": 6,
+      "inspector_successes": 6,
+      "gross": "2066666",
+      "driver_payout": "1144444",
+      "recipient_payout": "652222",
+      "forfeited": "270000",
+      "known_coin_costs": "0",
+      "starter_grants": "0",
+      "unpriced_cost_events": 2,
+      "unpriced_grant_events": 2
+    }
+  ],
+  "aggregateRebuildMatched": true,
+  "elapsedMs": 10734,
+  "readOnly": true,
+  "limits": "Disposable journey contract; no named-wallet browser journey or sustained player traffic"
+}

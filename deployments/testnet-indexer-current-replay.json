@@ -1,0 +1,31 @@
+{
+  "network": "testnet",
+  "capturedAt": "2026-11-11T00:41:32.131Z",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "startHeight": 277066408,
+  "checkpointHeight": 277142499,
+  "accountTransactions": 95,
+  "eventBlocks": 90,
+  "insertedEvents": 91,
+  "eventCounts": [
+    { "event_name": "car_minted", "count": 1 },
+    { "event_name": "collected", "count": 1 },
+    { "event_name": "npc_site_seeded", "count": 7 },
+    { "event_name": "parked", "count": 1 },
+    { "event_name": "player_registered", "count": 1 },
+    { "event_name": "plot_seeded", "count": 80 }
+  ],
+  "plotDailyRows": 0,
+  "economyDailyRows": 1,
+  "cursorAfterRecentResume": {
+    "height": 277142509,
+    "hash": "65LZYCJo1CygFUsxfKB6L8PVciJD5UJaXWxRhMXgay5Z",
+    "timestampNs": "1794357622252631512"
+  },
+  "resumedThrough": 277142509,
+  "replayInserted": 0,
+  "plotAndEconomyRebuildMatched": true,
+  "elapsedMs": 13635,
+  "readOnly": true,
+  "limits": "Quiet shared game contract; no named-wallet browser journey or sustained player traffic"
+}
