@@ -1778,11 +1778,74 @@ export function createApiApp({
     }
   });
 
+  async function neighbourCards(
+    plotId: string,
+    cache = new Map<string, Promise<string>>(),
+  ): Promise<[string, string]> {
+    const center = city.plots.find((plot) => plot.id === plotId);
+    if (!center)
+      return ["<div>Plot unavailable</div>", "<div>Plot unavailable</div>"];
+    const cards = await Promise.all(
+      [center.index - 1, center.index + 1].map((index) => {
+        const nearby = city.plots.find(
+          (plot) =>
+            plot.roadId === center.roadId &&
+            plot.side === center.side &&
+            plot.index === index,
+        );
+        if (!nearby)
+          return Promise.resolve('<div class="neighbor">Street end</div>');
+        const existing = cache.get(nearby.id);
+        if (existing) return existing;
+        const pending = (async () => {
+          try {
+            const neighbor = await chain?.plot(nearby.id);
+            if (!neighbor || neighbor.plot.id !== nearby.id)
+              throw new Error("Missing neighbor");
+            const building = neighbor.plot.building;
+            const approved = building.approved_manifest_hash
+              ? store.publicManifest(building.approved_manifest_hash)
+              : null;
+            if (building.approved_manifest_hash && !approved)
+              throw new Error("Approved neighbor art unavailable");
+            const approvedBytes = approved
+              ? await readFile(
+                  join(store.assetDir, `${approved.thumbnailHash}.png`),
+                )
+              : null;
+            if (
+              approved &&
+              (!approvedBytes || hash(approvedBytes) !== approved.thumbnailHash)
+            )
+              throw new Error("Approved neighbor thumbnail changed");
+            const url = approvedBytes
+              ? `data:image/png;base64,${approvedBytes.toString("base64")}`
+              : `data:image/png;base64,${(
+                  await renderMockCandidate(
+                    building.building_type,
+                    building.variant as 1 | 2,
+                    building.level,
+                    building.primary_color,
+                  )
+                ).thumbnail.toString("base64")}`;
+            return `<div class="neighbor"><img src="${url}" alt="" width="140" height="160"><span>${escapeHtml(building.name)}</span></div>`;
+          } catch {
+            return '<div class="neighbor">Neighbour unavailable</div>';
+          }
+        })();
+        cache.set(nearby.id, pending);
+        return pending;
+      }),
+    );
+    return cards as [string, string];
+  }
+
   app.get("/moderation", async (c) => {
     const denied = requireModerator(c);
     if (denied) return denied;
     const queue = store.reviewQueue().slice(0, 20);
     const cards: string[] = [];
+    const neighbourCache = new Map<string, Promise<string>>();
     for (const original of queue) {
       const job = await reconcileDecision(original).catch(() => original);
       if (job.status !== "submitted") continue;
@@ -1801,39 +1864,7 @@ export function createApiApp({
         </section>`);
         continue;
       }
-      const parts = job.plotId.split("-");
-      const index = Number(parts[parts.length - 1]);
-      const neighbors: string[] = [];
-      for (const neighborIndex of [index - 1, index + 1]) {
-        if (neighborIndex < 0 || neighborIndex > 7 || !chain) {
-          neighbors.push('<div class="neighbor">Street end</div>');
-          continue;
-        }
-        const neighborId = `${parts.slice(0, -1).join("-")}-${neighborIndex}`;
-        try {
-          const neighbor = await chain.plot(neighborId);
-          if (!neighbor) throw new Error("Missing neighbor");
-          const building = neighbor.plot.building;
-          const approved = building.approved_manifest_hash
-            ? store.publicManifest(building.approved_manifest_hash)
-            : null;
-          const url = approved
-            ? `/api/assets/${approved.thumbnailHash}`
-            : `data:image/png;base64,${(
-                await renderMockCandidate(
-                  building.building_type,
-                  building.variant as 1 | 2,
-                  building.level,
-                  building.primary_color,
-                )
-              ).thumbnail.toString("base64")}`;
-          neighbors.push(
-            `<div class="neighbor"><img src="${url}" alt="" width="140" height="160"><span>${escapeHtml(building.name)}</span></div>`,
-          );
-        } catch {
-          neighbors.push('<div class="neighbor">Neighbor unavailable</div>');
-        }
-      }
+      const neighbors = await neighbourCards(job.plotId, neighbourCache);
       cards.push(`<section class="review"><h2>${escapeHtml(job.plotId)} · ${escapeHtml(job.buildingType)} level ${job.level}</h2>
         <p>Owner: ${escapeHtml(job.accountId)} · revision ${job.proposalRevision}</p>
         <p>Prompt: ${escapeHtml(job.description)}</p>
@@ -1949,10 +1980,13 @@ export function createApiApp({
         rect
           ? `<span class="placement" style="left:${rect.x * 2}px;top:${rect.y * 2}px;width:${rect.width * 2}px;height:${rect.height * 2}px">${label}</span>`
           : "";
+      const neighbors = await neighbourCards(job.plotId, neighbourCache);
+      const spriteData = `data:image/png;base64,${sprite.toString("base64")}`;
       paidCandidateCards.push(`<section class="review"><h2>${escapeHtml(job.plotId)} · generated candidate ${candidate.ordinal}</h2>
         <p>Owner: ${escapeHtml(job.accountId)} · ${escapeHtml(job.snapshot.buildingType)} level ${job.snapshot.level}</p>
         <p>Owner description: ${escapeHtml(job.snapshot.promptSpec.description)}</p>
-        <div class="candidate-art"><img src="data:image/png;base64,${sprite.toString("base64")}" alt="Full generated facade with placement outlines" width="280" height="320">${outline("Logo", candidate.manifest.logoRect)}${outline("Billboard", candidate.manifest.billboardRect)}</div>
+        <p>Game-size street comparison</p><div class="street">${neighbors[0]}<div class="chosen"><img src="${spriteData}" alt="Generated candidate at game size" width="140" height="160"><span>Candidate ${candidate.ordinal}</span></div>${neighbors[1]}</div>
+        <div class="candidate-art"><img src="${spriteData}" alt="Full generated facade with placement outlines" width="280" height="320">${outline("Logo", candidate.manifest.logoRect)}${outline("Billboard", candidate.manifest.billboardRect)}</div>
         <p>These outlines mark the proposed media rectangles. Moving a logo or billboard, or removing a billboard, creates a new manifest hash before the owner can choose this image. The image is still private to this review page.</p>
         <p>Manifest: <code>${candidate.manifestHash}</code></p>
         <form method="post" action="/api/moderation/paid-generations/${encodeURIComponent(job.id)}/candidates/${candidate.ordinal}/approve">
@@ -2023,10 +2057,11 @@ export function createApiApp({
       const candidate = paidLedger
         .candidates(id.data)
         .find((item) => item.ordinal === ordinal);
+      const job = paidLedger.job(id.data);
       if (
         !candidate ||
         candidate.reviewStatus !== "pending" ||
-        paidLedger.job(id.data)?.status !== "complete" ||
+        job?.status !== "complete" ||
         !candidate.manifest.logoRect
       )
         return c.json(
@@ -2100,6 +2135,8 @@ export function createApiApp({
           ? `<span class="placement" style="left:${rect.x * 2}px;top:${rect.y * 2}px;width:${rect.width * 2}px;height:${rect.height * 2}px">${label}</span>`
           : "";
       const proposedHash = hash(canonicalJson(manifest));
+      const neighbors = await neighbourCards(job.plotId);
+      const spriteData = `data:image/png;base64,${sprite.toString("base64")}`;
       c.header("Cache-Control", "no-store");
       c.header("X-Frame-Options", "DENY");
       c.header(
@@ -2107,9 +2144,10 @@ export function createApiApp({
         "default-src 'none'; img-src data:; style-src 'unsafe-inline'; form-action 'self'",
       );
       return c.html(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Candidate placement preview</title>
-        <style>body{font:16px system-ui,sans-serif;margin:24px auto;padding:0 16px;max-width:640px;color:#1d3445;background:#faf6ea}.candidate-art{position:relative;width:280px;height:320px;background:#e8f2e8}.candidate-art img{display:block}.placement{position:absolute;box-sizing:border-box;border:2px solid #ffb900;background:#ffb90044;color:#14213d;font-size:12px;font-weight:700}label{display:block;margin:10px 0}button{font:inherit;padding:8px 12px}code{overflow-wrap:anywhere}</style>
+        <style>body{font:16px system-ui,sans-serif;margin:24px auto;padding:0 16px;max-width:640px;color:#1d3445;background:#faf6ea}.street{display:flex;gap:12px;align-items:end;justify-content:center;overflow:auto}.street>div{width:150px;min-width:100px;text-align:center}.street img{max-width:100%;height:auto}.chosen{background:#e8f2e8;border-radius:8px}.neighbor span,.chosen span{display:block}.candidate-art{position:relative;width:280px;height:320px;background:#e8f2e8}.candidate-art img{display:block}.placement{position:absolute;box-sizing:border-box;border:2px solid #ffb900;background:#ffb90044;color:#14213d;font-size:12px;font-weight:700}label{display:block;margin:10px 0}button{font:inherit;padding:8px 12px}code{overflow-wrap:anywhere}</style>
         <h1>Review adjusted placement</h1><p>Candidate ${candidate.ordinal} · ${escapeHtml(id.data)}. Compare the outline with the actual facade before approval.</p>
-        <div class="candidate-art"><img src="data:image/png;base64,${sprite.toString("base64")}" alt="Private generated facade with adjusted media outlines" width="280" height="320">${outline("Logo", manifest.logoRect)}${outline("Billboard", manifest.billboardRect)}</div>
+        <p>Game-size street comparison</p><div class="street">${neighbors[0]}<div class="chosen"><img src="${spriteData}" alt="Adjusted candidate at game size" width="140" height="160"><span>Candidate ${candidate.ordinal}</span></div>${neighbors[1]}</div>
+        <div class="candidate-art"><img src="${spriteData}" alt="Private generated facade with adjusted media outlines" width="280" height="320">${outline("Logo", manifest.logoRect)}${outline("Billboard", manifest.billboardRect)}</div>
         <p>Proposed manifest: <code>${proposedHash}</code></p>
         <form method="post" action="/api/moderation/paid-generations/${encodeURIComponent(id.data)}/candidates/${ordinal}/approve">
           <input type="hidden" name="logo_x" value="${logoRect.x}"><input type="hidden" name="logo_y" value="${logoRect.y}">${!suppressBillboard && billboardRect ? `<input type="hidden" name="billboard_x" value="${billboardRect.x}"><input type="hidden" name="billboard_y" value="${billboardRect.y}">` : ""}<input type="hidden" name="preview_manifest_hash" value="${proposedHash}">

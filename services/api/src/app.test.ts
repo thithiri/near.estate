@@ -71,31 +71,35 @@ async function setup(paid = false) {
   let billboardSlot: ChainMediaSlot = structuredClone(emptyMediaSlot);
   let plotReadCount = 0;
   let flipLayoutOnSecondRead = false;
+  let neighborEnabled = false;
   const chain: ChainGateway = {
     async hasAccessKey() {
       if (keyLookupFails) throw new Error("Test RPC unavailable");
       return activeKey;
     },
     async plot(plotId) {
-      if (plotId !== PLOT) return null;
-      plotReadCount++;
-      if (flipLayoutOnSecondRead && plotReadCount === 2) layoutRevision++;
+      const isNeighbor = neighborEnabled && plotId === "plot-main-n-1";
+      if (plotId !== PLOT && !isNeighbor) return null;
+      if (!isNeighbor) {
+        plotReadCount++;
+        if (flipLayoutOnSecondRead && plotReadCount === 2) layoutRevision++;
+      }
       return {
         plot: {
-          id: PLOT,
+          id: plotId,
           road_id: "main",
           side: "North",
-          index: 0,
-          corner: true,
-          owner: plotOwner,
+          index: isNeighbor ? 1 : 0,
+          corner: !isNeighbor,
+          owner: isNeighbor ? null : plotOwner,
           rule: { kind: "Free" },
           pending_rule: null,
           building: {
-            building_type: "Retail",
-            variant: 1,
-            level: buildingLevel,
-            primary_color: "#F6C85F",
-            name: "Plot 1",
+            building_type: isNeighbor ? "Cafe" : "Retail",
+            variant: isNeighbor ? 2 : 1,
+            level: isNeighbor ? 2 : buildingLevel,
+            primary_color: isNeighbor ? "#73D9A6" : "#F6C85F",
+            name: isNeighbor ? "Neighbour cafe" : "Plot 1",
             approved_manifest_hash: approvedManifestHash,
             approved_at: null,
             last_facade_approved_at: null,
@@ -324,6 +328,9 @@ async function setup(paid = false) {
     setMediaSlot(kind: "Logo" | "Billboard", value: ChainMediaSlot) {
       if (kind === "Logo") logoSlot = value;
       else billboardSlot = value;
+    },
+    setNeighborEnabled(value: boolean) {
+      neighborEnabled = value;
     },
     flipLayoutOnSecondRead() {
       flipLayoutOnSecondRead = true;
@@ -1845,6 +1852,7 @@ test("a completed paid candidate enters the exact owner and moderator review flo
     assert.equal(paidJob.designJobId, null);
     assert.equal(paidJob.candidates.length, 0);
     const admin = `Basic ${Buffer.from("reviewer:test-only-password").toString("base64")}`;
+    context.setNeighborEnabled(true);
     const reviewPage = await context.app.request("/moderation", {
       headers: { authorization: admin },
     });
@@ -1855,6 +1863,9 @@ test("a completed paid candidate enters the exact owner and moderator review flo
     assert.match(pendingHtml, /Remove the proposed billboard area/);
     assert.match(pendingHtml, /Preview adjusted placement/);
     assert.match(pendingHtml, /Style and perspective match the game/);
+    assert.match(pendingHtml, /Game-size street comparison/);
+    assert.match(pendingHtml, /Neighbour cafe/);
+    assert.match(pendingHtml, /Generated candidate at game size/);
     const reviewPath = `/moderation/paid-generations/${queuedJob.id}/candidates/2/approve`;
     const previewPath = `/moderation/paid-generations/${queuedJob.id}/candidates/2/preview?logo_x=${adjustedLogoX}&logo_y=${adjustedLogoY}&suppress_billboard=on`;
     assert.equal((await context.app.request(previewPath)).status, 401);
@@ -1864,6 +1875,8 @@ test("a completed paid candidate enters the exact owner and moderator review flo
     assert.equal(preview.status, 200);
     const previewHtml = await preview.text();
     assert.match(previewHtml, /Review adjusted placement/);
+    assert.match(previewHtml, /Adjusted candidate at game size/);
+    assert.match(previewHtml, /Neighbour cafe/);
     const previewHash = previewHtml.match(
       /name="preview_manifest_hash" value="([a-f0-9]{64})"/,
     )?.[1];

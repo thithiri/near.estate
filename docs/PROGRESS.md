@@ -311,3 +311,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-12 — Previewed billboard placement
 
 - The private generated-candidate review can move an existing billboard rectangle while keeping its dimensions, or remove it. It previews the final logo/billboard combination on the exact sprite and requires the resulting manifest hash for adjusted approval. A local synthetic-candidate journey confirms the revised billboard coordinates and hash reach the owner job; malformed, uncovered and unpreviewed adjustments fail. API type checking and 97 local API tests pass. Human suitability review, real provider output and the Phase-6 testnet publication gate remain open.
+
+## 2026-11-12 — Moderator street comparison for generated candidates
+
+- Added a game-size three-building comparison to both the paid-candidate moderation queue and the adjusted-placement page. It reads same-side neighbor appearances, showing approved art or a curated fallback, and marks unavailable neighbors explicitly. The existing full-size outline remains for logo and billboard placement. The local API fixture supplies a neighboring Cafe and verifies both review pages show it; API type checking and all 97 tests pass. This improves human review of scale and street fit; a real generated candidate and independent human art review remain open.
