@@ -1952,12 +1952,13 @@ export function createApiApp({
         <p>Owner: ${escapeHtml(job.accountId)} · ${escapeHtml(job.snapshot.buildingType)} level ${job.snapshot.level}</p>
         <p>Owner description: ${escapeHtml(job.snapshot.promptSpec.description)}</p>
         <div class="candidate-art"><img src="data:image/png;base64,${sprite.toString("base64")}" alt="Full generated facade with placement outlines" width="280" height="320">${outline("Logo", candidate.manifest.logoRect)}${outline("Billboard", candidate.manifest.billboardRect)}</div>
-        <p>These outlines mark the exact logo and billboard rectangles in the asset manifest. The image is still private to this review page.</p>
+        <p>These outlines mark the proposed media rectangles. Removing an unusable billboard creates a new manifest hash before the owner can choose this image. The image is still private to this review page.</p>
         <p>Manifest: <code>${candidate.manifestHash}</code></p>
         <form method="post" action="/api/moderation/paid-generations/${encodeURIComponent(job.id)}/candidates/${candidate.ordinal}/approve">
           <label><input type="checkbox" name="content_ok" required> Content is suitable for the city</label>
           <label><input type="checkbox" name="style_ok" required> Style and perspective match the game</label>
-          <label><input type="checkbox" name="placement_ok" required> Available logo and billboard spaces are usable</label>
+          ${candidate.manifest.billboardRect ? '<label><input type="checkbox" name="suppress_billboard"> Remove the proposed billboard area from this candidate</label>' : ""}
+          <label><input type="checkbox" name="placement_ok" required> Remaining media spaces are usable</label>
           <button>Approve candidate for owner</button>
         </form>
         <form method="post" action="/api/moderation/paid-generations/${encodeURIComponent(job.id)}/candidates/${candidate.ordinal}/reject"><label>Rejection reason <input name="reason" required maxlength="500"></label><button>Reject candidate</button></form>
@@ -2061,6 +2062,8 @@ export function createApiApp({
           reason: decision === "reject" ? reason : null,
           now: clock(),
           reviewer: adminCredentials?.user ?? "moderator",
+          suppressBillboard:
+            decision === "approve" && form?.suppress_billboard === "on",
         });
         const reviewedJob = paidLedger.job(id.data);
         if (reviewedJob) promotePaidJob(store, paidLedger, reviewedJob);

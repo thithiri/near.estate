@@ -456,6 +456,7 @@ export class PaidGenerationLedger {
     reason: string | null;
     now: number;
     reviewer: string;
+    suppressBillboard?: boolean;
   }): PaidCandidate {
     if (
       !Number.isSafeInteger(input.now) ||
@@ -466,15 +467,44 @@ export class PaidGenerationLedger {
       (input.decision !== "approved" && input.decision !== "rejected") ||
       input.reviewer.trim().length < 1 ||
       input.reviewer.length > 100 ||
+      (input.suppressBillboard === true && input.decision !== "approved") ||
       (input.decision === "rejected" &&
         (!input.reason?.trim() || Array.from(input.reason).length > 500))
     )
       throw new Error("Invalid candidate review");
     this.transaction(() => {
+      const row = this.db
+        .prepare(
+          `SELECT * FROM paid_generation_candidates
+           WHERE job_id = ? AND ordinal = ? AND review_status = 'pending'`,
+        )
+        .get(input.jobId, input.ordinal) as CandidateRow | undefined;
+      if (!row) throw new Error("Candidate is not awaiting review");
+      const originalManifest = validateAssetManifest(
+        JSON.parse(row.manifest_json),
+      );
+      if (
+        originalManifest.spriteHash !== row.sprite_hash ||
+        originalManifest.thumbnailHash !== row.thumbnail_hash ||
+        createHash("sha256")
+          .update(canonicalJson(originalManifest))
+          .digest("hex") !== row.manifest_hash
+      )
+        throw new Error("Candidate manifest fingerprint is invalid");
+      if (input.suppressBillboard && !originalManifest.billboardRect)
+        throw new Error("Candidate has no billboard to remove");
+      const manifest = input.suppressBillboard
+        ? validateAssetManifest({ ...originalManifest, billboardRect: null })
+        : originalManifest;
+      const manifestJson = canonicalJson(manifest);
+      const manifestHash = createHash("sha256")
+        .update(manifestJson)
+        .digest("hex");
       const changed = this.db
         .prepare(
           `UPDATE paid_generation_candidates SET review_status = ?,
-             review_reason = ?, reviewed_at = ?, reviewed_by = ?
+             review_reason = ?, reviewed_at = ?, reviewed_by = ?,
+             manifest_json = ?, manifest_hash = ?
            WHERE job_id = ? AND ordinal = ? AND review_status = 'pending'
              AND EXISTS (SELECT 1 FROM paid_generation_jobs
                          WHERE id = ? AND status = 'complete')`,
@@ -484,6 +514,8 @@ export class PaidGenerationLedger {
           input.decision === "rejected" ? input.reason!.trim() : null,
           input.now,
           input.reviewer.trim(),
+          manifestJson,
+          manifestHash,
           input.jobId,
           input.ordinal,
           input.jobId,
