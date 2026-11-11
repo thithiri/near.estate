@@ -20,6 +20,7 @@
     "assets:generate": "node scripts/generate-presets.mjs && node scripts/generate-world-sprites.mjs",
     "assets:check": "node scripts/generate-presets.mjs --check && node scripts/generate-world-sprites.mjs --check && node scripts/render-preset-review.mjs --check",
     "assets:review": "node scripts/render-preset-review.mjs",
+    "profile:street": "node scripts/profile-street.mjs",
     "seed:check": "npm run seed:check -w @estate/shared",
     "config:check": "npm run build -w @estate/shared && node scripts/check-config-parity.mjs",
     "contract:test": "cargo build --release --target wasm32-unknown-unknown -p near-estate-contract && cargo test --manifest-path contracts/estate/Cargo.toml",
