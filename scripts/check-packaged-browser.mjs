@@ -8,7 +8,7 @@ const catalog = JSON.parse(
 );
 const fallbackPreset = catalog.facades.find(
   (entry) =>
-    entry.buildingType === "Cafe" && entry.variant === 2 && entry.level === 2,
+    entry.buildingType === "Cafe" && entry.variant === 2 && entry.level === 4,
 );
 assert.ok(fallbackPreset, "Packaged fallback preset is missing");
 const missingSpriteHash = "b".repeat(64);
@@ -16,10 +16,10 @@ const approvedManifest = {
   schemaVersion: 1,
   renderProfileVersion: 1,
   buildingType: "Cafe",
-  level: 2,
+  level: 4,
   spriteHash: missingSpriteHash,
   thumbnailHash: missingSpriteHash,
-  alphaBounds: { x: 0, y: 60, width: 140, height: 100 },
+  alphaBounds: { x: 0, y: 0, width: 140, height: 160 },
   logoRect: null,
   billboardRect: null,
 };
@@ -88,13 +88,15 @@ const street = {
 Object.assign(street.plots[0].plot.plot.building, {
   building_type: "Cafe",
   variant: 2,
-  level: 2,
+  level: 4,
   approved_manifest_hash: approvedManifestHash,
 });
 const browser = await chromium.launch({ headless: true });
 
 try {
-  const page = await browser.newPage();
+  const page = await browser.newPage({
+    ignoreHTTPSErrors: address.startsWith("https://localhost"),
+  });
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.route(`**/api/manifests/${approvedManifestHash}`, (route) =>
@@ -113,6 +115,18 @@ try {
       get_street_side: street,
       get_tower_floor_availability: [8, 8, 8, 8],
       get_tower_floor_sessions: Array(8).fill(null),
+      plot_purchase_breakdown: {
+        price_yocto: "1000000000000000000000000",
+        storage_reserve_yocto: "100000000000000000000000",
+        total_yocto: "1100000000000000000000000",
+      },
+      get_config: {
+        base_rate_per_hour: "10000000",
+        tier_multiplier_bps: [10000, 15000, 22000],
+        illegal_multiplier_bps: 15000,
+        tower_multiplier_bps: 5000,
+        earn_cap_seconds: 86400,
+      },
     }[method];
     assert.notEqual(
       value,
@@ -155,13 +169,19 @@ try {
     (item) =>
       item.url().endsWith(`/api/assets/${missingSpriteHash}`) &&
       item.status() === 503,
+    { timeout: 15_000 },
   );
   const curatedFallback = page.waitForResponse(
     (item) =>
       item.url().includes(`/presets/${fallbackPreset.sprite}`) && item.ok(),
+    { timeout: 15_000 },
   );
-  await page.getByRole("button", { name: "Open live testnet city" }).click();
+  await page.getByRole("button", { name: "Testnet street" }).click();
   await Promise.all([failedSprite, curatedFallback]);
+  await page
+    .getByText("Viewing shared testnet street.", { exact: true })
+    .waitFor();
+  await page.getByRole("button", { name: "Open live testnet city" }).click();
   await page.getByRole("button", { name: "Connect wallet" }).click();
   await page.getByText("Meteor Wallet", { exact: true }).waitFor();
   const scriptViolations = await page.evaluate(
@@ -173,6 +193,7 @@ try {
     JSON.stringify({
       packagedHtml: true,
       meteorChooser: true,
+      liveStreetLoaded: true,
       failedApprovedSprite: true,
       curatedFallbackLoaded: true,
       scriptViolations,
