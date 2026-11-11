@@ -1,0 +1,29 @@
+{
+  "capturedAt": "2026-11-11T00:29:35Z",
+  "sourceRevision": "b011af8",
+  "scene": "guest Main Street, North side, ArrowRight held for eight seconds",
+  "browser": "HeadlessChrome 157.0.0.0 on macOS",
+  "renderer": "ANGLE Metal Renderer: Apple M2 Pro",
+  "method": "Chrome DevTools Protocol viewport emulation; requestAnimationFrame intervals and performance.memory.usedJSHeapSize measured in the page",
+  "viewports": [
+    {
+      "widthCssPx": 1366,
+      "heightCssPx": 768,
+      "sampledFrames": 481,
+      "framesPerSecond": 60,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 16.7,
+      "jsHeapMiB": 26
+    },
+    {
+      "widthCssPx": 667,
+      "heightCssPx": 375,
+      "sampledFrames": 479,
+      "framesPerSecond": 59,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 16.7,
+      "jsHeapMiB": 25
+    }
+  ],
+  "limits": "Headless desktop viewport emulation is not a physical phone, long play session, GPU memory measurement or live testnet street."
+}
