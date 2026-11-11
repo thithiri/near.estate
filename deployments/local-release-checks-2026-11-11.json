@@ -1,0 +1,58 @@
+{
+  "scope": "local source and packaged-browser checks; not a hosted CI run or release sign-off",
+  "checkedAt": "2026-11-11T11:21:36Z",
+  "sourceRevision": "e0987e794837c67d406cce7df1de8a9b7f2cc218",
+  "checks": {
+    "cleanInstall": "npm ci passed with the committed wallet patches",
+    "dependencyTree": "npm ls nanoid decode-uri-component query-string --all passed",
+    "productionAudit": "npm audit --omit=dev --audit-level=high passed; 17 low and zero high findings",
+    "seed": "5 roads, 80 plots, 7 NPC sites validated",
+    "assets": "40 facade presets, 24 car sprites, 5 civic sprites and both review sheets validated",
+    "format": "npm run format:check and cargo fmt --all -- --check passed",
+    "configParity": "34 contract defaults matched the client",
+    "applicationChecks": {
+      "command": "npm run check",
+      "webTests": 58,
+      "sharedTests": 13,
+      "apiTests": 88,
+      "workerTests": 30,
+      "betaMetricsTests": 6,
+      "ownerReconcileTests": 1,
+      "typeAndScriptChecks": "passed"
+    },
+    "guestBrowser": "6 Playwright journeys passed",
+    "builds": "shared, web, API and worker builds passed; live-configured web build passed",
+    "contract": {
+      "wasmSha256": "03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19",
+      "matchesDeployedCode": true,
+      "unitTests": 38,
+      "sandboxSuites": 3,
+      "migrationProbeTests": 1,
+      "deploymentHelperTests": 1,
+      "moderatorKeyHelperTests": 1,
+      "inspectorKeyHelperTests": 1,
+      "layoutAndEnumFixtures": "passed",
+      "wasmWorkspaceCheck": "passed",
+      "testnetCodePlan": "current release code already deployed and verified; no upgrade submitted"
+    }
+  },
+  "packagedBrowser": {
+    "webImageId": "sha256:9791ed0a28afa9b74d308c0afd530e949529d38563ea520ec55d9e1debd13478",
+    "contractId": "dev-20261110121817-59798568433631.testnet",
+    "meteorChooserVisible": true,
+    "pageErrors": [],
+    "consoleErrors": [],
+    "note": "The pinned js-sha256 dependency triggers a build warning for eval in its Node branch; the packaged browser reached the chooser without a CSP error. Wallet signing was not exercised."
+  },
+  "cleanup": {
+    "temporaryContainersAndVolumeRemoved": true
+  },
+  "openGates": [
+    "Hosted CI and candidate registry digests",
+    "Meteor and second-wallet signing on desktop and phone",
+    "Physical-device performance and accessibility review",
+    "Target-VPS deployment, public TLS, offsite recovery and role actions",
+    "Actual player demand and economy tuning evidence",
+    "Paid image generation remains deferred by the user"
+  ]
+}
