@@ -56,4 +56,6 @@ The [tower-floor upgrade record](../deployments/testnet-floor-upgrade.json) and 
 
 ## Service recovery and evidence
 
+For `API_UNAVAILABLE`, check the API container health and recent logs, then query `/api/health` through Caddy. If the container is restarting, preserve its logs and verify that the shared SQLite volume is mounted and writable before restarting it. The monitor's separate database alert distinguishes an API process outage from inaccessible shared storage. Confirm the API alert resolves only after the service responds again; an external HTTPS check is still needed to confirm the public route.
+
 For lost SQLite or image files, follow [RECOVERY.md](RECOVERY.md), which restores to a fresh volume and verifies hashes, cursor, and replay. After any incident, verify API health, the rendered street and approved media, the worker's advancing finalized cursor, and one role-specific path affected by the incident. Keep the pre-incident volume, backup, and logs until those checks pass. Update [DECISIONS.md](DECISIONS.md) with any changed trust boundary or operational rule.

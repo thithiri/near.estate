@@ -1,0 +1,12 @@
+{
+  "scope": "local API container health probe and monitor tests; no VPS or webhook delivery",
+  "capturedAt": "2026-11-11T01:12:01Z",
+  "apiImage": "near-estate-api:retention-local",
+  "runningApiHealthy": true,
+  "stoppedApiHealthy": false,
+  "monitorAlertAndResolutionTest": true,
+  "databaseIndependentApiResolutionTest": true,
+  "runModeWithoutApiUrlRejected": true,
+  "productionComposeConfigValid": true,
+  "liveWebhookDelivered": false
+}

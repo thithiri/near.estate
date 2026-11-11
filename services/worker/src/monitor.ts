@@ -17,6 +17,7 @@ export type MonitorConfig = {
   budgetWarnPercent: number;
   reminderSeconds: number;
   intervalSeconds: number;
+  apiHealthUrl: string | null;
   webhookUrl: string | null;
   webhookToken: string | null;
 };
@@ -39,7 +40,7 @@ export type MonitorSnapshot = {
 };
 
 export type MonitorIssue = {
-  category: "indexer" | "budget" | "inspector" | "storage";
+  category: "indexer" | "budget" | "inspector" | "storage" | "api";
   code: string;
   severity: "warning" | "critical";
   detail: Record<string, string | number | null>;
@@ -81,6 +82,7 @@ export function readMonitorConfig(env: NodeJS.ProcessEnv): MonitorConfig {
   if (budgetWarnPercent > 100)
     throw new Error("Budget warning percentage exceeds 100");
   const webhookUrl = env.ESTATE_MONITOR_WEBHOOK_URL?.trim() || null;
+  const apiHealthUrl = env.ESTATE_MONITOR_API_HEALTH_URL?.trim() || null;
   const inspectorStatusPath =
     env.ESTATE_MONITOR_INSPECTOR_STATUS_FILE?.trim() || null;
   if (inspectorStatusPath && !isAbsolute(inspectorStatusPath))
@@ -91,6 +93,17 @@ export function readMonitorConfig(env: NodeJS.ProcessEnv): MonitorConfig {
       throw new Error(
         "Monitor webhook must be an HTTPS URL without credentials",
       );
+  }
+  if (apiHealthUrl) {
+    const url = new URL(apiHealthUrl);
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:") ||
+      url.username ||
+      url.password ||
+      url.hash ||
+      url.search
+    )
+      throw new Error("Monitor API health URL must be plain HTTP(S)");
   }
   const tokenFile = env.ESTATE_MONITOR_WEBHOOK_TOKEN_FILE?.trim();
   const webhookToken = tokenFile
@@ -127,6 +140,7 @@ export function readMonitorConfig(env: NodeJS.ProcessEnv): MonitorConfig {
       "ESTATE_MONITOR_INTERVAL_SECONDS",
       60,
     ),
+    apiHealthUrl,
     webhookUrl,
     webhookToken,
   };
@@ -357,6 +371,9 @@ export class AlertMonitor {
       nowSeconds: number,
       inspectorStatusPath?: string | null,
     ) => MonitorSnapshot = readMonitorSnapshot,
+    private readonly probeApi: (
+      url: string,
+    ) => Promise<boolean> = probeApiHealth,
   ) {}
 
   async tick(
@@ -383,6 +400,21 @@ export class AlertMonitor {
         },
       ];
     }
+    if (this.config.apiHealthUrl) {
+      let healthy = false;
+      try {
+        healthy = await this.probeApi(this.config.apiHealthUrl);
+      } catch {
+        // A failed health request is an API outage, even when SQLite is healthy.
+      }
+      if (!healthy)
+        issues.push({
+          category: "api",
+          code: "API_UNAVAILABLE",
+          severity: "critical",
+          detail: {},
+        });
+    }
     const observedAt = new Date(nowSeconds * 1_000).toISOString();
     for (const issue of issues) {
       const prior = this.last.get(issue.category);
@@ -401,7 +433,11 @@ export class AlertMonitor {
     }
     for (const [category, prior] of this.last) {
       if (issues.some((issue) => issue.category === category)) continue;
-      if (issues.some((issue) => issue.category === "storage")) continue;
+      if (
+        category !== "api" &&
+        issues.some((issue) => issue.category === "storage")
+      )
+        continue;
       await this.send({
         ...prior.issue,
         state: "resolved",
@@ -411,6 +447,27 @@ export class AlertMonitor {
       this.last.delete(category);
     }
     return issues;
+  }
+}
+
+export async function probeApiHealth(
+  url: string,
+  fetcher: typeof fetch = fetch,
+): Promise<boolean> {
+  try {
+    const response = await fetcher(url, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) return false;
+    const body = (await response.json()) as Record<string, unknown>;
+    return (
+      body?.status === "ok" &&
+      body.service === "api" &&
+      body.schemaVersion === 1
+    );
+  } catch {
+    return false;
   }
 }
 
@@ -440,6 +497,8 @@ async function main(): Promise<void> {
   const config = readMonitorConfig(process.env);
   if (mode === "--run" && (!config.webhookUrl || !config.webhookToken))
     throw new Error("Running monitor requires an authenticated HTTPS webhook");
+  if (mode === "--run" && !config.apiHealthUrl)
+    throw new Error("Running monitor requires an API health URL");
   const monitor = new AlertMonitor(config, async (event) => {
     if (config.webhookUrl) await sendMonitorWebhook(config, event);
     console.log(JSON.stringify(event));

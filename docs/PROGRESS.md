@@ -157,4 +157,6 @@ The API's startup and six-hour retention sweep now removes expired impression ra
 
 The backup verifier now treats owner-readable approved paid candidate images as required before they are linked to a design job. The repeatable local backup drill rejects a missing approved thumbnail, then preserves that image, the deployment records and two events through restore; replay leaves the cursor intact and advances it once. The full `npm run backup:drill` build and [local evidence](../deployments/local-backup-drill.json) pass. Target VPS restore and offsite copy remain open.
 
+The optional monitor now alerts when the API health endpoint is unavailable, independently of database/indexer alerts. The full 26 worker tests cover response validation, outage, recovery and simultaneous database failure; worker TypeScript/build, formatting, the combined production Compose configuration and a run-mode configuration rejection pass. A local API container answered the probe while running and failed it after stop. The [record](../deployments/local-api-health-monitor.json) is local only; external HTTPS and webhook delivery are still open.
+
 The testnet contract and seeded city are deployed. The browser still needs a connected wallet journey before the testnet gameplay gate can close.

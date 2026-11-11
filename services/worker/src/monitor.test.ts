@@ -7,6 +7,8 @@ import { EventStore } from "./event-store.js";
 import {
   AlertMonitor,
   evaluateMonitor,
+  probeApiHealth,
+  readMonitorConfig,
   readMonitorSnapshot,
   sendMonitorWebhook,
   type MonitorConfig,
@@ -28,6 +30,7 @@ function config(): MonitorConfig {
     budgetWarnPercent: 80,
     reminderSeconds: 1800,
     intervalSeconds: 60,
+    apiHealthUrl: null,
     webhookUrl: null,
     webhookToken: null,
   };
@@ -217,6 +220,87 @@ test("failed alert delivery remains pending for the next tick", async () => {
   await assert.rejects(monitor.tick(now), /delivery failed/);
   await monitor.tick(now + 60);
   assert.equal(calls, 2);
+});
+
+test("API health probe accepts only the expected service response", async () => {
+  const url = "http://api:3000/health";
+  const healthy = new Response(
+    JSON.stringify({ status: "ok", service: "api", schemaVersion: 1 }),
+  );
+  assert.equal(await probeApiHealth(url, async () => healthy), true);
+  assert.equal(
+    await probeApiHealth(
+      url,
+      async () =>
+        new Response(JSON.stringify({ status: "ok", service: "web" })),
+    ),
+    false,
+  );
+  assert.equal(
+    await probeApiHealth(url, async () => new Response(null, { status: 503 })),
+    false,
+  );
+  assert.equal(
+    await probeApiHealth(url, async () => {
+      throw new Error("connection refused");
+    }),
+    false,
+  );
+  const environment = {
+    ESTATE_CONTRACT_ID: contractId,
+    ESTATE_MONITOR_API_HEALTH_URL: url,
+  };
+  assert.equal(readMonitorConfig(environment).apiHealthUrl, url);
+  assert.throws(
+    () =>
+      readMonitorConfig({
+        ...environment,
+        ESTATE_MONITOR_API_HEALTH_URL: "file:///tmp/secret",
+      }),
+    /health URL/,
+  );
+});
+
+test("API outage alerts and recovery stay independent of database access", async () => {
+  const sent: MonitorEvent[] = [];
+  let apiHealthy = false;
+  let databaseHealthy = true;
+  const monitor = new AlertMonitor(
+    {
+      ...config(),
+      apiHealthUrl: "http://api:3000/health",
+      dailyBudgetUsdMicros: 0,
+    },
+    async (event) => {
+      sent.push(event);
+    },
+    () => {
+      if (!databaseHealthy) throw new Error("database unavailable");
+      return snapshot(0, 0, 0);
+    },
+    async () => apiHealthy,
+  );
+  assert.deepEqual(
+    (await monitor.tick(now)).map((issue) => issue.code),
+    ["API_UNAVAILABLE"],
+  );
+  apiHealthy = true;
+  databaseHealthy = false;
+  assert.deepEqual(
+    (await monitor.tick(now + 60)).map((issue) => issue.code),
+    ["MONITOR_DATABASE_UNAVAILABLE"],
+  );
+  databaseHealthy = true;
+  assert.deepEqual(await monitor.tick(now + 120), []);
+  assert.deepEqual(
+    sent.map((event) => `${event.state}:${event.code}`),
+    [
+      "firing:API_UNAVAILABLE",
+      "firing:MONITOR_DATABASE_UNAVAILABLE",
+      "resolved:API_UNAVAILABLE",
+      "resolved:MONITOR_DATABASE_UNAVAILABLE",
+    ],
+  );
 });
 
 test("webhook sends authenticated JSON and treats a rejected response as failure", async () => {
