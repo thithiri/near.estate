@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { access, mkdtemp, readFile, rm, utimes } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { saveImmutablePng } from "./asset-storage.js";
-import { sweepPrivateAssets } from "./asset-retention.js";
+import { AssetRetentionWorker, sweepPrivateAssets } from "./asset-retention.js";
 import type { ChainGateway } from "./chain.js";
 import { readImageGenerationSettings } from "./image-generation-settings.js";
+import { ImpressionLedger } from "./impression-ledger.js";
 import { renderMockCandidate } from "./mock-art.js";
 import { PaidGenerationLedger } from "./paid-generation-ledger.js";
 import { buildGenerationPrompt } from "./prompt-builder.js";
@@ -157,6 +159,95 @@ test("seven-day cleanup removes unselected previews while retaining selected and
       uploadsExpired: 0,
       filesRemoved: 0,
     });
+  } finally {
+    store.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("idle service sweep expires raw impression and auth rows while retaining totals", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "estate-idle-retention-"));
+  const store = new ApiStore(":memory:", join(dir, "assets"));
+  const now = 1_800_000;
+  const expiredAt = now - 86_400;
+  try {
+    const impressions = new ImpressionLedger(store.db);
+    impressions.issueSession("expired-impression", expiredAt);
+    impressions.issueSession("active-impression", now - 10);
+    impressions.recordBatch(
+      "expired-impression",
+      [
+        {
+          eventId: randomUUID(),
+          plotId: "plot-main-n-0",
+          surface: "Logo",
+          observedAt: (expiredAt + 1) * 1_000,
+          msVisible: 1_200,
+        },
+      ],
+      expiredAt + 2,
+    );
+    store.createSession(
+      "expired-auth",
+      "owner.testnet",
+      "ed25519:expired",
+      now - 100,
+      now - 1,
+    );
+    store.createSession(
+      "active-auth",
+      "owner.testnet",
+      "ed25519:active",
+      now - 10,
+      now + 100,
+    );
+    store.createChallenge(
+      {
+        id: randomUUID(),
+        account_id: "owner.testnet",
+        nonce: "expired",
+        message: "expired",
+        recipient: "localhost",
+        callback_url: "http://localhost/",
+        expires_at: now - 1,
+      },
+      now - 100,
+    );
+
+    const worker = new AssetRetentionWorker(store, null, () => now);
+    worker.start();
+    await worker.stop();
+
+    assert.equal(impressions.sessionExpiry("expired-impression", now), null);
+    assert.equal(
+      impressions.sessionExpiry("active-impression", now),
+      now - 10 + 86_400,
+    );
+    assert.equal(store.sessionIdentity("expired-auth", now), null);
+    assert.equal(
+      store.sessionIdentity("active-auth", now)?.accountId,
+      "owner.testnet",
+    );
+    for (const table of [
+      "impression_events",
+      "impression_minutes",
+      "auth_challenges",
+    ]) {
+      const row = store.db
+        .prepare(`SELECT COUNT(*) AS count FROM ${table}`)
+        .get() as {
+        count: number;
+      };
+      assert.equal(
+        row.count,
+        0,
+        `${table} should be cleared during an idle sweep`,
+      );
+    }
+    const daily = store.db
+      .prepare("SELECT impressions, dwell_ms FROM impression_daily_stats")
+      .get() as { impressions: number; dwell_ms: number };
+    assert.deepEqual({ ...daily }, { impressions: 1, dwell_ms: 1_200 });
   } finally {
     store.close();
     await rm(dir, { recursive: true, force: true });

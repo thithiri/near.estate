@@ -2,6 +2,7 @@ import { readdir, stat, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import type { ChainPlot } from "@estate/shared";
 import type { ChainGateway } from "./chain.js";
+import { ImpressionLedger } from "./impression-ledger.js";
 import type { ApiStore } from "./store.js";
 
 export const PRIVATE_PREVIEW_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -148,22 +149,25 @@ export async function sweepPrivateAssets(
 export class AssetRetentionWorker {
   private interval: ReturnType<typeof setInterval> | null = null;
   private running: Promise<void> | null = null;
+  private readonly impressionLedger: ImpressionLedger;
 
   constructor(
     private readonly store: ApiStore,
     private readonly chain: ChainGateway | null = null,
     private readonly clock: () => number = () => Math.floor(Date.now() / 1_000),
-  ) {}
+  ) {
+    this.impressionLedger = new ImpressionLedger(store.db);
+  }
 
   start(): void {
     if (this.interval) return;
     this.interval = setInterval(() => {
       void this.tick().catch((error) =>
-        console.error("Asset cleanup failed", error),
+        console.error("API retention sweep failed", error),
       );
     }, SWEEP_INTERVAL_MS);
     void this.tick().catch((error) =>
-      console.error("Asset cleanup failed", error),
+      console.error("API retention sweep failed", error),
     );
   }
 
@@ -175,11 +179,12 @@ export class AssetRetentionWorker {
 
   tick(): Promise<void> {
     if (this.running) return this.running;
-    const running = sweepPrivateAssets(
-      this.store,
-      this.clock(),
-      this.chain,
-    ).then(() => undefined);
+    const running = Promise.resolve().then(async () => {
+      const now = this.clock();
+      this.impressionLedger.pruneExpiredSessions(now);
+      this.store.pruneExpiredAuth(now);
+      await sweepPrivateAssets(this.store, now, this.chain);
+    });
     this.running = running;
     const clear = () => {
       if (this.running === running) this.running = null;
