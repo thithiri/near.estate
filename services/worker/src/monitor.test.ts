@@ -13,6 +13,7 @@ import {
   sendMonitorWebhook,
   type MonitorConfig,
   type MonitorEvent,
+  type MonitorHeartbeat,
   type MonitorSnapshot,
 } from "./monitor.js";
 
@@ -30,6 +31,7 @@ function config(): MonitorConfig {
     budgetWarnPercent: 80,
     reminderSeconds: 1800,
     intervalSeconds: 60,
+    heartbeatSeconds: 300,
     apiHealthUrl: null,
     webhookUrl: null,
     webhookToken: null,
@@ -222,6 +224,62 @@ test("failed alert delivery remains pending for the next tick", async () => {
   assert.equal(calls, 2);
 });
 
+test("heartbeat repeats on cadence and retries a failed delivery", async () => {
+  const heartbeats: MonitorHeartbeat[] = [];
+  let rejectNext = true;
+  const monitor = new AlertMonitor(
+    { ...config(), dailyBudgetUsdMicros: 0 },
+    async () => {},
+    () => snapshot(0, 0, 0),
+    async () => true,
+    async (event) => {
+      if (rejectNext) {
+        rejectNext = false;
+        throw new Error("receiver unavailable");
+      }
+      heartbeats.push(event);
+    },
+  );
+  await assert.rejects(monitor.tick(now), /receiver unavailable/);
+  await monitor.tick(now + 60);
+  await monitor.tick(now + 299);
+  await monitor.tick(now + 360);
+  assert.deepEqual(heartbeats, [
+    {
+      kind: "heartbeat",
+      contractId,
+      observedAt: new Date((now + 60) * 1_000).toISOString(),
+      expectedIntervalSeconds: 300,
+    },
+    {
+      kind: "heartbeat",
+      contractId,
+      observedAt: new Date((now + 360) * 1_000).toISOString(),
+      expectedIntervalSeconds: 300,
+    },
+  ]);
+  assert.equal(
+    readMonitorConfig({ ESTATE_CONTRACT_ID: contractId }).heartbeatSeconds,
+    300,
+  );
+  assert.throws(
+    () =>
+      readMonitorConfig({
+        ESTATE_CONTRACT_ID: contractId,
+        ESTATE_MONITOR_HEARTBEAT_SECONDS: "0",
+      }),
+    /must be positive/,
+  );
+  assert.throws(
+    () =>
+      readMonitorConfig({
+        ESTATE_CONTRACT_ID: contractId,
+        ESTATE_MONITOR_HEARTBEAT_SECONDS: "30",
+      }),
+    /at least one polling interval/,
+  );
+});
+
 test("API health probe accepts only the expected service response", async () => {
   const url = "http://api:3000/health";
   const healthy = new Response(
@@ -336,6 +394,14 @@ test("webhook sends authenticated JSON and treats a rejected response as failure
       authorization: `Bearer ${options.webhookToken}`,
       body: event,
     });
+    const heartbeat: MonitorHeartbeat = {
+      kind: "heartbeat",
+      contractId,
+      observedAt: event.observedAt,
+      expectedIntervalSeconds: 300,
+    };
+    await sendMonitorWebhook(options, heartbeat);
+    assert.deepEqual(calls[1]?.body, heartbeat);
     responseStatus = 503;
     await assert.rejects(sendMonitorWebhook(options, event), /HTTP 503/);
   } finally {

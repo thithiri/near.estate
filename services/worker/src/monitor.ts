@@ -17,6 +17,7 @@ export type MonitorConfig = {
   budgetWarnPercent: number;
   reminderSeconds: number;
   intervalSeconds: number;
+  heartbeatSeconds: number;
   apiHealthUrl: string | null;
   webhookUrl: string | null;
   webhookToken: string | null;
@@ -50,6 +51,13 @@ export type MonitorEvent = MonitorIssue & {
   state: "firing" | "resolved";
   observedAt: string;
   contractId: string;
+};
+
+export type MonitorHeartbeat = {
+  kind: "heartbeat";
+  contractId: string;
+  observedAt: string;
+  expectedIntervalSeconds: number;
 };
 
 function positiveInteger(
@@ -111,6 +119,18 @@ export function readMonitorConfig(env: NodeJS.ProcessEnv): MonitorConfig {
     : null;
   if (webhookUrl && (!webhookToken || webhookToken.length < 16))
     throw new Error("Monitor webhook needs a protected bearer-token file");
+  const intervalSeconds = positiveInteger(
+    env,
+    "ESTATE_MONITOR_INTERVAL_SECONDS",
+    60,
+  );
+  const heartbeatSeconds = positiveInteger(
+    env,
+    "ESTATE_MONITOR_HEARTBEAT_SECONDS",
+    300,
+  );
+  if (heartbeatSeconds < intervalSeconds)
+    throw new Error("Monitor heartbeat must be at least one polling interval");
   return {
     contractId,
     dbPath: join(
@@ -135,11 +155,8 @@ export function readMonitorConfig(env: NodeJS.ProcessEnv): MonitorConfig {
       "ESTATE_MONITOR_REMINDER_SECONDS",
       1800,
     ),
-    intervalSeconds: positiveInteger(
-      env,
-      "ESTATE_MONITOR_INTERVAL_SECONDS",
-      60,
-    ),
+    intervalSeconds,
+    heartbeatSeconds,
     apiHealthUrl,
     webhookUrl,
     webhookToken,
@@ -358,6 +375,7 @@ export function evaluateMonitor(
 }
 
 export class AlertMonitor {
+  private lastHeartbeatAt: number | null = null;
   private readonly last = new Map<
     MonitorIssue["category"],
     { issue: MonitorIssue; sentAt: number }
@@ -374,6 +392,7 @@ export class AlertMonitor {
     private readonly probeApi: (
       url: string,
     ) => Promise<boolean> = probeApiHealth,
+    private readonly sendHeartbeat?: (event: MonitorHeartbeat) => Promise<void>,
   ) {}
 
   async tick(
@@ -446,6 +465,19 @@ export class AlertMonitor {
       });
       this.last.delete(category);
     }
+    if (
+      this.sendHeartbeat &&
+      (this.lastHeartbeatAt === null ||
+        nowSeconds - this.lastHeartbeatAt >= this.config.heartbeatSeconds)
+    ) {
+      await this.sendHeartbeat({
+        kind: "heartbeat",
+        contractId: this.config.contractId,
+        observedAt,
+        expectedIntervalSeconds: this.config.heartbeatSeconds,
+      });
+      this.lastHeartbeatAt = nowSeconds;
+    }
     return issues;
   }
 }
@@ -473,7 +505,7 @@ export async function probeApiHealth(
 
 export async function sendMonitorWebhook(
   config: MonitorConfig,
-  event: MonitorEvent,
+  event: MonitorEvent | MonitorHeartbeat,
 ): Promise<void> {
   if (!config.webhookUrl || !config.webhookToken)
     throw new Error("Monitor webhook is not configured");
@@ -499,10 +531,21 @@ async function main(): Promise<void> {
     throw new Error("Running monitor requires an authenticated HTTPS webhook");
   if (mode === "--run" && !config.apiHealthUrl)
     throw new Error("Running monitor requires an API health URL");
-  const monitor = new AlertMonitor(config, async (event) => {
-    if (config.webhookUrl) await sendMonitorWebhook(config, event);
-    console.log(JSON.stringify(event));
-  });
+  const monitor = new AlertMonitor(
+    config,
+    async (event) => {
+      if (config.webhookUrl) await sendMonitorWebhook(config, event);
+      console.log(JSON.stringify(event));
+    },
+    readMonitorSnapshot,
+    probeApiHealth,
+    mode === "--run"
+      ? async (event) => {
+          await sendMonitorWebhook(config, event);
+          console.log(JSON.stringify(event));
+        }
+      : undefined,
+  );
   if (mode === "--once") {
     const issues = await monitor.tick();
     console.log(JSON.stringify({ issueCount: issues.length }));
