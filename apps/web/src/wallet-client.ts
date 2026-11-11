@@ -1409,10 +1409,20 @@ export class GameWalletClient {
         throw new Error(
           "The previous gameplay action expired without landing. Review the updated game state, then retry.",
         );
-      if (outcome === "failure")
+      if (outcome === "failure") {
+        let reason: string | null = null;
+        try {
+          reason = await this.reader.transactionFailureMessage(
+            action.hash,
+            action.accountId,
+          );
+        } catch {
+          // The final failure is known even if its explanation is unavailable.
+        }
         throw new Error(
-          `The previous ${action.method} transaction failed on-chain`,
+          reason ?? `The previous ${action.method} transaction failed on-chain`,
         );
+      }
       if (this.accountId !== accountId)
         throw new Error("Wallet account changed");
       if (

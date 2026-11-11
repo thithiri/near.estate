@@ -1,3 +1,6 @@
+#[cfg(all(target_arch = "wasm32", not(near)))]
+compile_error!("NEAR contract WASM must be built with --cfg near");
+
 use near_sdk::{
     env, json_types::U128, near, require, store::LookupMap, AccountId, NearToken, PanicOnDefault,
     Promise,

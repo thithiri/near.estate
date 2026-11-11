@@ -203,6 +203,75 @@ test("pending action checker keeps an in-flight transaction until final", async 
   }
 });
 
+test("a failed gameplay action shows the contract's final error", async () => {
+  const originalStorage = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "localStorage",
+  );
+  const values = new Map<string, string>();
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key),
+    },
+  });
+  const pair = KeyPair.fromRandom("ed25519");
+  const keyName =
+    "near-estate:testnet:estate.testnet:driver.testnet:gameplay-key";
+  values.set(
+    keyName,
+    JSON.stringify({
+      accountId: "driver.testnet",
+      publicKey: pair.getPublicKey().toString(),
+      secretKey: pair.toString(),
+    }),
+  );
+  values.set(
+    `${keyName}:action`,
+    JSON.stringify({
+      version: 1,
+      accountId: "driver.testnet",
+      publicKey: pair.getPublicKey().toString(),
+      method: "park",
+      argsJson: '{"car_id":7}',
+      hash: "1".repeat(44),
+      signedTxBase64: "c2lnbmVk",
+    }),
+  );
+  const client = Object.assign(Object.create(GameWalletClient.prototype), {
+    reader: {
+      contractId: "estate.testnet",
+      transactionStatus: async () => "failure",
+      transactionFailureMessage: async () => "parking space is occupied",
+      sendSignedTransaction: async () => {
+        throw new Error("Final failed transaction must not be rebroadcast");
+      },
+    },
+    selector: {
+      store: {
+        getState: () => ({
+          contract: { contractId: "estate.testnet" },
+          accounts: [{ accountId: "driver.testnet", active: true }],
+        }),
+      },
+    },
+    lastCall: Promise.resolve(),
+  }) as GameWalletClient;
+  try {
+    await assert.rejects(
+      client.gameplayCall("park", { car_id: 7 }),
+      /parking space is occupied/,
+    );
+    assert.equal(values.has(`${keyName}:action`), false);
+  } finally {
+    if (originalStorage)
+      Object.defineProperty(globalThis, "localStorage", originalStorage);
+    else Reflect.deleteProperty(globalThis, "localStorage");
+  }
+});
+
 test("expired pending action clears only when its nonce was never used", async () => {
   const originalStorage = Object.getOwnPropertyDescriptor(
     globalThis,

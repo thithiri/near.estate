@@ -250,6 +250,10 @@ async fn paid_registration_plot_rules_and_ticket_settle_on_sandbox() -> anyhow::
         contested.is_failure(),
         "occupied curb must reject a rival car"
     );
+    assert!(
+        format!("{contested:?}").contains("parking space is occupied"),
+        "occupied curb must report the contract error: {contested:?}"
+    );
     worker.fast_forward(400).await?;
     let after_expiry: u64 = contract.call("chain_time_seconds").view().await?.json()?;
     assert!(

@@ -202,6 +202,65 @@ test("signed gameplay RPC distinguishes final success, failure, and unknown stat
   assert.deepEqual(calls, ["send_tx", "tx", "tx"]);
 });
 
+test("final contract failures expose a bounded readable message", async () => {
+  let calls = 0;
+  const reader = new ChainReader("estate-game.testnet", undefined, (async (
+    _url,
+    init,
+  ) => {
+    const request = JSON.parse(String(init?.body));
+    assert.deepEqual(request.params, {
+      tx_hash: "hash",
+      sender_account_id: "driver.testnet",
+      wait_until: "FINAL",
+    });
+    calls++;
+    return Response.json({
+      jsonrpc: "2.0",
+      result: {
+        final_execution_status: "FINAL",
+        status:
+          calls === 1
+            ? {
+                Failure: {
+                  ActionError: {
+                    kind: {
+                      FunctionCallError: {
+                        HostError: {
+                          GuestPanic: {
+                            panic_msg: "parking space is occupied",
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              }
+            : {
+                Failure: {
+                  ActionError: {
+                    kind: {
+                      FunctionCallError: {
+                        ExecutionError:
+                          "Smart contract panicked: parking space is occupied",
+                      },
+                    },
+                  },
+                },
+              },
+      },
+    });
+  }) as typeof fetch);
+  assert.equal(
+    await reader.transactionFailureMessage("hash", "driver.testnet"),
+    "parking space is occupied",
+  );
+  assert.equal(
+    await reader.transactionFailureMessage("hash", "driver.testnet"),
+    "parking space is occupied",
+  );
+});
+
 test("a stalled signed submission ends locally without claiming failure", async () => {
   const reader = new ChainReader(
     "estate-game.testnet",

@@ -87,6 +87,24 @@ function transactionOutcome(value: unknown): TransactionOutcome {
   return "pending";
 }
 
+function contractFailureMessage(value: unknown): string | null {
+  if (typeof value !== "object" || value === null) return null;
+  const record = value as Record<string, unknown>;
+  const direct = record.ExecutionError ?? record.panic_msg;
+  if (typeof direct === "string") {
+    const message = direct
+      .replace(/^Smart contract panicked:\s*/i, "")
+      .replace(/[\u0000-\u001f\u007f]/g, " ")
+      .trim();
+    return message ? message.slice(0, 240) : null;
+  }
+  for (const nested of Object.values(record)) {
+    const message = contractFailureMessage(nested);
+    if (message) return message;
+  }
+  return null;
+}
+
 function encodeArguments(args: object): string {
   const bytes = new TextEncoder().encode(JSON.stringify(args));
   let binary = "";
@@ -273,6 +291,25 @@ export class ChainReader {
         return "unknown";
       throw error;
     }
+  }
+
+  async transactionFailureMessage(
+    hash: string,
+    accountId: string,
+  ): Promise<string | null> {
+    const result = RpcTransactionOutcome.parse(
+      await this.rpcRequest(
+        "tx",
+        { tx_hash: hash, sender_account_id: accountId, wait_until: "FINAL" },
+        "tx failure",
+      ),
+    );
+    if (result.final_execution_status !== "FINAL") return null;
+    if (typeof result.status !== "object" || result.status === null)
+      return null;
+    return contractFailureMessage(
+      (result.status as { Failure?: unknown }).Failure,
+    );
   }
 
   async view<T>(
