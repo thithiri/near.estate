@@ -38,6 +38,8 @@ if (
 const sharedCity = mode.includes("-shared");
 const sharedLevel2 = mode.endsWith("-shared-level2");
 const preparing = mode.startsWith("--prepare");
+const selectedCandidateId = sharedLevel2 ? 1 : 2;
+const selectedCandidateIndex = selectedCandidateId - 1;
 const root = resolve(import.meta.dirname, "..");
 const dataDir = process.env.ESTATE_MEDIA_DATA_DIR;
 if (!dataDir || !dataDir.startsWith("/"))
@@ -269,9 +271,9 @@ try {
     const existing = store.latestGeneration(owner.accountId, plotId);
     const recovering = Boolean(
       (existing?.status === "submitted" || existing?.status === "selected") &&
-        existing.selectedCandidateId === 2 &&
+        existing.selectedCandidateId === selectedCandidateId &&
         before.plot.building.pending_appearance?.manifest_hash ===
-          existing.candidates[1]?.manifestHash,
+          existing.candidates[selectedCandidateIndex]?.manifestHash,
     );
     let job: Job;
     if (recovering) {
@@ -283,7 +285,7 @@ try {
         {
           plotId,
           description: sharedLevel2
-            ? "A taller green restaurant with a planted roof and a distinct rounded corner"
+            ? "A taller green restaurant with a planted roof and a broad central arcade"
             : sharedCity
               ? "A welcoming green neighbourhood restaurant with a garden terrace"
               : "A playful blue corner cafe with a distinctive awning",
@@ -299,8 +301,8 @@ try {
     }
     assert.equal(job.mode, "curated_mock");
     assert.equal(job.candidates.length, 3);
-    const candidate = job.candidates[1]!;
-    assert.equal(candidate.id, 2);
+    const candidate = job.candidates[selectedCandidateIndex]!;
+    assert.equal(candidate.id, selectedCandidateId);
     const privateAsset = await app.request(`/assets/${candidate.spriteHash}`);
     assert.equal(privateAsset.status, 404);
     let proposalTransaction: string | null = null;

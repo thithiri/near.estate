@@ -250,6 +250,8 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 
 - The shared-media event worker caught up after the first owner-income settlement: 11 account transactions contributed nine new event-bearing blocks, including the legal park for session 6, its `collected` event with 30,000,000 atomic gross and driver payout, and the next park for session 7. A repeatable verifier checked the completed session against the indexed payload and the public API's two parks and zero tickets on the Free River Street plot. [Indexed evidence](../deployments/testnet-owner-income-indexed.json) contains finalized block heights and public totals only. The second session is still earning; this does not prove the paid building upgrade yet.
 
+- The upcoming level-2 curated facade chooses Restaurant shape 2 with a central arcade, visually different from the current rounded shape-1 frontage. A local render with the plot's existing green palette produced a valid manifest and hash-addressed sprite (`31645fe6ccac1fea2281fb868e8626b2808af3b63467defa47cc39dddff1edcb` and `60b904d935ef05d0b9ab16d183364c64906184b5f0ebfcc52ea314485a31149c`); the image was inspected before the live upgrade. This is a planned curated choice, not an on-chain approval. The restricted moderator-key preflight currently reports no runtime key on the shared city; a new temporary key will be created only for the later review and revoked afterward.
+
 ## Open risks
 
 - Browser wallet sign-in, redirects, session-key setup/recovery/revocation and local key storage security on both named wallets; the patched dependency compatibility and wallet bundle size. Protocol permission, allowance exhaustion and revocation passed separately on testnet.
