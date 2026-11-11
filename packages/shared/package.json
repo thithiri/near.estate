@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "dev": "tsc --watch -p tsconfig.json --preserveWatchOutput",
     "check": "tsc --noEmit -p tsconfig.json",
     "test": "tsx --test src/*.test.ts",
     "seed:check": "tsx src/check-seed.ts"

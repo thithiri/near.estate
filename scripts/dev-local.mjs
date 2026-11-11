@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -60,10 +60,42 @@ function start(name, args, env) {
   });
 }
 
+function buildShared() {
+  const result = spawnSync(npm, ["run", "build", "-w", "@estate/shared"], {
+    cwd: root,
+    env: process.env,
+    stdio: "inherit",
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error("Shared game data failed to build");
+}
+
+function indexerStartHeight(contractId) {
+  const explicit = process.env.INDEXER_START_HEIGHT;
+  let configured = explicit;
+  if (configured === undefined) {
+    const record = JSON.parse(
+      readFileSync(
+        resolve(root, "deployments/testnet-indexer-backfill.json"),
+        "utf8",
+      ),
+    );
+    configured = record.contractId === contractId ? record.startHeight : NaN;
+  }
+  const value = Number(configured);
+  if (!Number.isSafeInteger(value) || value < 1)
+    throw new Error(
+      "Set INDEXER_START_HEIGHT to the contract creation height, or DEV_INDEXER=0 for offline city work",
+    );
+  return value;
+}
+
 process.on("SIGINT", () => stop("SIGINT"));
 process.on("SIGTERM", () => stop("SIGTERM"));
 
 if (mode === "--guest") {
+  buildShared();
+  start("shared", ["run", "dev", "-w", "@estate/shared"], {});
   console.log(`Guest preview: http://localhost:${webPort}`);
   start(
     "web",
@@ -82,6 +114,9 @@ if (mode === "--guest") {
     },
   );
 } else {
+  const devIndexer = process.env.DEV_INDEXER ?? "1";
+  if (devIndexer !== "0" && devIndexer !== "1")
+    throw new Error("DEV_INDEXER must be 0 or 1");
   const deployment = JSON.parse(
     readFileSync(resolve(root, "deployments/testnet.json"), "utf8"),
   );
@@ -89,10 +124,14 @@ if (mode === "--guest") {
     process.env.ESTATE_CONTRACT_ID?.trim() || deployment.contractId;
   if (!/^[a-z0-9._-]+\.testnet$/.test(contractId))
     throw new Error("The city needs a deployed .testnet contract ID");
+  const startHeight =
+    devIndexer === "1" ? indexerStartHeight(contractId) : null;
   const dataDir = resolve(
     process.env.API_DATA_DIR ?? resolve(root, "data/local-dev"),
   );
   mkdirSync(dataDir, { recursive: true });
+  buildShared();
+  start("shared", ["run", "dev", "-w", "@estate/shared"], {});
   console.log(`Live city: http://localhost:${webPort}`);
   console.log(`Contract: ${contractId}`);
   console.log(`Local API data: ${dataDir}`);
@@ -106,6 +145,14 @@ if (mode === "--guest") {
     API_DATA_DIR: dataDir,
     PORT: String(apiPort),
   });
+  if (startHeight !== null) {
+    console.log(`Event indexer: from block ${startHeight}`);
+    start("indexer", ["run", "dev", "-w", "@estate/worker"], {
+      ESTATE_CONTRACT_ID: contractId,
+      INDEXER_START_HEIGHT: String(startHeight),
+      API_DATA_DIR: dataDir,
+    });
+  }
   start(
     "web",
     [

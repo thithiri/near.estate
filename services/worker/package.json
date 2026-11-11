@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/index-events.ts --run",
     "check": "tsc --noEmit -p tsconfig.json",
     "seed:audit": "node dist/index.js",
     "index:once": "node dist/index-events.js --once",
