@@ -1,0 +1,69 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "plotId": "plot-main-n-2",
+  "purchaseQuoteYocto": "1040960000000000000000000",
+  "registeredWithStarterCar": true,
+  "plotOwnerVerified": true,
+  "pendingRule": {
+    "rule": {
+      "kind": "Meter",
+      "ratePerHour": "1000000"
+    },
+    "effective_at": 1794368157
+  },
+  "ruleEffectiveAfterDelay": {
+    "blockHeight": 277160546,
+    "rule": {
+      "kind": "Meter",
+      "ratePerHour": "1000000"
+    }
+  },
+  "building": {
+    "building_type": "Restaurant",
+    "variant": 2,
+    "level": 1,
+    "primary_color": "#73D9A6",
+    "name": "Near Garden",
+    "approved_manifest_hash": null,
+    "approved_at": null,
+    "last_facade_approved_at": null,
+    "pending_appearance": null,
+    "last_appearance_decision": null,
+    "facade_exemption_level": null,
+    "appearance_revision": 2,
+    "layout_revision": 2
+  },
+  "streetViewMatches": true,
+  "coinBalance": "100000000",
+  "gameplayKeyRevoked": true,
+  "gameplayTransactions": [
+    {
+      "method": "set_rule",
+      "hash": "9jRbtx2Sotb2AgdoDC2uCFQD7dW2bmViNF81VAoCuhbL"
+    }
+  ],
+  "fullAccessTransactions": [
+    {
+      "action": "register_player",
+      "hash": "4ghxSvTcvmKaadEEgAtGiatoS32deLsBzaC2YpVJaeF1"
+    },
+    {
+      "action": "buy_plot",
+      "hash": "136LTpaQ4m7z9nx1qeaPbytdeoWjH1eHh9hhWkbFGGAt"
+    },
+    {
+      "action": "add_gameplay_key",
+      "hash": "24HWaPxoKV8KuzgHoac2ZG3FR3KioUzEYHi4Vytj52yX"
+    },
+    {
+      "action": "revoke_gameplay_key",
+      "hash": "8FLqg1J1XR6x4s5s1BPRvnNY7dz5ZX2D21mzezhhAK1p"
+    },
+    {
+      "action": "choose_preset",
+      "hash": "89BGBUZWkrnSm89zABwMqKXkXk4XMr54CaQbUFspKHMa"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "network": "testnet",
+  "sharedCity": true,
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "moderatorId": "dev-20261110121820-76563125621460.testnet",
+  "plotId": "plot-main-n-2",
+  "proposalId": "6e56d7e7-e2a3-4ff9-85c5-fad7087ae26f",
+  "logoHash": "a7ceb962124bd4f3c1b6db35e8f47f6e5cfc0c6bd9e0596b613750084cbc4ef8",
+  "link": "https://near.org",
+  "uploadedImageBytes": 3192,
+  "publicAssetHashVerified": true,
+  "activeOnChain": true,
+  "publicStreetView": {
+    "blockHeight": 277160564,
+    "building": "Near Garden",
+    "logoEligible": true,
+    "logoHashMatches": true
+  },
+  "temporaryModeratorKeyRevoked": true,
+  "ownerTransactions": [
+    {
+      "action": "propose_media",
+      "hash": "Fq2ckMBrPSr9Mv6RSqdAK2hyTMBdheGQ5jo5a1HhTbSn"
+    }
+  ]
+}

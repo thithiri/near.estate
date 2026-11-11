@@ -27,10 +27,17 @@ import { NearModeratorGateway } from "../services/api/src/moderator.js";
 import { ApiStore } from "../services/api/src/store.js";
 
 const mode = process.argv[2];
-if (mode !== "--prepare" && mode !== "--approve")
+if (
+  mode !== "--prepare" &&
+  mode !== "--approve" &&
+  mode !== "--prepare-shared" &&
+  mode !== "--approve-shared"
+)
   throw new Error(
-    "Pass --prepare or --approve for the isolated testnet journey",
+    "Pass --prepare, --approve, --prepare-shared or --approve-shared",
   );
+const sharedCity = mode.endsWith("-shared");
+const prepare = mode === "--prepare" || mode === "--prepare-shared";
 const projectRoot = resolve(import.meta.dirname, "..");
 const dataDir = process.env.ESTATE_MEDIA_DATA_DIR;
 if (!dataDir || !dataDir.startsWith("/"))
@@ -64,18 +71,20 @@ function credential(name: string) {
 
 const evidencePath = resolve(
   projectRoot,
-  "deployments/testnet-moderation-journey.json",
+  sharedCity
+    ? "deployments/testnet.json"
+    : "deployments/testnet-moderation-journey.json",
 );
 const original = JSON.parse(readFileSync(evidencePath, "utf8")) as {
   contractId: string;
-  ownerId: string;
+  ownerId?: string;
   moderatorId: string;
 };
 const contract = credential("ESTATE_MEDIA_CONTRACT_KEY_FILE");
 const owner = credential("ESTATE_MEDIA_OWNER_KEY_FILE");
 const runtime = credential("ESTATE_MODERATOR_RUNTIME_KEY_FILE");
 assert.equal(contract.accountId, original.contractId);
-assert.equal(owner.accountId, original.ownerId);
+if (original.ownerId) assert.equal(owner.accountId, original.ownerId);
 assert.equal(runtime.accountId, original.moderatorId);
 const reader = new ChainReader(original.contractId);
 const chain = new NearChainGateway(original.contractId);
@@ -98,8 +107,11 @@ const app = createApiApp({
   appOrigin: origin,
   adminCredentials: { user: "local-reviewer", password: adminPassword },
 });
-const plotId = "plot-main-n-1";
-const preparedPath = resolve(dataDir, "prepared.json");
+const plotId = sharedCity ? "plot-main-n-2" : "plot-main-n-1";
+const preparedPath = resolve(
+  dataDir,
+  sharedCity ? "shared-media-prepared.json" : "prepared.json",
+);
 const transactions: Array<{ action: string; hash: string }> = [];
 
 async function signedCall(
@@ -198,13 +210,14 @@ async function ownerCookie() {
 }
 
 try {
-  if (mode === "--prepare") {
+  if (prepare) {
     let plot = await reader.view(
       "get_plot",
       { plot_id: plotId },
       ChainPlot.nullable(),
     );
     if (!plot) {
+      if (sharedCity) throw new Error("Shared-city plot is missing");
       await signedCall(contract, "seed_plot", contract.accountId, [
         actionCreators.functionCall(
           "seed_plot",
@@ -229,6 +242,8 @@ try {
     }
     assert(plot, "Second plot was not seeded");
     if (plot.plot.owner === null) {
+      if (sharedCity)
+        throw new Error("Buy the shared-city plot before uploading media");
       const quote = await reader.plotPurchaseQuote(plotId);
       await signedCall(owner, "buy_plot", contract.accountId, [
         actionCreators.functionCall(
@@ -372,6 +387,7 @@ try {
     );
     const evidence = {
       network: "testnet",
+      sharedCity,
       contractId: contract.accountId,
       ownerId: owner.accountId,
       moderatorId: runtime.accountId,
@@ -386,7 +402,9 @@ try {
     };
     const path = resolve(
       projectRoot,
-      "deployments/testnet-media-api-journey.json",
+      sharedCity
+        ? "deployments/testnet-shared-media-journey.json"
+        : "deployments/testnet-media-api-journey.json",
     );
     writeFileSync(path, `${JSON.stringify(evidence, null, 2)}\n`);
     console.log(JSON.stringify(evidence, null, 2));
