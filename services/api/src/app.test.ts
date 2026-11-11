@@ -387,6 +387,13 @@ test("an owner can reuse only their intact approved image after a layout change"
     assert.equal(upload.hash, assetHash);
     assert.equal(upload.layoutRevision, 2);
     assert.equal(context.store.upload(upload.uploadId)?.accountId, ACCOUNT);
+    const repeated = await context.postJson(
+      "/media/uploads/reuse",
+      request,
+      cookie,
+    );
+    assert.equal(repeated.status, 200);
+    assert.equal((await repeated.json()).uploadId, upload.uploadId);
     const proposal = await context.postJson(
       "/media/proposals",
       { uploadId: upload.uploadId, link: "https://near.org" },
