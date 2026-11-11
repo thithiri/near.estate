@@ -1,0 +1,31 @@
+{
+  "network": "testnet",
+  "contractId": "cdd9e90c27e30.dev-20261111023445-31126278967987.testnet",
+  "ownerId": "odd9e90c27e30.dev-20261111023445-31126278967987.testnet",
+  "moderatorId": "mdd9e90c27e30.dev-20261111023445-31126278967987.testnet",
+  "plotId": "plot-main-n-1",
+  "proposalId": "108a54db-c5a6-4697-a2d2-d823446f0cc4",
+  "logoHash": "a7ceb962124bd4f3c1b6db35e8f47f6e5cfc0c6bd9e0596b613750084cbc4ef8",
+  "link": "https://near.org",
+  "uploadedImageBytes": 3192,
+  "publicAssetHashVerified": true,
+  "localHttpAnonymousAssetHashVerified": true,
+  "activeOnChain": true,
+  "moderatorApprovalTransaction": "Ge861k5yMNc48QrZys2JY9G8ooF2URYp83UFBU2KEyM1",
+  "moderatorApprovalEventVerified": true,
+  "moderatorRuntimeKeyRevoked": true,
+  "ownerTransactions": [
+    {
+      "action": "seed_plot",
+      "hash": "6uLsd8tY7B8h9zxobWHtNbmiBko2mmqPHqn7K9DaKdR"
+    },
+    {
+      "action": "buy_plot",
+      "hash": "FipFeSty4wWuGFj1H2G7Mey7xxYKM499n1Nb1TWShaeG"
+    },
+    {
+      "action": "propose_media",
+      "hash": "2vqx7ZsMokozvA2utdviNMesjAbaY3keKRzwPKDjRsry"
+    }
+  ]
+}
