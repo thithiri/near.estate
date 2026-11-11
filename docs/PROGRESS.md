@@ -153,6 +153,6 @@ A separate-process local drill wrote 10,000 synthetic game events while the API 
 
 A fresh-lockfile Meteor dependency trial used patched `nanoid@5.1.16`, `query-string@9.5.1` and `decode-uri-component@0.5.1`. The production audit fell to zero high findings, but Meteor's SDK failed its ESM import because `query-string` 9.5.1 lacks its requested named `stringify` export. The trial was reverted; a clean install and all 41 web tests pass again, with five high audit findings still open.
 
-The API's startup and six-hour retention sweep now removes expired impression raw rows and expired owner-auth rows even when no new requests arrive. An idle-service test keeps active sessions and the aggregated daily ad count while clearing expired sessions, events, minute rows and challenges. All 83 API tests, type checking and the API build pass. Production service observation remains open.
+The API's startup and six-hour retention sweep now removes expired impression raw rows and expired owner-auth rows even when no new requests arrive. An idle-service test keeps active sessions and the aggregated daily ad count while clearing expired sessions, events, minute rows and challenges. All 83 API tests, type checking and the API build pass. The updated API container built and started locally; health and the empty economy route returned 200 without a startup cleanup error. Production service observation remains open.
 
 The testnet contract and seeded city are deployed. The browser still needs a connected wallet journey before the testnet gameplay gate can close.
