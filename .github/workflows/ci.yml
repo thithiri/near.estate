@@ -51,6 +51,10 @@ jobs:
       ESTATE_SOURCE_REVISION: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
       - name: Validate production service configuration
         run: docker compose -f infra/compose.yaml -f infra/compose.prod.yaml --profile indexer config --quiet
         env:
@@ -72,6 +76,11 @@ jobs:
             'require("sharp")(Buffer.from("<svg width=\"8\" height=\"8\"><rect width=\"8\" height=\"8\" fill=\"red\"/></svg>")).png().toBuffer().then(x=>{if(x.length<50)process.exit(1)})'
           docker compose -f infra/compose.yaml --profile indexer run --rm --no-deps --entrypoint node indexer \
             -e 'import("/app/services/worker/dist/event-store.js").catch(e=>{console.error(e);process.exit(1)})'
+      - name: Check packaged wallet chooser and script policy
+        run: |
+          npm ci
+          npx playwright install chromium --with-deps --only-shell
+          node scripts/check-packaged-browser.mjs
       - name: Check production HTTPS routing with local trust root
         env:
           ESTATE_HOST: localhost
