@@ -32,6 +32,12 @@ The sheet below places each of the 40 implemented curated facade sprites between
 
 ![near.estate practice course on a portrait phone](images/near-estate-practice-course-phone-v1.png)
 
+## Harbor Cinema on a phone
+
+390 × 844 portrait, captured during the free 18-second short. A local browser journey paused, resumed, finished and replayed it without changing parking coins or durability.
+
+![near.estate Harbor Cinema during playback](images/near-estate-cinema-phone-v1.png)
+
 The [art specification](ART_SPEC.md) explains the size limits, palettes, source assets and review checks. The older [phone layout concept](images/near-estate-phone-layout-v1.png) and [car concept sheet](images/near-estate-cars-v1.png) are design references rather than current game screenshots.
 
 The [street visual review](VISUAL_REVIEW.md) records the next art changes suggested by these captures.
