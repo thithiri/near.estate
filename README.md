@@ -45,6 +45,8 @@ The VPS deployment uses [the production Compose override](infra/compose.prod.yam
 
 Phone driving uses landscape; menus and the building studio also work in portrait. Desktop has a wide scene and a dismissible plot panel. The [phone](docs/images/near-estate-phone-layout-v1.png) and [computer](docs/images/near-estate-computer-layout-v1.png) sheets are references, not screenshots of the app.
 
+See the [current game visuals](docs/VISUALS.md) for browser captures of the street and building studio, plus the implemented facade variations.
+
 ## Status
 
 The [numbered progress tracker](docs/PROGRESS.md), [decisions](docs/DECISIONS.md) and [invite-beta release checklist](docs/RELEASE_CHECKLIST.md) show verified work and unverified gates. The [recovery runbook](docs/RECOVERY.md) covers the shared SQLite volume, immutable artwork and deployment records. Do not use a local build as evidence of a completed testnet or paid-generation phase.
