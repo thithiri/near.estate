@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import { createHash, randomBytes } from "node:crypto";
 import {
   chmodSync,
+  existsSync,
   mkdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
   statSync,
   writeFileSync,
 } from "node:fs";
@@ -14,6 +16,7 @@ import { KeyPairSigner } from "@near-js/signers";
 import {
   actionCreators,
   createTransaction,
+  decodeSignedTransaction,
   encodeTransaction,
 } from "@near-js/transactions";
 import { baseDecode, baseEncode } from "@near-js/utils";
@@ -137,41 +140,134 @@ const preparedPath = resolve(
           ? "shared-media-prepared.json"
           : "prepared.json",
 );
+const ownerTxJournalPath = resolve(
+  dataDir,
+  `shared-level2-${kind.toLowerCase()}-owner-transaction.json`,
+);
 const transactions: Array<{ action: string; hash: string }> = [];
+
+function readOwnerTransactionJournal(
+  actionName: string,
+  receiverId: string,
+  actions: Parameters<typeof createTransaction>[4],
+  intent: Record<string, unknown>,
+) {
+  const saved = JSON.parse(readFileSync(ownerTxJournalPath, "utf8")) as {
+    mode: string;
+    actionName: string;
+    signerId: string;
+    receiverId: string;
+    intentHash: string;
+    hash: string;
+    signedBase64: string;
+  };
+  assert.equal(saved.mode, mode);
+  assert.equal(saved.actionName, actionName);
+  assert.equal(saved.signerId, owner.accountId);
+  assert.equal(saved.receiverId, receiverId);
+  assert.equal(
+    saved.intentHash,
+    createHash("sha256").update(JSON.stringify(intent)).digest("hex"),
+  );
+  const decoded = decodeSignedTransaction(
+    Buffer.from(saved.signedBase64, "base64"),
+  );
+  const exact = createTransaction(
+    owner.accountId,
+    owner.pair.getPublicKey(),
+    receiverId,
+    decoded.transaction.nonce,
+    actions,
+    decoded.transaction.blockHash,
+  );
+  assert.deepEqual(
+    Buffer.from(encodeTransaction(decoded.transaction)),
+    Buffer.from(encodeTransaction(exact)),
+    "Saved media transaction differs from the current proposal",
+  );
+  assert.equal(
+    baseEncode(
+      createHash("sha256")
+        .update(encodeTransaction(decoded.transaction))
+        .digest(),
+    ),
+    saved.hash,
+    "Saved media transaction hash mismatch",
+  );
+  return saved;
+}
 
 async function signedCall(
   signer: typeof contract,
   actionName: string,
   receiverId: string,
   actions: Parameters<typeof createTransaction>[4],
+  intent?: Record<string, unknown>,
 ) {
-  const access = await reader.accessKey(
-    signer.accountId,
-    signer.pair.getPublicKey().toString(),
-  );
-  const transaction = createTransaction(
-    signer.accountId,
-    signer.pair.getPublicKey(),
-    receiverId,
-    access.nonce + 1n,
-    actions,
-    baseDecode(access.blockHash),
-  );
-  const [hashBytes, signed] = await KeyPairSigner.fromSecretKey(
-    signer.secret,
-  ).signTransaction(transaction);
-  const hash = baseEncode(hashBytes);
-  const bytes = Buffer.from(encodeTransaction(signed)).toString("base64");
-  let outcome: "success" | "failure" | "pending" = "pending";
-  try {
-    outcome = await reader.sendSignedTransaction(bytes);
-  } catch {
-    // Query the exact hash after a lost submission response.
+  const journaled =
+    level2Revalidation &&
+    actionName === "propose_media" &&
+    signer.accountId === owner.accountId;
+  const intentHash = intent
+    ? createHash("sha256").update(JSON.stringify(intent)).digest("hex")
+    : null;
+  let hash: string;
+  let bytes: string;
+  if (journaled && existsSync(ownerTxJournalPath)) {
+    assert(intent, "Level-2 owner transaction needs an exact intent");
+    const saved = readOwnerTransactionJournal(
+      actionName,
+      receiverId,
+      actions,
+      intent,
+    );
+    hash = saved.hash;
+    bytes = saved.signedBase64;
+  } else {
+    const access = await reader.accessKey(
+      signer.accountId,
+      signer.pair.getPublicKey().toString(),
+    );
+    const transaction = createTransaction(
+      signer.accountId,
+      signer.pair.getPublicKey(),
+      receiverId,
+      access.nonce + 1n,
+      actions,
+      baseDecode(access.blockHash),
+    );
+    const [hashBytes, signed] = await KeyPairSigner.fromSecretKey(
+      signer.secret,
+    ).signTransaction(transaction);
+    hash = baseEncode(hashBytes);
+    bytes = Buffer.from(encodeTransaction(signed)).toString("base64");
+    if (journaled) {
+      assert(intentHash, "Level-2 owner transaction needs an exact intent");
+      const temporary = `${ownerTxJournalPath}.tmp`;
+      writeFileSync(
+        temporary,
+        `${JSON.stringify({ mode, actionName, signerId: signer.accountId, receiverId, intentHash, hash, signedBase64: bytes }, null, 2)}\n`,
+        { mode: 0o600 },
+      );
+      chmodSync(temporary, 0o600);
+      renameSync(temporary, ownerTxJournalPath);
+    }
   }
-  for (let attempt = 0; outcome === "pending" && attempt < 8; attempt++) {
+  let outcome = await reader.transactionStatus(hash, signer.accountId);
+  if (outcome === "unknown") {
+    try {
+      outcome = await reader.sendSignedTransaction(bytes);
+    } catch {
+      // Keep the exact signed bytes for recovery after a lost reply.
+    }
+  }
+  for (
+    let attempt = 0;
+    (outcome === "unknown" || outcome === "pending") && attempt < 8;
+    attempt++
+  ) {
     await new Promise((done) => setTimeout(done, 1_000));
-    const status = await reader.transactionStatus(hash, signer.accountId);
-    if (status !== "unknown") outcome = status;
+    outcome = await reader.transactionStatus(hash, signer.accountId);
   }
   if (outcome !== "success")
     throw new Error(`${actionName} transaction ${hash} is ${outcome}`);
@@ -301,66 +397,137 @@ try {
         "Media is already approved for the current layout",
       );
     } else assert.equal(slot?.active, null);
-    assert.equal(slot?.pending, null);
+    const pendingRecovery = level2Revalidation ? slot?.pending : null;
+    if (!pendingRecovery) assert.equal(slot?.pending, null);
     const cookie = await ownerCookie();
-    let uploaded: Response;
-    if (level2Revalidation) {
-      uploaded = await postJson(
-        "/media/uploads/reuse",
-        { plotId, kind },
-        cookie,
-      );
-    } else {
-      const source = Buffer.from(
-        kind === "Billboard"
-          ? `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="256" viewBox="0 0 512 256"><rect width="512" height="256" rx="24" fill="#F6C85F"/><circle cx="90" cy="128" r="62" fill="#B45131"/><path d="M42 128h96" stroke="#73D9A6" stroke-width="16"/><text x="180" y="112" font-family="Arial,sans-serif" font-size="44" font-weight="bold" fill="#173F5F">NEAR &amp; FAR</text><text x="180" y="165" font-family="Arial,sans-serif" font-size="38" fill="#173F5F">BURGERS</text></svg>`
-          : `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" rx="44" fill="#173F5F"/><path d="M28 184h200" stroke="#FFD166" stroke-width="13"/><text x="128" y="145" text-anchor="middle" font-family="Arial,sans-serif" font-size="100" font-weight="bold" fill="white">NE</text></svg>`,
-      );
-      const png = await sharp(source).png().toBuffer();
-      const form = new FormData();
-      form.set("plot_id", plotId);
-      form.set(
-        "file",
-        new File([png], `near-estate-${kind.toLowerCase()}.png`, {
-          type: "image/png",
-        }),
-      );
-      uploaded = await app.request(kind === "Logo" ? "/logos" : "/ads", {
-        method: "POST",
-        headers: { origin, cookie },
-        body: form,
-      });
-    }
-    await requireStatus(uploaded, 200);
-    const upload = (await uploaded.json()) as {
+    let upload: {
       uploadId: string;
       hash: string;
       layoutRevision: number;
     };
-    if (revalidating)
-      assert.equal(upload.hash, slot.active?.content.asset_hash);
     const link = "https://near.org";
-    const created = await postJson(
-      "/media/proposals",
-      { uploadId: upload.uploadId, link },
-      cookie,
-    );
-    await requireStatus(created, 201);
-    const proposal = (await created.json()) as { id: string };
-    await signedCall(owner, "propose_media", contract.accountId, [
-      actionCreators.functionCall(
-        "propose_media",
-        {
+    let proposal: { id: string };
+    if (pendingRecovery) {
+      assert.equal(pendingRecovery.owner, owner.accountId);
+      assert.equal(
+        pendingRecovery.content.asset_hash,
+        slot.active?.content.asset_hash,
+      );
+      assert.equal(pendingRecovery.content.link, link);
+      assert.equal(
+        pendingRecovery.layout_revision,
+        plot.plot.building.layout_revision,
+      );
+      const existing = store.latestMediaProposal(owner.accountId, plotId, kind);
+      assert(existing, "Pending level-2 media has no local proposal");
+      assert.equal(existing.assetHash, pendingRecovery.content.asset_hash);
+      assert.equal(existing.link, link);
+      assert.equal(existing.layoutRevision, pendingRecovery.layout_revision);
+      assert.equal(
+        existing.expectedMediaRevision + 1,
+        pendingRecovery.revision,
+      );
+      upload = {
+        uploadId: existing.uploadId,
+        hash: existing.assetHash,
+        layoutRevision: existing.layoutRevision,
+      };
+      proposal = { id: existing.id };
+      if (existsSync(ownerTxJournalPath)) {
+        const proposalArgs = {
           plot_id: plotId,
           kind,
-          expected_media_revision: slot.revision,
-          expected_layout_revision: upload.layoutRevision,
-          content: { asset_hash: upload.hash, link },
-        },
-        60n * 10n ** 12n,
-        0n,
-      ),
-    ]);
+          expected_media_revision: existing.expectedMediaRevision,
+          expected_layout_revision: existing.layoutRevision,
+          content: { asset_hash: existing.assetHash, link },
+        };
+        const saved = readOwnerTransactionJournal(
+          "propose_media",
+          contract.accountId,
+          [
+            actionCreators.functionCall(
+              "propose_media",
+              proposalArgs,
+              60n * 10n ** 12n,
+              0n,
+            ),
+          ],
+          proposalArgs,
+        );
+        assert.equal(
+          await reader.transactionStatus(saved.hash, owner.accountId),
+          "success",
+        );
+        transactions.push({ action: "propose_media", hash: saved.hash });
+      }
+    } else {
+      let uploaded: Response;
+      if (level2Revalidation) {
+        uploaded = await postJson(
+          "/media/uploads/reuse",
+          { plotId, kind },
+          cookie,
+        );
+      } else {
+        const source = Buffer.from(
+          kind === "Billboard"
+            ? `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="256" viewBox="0 0 512 256"><rect width="512" height="256" rx="24" fill="#F6C85F"/><circle cx="90" cy="128" r="62" fill="#B45131"/><path d="M42 128h96" stroke="#73D9A6" stroke-width="16"/><text x="180" y="112" font-family="Arial,sans-serif" font-size="44" font-weight="bold" fill="#173F5F">NEAR &amp; FAR</text><text x="180" y="165" font-family="Arial,sans-serif" font-size="38" fill="#173F5F">BURGERS</text></svg>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" rx="44" fill="#173F5F"/><path d="M28 184h200" stroke="#FFD166" stroke-width="13"/><text x="128" y="145" text-anchor="middle" font-family="Arial,sans-serif" font-size="100" font-weight="bold" fill="white">NE</text></svg>`,
+        );
+        const png = await sharp(source).png().toBuffer();
+        const form = new FormData();
+        form.set("plot_id", plotId);
+        form.set(
+          "file",
+          new File([png], `near-estate-${kind.toLowerCase()}.png`, {
+            type: "image/png",
+          }),
+        );
+        uploaded = await app.request(kind === "Logo" ? "/logos" : "/ads", {
+          method: "POST",
+          headers: { origin, cookie },
+          body: form,
+        });
+      }
+      await requireStatus(uploaded, 200);
+      upload = (await uploaded.json()) as typeof upload;
+      if (revalidating)
+        assert.equal(upload.hash, slot.active?.content.asset_hash);
+      const created = await postJson(
+        "/media/proposals",
+        { uploadId: upload.uploadId, link },
+        cookie,
+      );
+      if (
+        created.status !== 201 &&
+        !(level2Revalidation && created.status === 200)
+      )
+        throw new Error(
+          `Expected proposal creation or reuse, got ${created.status}: ${await created.text()}`,
+        );
+      proposal = (await created.json()) as { id: string };
+      const proposalArgs = {
+        plot_id: plotId,
+        kind,
+        expected_media_revision: slot.revision,
+        expected_layout_revision: upload.layoutRevision,
+        content: { asset_hash: upload.hash, link },
+      };
+      await signedCall(
+        owner,
+        "propose_media",
+        contract.accountId,
+        [
+          actionCreators.functionCall(
+            "propose_media",
+            proposalArgs,
+            60n * 10n ** 12n,
+            0n,
+          ),
+        ],
+        level2Revalidation ? proposalArgs : undefined,
+      );
+    }
     const reconciled = await postJson(
       `/media/proposals/${proposal.id}/reconcile`,
       {},
