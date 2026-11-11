@@ -116,6 +116,7 @@ let carX = 85;
 let selectedTowerFloor = 0;
 let moving = 0;
 let currentScreen = "Street";
+let garageFeedback: { message: string; error: boolean } | null = null;
 const portraitDriving = window.matchMedia(
   "(max-width: 700px) and (orientation: portrait)",
 );
@@ -1502,6 +1503,7 @@ function carsMarkup(): string {
     game.cars.length < DEFAULT_CONFIG.maxCars && game.balance >= buyCost;
   return `<h1>My cars</h1>
     <p class="muted">Choose an unparked car to drive, or select a parked car to collect it. Only one car earns parking coins at a time.</p>
+    ${garageFeedback ? `<p class="card garage-feedback" role="${garageFeedback.error ? "alert" : "status"}"></p>` : ""}
     <div class="card-grid garage-grid">${game.cars
       .map((car) => {
         const isActive = car.id === game.activeCarId;
@@ -1524,7 +1526,7 @@ function carsMarkup(): string {
           <h2>${car.body}</h2>
           <p>${car.color} · Tier ${car.tier} · ${car.durability}% durability</p>
           <p><span class="tag">${isParked ? "Parked and earning" : isActive ? "Driving now" : "In garage"}</span></p>
-          <button data-select-car="${car.id}" ${isActive ? "disabled" : ""}>${isActive ? "Selected" : "Drive this car"}</button>
+          <button data-select-car="${car.id}" ${isActive ? "disabled" : ""}>${isActive ? "Selected" : isParked ? "Select parked car" : "Drive this car"}</button>
           <button data-repair-car="${car.id}" ${fullPoints === 0 || isParked || game.balance < fullCost ? "disabled" : ""}>${fullPoints === 0 ? "Fully repaired" : `Repair to full · ${formatCoins(fullCost.toString())} coins`}</button>
           ${parkPoints > 0 && parkPoints < fullPoints ? `<button data-repair-to-park="${car.id}" ${isParked || game.balance < parkCost ? "disabled" : ""}>Repair to park · ${formatCoins(parkCost.toString())} coins</button>` : ""}
           <button data-upgrade-car="${car.id}" ${!upgradeCost || isParked || game.balance < BigInt(upgradeCost) ? "disabled" : ""}>${upgradeCost ? `Upgrade · ${formatCoins(upgradeCost)} coins` : "Max tier"}</button>
@@ -1586,6 +1588,7 @@ function menuMarkup(): string {
 
 function showScreen(screen: string): void {
   const navigationScreen = screen;
+  if (currentScreen === "Cars" && screen !== "Cars") garageFeedback = null;
   if (currentScreen === "Street" && screen !== "Street")
     impressionReporter.pause();
   if (unmountCinema) {
@@ -1709,6 +1712,8 @@ function showScreen(screen: string): void {
       );
   } else if (screen === "Cars") {
     otherScreen.innerHTML = carsMarkup();
+    const feedback = otherScreen.querySelector<HTMLElement>(".garage-feedback");
+    if (feedback) feedback.textContent = garageFeedback?.message ?? "";
     const refreshGarage = () => {
       drawWorld();
       updatePanel();
@@ -1716,10 +1721,14 @@ function showScreen(screen: string): void {
     };
     const garageAction = (run: () => string) => {
       try {
-        status.textContent = run();
+        const message = run();
+        status.textContent = message;
+        garageFeedback = { message, error: false };
       } catch (error) {
-        status.textContent =
+        const message =
           error instanceof Error ? error.message : "Car action failed";
+        status.textContent = message;
+        garageFeedback = { message, error: true };
       }
       refreshGarage();
     };
@@ -1729,7 +1738,9 @@ function showScreen(screen: string): void {
         button.addEventListener("click", () =>
           garageAction(() => {
             game.selectCar(button.dataset.selectCar!);
-            return `${game.car.body} is ready to drive`;
+            return game.activeCarSession()
+              ? `${game.car.body} is parked. Return to the street to collect.`
+              : `${game.car.body} is ready to drive`;
           }),
         ),
       );
