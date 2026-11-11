@@ -566,7 +566,7 @@ export class ChainScreen {
             : selected.billboard_eligible;
         const active = eligible ? slot.active : null;
         const decision = slot.last_decision;
-        return `<div class="owner-media-status"><strong>${kind}</strong> · ${active ? "Visible on this building" : slot.pending ? "Awaiting review" : "Showing fallback"}
+        return `<div class="owner-media-status"><strong>${kind}</strong> · ${active ? "Visible on this building" : slot.pending ? "Awaiting review" : slot.active ? "Hidden after building change" : "Showing fallback"}
           ${active ? `<img class="owner-upload-preview" src="/api/assets/${html(active.content.asset_hash)}" alt="Approved ${kind.toLowerCase()}" />` : ""}
           ${active?.content.link ? `<a href="${html(active.content.link)}" target="_blank" rel="noopener noreferrer">Approved link</a>` : ""}
           ${decision?.status === "Rejected" || decision?.status === "Revoked" ? `<p class="chain-parked">${decision.status}: ${html(decision.reason ?? "No reason supplied")}</p>` : ""}
@@ -590,6 +590,7 @@ export class ChainScreen {
       ${
         upload
           ? `<p class="chain-parked">${upload.kind} image · ${upload.hash.slice(0, 12)}…</p><img class="owner-upload-preview" src="${html(upload.url)}" alt="Uploaded ${upload.kind.toLowerCase()} preview" />
+        ${upload.layoutRevision !== plot.building.layout_revision ? `<p class="muted">This image upload belongs to an earlier building layout. Upload the image again to propose it for the current building.</p>` : ""}
         <label>Destination link (optional) <input id="owner-media-link" type="url" maxlength="256" placeholder="https://brand.example" value="${html(this.mediaLinkDraft)}" ${proposal?.status === "selected" ? "disabled" : ""} /></label>
         ${!proposal || proposal.status !== "selected" ? `<button id="owner-create-media" ${this.busy || upload.layoutRevision !== plot.building.layout_revision ? "disabled" : ""}>Prepare ${upload.kind.toLowerCase()} proposal</button>` : ""}`
           : ""
@@ -683,6 +684,9 @@ export class ChainScreen {
         ? BigInt(config.building_upgrade_costs[building.level - 1]!)
         : null;
     const changingType = draft.buildingType !== building.building_type;
+    const affectedMedia = (["logo", "billboard"] as const).filter(
+      (kind) => plot[kind].active || plot[kind].pending,
+    );
     return `<section class="card" id="chain-owned-plots"><h2>My plots · ${owned.length}</h2>
       <label>Manage plot <select id="chain-owned-plot">${owned.map((entry) => `<option value="${html(entry.plot.id)}" ${entry.plot.id === plot.id ? "selected" : ""}>${html(entry.plot.road_id)} · ${entry.plot.side} · Plot ${entry.plot.index + 1}${entry.plot.corner ? " (corner)" : ""}</option>`).join("")}</select></label>
       <div class="owner-grid">
@@ -706,6 +710,7 @@ export class ChainScreen {
           ${changingType ? `<button id="owner-change-type" ${this.busy || BigInt(balance) < typeCost ? "disabled" : ""}>Change type · ${formatCoins(config.change_building_type_cost)} coins</button><p class="muted">Changing type uses its curated preset and keeps level ${building.level}. Choose colour and name afterward.</p>` : `<button id="owner-save-preset" ${this.busy ? "disabled" : ""}>Use this preset</button>`}
           ${levelCost === null ? `<p>Maximum level reached.</p>` : `<button id="owner-upgrade-building" ${this.busy || BigInt(balance) < levelCost ? "disabled" : ""}>Upgrade to level ${building.level + 1} · ${formatCoins(config.building_upgrade_costs[building.level - 1]!)} coins</button>`}
           <p class="muted">Using a preset, changing type or upgrading immediately replaces the current facade with a curated design. Any custom facade must be reviewed again.</p>
+          ${affectedMedia.length ? `<p class="chain-parked">A building change will hide the current ${affectedMedia.join(" and ")} until you upload the image again and a moderator approves it for the new layout. Pending media proposals will be cancelled.</p>` : ""}
           ${this.mockStudioMarkup(selected, accountId)}
           ${this.ownerMediaMarkup(selected)}
         </div>

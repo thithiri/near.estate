@@ -10,7 +10,7 @@
   "scripts": {
     "postinstall": "patch-package",
     "build": "npm run build -w @estate/shared && npm run build -w @estate/web && npm run build -w @estate/api && npm run build -w @estate/worker",
-    "check": "npm run check --workspaces --if-present && npm run test --workspaces --if-present && npm run beta:metrics:test && npm run testnet:web-signer:check && npm run testnet:media-api:check && npm run testnet:owner:check && npm run testnet:mock-facade:check && npm run testnet:shared-facade:check && npm run testnet:shared-owner:check && npm run testnet:ad-impression:check",
+    "check": "npm run check --workspaces --if-present && npm run test --workspaces --if-present && npm run beta:metrics:test && npm run testnet:web-signer:check && npm run testnet:media-api:check && npm run testnet:owner:check && npm run testnet:mock-facade:check && npm run testnet:shared-facade:check && npm run testnet:shared-owner:check && npm run testnet:owner-income:check && npm run testnet:ad-impression:check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "assets:generate": "node scripts/generate-presets.mjs && node scripts/generate-world-sprites.mjs",
@@ -58,6 +58,9 @@
     "testnet:shared-facade:check": "tsc --noEmit --module esnext --moduleResolution bundler --target es2022 --types vite/client,node --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --strict scripts/verify-shared-facade-journey.ts",
     "testnet:mock-facade:check": "tsc --noEmit --module esnext --moduleResolution bundler --target es2022 --types vite/client,node --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --strict scripts/testnet-mock-facade-journey.ts",
     "testnet:shared-owner:journey": "tsx scripts/testnet-shared-owner-journey.ts --apply",
+    "testnet:owner-income:park": "tsx scripts/testnet-owner-income-journey.ts --park",
+    "testnet:owner-income:settle": "tsx scripts/testnet-owner-income-journey.ts --settle",
+    "testnet:owner-income:check": "tsc --noEmit --module esnext --moduleResolution bundler --target es2022 --types vite/client,node --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --strict scripts/testnet-owner-income-journey.ts",
     "testnet:shared-owner:check": "tsc --noEmit --module esnext --moduleResolution bundler --target es2022 --types vite/client,node --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --strict scripts/testnet-shared-owner-journey.ts",
     "testnet:ad-impression:journey": "tsx scripts/testnet-ad-impression-journey.ts --apply",
     "testnet:ad-impression:check": "tsc --noEmit --module esnext --moduleResolution bundler --target es2022 --types vite/client,node --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --strict scripts/testnet-ad-impression-journey.ts",
