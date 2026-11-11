@@ -48,6 +48,11 @@ jobs:
       VITE_ESTATE_CONTRACT_ID: ci-estate.testnet
     steps:
       - uses: actions/checkout@v4
+      - name: Validate production service configuration
+        run: docker compose -f infra/compose.yaml -f infra/compose.prod.yaml --profile indexer config --quiet
+        env:
+          ESTATE_HOST: ci.invalid
+          INDEXER_START_HEIGHT: 1
       - run: docker compose -f infra/compose.yaml --profile indexer build api indexer web
       - run: docker compose -f infra/compose.yaml up -d api web
       - name: Check packaged services
