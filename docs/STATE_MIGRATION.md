@@ -1,0 +1,20 @@
+# Contract state migration boundary
+
+The shared testnet city currently supports **state-preserving code upgrades**. The `upgrade_testnet` rehearsal imports the live state into a sandbox, deploys a candidate, compares every storage key and known view, then redeploys the previous WASM and checks the same state again. It does not change serialized state. Do not use that rehearsal as approval for a schema change.
+
+## Stored layout today
+
+`Contract` is stored under NEAR's contract-state key as Borsh. Its root contains roles, `GameConfig`, counters, treasury and inspector limits, plus `LookupMap` handles. The maps store `AccountState`, `Car`, `Plot`, `NPCSite` and `ParkingSession` values separately. `space_sessions` and the plot/NPC ID maps also live in storage. The `stored_value_layout_fixtures` contract test pins representative Borsh hashes for the root, config and each main value type. A changed fixture is a review signal, **not** permission to replace its expected hash and deploy.
+
+The map prefixes are part of the persisted format: accounts `a`, cars `c`, plots `p`, plot IDs `i`, NPC sites `n`, NPC IDs `j`, sessions `s`, and occupied spaces `o`. `LookupMap` does not enumerate stored keys. Cars and sessions have monotonic IDs, and plots/NPC sites have ID indexes; accounts have no complete on-chain index. An eager account-value migration cannot safely claim to have found every player from contract state alone.
+
+## Required path for a future schema change
+
+1. Freeze the old source revision, WASM hash, exact Borsh definitions, storage prefixes and layout fixtures. Specify every changed root/value field and enum variant, including defaults for old records and new storage costs.
+2. Write a separate migration candidate that reads the **old** root representation from storage before writing a new root. NEAR SDK 5.30.1 documents `#[init(ignore_state)]` as skipping the initialized-state check and `env::state_read`/`state_write` as Borsh reads/writes of the root key. A migration entry point using that attribute therefore needs an explicit contract-account/admin authorization check and an old-state/version guard; an unrestricted initializer would be unsafe. Keep the old type definitions in the migration binary until the conversion is complete.
+3. For changed map values, build an explicit conversion plan. Enumerate cars/sessions by their stored ID counters and plots/NPC sites by their ID indexes, while accounting for gaps. For accounts, choose and test a lazy, version-aware read/write path or add a proven complete index **before** changing account values. Do not interpret old account bytes as the new struct. Keep old and new prefixes distinct if both representations coexist, and reconcile storage reserves and coin totals.
+4. Rehearse on an exact imported snapshot of the target city. Check every raw storage key, migrated record count, balances, plot ownership, parked sessions, media approvals and public views. Exercise reads and writes of records in each old-state variant and a restart after partial or interrupted work. Reject any unaccounted record or changed economic total.
+5. Decide the rollback boundary **before** deployment. Once migrated bytes are written, redeploying old WASM alone may fail to deserialize them. Either demonstrate a tested reverse migration on the imported snapshot or treat the migration as forward-only with a separately tested recovery binary and a stopped-traffic window. Keep the old code and state snapshot protected outside the repository.
+6. Only after the rehearsal passes, run the live migration with an immutable source/code record, operator sign-off and post-migration readback. Record the state root, code hash, transaction, counts and conservation checks. Resume gameplay and the event indexer only after verification.
+
+No migration entry point is deployed or prepared yet. The current layout fixtures cover representative values, not every enum variant or every possible map record. The release gate remains open until a real schema change is implemented and rehearsed.

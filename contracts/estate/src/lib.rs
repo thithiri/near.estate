@@ -2322,6 +2322,7 @@ mod tests {
     use super::*;
     use near_sdk::test_utils::{get_logs, VMContextBuilder};
     use near_sdk::testing_env;
+    use sha2::{Digest, Sha256};
 
     fn account(name: &str) -> AccountId {
         name.parse().expect("valid test account")
@@ -2421,6 +2422,70 @@ mod tests {
             name: "Main Parking Tower".to_string(),
             capacity: 32,
         });
+    }
+
+    #[test]
+    fn stored_value_layout_fixtures() {
+        let mut contract = seeded_contract();
+        seed_tower(&mut contract);
+        let driver = account("driver.testnet");
+        let car = register_at(&mut contract, &driver, 1_001);
+        context(&driver, 0, 1_002);
+        let session = contract.park(car.id, "plot-main-n-0".to_string(), 0);
+        let account_state = contract.accounts.get(&driver).expect("stored account");
+        let stored_car = contract.cars.get(&car.id).expect("stored car");
+        let plot = contract.plots.get("plot-main-n-0").expect("stored plot");
+        let npc = contract
+            .npc_sites
+            .get("npc-main-tower")
+            .expect("stored tower");
+        let stored_session = contract.sessions.get(&session.id).expect("stored session");
+        // These hashes guard the serialized state already deployed on testnet.
+        // An intentional layout change must have a migration rehearsal first.
+        let fixtures = [
+            (
+                "root",
+                near_sdk::borsh::to_vec(&contract).expect("root bytes"),
+                "d274e0f55f774f92970b9e38ee9fb8961883a34bcc66929b3a8991a325d7f782",
+            ),
+            (
+                "config",
+                near_sdk::borsh::to_vec(&contract.config).expect("config bytes"),
+                "6bc2d05175c76201e89e859beed0457a18040dda1a73a487e43f0b7e8c0c5203",
+            ),
+            (
+                "account",
+                near_sdk::borsh::to_vec(account_state).expect("account bytes"),
+                "dc7864026a9a3ed0dd9a7a15c76fd48aedb718c6f810586a1e0107898565b91e",
+            ),
+            (
+                "car",
+                near_sdk::borsh::to_vec(stored_car).expect("car bytes"),
+                "89dcaeaaf139c71f6ac7a63275acd3e2b66452741a49b1ee686a51765dc968f4",
+            ),
+            (
+                "plot",
+                near_sdk::borsh::to_vec(plot).expect("plot bytes"),
+                "3f0d75b80c16bee8b8839f1b03094344a3eca671ec0ef0058213f03494e3d392",
+            ),
+            (
+                "npc",
+                near_sdk::borsh::to_vec(npc).expect("npc bytes"),
+                "66ba7040338cddbd60dc0a864f441f59d5e66b31f8909e9cd38e48d6cb088936",
+            ),
+            (
+                "session",
+                near_sdk::borsh::to_vec(stored_session).expect("session bytes"),
+                "a68b63fa3b76b5f85c066a69e70c09b88e1c6e9faa55ce14d49ec962d59ee2c5",
+            ),
+        ];
+        for (name, bytes, expected) in fixtures {
+            assert_eq!(
+                format!("{:x}", Sha256::digest(bytes)),
+                expected,
+                "{name} layout changed"
+            );
+        }
     }
 
     fn owned_test_plot(contract: &mut Contract, owner: &AccountId) {

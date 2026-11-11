@@ -31,6 +31,8 @@ The shared-city billboard plot has now combined a real legal Meter park and the 
 
 The approved shared-city logo and billboard now render in a 1280×720 local browser view; the plot's API impressions rose from three to six during that run. PixiJS needed an explicit texture parser for the immutable hash URLs. [Browser evidence](../deployments/testnet-browser-impression-journey.json) closes local browser visibility only. Hosted stats, independent device checks and billing-grade measurement remain open.
 
+The [state migration boundary and plan](STATE_MIGRATION.md) now records the persisted layout, account-map enumeration limit and rollback requirement. Its representative serialization fixture passes. The release still lacks an implemented and rehearsed schema migration; the existing code-upgrade checks cover state-preserving replacement only.
+
 ## Final release run
 
 1. Record a source revision and immutable web/API/worker image digests. Run `npm ci`, `npm run check`, `npm run build`, `npm run assets:check`, `npm run contract:test`, and the candidate-specific `npm run testnet:code:plan`. Attach outputs and hosted CI run ID. A code upgrade uses `npm run testnet:code:upgrade` only with the protected deploy key and its prepared recovery record.

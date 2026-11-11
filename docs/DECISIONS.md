@@ -254,6 +254,8 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 
 ## Open risks
 
+- The persisted contract layout now has a representative Borsh hash fixture for its root, config, account, car, plot, NPC site and parking session. [State migration planning](STATE_MIGRATION.md) records the current map prefixes, the non-enumerable account-map constraint, the required old-type conversion and the rollback boundary. This follows the locally pinned near-sdk 5.30.1 documentation: `#[init(ignore_state)]` skips the state-exists guard, `env::state_read`/`state_write` serialize the root with Borsh, and `LookupMap` is non-iterable. The fixture test passes, but it does not exercise every stored variant or implement a migration. The shared city still supports only state-preserving code replacement.
+
 - Browser wallet sign-in, redirects, session-key setup/recovery/revocation and local key storage security on both named wallets; the patched dependency compatibility and wallet bundle size. Protocol permission, allowance exhaustion and revocation passed separately on testnet.
 - Provider retention, authentication and sustained throughput under player traffic. The current quiet contract passed one full sparse catch-up, cursor restart and aggregate replay; a longer history with many paginated transactions remains unmeasured.
 - Actual provider cost, transparent edit quality, silhouette fit and human moderation load.
