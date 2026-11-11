@@ -8,6 +8,7 @@ import {
 import { baseDecode, baseEncode } from "@near-js/utils";
 import {
   setupWalletSelector,
+  type WalletModuleFactory,
   type WalletSelector,
 } from "@near-wallet-selector/core";
 import { setupMeteorWallet } from "@near-wallet-selector/meteor-wallet";
@@ -276,9 +277,16 @@ export class GameWalletClient {
   ) {}
 
   static async create(reader: ChainReader): Promise<GameWalletClient> {
+    const modules: WalletModuleFactory[] = [setupMeteorWallet()];
+    if (import.meta.env.VITE_EXPERIMENTAL_INTEAR === "1") {
+      const { setupIntearWallet } = await import(
+        "@near-wallet-selector/intear-wallet"
+      );
+      modules.push(setupIntearWallet());
+    }
     const selector = await setupWalletSelector({
       network: NETWORK,
-      modules: [setupMeteorWallet()],
+      modules,
     });
     const modal = setupModal(selector, {
       contractId: reader.contractId,

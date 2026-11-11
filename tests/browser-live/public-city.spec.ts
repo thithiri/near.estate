@@ -39,4 +39,23 @@ test("wallet chooser offers an active wallet", async ({ page }) => {
   await page.getByRole("button", { name: "Connect wallet" }).click();
   await expect(page.getByText("Meteor Wallet", { exact: true })).toBeVisible();
   await expect(page.getByText("MyNearWallet", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Intear Wallet", { exact: true })).toHaveCount(0);
+});
+
+test("experimental second wallet reaches its connection screen", async ({
+  page,
+}) => {
+  test.skip(
+    process.env.ESTATE_EXPERIMENTAL_INTEAR !== "1",
+    "Run a Vite city server with VITE_EXPERIMENTAL_INTEAR=1",
+  );
+  await page.goto("/");
+  await page.getByRole("button", { name: "Open live testnet city" }).click();
+  await page.getByRole("button", { name: "Connect wallet" }).click();
+  await page.getByText("Intear Wallet", { exact: true }).click();
+  await expect(
+    page
+      .frameLocator('iframe[src^="https://wallet.intear.tech/"]')
+      .getByText("Choose your preferred wallet connection method"),
+  ).toBeVisible({ timeout: 20_000 });
 });

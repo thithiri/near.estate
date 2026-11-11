@@ -815,7 +815,7 @@ export class ChainScreen {
           !wallet
             ? `<p>Loading supported wallets…</p>`
             : !accountId
-              ? `<p>Connect Meteor Wallet on testnet.</p><button id="chain-connect" class="primary" ${this.street && !this.busy ? "" : "disabled"}>Connect wallet</button>`
+              ? `<p>Connect a testnet wallet.</p><button id="chain-connect" class="primary" ${this.street && !this.busy ? "" : "disabled"}>Connect wallet</button>`
               : `
           <p><strong>${html(accountId)}</strong></p>
           ${
