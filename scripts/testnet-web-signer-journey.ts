@@ -3,7 +3,9 @@ import {
   chmodSync,
   existsSync,
   readFileSync,
+  realpathSync,
   renameSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -23,8 +25,10 @@ if (!keyFile || !keyFile.startsWith("/"))
     "Set ESTATE_DRIVER_KEY_FILE to a private absolute credential path",
   );
 const projectRoot = resolve(import.meta.dirname, "..");
-if (resolve(keyFile).startsWith(`${projectRoot}/`))
+if (realpathSync(keyFile).startsWith(`${projectRoot}/`))
   throw new Error("Driver credential must be outside the repository");
+if ((statSync(keyFile).mode & 0o077) !== 0)
+  throw new Error("Driver credential must not be readable by group or others");
 const credential = JSON.parse(readFileSync(keyFile, "utf8")) as {
   account_id: string;
   public_key: string;
@@ -188,21 +192,51 @@ for (const road of ["main", "market", "river", "central", "harbor"] as const) {
   if (selected) break;
 }
 assert(selected, "No open free curb slot was found");
-await client.gameplayCall("park", {
+const parkArgs = {
   car_id: car.id,
   plot_id: selected.plotId,
   slot: selected.slot,
-});
+};
+const realSendSigned = reader.sendSignedTransaction.bind(reader);
+const realTransactionStatus = reader.transactionStatus.bind(reader);
+let signedSubmissions = 0;
+let hiddenStatusReads = 0;
+reader.sendSignedTransaction = async (signedTxBase64) => {
+  signedSubmissions++;
+  assert.equal(await realSendSigned(signedTxBase64), "success");
+  throw new Error("Simulated network reply loss after final execution");
+};
+reader.transactionStatus = async (hash, accountId) => {
+  if (hiddenStatusReads++ === 0) return "unknown";
+  return realTransactionStatus(hash, accountId);
+};
+try {
+  await assert.rejects(client.gameplayCall("park", parkArgs), /pending/);
+} finally {
+  reader.sendSignedTransaction = realSendSigned;
+  reader.transactionStatus = realTransactionStatus;
+}
+assert.equal(signedSubmissions, 1, "Parking was submitted more than once");
+const reopenedClient = Object.assign(
+  Object.create(GameWalletClient.prototype),
+  {
+    reader,
+    selector,
+    lastCall: Promise.resolve(),
+  },
+) as GameWalletClient;
+assert.equal(await reopenedClient.checkPendingGameplayAction(), "success");
+assert.equal(signedSubmissions, 1, "Recovery rebroadcast the parked action");
 const parked = await reader.player(credential.account_id);
 assert(parked.active_session, "Parking did not finalize");
 assert.equal(parked.active_session.location_id, selected.plotId);
 assert.equal(parked.active_session.slot, selected.slot);
-await client.gameplayCall("collect", {
+await reopenedClient.gameplayCall("collect", {
   expected_session_id: parked.active_session.id,
 });
 const collected = await reader.player(credential.account_id);
 assert.equal(collected.active_session, null, "Collection did not free the car");
-assert.equal(await client.revokeGameplayKey(), "revoked");
+assert.equal(await reopenedClient.revokeGameplayKey(), "revoked");
 const listedKeys = await reader.accessKeyList(credential.account_id);
 assert(
   !listedKeys.keys.some((key) => key.public_key === gameplayKeyPublic),
@@ -227,6 +261,7 @@ const evidence = {
   gameplayTransactions,
   gameplayKeyPublic,
   gameplayKeyRevoked: true,
+  simulatedReplyLossRecoveredWithoutRebroadcast: true,
   finalActiveSession: collected.active_session,
 };
 const evidenceFile = resolve(

@@ -5,22 +5,23 @@
   "carId": 2,
   "plotId": "plot-main-n-0",
   "slot": 0,
-  "sessionId": 3,
+  "sessionId": 4,
   "fullAccessTransactionHashes": [
-    "7KGvtnvaepZHCGrdMqt6Uy9Xux42d184s47hnWVYExUF",
-    "7Pw4tYaMhL64viS8MimhC7TSwXjSxQdJckKNyZL1gaAk"
+    "Pc952AB47TUNaTfnBndn1yJtvL4KcWhqpNhGMEYbYQr",
+    "CQ9s4T88TRLa81HQXsi8NAUq4oHH1bnDbrXjRa7v6Tde"
   ],
   "gameplayTransactions": [
     {
       "method": "park",
-      "hash": "AKqetMNTjXGYK4dzwuJTT55hWajnCDUevFBMmMcHoc8u"
+      "hash": "F3ozEdQHBhBgjH8oj5Um5jud2AFmZXuHbFTVUXXrAYx6"
     },
     {
       "method": "collect",
-      "hash": "474EtbQLw6uc4eMDtMBDPo4o9sgotMJf4YHxFypiGq6S"
+      "hash": "CF7j3bjG33uz5TbZCSQREf7Ujd57YAjqfFk9FHH5Z2rC"
     }
   ],
-  "gameplayKeyPublic": "ed25519:BGktt8XGj162XkkL2FbNjW1C4Ku1Ws7rZ4bePfsagySm",
+  "gameplayKeyPublic": "ed25519:6vVozRyxAAzENw22Vs1vz5siQr4Xjx16fYHVTPwNiUf2",
   "gameplayKeyRevoked": true,
+  "simulatedReplyLossRecoveredWithoutRebroadcast": true,
   "finalActiveSession": null
 }
