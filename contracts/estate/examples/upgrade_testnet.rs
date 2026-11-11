@@ -8,12 +8,59 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::Duration;
 
 const TOWER_ID: &str = "npc-main-tower";
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+fn check_storage_layout() -> Result<()> {
+    let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let manifest = root().join("contracts/estate/Cargo.toml");
+    let listed = Command::new(&cargo)
+        .arg("test")
+        .arg("--manifest-path")
+        .arg(&manifest)
+        .arg("--lib")
+        .arg("--")
+        .arg("--list")
+        .current_dir(root())
+        .output()
+        .context("could not list contract layout tests")?;
+    ensure!(
+        listed.status.success(),
+        "could not list contract layout tests: {}",
+        String::from_utf8_lossy(&listed.stderr)
+    );
+    let names = String::from_utf8_lossy(&listed.stdout);
+    for required in ["stored_value_layout_fixtures", "stored_enum_variant_tags"] {
+        ensure!(
+            names
+                .lines()
+                .any(|line| { line.contains(required) && line.trim_end().ends_with(": test") }),
+            "required contract layout test is missing: {required}"
+        );
+    }
+    let checked = Command::new(&cargo)
+        .arg("test")
+        .arg("--manifest-path")
+        .arg(&manifest)
+        .arg("--lib")
+        .arg("stored_")
+        .current_dir(root())
+        .output()
+        .context("could not run contract layout tests")?;
+    ensure!(
+        checked.status.success(),
+        "contract storage layout changed; use a migration rehearsal instead of this upgrade tool:\n{}\n{}",
+        String::from_utf8_lossy(&checked.stdout),
+        String::from_utf8_lossy(&checked.stderr)
+    );
+    println!("Contract storage layout fixtures and enum tags passed.");
+    Ok(())
 }
 
 fn hash(bytes: &[u8]) -> String {
@@ -504,9 +551,13 @@ async fn main() -> Result<()> {
         .nth(1)
         .unwrap_or_else(|| "--plan".to_string());
     ensure!(
-        mode == "--plan" || mode == "--apply",
-        "use --plan or --apply"
+        mode == "--plan" || mode == "--apply" || mode == "--layout-check",
+        "use --plan, --apply or --layout-check"
     );
+    check_storage_layout()?;
+    if mode == "--layout-check" {
+        return Ok(());
+    }
     let (manifest_path, mut manifest, id, old_hash) = manifest()?;
     let new_wasm = std::fs::read(
         root().join("target/wasm32-unknown-unknown/release/near_estate_contract.wasm"),

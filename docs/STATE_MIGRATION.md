@@ -2,6 +2,8 @@
 
 The shared testnet city currently supports **state-preserving code upgrades**. The `upgrade_testnet` rehearsal imports the live state into a sandbox, deploys a candidate, compares every storage key and known view, including a real owner account, its cars and active session, then redeploys the previous WASM and checks the same state again. It does not change serialized state. Do not use that rehearsal as approval for a schema change.
 
+The ordinary `testnet:code:plan` and `testnet:code:upgrade` commands now run both stored-layout fixture tests before reading the release WASM or contacting testnet. The example itself enforces this check, including when called directly. `npm run contract:layout:check` runs the same local guard without a network call. If a fixture changes, use the separate migration path below; changing an expected hash to make this guard pass is not a migration rehearsal.
+
 ## Stored layout today
 
 `Contract` is stored under NEAR's contract-state key as Borsh. Its root contains roles, `GameConfig`, counters, treasury and inspector limits, plus `LookupMap` handles. The maps store `AccountState`, `Car`, `Plot`, `NPCSite` and `ParkingSession` values separately. `space_sessions` and the plot/NPC ID maps also live in storage. The `stored_value_layout_fixtures` contract test pins representative Borsh hashes for the root, config and each main value type. `stored_enum_variant_tags` additionally pins every current persisted enum variant's Borsh tag and the payload layout of Meter and ColorOnly rules. A changed fixture is a review signal, **not** permission to replace its expected hash and deploy.

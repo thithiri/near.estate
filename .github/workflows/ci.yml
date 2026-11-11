@@ -39,5 +39,6 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo build --release --target wasm32-unknown-unknown -p near-estate-contract
       - run: cargo test --workspace
+      - run: npm run contract:layout:check
       - run: cargo test --manifest-path contracts/estate/Cargo.toml --example deploy_testnet
       - run: cargo check --workspace --target wasm32-unknown-unknown
