@@ -1,0 +1,19 @@
+{
+  "network": "testnet",
+  "contractId": "cdd9e90c27e30.dev-20261111023445-31126278967987.testnet",
+  "ownerId": "odd9e90c27e30.dev-20261111023445-31126278967987.testnet",
+  "moderatorId": "mdd9e90c27e30.dev-20261111023445-31126278967987.testnet",
+  "plotId": "plot-main-n-0",
+  "jobId": "bb5419ea-6dc6-4486-9477-80438c6bac9d",
+  "candidateId": 2,
+  "manifestHash": "5b467d67ec41d2bc468120d134880964950c3c49ec14d1e34afe79f328c1c400",
+  "spriteHash": "ce57126a2b6eee19659df6e975975c3f0aab2afa7a6b051ca7d01c0709e57dee",
+  "appearanceRevision": 5,
+  "layoutRevision": 5,
+  "proposalTransaction": null,
+  "approvedOnChain": true,
+  "anonymousManifestReadable": true,
+  "anonymousSpriteHashVerified": true,
+  "ownerJobStatus": "approved",
+  "temporaryModeratorKeyRevoked": true
+}
