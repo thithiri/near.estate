@@ -1,0 +1,16 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "beforeWasmSha256": "007f67a531c87671f57a96660b4a61f3b7fca6a60681944c5b8227eaf0549c59",
+  "afterWasmSha256": "15d316f796236300524aa553efe0712b3d798b9798312a558120837044fec22e",
+  "beforeStateSha256": "0af330b485c4c700bdb9ae4a03d24b146936d6ecd9fa8509a79a7401d2cff7c1",
+  "beforeTowerViews": {
+    "floors": [8, 8, 8, 8],
+    "total": 32,
+    "floor2FirstOpen": 16
+  },
+  "status": "verified",
+  "deploymentTransactionHash": "AaqCKJQarBvHNLD1nVmrm42tP6SiEasH98wYmX2kdfzp",
+  "deploymentBlockHash": "8bKpwXFnL2SwxMYLzKssJbGTvQEWRAxt4SasLeowVmNR",
+  "afterStateSha256": "0af330b485c4c700bdb9ae4a03d24b146936d6ecd9fa8509a79a7401d2cff7c1"
+}
