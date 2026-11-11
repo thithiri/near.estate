@@ -322,3 +322,7 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 ## 2026-11-11 — Shared-city expiry reuse
 
 - Session 13 on `plot-river-s-0` earned at most 30 coins over 30 minutes, then remained parked through the configured two-minute grace. After expiry, the separate registered driver account called the permissionless `settle_expired`; the original owner received exactly 30,000,000 atomic coins. The second driver parked session 14 in that same curb and collected it, leaving both accounts unparked and the slot free. The [direct testnet journey](../deployments/testnet-expiry-reuse-journey.json) records the three final transaction hashes. The local event indexer independently recorded the `expired` event and capped payout in [owner income evidence](../deployments/testnet-owner-income-indexed.json). This closes the direct-signer expiry/reuse test, not the named-wallet browser or hosted service gate.
+
+## 2026-11-11 — Phone touch controls
+
+- The landscape-phone Chromium journey now sends actual browser touch input to the driving buttons, including a 50px finger slide while holding right. It sees the selected plot change, verifies that movement stops after touch release, drives left, then parks by tapping the action button. The buttons use `touch-action: none` and disable selection so the browser does not turn that gesture into page movement. This is mobile browser emulation on a desktop machine; physical touch hardware, frame time and GPU memory on the reference phone remain open.

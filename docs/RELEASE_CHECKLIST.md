@@ -35,7 +35,7 @@ A [shared-city seven-day metrics snapshot](../deployments/testnet-beta-metrics-2
 
 Two Chromium guest browser journeys now run with `npm run test:browser` and in the app CI job. They cover park, collect, repair and owner ticket, then all-curbs-full tower parking, a free burger visit and collection. A clean `npm ci` plus both tests passed locally in about seven seconds; the production dependency audit had no high findings. This adds repeatable Phase-2/7 browser coverage, not named-wallet signing, a real phone or hosted CI evidence.
 
-Three more guest Chromium journeys now check the map, cars, plots, preset Studio, guest stats, cinema and practice entry at 1280×720, 667×375 and 390×844. Each visited state checks for horizontal overflow and uncaught page errors. All five guest tests pass locally. Real touch devices, GPU memory and named-wallet journeys remain open.
+Three guest Chromium journeys check the map, cars, plots, preset Studio, guest stats, cinema and practice entry at 1280×720, 667×375 and 390×844. Each visited state checks for horizontal overflow and uncaught page errors. A sixth journey uses emulated phone touch input to hold, slide and release the drive controls, then parks. Physical touch devices, GPU memory and named-wallet journeys remain open.
 
 `ESTATE_BROWSER_LIVE_URL=<running-city-url> npm run test:browser:live` additionally checks the actual public testnet plot and rendered advertiser stats without signing. The local run passed with a recent indexed block. Repeated archival-RPC 429s then exposed a six-minute worker lag; bounded backoff and a 30-second sparse-pass interval reduced the observed lag to about 90 seconds after restart. A hosted provider-capacity and freshness run is still required.
 
