@@ -220,10 +220,18 @@ export class FastNearEventSource {
         }),
         "account history response",
       );
-      const count = integer(response.txs_count, "account transaction count");
-      if (expectedCount !== null && expectedCount !== count)
+      if (expectedCount === null) {
+        expectedCount = integer(
+          response.txs_count,
+          "account transaction count",
+        );
+      } else if (
+        response.txs_count != null &&
+        integer(response.txs_count, "account transaction count") !==
+          expectedCount
+      ) {
         throw new Error("Account history count changed during backfill");
-      expectedCount = count;
+      }
       for (const raw of array(response.account_txs, "account transactions")) {
         const row = object(raw, "account transaction");
         const height = integer(row.tx_block_height, "transaction block height");
@@ -294,8 +302,8 @@ export class FastNearEventSource {
             "receipt block height",
           );
           if (height < startHeight || height > checkpointHeight) continue;
-          if (envelope.block_height !== height)
-            throw new Error("Backfill receipt is outside the indexed range");
+          // The receipt's block_height can precede its execution block. Match
+          // the execution to a canonical block below instead.
           const receiptId = string(envelope.receipt_id, "receipt ID");
           if (execution.id !== receiptId)
             throw new Error("Backfill receipt identity mismatch");

@@ -1,0 +1,25 @@
+{
+  "network": "testnet",
+  "provider": "FastNear Transactions API and archival RPC",
+  "publicAccountId": "wrap.testnet",
+  "readOnly": true,
+  "observedAccountPages": {
+    "fromHeight": 277082103,
+    "toHeightExclusive": 277142104,
+    "firstPageRows": 200,
+    "firstPageTransactionCount": 257,
+    "firstPageHasResumeToken": true,
+    "secondPageRows": 57,
+    "secondPageHasTransactionCount": false,
+    "secondPageHasResumeToken": false,
+    "uniqueTransactionHashes": 257
+  },
+  "fixedWorkerBackfill": {
+    "startHeight": 277082267,
+    "checkpointHeight": 277142270,
+    "transactions": 263,
+    "eventBlocks": 0,
+    "elapsedMs": 10589
+  },
+  "limits": "The account is not the game contract, so this verifies live pagination and receipt handling but not a game-event aggregate or sustained production throughput."
+}

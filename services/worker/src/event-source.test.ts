@@ -298,7 +298,7 @@ test("account backfill validates indexed receipts against historical block hashe
                 receipt: {
                   receipt_id: "receipt-a",
                   receiver_id: contractId,
-                  block_height: 11,
+                  block_height: 10,
                 },
                 execution_outcome: {
                   id: "receipt-a",
@@ -380,8 +380,9 @@ test("account backfill reads every page and transaction batch without losing eve
           is_receiver: true,
           index,
         })),
-        txs_count: hashes.length,
-        ...(!request.resume_token ? { resume_token: "page-two" } : {}),
+        ...(!request.resume_token
+          ? { txs_count: hashes.length, resume_token: "page-two" }
+          : {}),
       });
     }
     if (url.endsWith("/v0/transactions")) {
@@ -402,7 +403,7 @@ test("account backfill reads every page and transaction batch without losing eve
                       receipt: {
                         receipt_id: receiptId,
                         receiver_id: contractId,
-                        block_height: height,
+                        block_height: height - 1,
                       },
                       execution_outcome: {
                         id: receiptId,
