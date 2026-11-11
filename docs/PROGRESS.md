@@ -291,3 +291,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-12 — Homes level progression
 
 - Added six transparent Homes sources, completing Terrace and Townhouse across levels 1–4. The illustrated guest catalog now has all 40 type/shape/level combinations. The [level-4 portrait builder](images/near-estate-homes-level4-studio-phone-v1.png) compares their footprints; the [Market Street capture](images/near-estate-homes-townhouse-level4-street-phone-v1.png) shows the narrow Townhouse with planted side yards beside its curb. All six sources pass the backend normalizer. Web type, asset and four focused guest browser checks pass locally. Physical-phone art review, owner generation, paid provider testing and hosted checks remain open.
+
+## 2026-11-12 — Shape-specific generation prompt
+
+- Prompt profile v4 now carries ten named silhouette briefs and 40 level-specific features matching the completed illustrated guest set. Homes requests suppress billboard surfaces, and all types retain the 140-pixel facade width and level height limits. New tests cover all 40 distinct prompt identities and a persisted v3 job after a database restart. This prepares future owner generation without enabling or spending on the paid provider; semantic media placement review, real provider jobs and the phase-6 testnet gate remain open.

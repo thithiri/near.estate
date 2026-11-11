@@ -143,6 +143,45 @@ test("paid reservations enforce invites, idempotency, account and plot quotas", 
   }
 });
 
+test("stored version-3 prompt identity survives a version-4 builder restart", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "estate-paid-ledger-"));
+  const dbPath = join(dir, "estate.sqlite");
+  let jobId: string;
+  const request = input("one.testnet", "plot-old", "o");
+  const { promptHash: _oldHash, ...priorIdentity } =
+    request.snapshot.promptSpec;
+  const legacyIdentity = {
+    ...priorIdentity,
+    version: 3 as const,
+    prompt: "near.estate facade prompt profile v3\n\nSaved owner direction",
+  };
+  const legacyPrompt = {
+    ...legacyIdentity,
+    promptHash: createHash("sha256")
+      .update(canonicalJson(legacyIdentity))
+      .digest("hex"),
+  };
+  const firstStore = new ApiStore(dbPath, join(dir, "assets"));
+  try {
+    const ledger = new PaidGenerationLedger(firstStore.db, settings());
+    jobId = ledger.reserve({
+      ...request,
+      snapshot: { ...request.snapshot, promptSpec: legacyPrompt },
+    }).id;
+  } finally {
+    firstStore.close();
+  }
+  const secondStore = new ApiStore(dbPath, join(dir, "assets"));
+  try {
+    const ledger = new PaidGenerationLedger(secondStore.db, settings());
+    assert.deepEqual(ledger.job(jobId!)?.snapshot?.promptSpec, legacyPrompt);
+    assert.equal(ledger.job(jobId!)?.status, "queued");
+  } finally {
+    secondStore.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("global currency reservations survive restart and cancellation releases only unused capacity", async () => {
   const dir = await mkdtemp(join(tmpdir(), "estate-paid-ledger-"));
   const dbPath = join(dir, "estate.sqlite");

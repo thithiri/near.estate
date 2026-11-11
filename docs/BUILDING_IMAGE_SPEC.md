@@ -97,15 +97,16 @@ All eight Homes sources are separate images and pass the level-specific image no
 
 ## Versioned generation prompt
 
-The game supplies all bracketed fields; the player supplies only the bounded description. The operator controls the style instructions and output checks.
+The game supplies all bracketed fields; the player supplies only the bounded description. Backend prompt profile v4 now binds each of the ten named shapes to a separate level-1, level-2, level-3 and level-4 feature brief from the progression tables above. The operator controls the style instructions and output checks. Profiles v1–v3 stay attached to their saved jobs and hashes.
 
 ```text
 Use case: stylized-concept.
 Asset type: transparent 2D facade sprite for near.estate, a side-scrolling parking city game.
 Create ONE [BUILDING_TYPE] building, architectural direction [VARIANT_DESCRIPTION], level [LEVEL].
+Level-specific feature: [SHAPE_LEVEL_FEATURE]. Preserve the shape and add this feature; do not stretch a lower-level image.
 Player idea: [SANITIZED_DESCRIPTION].
 Strict straight-on front elevation, centered and isolated, entire building visible with a level bottom edge. No perspective.
-Keep the silhouette, entrance and type materials distinct and legible at 140 logical pixels wide. Maximum final height after normalization: [70|100|130|160] logical pixels. Leave a clean 20 × 20 logical-pixel area for the game-rendered owner logo and, if possible, a separate blank 48 × 24 area for an optional billboard. Leave a clear name panel; do not draw any text or ad content.
+Keep the silhouette, entrance and type materials distinct and legible at 140 logical pixels wide. Maximum final height after normalization: [70|100|130|160] logical pixels. Leave a clean 20 × 20 logical-pixel area for the game-rendered owner logo. On commercial types only, a billboard needs a separate blank 48 × 24 area; Homes have no billboard surface. Leave a clear name panel where the architecture supports one; do not draw any text or ad content.
 Visual style: friendly hand-inked 2D city illustration, confident dark navy outlines, broad flat colors, restrained highlights, warm cream details. Accent palette: [PALETTE]. Architectural material: [TYPE_MATERIAL].
 Genuinely transparent background. No sky, ground, sidewalk, road, cars, people, cast shadow, lettering, advertisement, logo, watermark, interface or floating objects.
 ```
@@ -116,7 +117,7 @@ The second Cafe study used the following filled shape brief alongside the shared
 
 The current backend normalizer accepts the Pergola source at level 2, with visible bounds of 130 × 95.75 logical pixels. Its automatic logo and billboard suggestions land on the roof and glazing, despite the image's clear blank panels. The guest preview uses manually aligned rectangles. Future owner generation needs semantic placement review or editable overlay positions before publication; a successful geometry check alone is insufficient.
 
-The backend prompt builder currently uses profile v3 with the same envelope, style and broad shape restrictions; v3 aligns the Homes variant numbers with the selectable curated shapes. It does not yet encode every exact brief in the table above. Before enabling owner generation from these illustrated directions, update and version the builder rather than silently changing v3. Saved v1 and v2 jobs keep their original prompt and hash. Its image normalizer reserves five logical pixels on each side. All ten draft sources pass the actual level-2 geometry/alpha validator. Automatic logo and billboard rectangles are only geometric suggestions: they can land over windows or decoration. The moderator's candidate view outlines them, and a human must reject poor placements. Reliable editable placement, and a rule that suppresses a billboard when no suitable blank area exists, remain necessary before owner-generated art is offered.
+The backend prompt builder now uses profile v4 with the same render envelope, style restrictions and exact shape/level briefs. Saved v1–v3 jobs retain their original prompt and hash; a local restart test verifies a stored v3 record remains unchanged. The image normalizer reserves five logical pixels on each side, and all 40 draft sources pass its geometry/alpha checks. Automatic logo and billboard rectangles are only geometric suggestions: they can land over windows or decoration. The moderator's candidate view outlines them, and a human must reject poor placements. Reliable editable placement, a rule that suppresses a billboard when no suitable blank area exists, real provider output review and a physical-phone pass remain necessary before owner-generated art is offered.
 
 ## First illustrated guest set
 
