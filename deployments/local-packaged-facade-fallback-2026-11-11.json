@@ -1,0 +1,23 @@
+{
+  "result": "passed",
+  "scope": "local packaged Chromium browser with mocked read-only testnet street and forced public image failure; no wallet signature or live asset outage",
+  "webSourceRevision": "24a97a54835525e686740a33012d6a88da483cb5",
+  "browserCheckRevision": "0b37de9c16cd86c8d8891f56d973653a29252f67",
+  "contractIdInWebBuild": "ci-estate.testnet",
+  "apiImageId": "sha256:dc1ef24e802c1a57b7b61573d8dc654d9b926d84af05b85915ffc0b035141c5d",
+  "webImageId": "sha256:9a963bb63bf14dbf8a8fb3604cc03ffc566b596fef31884c8825b8d862f967e4",
+  "fixture": {
+    "buildingType": "Cafe",
+    "variant": 2,
+    "level": 4,
+    "approvedSpriteHttpStatus": 503,
+    "curatedSpriteHttpStatus": 200
+  },
+  "routesPassed": ["https://localhost", "http://127.0.0.1:8080"],
+  "liveStreetLoaded": true,
+  "meteorChooserReached": true,
+  "scriptPolicyViolations": 0,
+  "pageErrors": 0,
+  "relatedUnitTest": "approved facade uses its curated preset while the public image retries",
+  "realOutageAndPhysicalDeviceReview": "open"
+}
