@@ -1431,6 +1431,15 @@ footer[hidden] {
     gap: 6px;
   }
 }
+@media (max-width: 375px) {
+  .owner-generation-candidates .studio-building,
+  .owner-neighbour .studio-building,
+  .owner-generation-candidates button > img,
+  .owner-neighbour > img {
+    transform: scale(0.55);
+    margin-top: -72px;
+  }
+}
 @media (min-width: 500px) and (max-width: 700px) {
   .studio-neighbourhood {
     --studio-scale: 1;

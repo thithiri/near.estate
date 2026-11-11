@@ -377,3 +377,8 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 
 - The guest studio's mobile Preview step previously hid both neighbouring buildings below 700px, even though comparing a chosen building on its street is part of the design flow. The three facade wrappers and height-limit line now scale together, retaining both neighbours at 390px and 320px widths. [Phone](images/near-estate-studio-preview-phone-v2.png) and [narrow-phone](images/near-estate-studio-preview-narrow-v2.png) captures show the rendered result; measured building bounds remain inside the preview at both sizes.
 - The guest browser journeys now select the second candidate and require both neighbours to be visible in the Preview step on desktop, phone landscape and portrait. All six journeys, 58 web tests and the web production build pass. This covers the curated guest comparison; a physical device and the real paid owner flow still need their own review.
+
+## 2026-11-11 — Owner candidate cards on narrow phones
+
+- The wallet-backed owner's candidate cards and street comparison retained 140px images scaled to about 101px at a 320px viewport, but their grid cells were only about 83px wide. Overflow clipping cut off the facade sides. At widths up to 375px, those images now scale to 77px and fit inside the cells; the centre label is shortened to “Selected” so it remains readable. A [representative 320px CSS fixture](images/near-estate-owner-preview-narrow-layout-v1.png) and measured bounds show the result. The fixture does not sign in or prove the complete owner journey.
+- The web TypeScript build, 58 web tests and six guest browser journeys pass. Named-wallet and paid-candidate owner checks remain open.

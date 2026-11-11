@@ -57,6 +57,12 @@ The [390 px capture](images/near-estate-studio-preview-phone-v2.png) and
 guest renderer without horizontal clipping. These are browser viewport checks;
 physical phone readability is still open.
 
+The wallet-backed owner's candidate cards and three-building comparison use a
+smaller art scale at widths up to 375 px so none of the facade sides are clipped. A
+[320 px layout fixture](images/near-estate-owner-preview-narrow-layout-v1.png)
+shows the CSS with representative candidate images. It is a layout check, not
+an authenticated owner session or a paid-generation result.
+
 If later playtesting shows strong demand for portrait driving, make it a distinct
 camera/layout mode with a shorter visible street span and one focused building,
 not a scaled-down version of the landscape scene. Defer that additional mode

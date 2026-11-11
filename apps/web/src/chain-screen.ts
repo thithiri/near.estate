@@ -577,7 +577,7 @@ export class ChainScreen {
       <p class="muted">Choose a design to preview it beside the neighbouring plots. Submitting asks your wallet to publish a proposal for moderator review.</p>
       <div class="owner-street-preview" aria-label="Selected design beside current neighbouring plots">
         ${neighbour(-1)}
-        <div class="owner-neighbour selected"><img src="${html(choice!.thumbnailUrl)}" alt="" width="140" height="160" /><span>Selected design</span></div>
+        <div class="owner-neighbour selected"><img src="${html(choice!.thumbnailUrl)}" alt="" width="140" height="160" /><span>Selected</span></div>
         ${neighbour(1)}
       </div>
       ${pending ? `<p class="chain-parked">This design is pending moderator review on testnet.</p>` : ""}
