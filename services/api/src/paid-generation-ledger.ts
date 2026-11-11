@@ -458,6 +458,7 @@ export class PaidGenerationLedger {
     reviewer: string;
     suppressBillboard?: boolean;
     logoRectOverride?: NonNullable<AssetManifest["logoRect"]>;
+    billboardRectOverride?: NonNullable<AssetManifest["billboardRect"]>;
   }): PaidCandidate {
     if (
       !Number.isSafeInteger(input.now) ||
@@ -494,6 +495,8 @@ export class PaidGenerationLedger {
         throw new Error("Candidate manifest fingerprint is invalid");
       if (input.suppressBillboard && !originalManifest.billboardRect)
         throw new Error("Candidate has no billboard to remove");
+      if (input.suppressBillboard && input.billboardRectOverride)
+        throw new Error("Cannot move and remove the same billboard");
       const proposedLogo = input.logoRectOverride;
       if (
         proposedLogo &&
@@ -505,12 +508,23 @@ export class PaidGenerationLedger {
           !Number.isInteger(proposedLogo.y))
       )
         throw new Error("Invalid candidate logo adjustment");
+      const proposedBillboard = input.billboardRectOverride;
+      if (
+        proposedBillboard &&
+        (input.decision !== "approved" ||
+          !originalManifest.billboardRect ||
+          proposedBillboard.width !== originalManifest.billboardRect.width ||
+          proposedBillboard.height !== originalManifest.billboardRect.height ||
+          !Number.isInteger(proposedBillboard.x) ||
+          !Number.isInteger(proposedBillboard.y))
+      )
+        throw new Error("Invalid candidate billboard adjustment");
       const manifest = validateAssetManifest({
         ...originalManifest,
         logoRect: proposedLogo ?? originalManifest.logoRect,
         billboardRect: input.suppressBillboard
           ? null
-          : originalManifest.billboardRect,
+          : (proposedBillboard ?? originalManifest.billboardRect),
       });
       if (
         manifest.logoRect &&

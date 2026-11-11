@@ -2069,6 +2069,196 @@ test("a completed paid candidate enters the exact owner and moderator review flo
   }
 });
 
+test("billboard movement is previewed and published with its exact candidate hash", async () => {
+  const context = await setup(true);
+  try {
+    const { verified } = await context.signIn();
+    const cookie = verified.headers.get("set-cookie")!.split(";")[0]!;
+    const queued = await context.app.request("/paid-generations", {
+      method: "POST",
+      headers: {
+        origin: ORIGIN,
+        cookie,
+        "content-type": "application/json",
+        "idempotency-key": "billboard-placement-request-123",
+      },
+      body: JSON.stringify({
+        plotId: PLOT,
+        description: "A shop with a clear rooftop ad frame",
+        palette: "#73D9A6",
+      }),
+    });
+    assert.equal(queued.status, 202);
+    const job = await queued.json();
+    const ledger = context.paidLedger!;
+    ledger.claim("worker_billboard", 1_000);
+    const first = ledger.beginAttempt(job.id, "worker_billboard", 1_000);
+    const png = await sharp(
+      Buffer.from(
+        '<svg width="1024" height="1536" xmlns="http://www.w3.org/2000/svg"><rect x="200" y="600" width="624" height="500" fill="#73D9A6"/></svg>',
+      ),
+    )
+      .png()
+      .toBuffer();
+    await processPaidImageResult({
+      ledger,
+      jobId: job.id,
+      workerId: "worker_billboard",
+      clientRequestId: first.clientRequestId,
+      providerRequestId: "provider_billboard_1",
+      png,
+      assetDir: context.store.assetDir,
+      now: 1_000,
+    });
+    for (let index = 0; index < 3; index++) {
+      const attempt = ledger.beginAttempt(
+        job.id,
+        "worker_billboard",
+        1_001 + index,
+      );
+      ledger.finishAttempt({
+        jobId: job.id,
+        workerId: "worker_billboard",
+        clientRequestId: attempt.clientRequestId,
+        outcome: "rejected",
+        now: 1_001 + index,
+      });
+    }
+    assert.equal(ledger.job(job.id)?.status, "complete");
+    const original = ledger.candidates(job.id)[0]!;
+    assert.ok(original.manifest.logoRect);
+    assert.ok(original.manifest.billboardRect);
+    const billboardX = original.manifest.billboardRect.x + 2;
+    const billboardY = original.manifest.billboardRect.y + 1;
+    const admin = `Basic ${Buffer.from("reviewer:test-only-password").toString("base64")}`;
+    const path = `/moderation/paid-generations/${job.id}/candidates/1`;
+    const moderation = await context.app.request("/moderation", {
+      headers: { authorization: admin },
+    });
+    assert.equal(moderation.status, 200);
+    const moderationHtml = await moderation.text();
+    assert.match(moderationHtml, /name="billboard_x"/);
+    assert.match(moderationHtml, /name="billboard_y"/);
+    const coordinates = new URLSearchParams({
+      logo_x: String(original.manifest.logoRect.x),
+      logo_y: String(original.manifest.logoRect.y),
+      billboard_x: String(billboardX),
+      billboard_y: String(billboardY),
+    });
+    assert.equal(
+      (
+        await context.app.request(
+          `${path}/preview?logo_x=${original.manifest.logoRect.x}&logo_y=${original.manifest.logoRect.y}`,
+          { headers: { authorization: admin } },
+        )
+      ).status,
+      200,
+    );
+    const preview = await context.app.request(
+      `${path}/preview?${coordinates}`,
+      {
+        headers: { authorization: admin },
+      },
+    );
+    assert.equal(preview.status, 200);
+    const previewHtml = await preview.text();
+    assert.match(previewHtml, /Billboard/);
+    const previewHash = previewHtml.match(
+      /name="preview_manifest_hash" value="([a-f0-9]{64})"/,
+    )?.[1];
+    assert.ok(previewHash);
+    assert.notEqual(previewHash, original.manifestHash);
+    assert.equal(
+      (
+        await context.app.request(
+          `${path}/preview?logo_x=${original.manifest.logoRect.x}&logo_y=${original.manifest.logoRect.y}&billboard_x=${original.manifest.logoRect.x}&billboard_y=${original.manifest.logoRect.y}`,
+          { headers: { authorization: admin } },
+        )
+      ).status,
+      400,
+    );
+    assert.equal(
+      (
+        await context.app.request(
+          `${path}/preview?logo_x=${original.manifest.logoRect.x}&logo_y=${original.manifest.logoRect.y}&billboard_x=1.5&billboard_y=${billboardY}`,
+          { headers: { authorization: admin } },
+        )
+      ).status,
+      400,
+    );
+    assert.equal(
+      (
+        await context.app.request(
+          `${path}/preview?logo_x=${original.manifest.logoRect.x}&logo_y=${original.manifest.logoRect.y}&billboard_x=0&billboard_y=0`,
+          { headers: { authorization: admin } },
+        )
+      ).status,
+      400,
+    );
+    const approval = new URLSearchParams({
+      content_ok: "on",
+      style_ok: "on",
+      placement_ok: "on",
+      logo_x: String(original.manifest.logoRect.x),
+      logo_y: String(original.manifest.logoRect.y),
+      billboard_x: String(billboardX),
+      billboard_y: String(billboardY),
+    });
+    const headers = {
+      origin: ORIGIN,
+      authorization: admin,
+      "content-type": "application/x-www-form-urlencoded",
+    };
+    assert.equal(
+      (
+        await context.app.request(`${path}/approve`, {
+          method: "POST",
+          headers,
+          body: approval.toString(),
+        })
+      ).status,
+      400,
+    );
+    approval.set("preview_manifest_hash", previewHash);
+    approval.set("billboard_x", String(billboardX + 1));
+    assert.equal(
+      (
+        await context.app.request(`${path}/approve`, {
+          method: "POST",
+          headers,
+          body: approval.toString(),
+        })
+      ).status,
+      400,
+    );
+    approval.set("billboard_x", String(billboardX));
+    assert.equal(
+      (
+        await context.app.request(`${path}/approve`, {
+          method: "POST",
+          headers,
+          body: approval.toString(),
+        })
+      ).status,
+      303,
+    );
+    const reviewed = ledger.candidates(job.id)[0]!;
+    assert.equal(reviewed.reviewStatus, "approved");
+    assert.equal(reviewed.manifest.billboardRect?.x, billboardX);
+    assert.equal(reviewed.manifest.billboardRect?.y, billboardY);
+    assert.equal(reviewed.manifestHash, previewHash);
+    const promoted = await context.app.request(`/generations/${job.id}`, {
+      headers: { cookie },
+    });
+    assert.equal(promoted.status, 200);
+    const ownerJob = await promoted.json();
+    assert.equal(ownerJob.candidates[0]?.manifestHash, previewHash);
+    assert.equal(ownerJob.candidates[0]?.manifest.billboardRect.x, billboardX);
+  } finally {
+    await context.close();
+  }
+});
+
 test("owner mock design jobs are private, bounded and tied to a plot revision", async () => {
   const context = await setup();
   try {

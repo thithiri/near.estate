@@ -1953,7 +1953,7 @@ export function createApiApp({
         <p>Owner: ${escapeHtml(job.accountId)} · ${escapeHtml(job.snapshot.buildingType)} level ${job.snapshot.level}</p>
         <p>Owner description: ${escapeHtml(job.snapshot.promptSpec.description)}</p>
         <div class="candidate-art"><img src="data:image/png;base64,${sprite.toString("base64")}" alt="Full generated facade with placement outlines" width="280" height="320">${outline("Logo", candidate.manifest.logoRect)}${outline("Billboard", candidate.manifest.billboardRect)}</div>
-        <p>These outlines mark the proposed media rectangles. Removing an unusable billboard creates a new manifest hash before the owner can choose this image. The image is still private to this review page.</p>
+        <p>These outlines mark the proposed media rectangles. Moving a logo or billboard, or removing a billboard, creates a new manifest hash before the owner can choose this image. The image is still private to this review page.</p>
         <p>Manifest: <code>${candidate.manifestHash}</code></p>
         <form method="post" action="/api/moderation/paid-generations/${encodeURIComponent(job.id)}/candidates/${candidate.ordinal}/approve">
           <label><input type="checkbox" name="content_ok" required> Content is suitable for the city</label>
@@ -1967,6 +1967,7 @@ export function createApiApp({
             ? `<form method="get" action="/api/moderation/paid-generations/${encodeURIComponent(job.id)}/candidates/${candidate.ordinal}/preview">
           <label>Logo X <input type="number" name="logo_x" min="0" max="140" step="1" value="${candidate.manifest.logoRect.x}" required></label>
           <label>Logo Y <input type="number" name="logo_y" min="0" max="160" step="1" value="${candidate.manifest.logoRect.y}" required></label>
+          ${candidate.manifest.billboardRect ? `<label>Billboard X <input type="number" name="billboard_x" min="0" max="140" step="1" value="${candidate.manifest.billboardRect.x}" required></label><label>Billboard Y <input type="number" name="billboard_y" min="0" max="160" step="1" value="${candidate.manifest.billboardRect.y}" required></label>` : ""}
           ${candidate.manifest.billboardRect ? '<label><input type="checkbox" name="suppress_billboard"> Remove proposed billboard</label>' : ""}
           <button>Preview adjusted placement</button>
         </form>`
@@ -2003,6 +2004,8 @@ export function createApiApp({
       const ordinal = Number(c.req.param("ordinal"));
       const rawX = c.req.query("logo_x");
       const rawY = c.req.query("logo_y");
+      const rawBillboardX = c.req.query("billboard_x");
+      const rawBillboardY = c.req.query("billboard_y");
       if (
         !id.success ||
         !Number.isInteger(ordinal) ||
@@ -2036,6 +2039,29 @@ export function createApiApp({
         x: Number(rawX),
         y: Number(rawY),
       };
+      if (
+        !suppressBillboard &&
+        (rawBillboardX !== undefined || rawBillboardY !== undefined) &&
+        (!candidate.manifest.billboardRect ||
+          !rawBillboardX ||
+          !rawBillboardY ||
+          !/^\d{1,3}$/.test(rawBillboardX) ||
+          !/^\d{1,3}$/.test(rawBillboardY))
+      )
+        return c.json(
+          {
+            code: "INVALID_REQUEST",
+            message: "Enter whole billboard coordinates",
+          },
+          400,
+        );
+      const billboardRect = candidate.manifest.billboardRect
+        ? {
+            ...candidate.manifest.billboardRect,
+            x: Number(rawBillboardX ?? candidate.manifest.billboardRect.x),
+            y: Number(rawBillboardY ?? candidate.manifest.billboardRect.y),
+          }
+        : null;
       let sprite: Buffer;
       let manifest: Awaited<ReturnType<typeof validateCandidateMediaPlacement>>;
       try {
@@ -2054,16 +2080,14 @@ export function createApiApp({
         manifest = await validateCandidateMediaPlacement(sprite, {
           ...candidate.manifest,
           logoRect,
-          billboardRect: suppressBillboard
-            ? null
-            : candidate.manifest.billboardRect,
+          billboardRect: suppressBillboard ? null : billboardRect,
         });
       } catch {
         return c.json(
           {
             code: "INVALID_PLACEMENT",
             message:
-              "Logo must sit on the facade, inside this level's bounds, away from the billboard",
+              "Logo and billboard must sit on the facade inside this level's bounds without overlapping",
           },
           400,
         );
@@ -2088,11 +2112,11 @@ export function createApiApp({
         <div class="candidate-art"><img src="data:image/png;base64,${sprite.toString("base64")}" alt="Private generated facade with adjusted media outlines" width="280" height="320">${outline("Logo", manifest.logoRect)}${outline("Billboard", manifest.billboardRect)}</div>
         <p>Proposed manifest: <code>${proposedHash}</code></p>
         <form method="post" action="/api/moderation/paid-generations/${encodeURIComponent(id.data)}/candidates/${ordinal}/approve">
-          <input type="hidden" name="logo_x" value="${logoRect.x}"><input type="hidden" name="logo_y" value="${logoRect.y}"><input type="hidden" name="preview_manifest_hash" value="${proposedHash}">
+          <input type="hidden" name="logo_x" value="${logoRect.x}"><input type="hidden" name="logo_y" value="${logoRect.y}">${!suppressBillboard && billboardRect ? `<input type="hidden" name="billboard_x" value="${billboardRect.x}"><input type="hidden" name="billboard_y" value="${billboardRect.y}">` : ""}<input type="hidden" name="preview_manifest_hash" value="${proposedHash}">
           ${suppressBillboard ? '<input type="hidden" name="suppress_billboard" value="on">' : ""}
           <label><input type="checkbox" name="content_ok" required> Content is suitable for the city</label>
           <label><input type="checkbox" name="style_ok" required> Style and perspective match the game</label>
-          <label><input type="checkbox" name="placement_ok" required> The adjusted logo and remaining media spaces are usable</label>
+          <label><input type="checkbox" name="placement_ok" required> The adjusted logo and billboard spaces are usable</label>
           <button>Approve adjusted candidate</button>
         </form><p><a href="/api/moderation">Back to moderation</a></p>`);
     },
@@ -2142,8 +2166,12 @@ export function createApiApp({
       const reason = typeof rawReason === "string" ? rawReason.trim() : "";
       const rawLogoX = form?.logo_x;
       const rawLogoY = form?.logo_y;
+      const rawBillboardX = form?.billboard_x;
+      const rawBillboardY = form?.billboard_y;
       const hasLogoAdjustment =
         rawLogoX !== undefined || rawLogoY !== undefined;
+      const hasBillboardAdjustment =
+        rawBillboardX !== undefined || rawBillboardY !== undefined;
       if (
         hasLogoAdjustment &&
         (typeof rawLogoX !== "string" ||
@@ -2165,6 +2193,30 @@ export function createApiApp({
               ...candidate.manifest.logoRect,
               x: Number(rawLogoX),
               y: Number(rawLogoY),
+            }
+          : undefined;
+      if (
+        hasBillboardAdjustment &&
+        (typeof rawBillboardX !== "string" ||
+          typeof rawBillboardY !== "string" ||
+          !/^\d{1,3}$/.test(rawBillboardX) ||
+          !/^\d{1,3}$/.test(rawBillboardY) ||
+          !candidate.manifest.billboardRect ||
+          form?.suppress_billboard === "on")
+      )
+        return c.json(
+          {
+            code: "INVALID_PLACEMENT",
+            message: "Enter whole billboard coordinates or remove it",
+          },
+          400,
+        );
+      const billboardRectOverride =
+        hasBillboardAdjustment && candidate.manifest.billboardRect
+          ? {
+              ...candidate.manifest.billboardRect,
+              x: Number(rawBillboardX),
+              y: Number(rawBillboardY),
             }
           : undefined;
       if (decision === "approve") {
@@ -2211,11 +2263,11 @@ export function createApiApp({
               billboardRect:
                 form?.suppress_billboard === "on"
                   ? null
-                  : candidate.manifest.billboardRect,
+                  : (billboardRectOverride ?? candidate.manifest.billboardRect),
             },
           );
           if (
-            hasLogoAdjustment &&
+            (hasLogoAdjustment || hasBillboardAdjustment) &&
             form?.preview_manifest_hash !==
               hash(canonicalJson(proposedManifest))
           )
@@ -2245,6 +2297,7 @@ export function createApiApp({
           suppressBillboard:
             decision === "approve" && form?.suppress_billboard === "on",
           logoRectOverride,
+          billboardRectOverride,
         });
         const reviewedJob = paidLedger.job(id.data);
         if (reviewedJob) promotePaidJob(store, paidLedger, reviewedJob);

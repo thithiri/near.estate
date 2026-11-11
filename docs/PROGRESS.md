@@ -307,3 +307,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-12 — Illustrated choice on the guest street
 
 - Connected the 40-image illustrated building catalog to an actionable guest studio choice and the playable sample plot. A selected type, shape and level appears in a neighbour preview and on Main Street, with Edit look and Reset controls. The sample plot's default art now matches its level-1 label. The [desktop street capture](images/near-estate-illustrated-choice-street-desktop-v1.png) and [phone studio capture](images/near-estate-illustrated-choice-phone-v1.png) record the local layout. Web type and unit checks pass; all five guest browser checks pass, including the select/edit/reset journey. This is a guest visual path, not owner publication or a paid generation test.
+
+## 2026-11-12 — Previewed billboard placement
+
+- The private generated-candidate review can move an existing billboard rectangle while keeping its dimensions, or remove it. It previews the final logo/billboard combination on the exact sprite and requires the resulting manifest hash for adjusted approval. A local synthetic-candidate journey confirms the revised billboard coordinates and hash reach the owner job; malformed, uncovered and unpreviewed adjustments fail. API type checking and 97 local API tests pass. Human suitability review, real provider output and the Phase-6 testnet publication gate remain open.
