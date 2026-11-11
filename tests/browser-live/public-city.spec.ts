@@ -42,7 +42,7 @@ test("wallet chooser offers an active wallet", async ({ page }) => {
   await expect(page.getByText("Intear Wallet", { exact: true })).toHaveCount(0);
 });
 
-test("experimental second wallet reaches its connection screen", async ({
+test("experimental second wallet rejects a forged connection", async ({
   page,
 }) => {
   test.skip(
@@ -53,9 +53,43 @@ test("experimental second wallet reaches its connection screen", async ({
   await page.getByRole("button", { name: "Open live testnet city" }).click();
   await page.getByRole("button", { name: "Connect wallet" }).click();
   await page.getByText("Intear Wallet", { exact: true }).click();
+  const connection = page.frameLocator(
+    'iframe[src^="https://wallet.intear.tech/"]',
+  );
   await expect(
-    page
-      .frameLocator('iframe[src^="https://wallet.intear.tech/"]')
-      .getByText("Choose your preferred wallet connection method"),
+    connection.getByText("Choose your preferred wallet connection method"),
   ).toBeVisible({ timeout: 20_000 });
+  await page.evaluate(() =>
+    window.postMessage(
+      {
+        type: "connected",
+        accounts: [
+          {
+            accountId: "attacker.testnet",
+            publicKey: "ed25519:11111111111111111111111111111111",
+          },
+        ],
+        functionCallKeyAdded: true,
+        logoutKey: "ed25519:11111111111111111111111111111111",
+        useBridge: false,
+        walletUrl: "https://wallet.intear.tech",
+      },
+      "*",
+    ),
+  );
+  await page.waitForTimeout(500);
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem("_intear_wallet_connected_account"),
+    ),
+  ).toBeNull();
+  await expect(
+    connection.getByText("Choose your preferred wallet connection method"),
+  ).toBeVisible();
+  const popupPromise = page.context().waitForEvent("page");
+  await connection.getByText("Web", { exact: true }).click();
+  const popup = await popupPromise;
+  await expect
+    .poll(() => new URL(popup.url()).origin)
+    .toBe("https://wallet.intear.tech");
 });

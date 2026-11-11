@@ -1,0 +1,56 @@
+diff --git a/node_modules/@near-wallet-selector/intear-wallet/index.cjs b/node_modules/@near-wallet-selector/intear-wallet/index.cjs
+index 2138370..617b50c 100644
+--- a/node_modules/@near-wallet-selector/intear-wallet/index.cjs
++++ b/node_modules/@near-wallet-selector/intear-wallet/index.cjs
+@@ -5215,6 +5215,7 @@ function signAndSendTransactions(incompleteTransactions, walletUrl, provider, lo
+       }
+       let done = false;
+       const listener = event => __awaiter(this, void 0, void 0, function* () {
++        if (event.origin !== new URL(walletUrl).origin || event.source !== popup) return;
+         logger.log("Message from send-transactions popup", event);
+         switch (event.data.type) {
+           case "ready":
+@@ -5301,6 +5302,7 @@ const IntearWallet = ({
+           }
+           const listener = event => __awaiter(this, void 0, void 0, function* () {
+             var _a, _b, _c;
++            if (event.origin !== new URL(iframeOriginUrl).origin || event.source !== iframe.contentWindow) return;
+             logger.log("Message from connect popup", event);
+             switch (event.data.type) {
+               case "ready":
+@@ -5632,6 +5634,7 @@ const IntearWallet = ({
+             let done = false;
+             const listener = event => __awaiter(this, void 0, void 0, function* () {
+               var _a;
++              if (event.origin !== new URL(savedData.walletUrl || iframeOriginUrl).origin || event.source !== popup) return;
+               logger.log("Message from sign-message popup", event);
+               switch (event.data.type) {
+                 case "ready":
+diff --git a/node_modules/@near-wallet-selector/intear-wallet/index.js b/node_modules/@near-wallet-selector/intear-wallet/index.js
+index 3743138..a78ecd9 100644
+--- a/node_modules/@near-wallet-selector/intear-wallet/index.js
++++ b/node_modules/@near-wallet-selector/intear-wallet/index.js
+@@ -5211,6 +5211,7 @@ function signAndSendTransactions(incompleteTransactions, walletUrl, provider, lo
+       }
+       let done = false;
+       const listener = event => __awaiter(this, void 0, void 0, function* () {
++        if (event.origin !== new URL(walletUrl).origin || event.source !== popup) return;
+         logger.log("Message from send-transactions popup", event);
+         switch (event.data.type) {
+           case "ready":
+@@ -5297,6 +5298,7 @@ const IntearWallet = ({
+           }
+           const listener = event => __awaiter(this, void 0, void 0, function* () {
+             var _a, _b, _c;
++            if (event.origin !== new URL(iframeOriginUrl).origin || event.source !== iframe.contentWindow) return;
+             logger.log("Message from connect popup", event);
+             switch (event.data.type) {
+               case "ready":
+@@ -5628,6 +5630,7 @@ const IntearWallet = ({
+             let done = false;
+             const listener = event => __awaiter(this, void 0, void 0, function* () {
+               var _a;
++              if (event.origin !== new URL(savedData.walletUrl || iframeOriginUrl).origin || event.source !== popup) return;
+               logger.log("Message from sign-message popup", event);
+               switch (event.data.type) {
+                 case "ready":
