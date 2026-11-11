@@ -1,6 +1,6 @@
 # Contract state migration boundary
 
-The shared testnet city currently supports **state-preserving code upgrades**. The `upgrade_testnet` rehearsal imports the live state into a sandbox, deploys a candidate, compares every storage key and known view, then redeploys the previous WASM and checks the same state again. It does not change serialized state. Do not use that rehearsal as approval for a schema change.
+The shared testnet city currently supports **state-preserving code upgrades**. The `upgrade_testnet` rehearsal imports the live state into a sandbox, deploys a candidate, compares every storage key and known view, including a real owner account, its cars and active session, then redeploys the previous WASM and checks the same state again. It does not change serialized state. Do not use that rehearsal as approval for a schema change.
 
 ## Stored layout today
 

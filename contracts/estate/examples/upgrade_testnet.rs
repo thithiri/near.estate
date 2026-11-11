@@ -62,6 +62,72 @@ fn manifest() -> Result<(PathBuf, Value, AccountId, String)> {
     Ok((path, value, id, code_hash))
 }
 
+fn shared_owner_id(contract_id: &AccountId) -> Result<AccountId> {
+    let path = root().join("deployments/testnet-shared-owner-journey.json");
+    let record: Value = near_sdk::serde_json::from_slice(&std::fs::read(path)?)?;
+    ensure!(
+        record["contractId"] == contract_id.as_str(),
+        "shared owner record belongs to another contract"
+    );
+    Ok(record["ownerId"]
+        .as_str()
+        .context("shared owner record has no owner ID")?
+        .parse()?)
+}
+
+async fn account_views<N: NetworkClient + NetworkInfo + Send + Sync + 'static>(
+    worker: &Worker<N>,
+    id: &AccountId,
+    owner: &AccountId,
+) -> Result<Value> {
+    let account: Option<Value> = worker
+        .view(id, "get_account")
+        .args_json(json!({"account_id": owner}))
+        .await?
+        .json()?;
+    let account = account.context("known shared owner account is missing")?;
+    let cars: Vec<Value> = worker
+        .view(id, "get_cars")
+        .args_json(json!({"account_id": owner}))
+        .await?
+        .json()?;
+    let car_ids = account["car_ids"]
+        .as_array()
+        .context("shared owner has no car ID list")?;
+    ensure!(
+        !car_ids.is_empty() && cars.len() == car_ids.len(),
+        "shared owner cars differ from account"
+    );
+    for car in &cars {
+        ensure!(
+            car["owner"] == owner.as_str() && car_ids.contains(&car["id"]),
+            "shared owner car is misplaced"
+        );
+    }
+    let active_session = if let Some(session_id) = account["active_session_id"].as_u64() {
+        let session: Option<Value> = worker
+            .view(id, "get_session")
+            .args_json(json!({"session_id": session_id}))
+            .await?
+            .json()?;
+        let session = session.context("shared owner active session is missing")?;
+        ensure!(
+            session["id"] == session_id
+                && session["driver"] == owner.as_str()
+                && car_ids.contains(&session["car_id"]),
+            "shared owner active session differs from account"
+        );
+        Some(session)
+    } else {
+        ensure!(
+            account["active_session_id"].is_null(),
+            "shared owner active session ID is invalid"
+        );
+        None
+    };
+    Ok(json!({"account": account, "cars": cars, "activeSession": active_session}))
+}
+
 async fn counts_and_roles<N: NetworkClient + NetworkInfo + Send + Sync + 'static>(
     worker: &Worker<N>,
     id: &AccountId,
@@ -232,6 +298,8 @@ async fn rehearse(
     old_hash: &str,
     state_hash_before: &str,
     tower_views_before: &Value,
+    owner: &AccountId,
+    account_views_before: &Value,
     new_wasm: &[u8],
 ) -> Result<()> {
     println!("Importing current city into a local sandbox for upgrade rehearsal...");
@@ -249,6 +317,10 @@ async fn rehearse(
         state_hash(&sandbox.view_state(id).await?) == state_hash_before,
         "sandbox imported different contract state"
     );
+    ensure!(
+        account_views(&sandbox, id, owner).await? == *account_views_before,
+        "sandbox imported different owner account views"
+    );
     let outcome = copy.as_account().deploy(new_wasm).await?;
     ensure!(
         outcome.is_success(),
@@ -263,6 +335,10 @@ async fn rehearse(
     ensure!(
         sandbox_views == *tower_views_before,
         "sandbox tower views changed during code upgrade"
+    );
+    ensure!(
+        account_views(&sandbox, id, owner).await? == *account_views_before,
+        "sandbox owner account views changed during code upgrade"
     );
     verify_street_car_appearances(&sandbox, id).await?;
     verify_tower_floor_batch(&sandbox, id).await?;
@@ -284,6 +360,10 @@ async fn rehearse(
         verify_floors(&sandbox, id).await? == *tower_views_before,
         "sandbox rollback changed tower views"
     );
+    ensure!(
+        account_views(&sandbox, id, owner).await? == *account_views_before,
+        "sandbox rollback changed owner account views"
+    );
     counts_and_roles(&sandbox, id, manifest).await?;
     println!(
         "Sandbox upgrade and rollback preserved every contract state key and passed old and new views."
@@ -302,6 +382,8 @@ async fn apply(
     new_hash: &str,
     state_hash_before: &str,
     tower_views_before: &Value,
+    owner: &AccountId,
+    account_views_before: &Value,
 ) -> Result<()> {
     let key_file = PathBuf::from(
         std::env::var("ESTATE_DEPLOY_KEY_FILE").context("ESTATE_DEPLOY_KEY_FILE is required")?,
@@ -321,6 +403,8 @@ async fn apply(
         "afterWasmSha256": new_hash,
         "beforeStateSha256": state_hash_before,
         "beforeTowerViews": tower_views_before,
+        "beforeOwnerId": owner,
+        "beforeAccountViews": account_views_before,
         "status": "prepared"
     });
     if record_path.exists() {
@@ -348,6 +432,10 @@ async fn apply(
         ensure!(
             verify_floors(worker, id).await? == *tower_views_before,
             "tower views changed during code upgrade"
+        );
+        ensure!(
+            account_views(worker, id, owner).await? == *account_views_before,
+            "owner account views changed during code upgrade"
         );
         verify_tower_floor_batch(worker, id).await?;
         verify_street_car_appearances(worker, id).await?;
@@ -390,6 +478,10 @@ async fn apply(
             verify_floors(worker, id).await? == *tower_views_before,
             "rollback did not restore the pre-upgrade tower views"
         );
+        ensure!(
+            account_views(worker, id, owner).await? == *account_views_before,
+            "rollback did not restore the pre-upgrade owner account views"
+        );
         counts_and_roles(worker, id, &manifest).await?;
         record["status"] = json!("rolled_back");
         record["afterRollbackStateSha256"] = json!(state_hash_before);
@@ -430,6 +522,7 @@ async fn main() -> Result<()> {
         "RPC is not testnet"
     );
     counts_and_roles(&worker, &id, &manifest).await?;
+    let owner = shared_owner_id(&id)?;
     let old_wasm = worker.view_code(&id).await?;
     let live_hash = hash(&old_wasm);
     ensure!(
@@ -441,6 +534,7 @@ async fn main() -> Result<()> {
         verify_floors(&worker, &id).await?;
         verify_tower_floor_batch(&worker, &id).await?;
         verify_street_car_appearances(&worker, &id).await?;
+        account_views(&worker, &id, &owner).await?;
         println!("Current release code is already deployed and verified.");
         return Ok(());
     }
@@ -468,6 +562,11 @@ async fn main() -> Result<()> {
         );
         verify_tower_floor_batch(&worker, &id).await?;
         verify_street_car_appearances(&worker, &id).await?;
+        ensure!(
+            record["beforeOwnerId"] == owner.as_str()
+                && account_views(&worker, &id, &owner).await? == record["beforeAccountViews"],
+            "owner account views differ from prepared upgrade"
+        );
         if mode == "--apply" {
             record["status"] = json!("verified");
             record["afterStateSha256"] = json!(expected_state);
@@ -486,6 +585,7 @@ async fn main() -> Result<()> {
     );
     let before = state_hash(&worker.view_state(&id).await?);
     let tower_views_before = verify_floors(&worker, &id).await?;
+    let account_views_before = account_views(&worker, &id, &owner).await?;
     println!("Current code: {old_hash}; new code: {new_hash}; state: {before}");
     rehearse(
         &worker,
@@ -495,6 +595,8 @@ async fn main() -> Result<()> {
         &old_hash,
         &before,
         &tower_views_before,
+        &owner,
+        &account_views_before,
         &new_wasm,
     )
     .await?;
@@ -510,6 +612,8 @@ async fn main() -> Result<()> {
             &new_hash,
             &before,
             &tower_views_before,
+            &owner,
+            &account_views_before,
         )
         .await?;
     }
