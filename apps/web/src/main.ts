@@ -40,6 +40,7 @@ import type { ChainReader } from "./chain-reader.js";
 import type { LiveStreet } from "./live-street.js";
 import type { GameWalletClient } from "./wallet-client.js";
 import { createPresetFacade, PresetTextureCache } from "./preset-renderer.js";
+import { facadePreset } from "./preset-catalog.js";
 import { MockStudio } from "./studio-screen.js";
 import { mountCinemaShort } from "./cinema-short.js";
 import { mountPracticeCourse } from "./practice-course.js";
@@ -375,6 +376,32 @@ function label(text: string, size = 12, color = "#14213d"): Text {
   });
 }
 
+function guestBurgerBillboard(rect: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}): Container {
+  const board = new Container();
+  const art = new Graphics()
+    .roundRect(rect.x, rect.y, rect.width, rect.height, 2)
+    .fill(0x17384a)
+    .stroke({ color: 0xffd34f, width: 1.5 })
+    .moveTo(rect.x + 5, rect.y + 11)
+    .arc(rect.x + 11, rect.y + 11, 6, Math.PI, 0)
+    .fill(0xffca57)
+    .roundRect(rect.x + 5, rect.y + 13, 12, 2, 1)
+    .fill(0x8bc56b)
+    .roundRect(rect.x + 5, rect.y + 16, 12, 3, 1)
+    .fill(0xe89449);
+  const brand = label("N&F", 10, "#fff5d8");
+  brand.position.set(rect.x + 21, rect.y + 3);
+  const product = label("BURGERS", 4, "#ffcf59");
+  product.position.set(rect.x + 21, rect.y + 15);
+  board.addChild(art, brand, product);
+  return board;
+}
+
 function intersectionSign(road: Road, connection: RoadConnection): Container {
   const start = intersectionX(road, connection);
   const center = start + INTERSECTION_GAP / 2;
@@ -553,6 +580,15 @@ function drawWorld(): void {
           ? { level: 1, palette: "#F6C85F" }
           : undefined,
     );
+    if (!liveMode && plot.id === "plot-main-n-2") {
+      const previewLevel = (plot.index % 4) + 1;
+      const rect = facadePreset(
+        plot.initialType,
+        plot.initialVariant,
+        previewLevel,
+      ).billboardRect;
+      if (rect) facade.group.addChild(guestBurgerBillboard(rect));
+    }
     facade.group.eventMode = "static";
     facade.group.cursor = "pointer";
     facade.group.on("pointertap", () => {

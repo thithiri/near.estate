@@ -1,18 +1,18 @@
 # Current game visuals
 
-These are the latest saved visuals for the curated-only near.estate beta. The first three are captures of the running guest game at the stated browser viewports. They show the implemented interface and generated preset art, but do not prove physical-phone performance or wallet signing.
+These are the latest saved visuals for the curated-only near.estate beta. The first three are captures of the running guest game at the stated browser viewports. They show the implemented interface and generated preset art, but do not prove physical-phone performance or wallet signing. The restaurant's Near & Far Burgers billboard is a guest-only sample; live billboards require on-chain approval.
 
 ## Street on a phone
 
 667 × 375 landscape. The driving buttons, parking action, curb spaces, rule signs and cross-street control are visible.
 
-![near.estate street on a landscape phone](images/near-estate-curated-street-phone-v3.png)
+![near.estate street on a landscape phone](images/near-estate-curated-street-phone-v4.png)
 
 ## Street on a computer
 
 1280 × 720. The plot details sit beside the street and can be dismissed.
 
-![near.estate street with the desktop plot panel](images/near-estate-curated-street-desktop-v3.png)
+![near.estate street with the desktop plot panel](images/near-estate-curated-street-desktop-v4.png)
 
 ## Building studio on a phone
 
