@@ -15,7 +15,6 @@ import {
   setupModal,
   type WalletSelectorModal,
 } from "@near-wallet-selector/modal-ui";
-import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 import {
   BuildingType,
   CarBody,
@@ -279,7 +278,7 @@ export class GameWalletClient {
   static async create(reader: ChainReader): Promise<GameWalletClient> {
     const selector = await setupWalletSelector({
       network: NETWORK,
-      modules: [setupMyNearWallet(), setupMeteorWallet()],
+      modules: [setupMeteorWallet()],
     });
     const modal = setupModal(selector, {
       contractId: reader.contractId,

@@ -229,7 +229,7 @@ All mutating targets that can be reused, including a parking slot, carry an expe
 
 Prepay bounded account storage for three cars and one active session during registration. Quote and charge a plot/building reserve at purchase. Subsequent gameplay methods attach zero NEAR; purchases and storage funding use the wallet. Normal NEAR function-call keys cannot attach deposits, so the session-key allowlist and storage model must be tested together. [NEAR access keys](https://docs.near.org/protocol/accounts-contracts/access-keys)
 
-Use MyNearWallet and Meteor on testnet. Evaluate the documented NEAR Connect integration against restricted access-key needs; retain Wallet Selector only if the compatibility spike establishes it as the working choice. Record tested package versions, key permissions, allowance and renewal behaviour in DECISIONS. [NEAR Connect](https://docs.near.org/tools/near-connect)
+Use Meteor on testnet and select a second active wallet after a compatibility spike. As of November 2026, MyNearWallet refuses new app connections. Evaluate the documented NEAR Connect integration against restricted access-key needs; retain Wallet Selector while it remains the working choice. Record tested package versions, key permissions, allowance and renewal behaviour in DECISIONS. [NEAR Connect](https://docs.near.org/tools/near-connect)
 
 The initial gameplay key allowlist is park, park_tower, collect, settle_expired, ticket, repair, emergency_repair and set_rule. Keep purchases, building upgrades and appearance publishing behind wallet signing. Use finite gas allowance, recovery on exhaustion, account-scoped storage and a wallet-assisted on-chain revoke action. Clearing local storage alone is not key revocation.
 
@@ -260,7 +260,7 @@ Tasks use stable numbers for implementation and review. Phases 2 and 3 can proce
 Start here.
 
 1. Record the V1 scope, NPC/player ownership boundary, five building types and proposed economy; list every deliberate change from the original handoff.
-2. Run a minimal testnet wallet spike for MyNearWallet and Meteor: login, restricted key creation, zero-deposit call, allowance exhaustion and key revocation.
+2. Run a minimal testnet wallet spike for Meteor and a second active wallet: login, restricted key creation, zero-deposit call, allowance exhaustion and key revocation. Confirm the replacement supports the artwork signing flow before adding it to the chooser.
 3. Before any paid image spike, configure a finite spend ceiling and a maximum of six image calls. Then test transparent generation, reference-based editing and normalization; record model/version access, actual latency and measured cost.
 4. Validate generated samples for every type against all four height envelopes; prove that different silhouettes remain readable at actual game scale.
 5. Confirm a testnet event-data source with finalized successful execution logs, historical replay and receipt-level event identity.

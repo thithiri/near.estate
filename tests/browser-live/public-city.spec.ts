@@ -32,3 +32,11 @@ test("public testnet city and advertiser stats load together", async ({
     page.locator(".owner-stats-grid > div").nth(3).locator("strong"),
   ).toHaveText(String(stats.totals.tickets));
 });
+
+test("wallet chooser offers an active wallet", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Open live testnet city" }).click();
+  await page.getByRole("button", { name: "Connect wallet" }).click();
+  await expect(page.getByText("Meteor Wallet", { exact: true })).toBeVisible();
+  await expect(page.getByText("MyNearWallet", { exact: true })).toHaveCount(0);
+});
