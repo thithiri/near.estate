@@ -24,7 +24,8 @@ const journey = JSON.parse(
     plotId: string;
     slot: number;
     parkHash: string;
-    settleHash: string;
+    settleHash?: string;
+    settlementReceiptId?: string;
     earnedAtomic: string;
   }>;
 };
@@ -32,6 +33,7 @@ assert(journey.completedCycles.length > 0, "No settled income cycles");
 
 type EventRow = {
   block_height: number;
+  receipt_id: string;
   event_name: string;
   location_id: string | null;
   payload_json: string;
@@ -49,10 +51,10 @@ const verified: Array<{
 }> = [];
 try {
   const findEvents = db.prepare(
-    "SELECT block_height, event_name, location_id, payload_json FROM chain_events WHERE json_extract(payload_json, '$.session_id') = ? ORDER BY block_height",
+    "SELECT block_height, receipt_id, event_name, location_id, payload_json FROM chain_events WHERE json_extract(payload_json, '$.session_id') = ? ORDER BY block_height",
   );
   for (const cycle of journey.completedCycles) {
-    assert(cycle.parkHash && cycle.settleHash);
+    assert(cycle.parkHash && (cycle.settleHash || cycle.settlementReceiptId));
     const events = findEvents.all(cycle.sessionId) as EventRow[];
     const parked = events.filter((event) => event.event_name === "parked");
     const settled = events.filter((event) =>
@@ -91,6 +93,8 @@ try {
     assert.equal(settlement.driver_payout, cycle.earnedAtomic);
     assert.equal(settlement.recipient_payout, "0");
     assert.equal(settlement.forfeited, "0");
+    if (cycle.settlementReceiptId)
+      assert.equal(settled[0]!.receipt_id, cycle.settlementReceiptId);
     verified.push({
       sessionId: cycle.sessionId,
       plotId: cycle.plotId,

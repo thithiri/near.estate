@@ -8,7 +8,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { KeyPair } from "@near-js/crypto";
 import { KeyPairSigner } from "@near-js/signers";
 import {
@@ -18,6 +18,7 @@ import {
 } from "@near-js/transactions";
 import { baseDecode, baseEncode } from "@near-js/utils";
 import { ChainReader } from "../apps/web/src/chain-reader.js";
+import { reconcileIndexedOwnerIncome } from "./owner-income-reconcile.js";
 
 const mode = process.argv[2];
 if (mode !== "--park" && mode !== "--settle")
@@ -65,7 +66,9 @@ type Cycle = {
   startedAt: number;
   earnUntil: number;
   expiresAt: number;
+  balanceAtPark?: string;
   settleHash?: string;
+  settlementReceiptId?: string;
   earnedAtomic?: string;
 };
 type Pending = {
@@ -188,6 +191,11 @@ async function confirmPending() {
     assert.equal(session.location_id, pending.plotId);
     assert.equal(session.slot, pending.slot);
     assert.equal(session.legal, true);
+    assert.equal(
+      player.account.balance,
+      pending.balanceBefore,
+      "Parking changed the owner coin balance",
+    );
     if (!journal.cycles.some((cycle) => cycle.sessionId === session.id))
       journal.cycles.push({
         sessionId: session.id,
@@ -198,6 +206,7 @@ async function confirmPending() {
         startedAt: session.started_at,
         earnUntil: session.earn_until,
         expiresAt: session.expires_at,
+        balanceAtPark: player.account.balance,
       });
   } else {
     assert.equal(
@@ -227,13 +236,19 @@ const recoveredSettlementSessionId =
 if (journal.pending) await confirmPending();
 const player = await reader.player(credential.account_id);
 assert(player.account, "Owner is not registered");
-const unsettledCycle = journal.cycles.find((entry) => !entry.settleHash);
+const unsettledCycle = journal.cycles.find(
+  (entry) => !entry.settleHash && !entry.settlementReceiptId,
+);
 if (mode === "--settle" && recoveredSettlementSessionId !== undefined) {
   const recoveredCycle = journal.cycles.find(
     (entry) => entry.sessionId === recoveredSettlementSessionId,
   );
   assert(recoveredCycle?.settleHash, "Recovered settlement is not recorded");
-  assert.equal(player.active_session, null, "Recovered settlement left car parked");
+  assert.equal(
+    player.active_session,
+    null,
+    "Recovered settlement left car parked",
+  );
   publishSettlementEvidence(player.account.balance);
 } else if (mode === "--park") {
   if (player.active_session) {
@@ -242,6 +257,10 @@ if (mode === "--settle" && recoveredSettlementSessionId !== undefined) {
       unsettledCycle?.sessionId,
       "The active session does not match the private journey journal",
     );
+    if (unsettledCycle && !unsettledCycle.balanceAtPark) {
+      unsettledCycle.balanceAtPark = player.account.balance;
+      saveJournal();
+    }
     console.log(
       JSON.stringify({
         status: "already_parked",
@@ -253,7 +272,7 @@ if (mode === "--settle" && recoveredSettlementSessionId !== undefined) {
   } else {
     assert(
       !unsettledCycle,
-      `Session ${unsettledCycle?.sessionId} was settled externally; reconcile its chain event and payout before another park`,
+      `Session ${unsettledCycle?.sessionId} was settled externally; catch up the event index and run --settle with ESTATE_MEDIA_DATA_DIR`,
     );
     const config = await reader.ownerConfig();
     const car = player.cars.find(
@@ -284,29 +303,48 @@ if (mode === "--settle" && recoveredSettlementSessionId !== undefined) {
   }
 } else {
   const session = player.active_session;
-  assert(
-    session,
-    unsettledCycle
-      ? `Session ${unsettledCycle.sessionId} was settled externally; reconcile its chain event and payout`
-      : "Owner has no active session to settle",
-  );
-  const cycle = journal.cycles.find((entry) => entry.sessionId === session.id);
-  assert(cycle && !cycle.settleHash, "Active session is not in this journey");
-  const chainNow = await reader.chainTimeSeconds();
-  if (chainNow < session.earn_until)
-    throw new Error(`Full parking payout available at ${session.earn_until}`);
-  const secondsUntilExpiry = session.expires_at - chainNow;
-  if (secondsUntilExpiry > 0 && secondsUntilExpiry <= 30)
-    throw new Error("Collection is too close to expiry; retry after expiry");
-  const method = secondsUntilExpiry > 0 ? "collect" : "settle_expired";
-  await prepareCall(
-    method,
-    { expected_session_id: session.id },
-    player.account.balance,
-    { sessionId: session.id },
-  );
-  await confirmPending();
-  const after = await reader.player(credential.account_id);
-  assert(after.account);
-  publishSettlementEvidence(after.account.balance);
+  if (!session) {
+    assert(unsettledCycle, "Owner has no active session to settle");
+    const dataDir = process.env.ESTATE_MEDIA_DATA_DIR;
+    assert(
+      dataDir && dataDir.startsWith("/") && !dataDir.startsWith(`${root}/`),
+      "Set ESTATE_MEDIA_DATA_DIR to the private indexed city directory",
+    );
+    const indexed = reconcileIndexedOwnerIncome(
+      join(dataDir, "estate.sqlite"),
+      deployment.contractId,
+      credential.account_id,
+      unsettledCycle,
+      player.account.balance,
+    );
+    unsettledCycle.settlementReceiptId = indexed.receiptId;
+    unsettledCycle.earnedAtomic = indexed.earnedAtomic;
+    saveJournal();
+    publishSettlementEvidence(player.account.balance);
+  } else {
+    const cycle = journal.cycles.find(
+      (entry) => entry.sessionId === session.id,
+    );
+    assert(
+      cycle && !cycle.settleHash && !cycle.settlementReceiptId,
+      "Active session is not in this journey",
+    );
+    const chainNow = await reader.chainTimeSeconds();
+    if (chainNow < session.earn_until)
+      throw new Error(`Full parking payout available at ${session.earn_until}`);
+    const secondsUntilExpiry = session.expires_at - chainNow;
+    if (secondsUntilExpiry > 0 && secondsUntilExpiry <= 30)
+      throw new Error("Collection is too close to expiry; retry after expiry");
+    const method = secondsUntilExpiry > 0 ? "collect" : "settle_expired";
+    await prepareCall(
+      method,
+      { expected_session_id: session.id },
+      player.account.balance,
+      { sessionId: session.id },
+    );
+    await confirmPending();
+    const after = await reader.player(credential.account_id);
+    assert(after.account);
+    publishSettlementEvidence(after.account.balance);
+  }
 }
