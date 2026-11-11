@@ -3,6 +3,8 @@ import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import {
+  ExpiryStatus,
+  type ExpiryStatus as SweepStatus,
   InspectorStatus,
   type InspectorStatus as PatrolStatus,
 } from "@estate/shared";
@@ -13,6 +15,8 @@ export type MonitorConfig = {
   maxIndexerAgeSeconds: number;
   inspectorStatusPath: string | null;
   maxInspectorAgeSeconds: number;
+  expiryStatusPath: string | null;
+  maxExpiryAgeSeconds: number;
   dailyBudgetUsdMicros: number;
   budgetWarnPercent: number;
   reminderSeconds: number;
@@ -38,10 +42,15 @@ export type MonitorSnapshot = {
     | { state: "missing" }
     | { state: "invalid" }
     | null;
+  expiry?:
+    | { state: "ok"; status: SweepStatus }
+    | { state: "missing" }
+    | { state: "invalid" }
+    | null;
 };
 
 export type MonitorIssue = {
-  category: "indexer" | "budget" | "inspector" | "storage" | "api";
+  category: "indexer" | "budget" | "inspector" | "expiry" | "storage" | "api";
   code: string;
   severity: "warning" | "critical";
   detail: Record<string, string | number | null>;
@@ -95,6 +104,10 @@ export function readMonitorConfig(env: NodeJS.ProcessEnv): MonitorConfig {
     env.ESTATE_MONITOR_INSPECTOR_STATUS_FILE?.trim() || null;
   if (inspectorStatusPath && !isAbsolute(inspectorStatusPath))
     throw new Error("Inspector status path must be absolute");
+  const expiryStatusPath =
+    env.ESTATE_MONITOR_EXPIRY_STATUS_FILE?.trim() || null;
+  if (expiryStatusPath && !isAbsolute(expiryStatusPath))
+    throw new Error("Expiry status path must be absolute");
   if (webhookUrl) {
     const url = new URL(webhookUrl);
     if (url.protocol !== "https:" || url.username || url.password || url.hash)
@@ -148,6 +161,12 @@ export function readMonitorConfig(env: NodeJS.ProcessEnv): MonitorConfig {
       "ESTATE_MONITOR_INSPECTOR_MAX_AGE_SECONDS",
       900,
     ),
+    expiryStatusPath,
+    maxExpiryAgeSeconds: positiveInteger(
+      env,
+      "ESTATE_MONITOR_EXPIRY_MAX_AGE_SECONDS",
+      900,
+    ),
     dailyBudgetUsdMicros,
     budgetWarnPercent,
     reminderSeconds: positiveInteger(
@@ -167,6 +186,7 @@ export function readMonitorSnapshot(
   dbPath: string,
   nowSeconds: number,
   inspectorStatusPath: string | null = null,
+  expiryStatusPath: string | null = null,
 ): MonitorSnapshot {
   const file = statSync(dbPath);
   if (!file.isFile()) throw new Error("Monitor database is not a file");
@@ -219,6 +239,7 @@ export function readMonitorSnapshot(
               chargedUsdMicros: budget?.charged_usd_micros ?? 0,
             },
       inspector: readInspectorStatus(inspectorStatusPath),
+      expiry: readExpiryStatus(expiryStatusPath),
     };
   } finally {
     db.close();
@@ -239,6 +260,26 @@ function readInspectorStatus(
   }
   try {
     const parsed = InspectorStatus.safeParse(JSON.parse(raw));
+    return parsed.success
+      ? { state: "ok", status: parsed.data }
+      : { state: "invalid" };
+  } catch {
+    return { state: "invalid" };
+  }
+}
+
+function readExpiryStatus(path: string | null): MonitorSnapshot["expiry"] {
+  if (!path) return null;
+  let raw: string;
+  try {
+    raw = readFileSync(path, "utf8");
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "ENOENT"
+      ? { state: "missing" }
+      : { state: "invalid" };
+  }
+  try {
+    const parsed = ExpiryStatus.safeParse(JSON.parse(raw));
     return parsed.success
       ? { state: "ok", status: parsed.data }
       : { state: "invalid" };
@@ -371,6 +412,52 @@ export function evaluateMonitor(
         });
     }
   }
+  if (config.expiryStatusPath) {
+    const expiry = snapshot.expiry;
+    if (!expiry || expiry.state === "missing")
+      issues.push({
+        category: "expiry",
+        code: "EXPIRY_MISSING",
+        severity: "critical",
+        detail: {},
+      });
+    else if (expiry.state === "invalid")
+      issues.push({
+        category: "expiry",
+        code: "EXPIRY_STATUS_INVALID",
+        severity: "critical",
+        detail: {},
+      });
+    else if (expiry.status.contractId !== config.contractId)
+      issues.push({
+        category: "expiry",
+        code: "EXPIRY_WRONG_CONTRACT",
+        severity: "critical",
+        detail: { contractId: expiry.status.contractId },
+      });
+    else {
+      const age = nowSeconds - expiry.status.completedAt;
+      if (age > config.maxExpiryAgeSeconds || age < -60)
+        issues.push({
+          category: "expiry",
+          code: age < 0 ? "EXPIRY_CLOCK_SKEW" : "EXPIRY_STALE",
+          severity: "critical",
+          detail: { ageSeconds: age },
+        });
+      else if (expiry.status.consecutiveFailures >= 3)
+        issues.push({
+          category: "expiry",
+          code: "EXPIRY_FAILING",
+          severity: "critical",
+          detail: {
+            consecutiveFailures: expiry.status.consecutiveFailures,
+            eligible: expiry.status.eligible,
+            attempted: expiry.status.attempted,
+            failed: expiry.status.failed,
+          },
+        });
+    }
+  }
   return issues;
 }
 
@@ -388,6 +475,7 @@ export class AlertMonitor {
       path: string,
       nowSeconds: number,
       inspectorStatusPath?: string | null,
+      expiryStatusPath?: string | null,
     ) => MonitorSnapshot = readMonitorSnapshot,
     private readonly probeApi: (
       url: string,
@@ -405,6 +493,7 @@ export class AlertMonitor {
           this.config.dbPath,
           nowSeconds,
           this.config.inspectorStatusPath,
+          this.config.expiryStatusPath,
         ),
         this.config,
         nowSeconds,

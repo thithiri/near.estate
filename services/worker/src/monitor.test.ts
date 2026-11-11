@@ -27,6 +27,8 @@ function config(): MonitorConfig {
     maxIndexerAgeSeconds: 900,
     inspectorStatusPath: null,
     maxInspectorAgeSeconds: 900,
+    expiryStatusPath: null,
+    maxExpiryAgeSeconds: 900,
     dailyBudgetUsdMicros: 4_000_000,
     budgetWarnPercent: 80,
     reminderSeconds: 1800,
@@ -180,6 +182,85 @@ test("inspector alerts cover missing, invalid, stale and repeated failed patrols
     writer.close();
     await rm(directory, { recursive: true, force: true });
   }
+});
+
+test("expiry alerts cover stopped, malformed, stale and repeatedly failing sweeps", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "estate-expiry-monitor-"));
+  const dbPath = join(directory, "estate.sqlite");
+  const statusPath = join(directory, "sweep.json");
+  const writer = new EventStore(dbPath, contractId, 10);
+  const options = {
+    ...config(),
+    dailyBudgetUsdMicros: 0,
+    expiryStatusPath: statusPath,
+  };
+  try {
+    writer.applyHeight(10, {
+      height: 10,
+      hash: "block-10",
+      prevHash: "block-9",
+      timestampNs: String(BigInt(now) * 1_000_000_000n),
+      source: "neardata",
+      events: [],
+    });
+    const codes = () =>
+      evaluateMonitor(
+        readMonitorSnapshot(dbPath, now, null, statusPath),
+        options,
+        now,
+      ).map((issue) => issue.code);
+    assert.deepEqual(codes(), ["EXPIRY_MISSING"]);
+    await writeFile(statusPath, "bad JSON");
+    assert.deepEqual(codes(), ["EXPIRY_STATUS_INVALID"]);
+    const status = {
+      contractId,
+      completedAt: now - 901,
+      outcome: "ok",
+      consecutiveFailures: 0,
+      eligible: 0,
+      attempted: 0,
+      settled: 0,
+      raced: 0,
+      failed: 0,
+    };
+    await writeFile(statusPath, JSON.stringify(status));
+    assert.deepEqual(codes(), ["EXPIRY_STALE"]);
+    status.completedAt = now;
+    status.contractId = "other.testnet";
+    await writeFile(statusPath, JSON.stringify(status));
+    assert.deepEqual(codes(), ["EXPIRY_WRONG_CONTRACT"]);
+    status.contractId = contractId;
+    status.outcome = "error";
+    status.consecutiveFailures = 3;
+    status.eligible = 2;
+    status.attempted = 2;
+    status.failed = 2;
+    await writeFile(statusPath, JSON.stringify(status));
+    assert.deepEqual(codes(), ["EXPIRY_FAILING"]);
+    status.outcome = "ok";
+    status.consecutiveFailures = 0;
+    status.failed = 0;
+    await writeFile(statusPath, JSON.stringify(status));
+    assert.deepEqual(codes(), []);
+  } finally {
+    writer.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+  assert.equal(
+    readMonitorConfig({
+      ESTATE_CONTRACT_ID: contractId,
+      ESTATE_MONITOR_EXPIRY_STATUS_FILE: "/expiry-status/sweep.json",
+    }).expiryStatusPath,
+    "/expiry-status/sweep.json",
+  );
+  assert.throws(
+    () =>
+      readMonitorConfig({
+        ESTATE_CONTRACT_ID: contractId,
+        ESTATE_MONITOR_EXPIRY_STATUS_FILE: "relative/sweep.json",
+      }),
+    /Expiry status path must be absolute/,
+  );
 });
 
 test("alerts repeat after the reminder interval and send a resolution after recovery", async () => {

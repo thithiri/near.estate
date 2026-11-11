@@ -2,6 +2,11 @@ import { lstatSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { validateCitySeed } from "@estate/shared";
 import { ExpirySweeper, NearExpiryGateway } from "./expiry-sweep.js";
+import {
+  ExpiryStatusTracker,
+  readExpiryStatus,
+  writeExpiryStatus,
+} from "./expiry-status.js";
 
 const contractId = process.env.ESTATE_CONTRACT_ID?.trim();
 const accountId = process.env.EXPIRY_ACCOUNT_ID?.trim();
@@ -54,9 +59,36 @@ const sweeper = new ExpirySweeper(
   towers,
   Number(process.env.EXPIRY_MAX_SETTLEMENTS_PER_PASS ?? 8),
 );
+const statusFile = process.env.EXPIRY_STATUS_FILE?.trim();
+const previousStatus = statusFile
+  ? readExpiryStatus(statusFile, contractId)
+  : null;
+const statusTracker = new ExpiryStatusTracker(
+  contractId,
+  previousStatus?.consecutiveFailures ?? 0,
+);
+const runSweep = async () => {
+  let result;
+  try {
+    result = await sweeper.runOnce();
+  } catch (error) {
+    if (statusFile)
+      await writeExpiryStatus(
+        statusFile,
+        statusTracker.failed(Math.floor(Date.now() / 1_000)),
+      );
+    throw error;
+  }
+  if (statusFile)
+    await writeExpiryStatus(
+      statusFile,
+      statusTracker.completed(result, Math.floor(Date.now() / 1_000)),
+    );
+  return result;
+};
 const mode = process.argv[2] ?? "--run";
 if (mode === "--once") {
-  console.log(JSON.stringify(await sweeper.runOnce()));
+  console.log(JSON.stringify(await runSweep()));
 } else if (mode === "--run") {
   let stopped = false;
   let wake: (() => void) | null = null;
@@ -68,7 +100,7 @@ if (mode === "--once") {
   process.on("SIGTERM", stop);
   while (!stopped) {
     try {
-      console.log(JSON.stringify(await sweeper.runOnce()));
+      console.log(JSON.stringify(await runSweep()));
     } catch (error) {
       console.error("Expiry sweep retrying", error);
     }
