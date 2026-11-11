@@ -8,6 +8,7 @@
     "services/*"
   ],
   "scripts": {
+    "postinstall": "patch-package",
     "build": "npm run build -w @estate/shared && npm run build -w @estate/web && npm run build -w @estate/api && npm run build -w @estate/worker",
     "check": "npm run check --workspaces --if-present && npm run test --workspaces --if-present && npm run beta:metrics:test",
     "format": "prettier --write .",
@@ -50,6 +51,17 @@
     "tsx": "4.20.6",
     "typescript": "5.9.3",
     "vite-plugin-node-polyfills": "0.28.0"
+  },
+  "dependencies": {
+    "patch-package": "8.0.1"
+  },
+  "overrides": {
+    "@meteorwallet/sdk": {
+      "nanoid": "5.1.16",
+      "query-string": {
+        "decode-uri-component": "0.5.1"
+      }
+    }
   },
   "engines": {
     "node": ">=22.12"

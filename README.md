@@ -13,6 +13,8 @@ npm run contract:test
 npm run dev -w @estate/web
 ```
 
+`npm ci` applies the two small Meteor dependency manifest patches in `patches/` so the scoped fixed versions satisfy their declared ranges. Keep install scripts enabled; `npm ls` and the production audit are checked in the [release checklist](docs/RELEASE_CHECKLIST.md).
+
 The web app starts in guest mode with local mock state. Guest actions do not affect shared ownership or rewards. To show the separate **Live city** screen after deploying the contract, set `VITE_ESTATE_CONTRACT_ID` to the deployed `.testnet` account before starting or building the web app. The live screen reads the selected street side and supports wallet-backed registration, purchases, curb and tower parking, collection, tickets, and repairs. The illustrated Street has an explicit testnet switch: it renders chain-backed buildings, rules, occupancy, selected car and balance, and uses the restricted key for parking, collection and owner tickets. Guest mode stays local. Wallet actions have not yet been verified with two testnet accounts.
 
 ## Testnet deployment

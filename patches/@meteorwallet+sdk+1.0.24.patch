@@ -1,0 +1,13 @@
+diff --git a/node_modules/@meteorwallet/sdk/package.json b/node_modules/@meteorwallet/sdk/package.json
+index 80b28d5..78a397b 100644
+--- a/node_modules/@meteorwallet/sdk/package.json
++++ b/node_modules/@meteorwallet/sdk/package.json
+@@ -45,7 +45,7 @@
+     "@near-js/signers": "^2.2.5",
+     "@near-js/types": "2.2.5",
+     "borsh": "1.0.0",
+-    "nanoid": "5.1.5",
++    "nanoid": "^5.1.16",
+     "query-string": "^7.1.3",
+     "zod": "^4.0.17"
+   },
