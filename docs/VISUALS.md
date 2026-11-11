@@ -27,3 +27,5 @@ The sheet below places each of the 40 implemented curated facade sprites beside 
 ![near.estate curated facade variations across four levels](images/near-estate-level-neighbours-v1.png)
 
 The [art specification](ART_SPEC.md) explains the size limits, palettes, source assets and review checks. The older [phone layout concept](images/near-estate-phone-layout-v1.png) and [car concept sheet](images/near-estate-cars-v1.png) are design references rather than current game screenshots.
+
+The [street visual review](VISUAL_REVIEW.md) records the next art changes suggested by these captures.
