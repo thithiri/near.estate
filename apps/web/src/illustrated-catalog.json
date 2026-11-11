@@ -436,6 +436,24 @@
     {
       "type": "office",
       "variant": 1,
+      "level": 1,
+      "sprite": "office-glass-l1.png",
+      "sha256": "52a8f4d5dee61f4f311980218393304176a67995efcc29092fa49e4dfec8e292",
+      "source": "office-glass-l1-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 96.5,
+        "width": 130,
+        "height": 63.5
+      }
+    },
+    {
+      "type": "office",
+      "variant": 1,
       "level": 2,
       "sprite": "office-l2.png",
       "sha256": "7ff7b05d9dd35e40d423841df92dc93c6183ef09f10c4eec064477460a7836bd",
@@ -454,6 +472,60 @@
     {
       "type": "office",
       "variant": 2,
+      "level": 1,
+      "sprite": "office-studio-l1.png",
+      "sha256": "bbcfb992364e36a1d7a699f3c5376dcbb463c2cdb5b346941c3b5b1bbf6861b7",
+      "source": "office-studio-l1-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 109.75,
+        "width": 130,
+        "height": 50.25
+      }
+    },
+    {
+      "type": "office",
+      "variant": 1,
+      "level": 3,
+      "sprite": "office-glass-l3.png",
+      "sha256": "92e5a5c5ab441f3653c328e7ac60cac288657f22ee73dc7037f810a6eb520679",
+      "source": "office-glass-l3-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 15.25,
+        "y": 30,
+        "width": 109.25,
+        "height": 130
+      }
+    },
+    {
+      "type": "office",
+      "variant": 1,
+      "level": 4,
+      "sprite": "office-glass-l4.png",
+      "sha256": "fffed3ae2f42c8f7a404d9851f15c48570af4ad7fdc09566e804b9d63776f995",
+      "source": "office-glass-l4-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 19,
+        "y": 0,
+        "width": 101.75,
+        "height": 160
+      }
+    },
+    {
+      "type": "office",
+      "variant": 2,
       "level": 2,
       "sprite": "office-wide-l2.png",
       "sha256": "dd548ab73d78aa71a05076545baada3b76e000a119174b484f432b0950ac2681",
@@ -467,6 +539,42 @@
         "y": 73.25,
         "width": 130,
         "height": 86.75
+      }
+    },
+    {
+      "type": "office",
+      "variant": 2,
+      "level": 3,
+      "sprite": "office-studio-l3.png",
+      "sha256": "1e240c3f73887c75bb3b79fd1271e4e6fda69cae9ff3a7fae47e6694493352f6",
+      "source": "office-studio-l3-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 46.5,
+        "width": 130,
+        "height": 113.5
+      }
+    },
+    {
+      "type": "office",
+      "variant": 2,
+      "level": 4,
+      "sprite": "office-studio-l4.png",
+      "sha256": "8199d04fc1369facb6f4b66ae1ce9d55f54a5dce16ab6ec3fc2aba31ecf2bad6",
+      "source": "office-studio-l4-source.png",
+      "canvas": {
+        "width": 560,
+        "height": 640
+      },
+      "alphaBounds": {
+        "x": 5,
+        "y": 13,
+        "width": 130,
+        "height": 147
       }
     },
     {

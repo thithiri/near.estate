@@ -24,7 +24,9 @@ const samplePlots: Record<string, { type: string; variant: 1 | 2 }> = {
   "plot-market-n-1": { type: "restaurant", variant: 2 },
   "plot-main-n-7": { type: "restaurant", variant: 2 },
   "plot-market-n-2": { type: "office", variant: 1 },
+  "plot-central-n-0": { type: "office", variant: 1 },
   "plot-river-n-1": { type: "office", variant: 2 },
+  "plot-main-n-3": { type: "office", variant: 2 },
   "plot-central-n-6": { type: "homes", variant: 1 },
   "plot-central-n-1": { type: "homes", variant: 2 },
 };
@@ -138,6 +140,30 @@ const mediaRects: Record<
   "office:2": {
     logoRect: { x: 16, y: 81, width: 11, height: 11 },
     nameRect: { x: 34, y: 82, width: 66, height: 10 },
+  },
+  "office:1:1": {
+    logoRect: null,
+    nameRect: { x: 23, y: 115, width: 79, height: 8 },
+  },
+  "office:1:3": {
+    logoRect: null,
+    nameRect: { x: 35, y: 47, width: 59, height: 9 },
+  },
+  "office:1:4": {
+    logoRect: null,
+    nameRect: { x: 37, y: 82, width: 59, height: 20 },
+  },
+  "office:2:1": {
+    logoRect: { x: 16, y: 116, width: 10, height: 9 },
+    nameRect: { x: 33, y: 117, width: 71, height: 8 },
+  },
+  "office:2:3": {
+    logoRect: { x: 15, y: 118, width: 13, height: 11 },
+    nameRect: { x: 33, y: 120, width: 69, height: 9 },
+  },
+  "office:2:4": {
+    logoRect: { x: 23, y: 23, width: 19, height: 13 },
+    nameRect: { x: 45, y: 24, width: 48, height: 10 },
   },
   "homes:1": { logoRect: null, nameRect: null },
   "homes:2": { logoRect: null, nameRect: null },

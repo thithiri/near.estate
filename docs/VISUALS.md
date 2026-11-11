@@ -119,3 +119,13 @@ The level-4 phone builder shows the Diner and Bistro as separate silhouettes at 
 The level-3 Diner sits in the actual landscape street, with the Near & Far Burgers guest billboard placed on its rooftop sign. This is local preview art without a live media approval or impression event.
 
 ![Level-3 Diner and guest billboard on Main Street](images/near-estate-restaurant-diner-level3-street-phone-v1.png)
+
+## Office upgrade progression
+
+The level-4 phone builder compares a slim Glass block with slanted roof and a broad Studio with stacked concrete slabs. Both are guest-only design studies within a one-plot frontage.
+
+![Glass block and Studio level-4 building studies in the portrait builder](images/near-estate-office-level4-studio-phone-v1.png)
+
+The level-4 Studio appears in the landscape street next to the Diner and parking signs. Its windows and roofline remain distinct at game size.
+
+![Level-4 Office Studio on Main Street](images/near-estate-office-studio-level4-street-phone-v1.png)

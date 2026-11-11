@@ -89,7 +89,12 @@ for (const viewport of [
       ] as const) {
         await page.locator("#studio-type").selectOption(type);
         const studyLevel =
-          type === "Cafe" || type === "Retail" || type === "Restaurant" ? 1 : 2;
+          type === "Cafe" ||
+          type === "Retail" ||
+          type === "Restaurant" ||
+          type === "Office"
+            ? 1
+            : 2;
         for (const shape of shapes)
           await expect(
             page.getByRole("img", {
@@ -117,6 +122,15 @@ for (const viewport of [
         await expect(
           page.getByRole("img", {
             name: `Retail ${shape} illustrated level 4 style study`,
+          }),
+        ).toBeVisible();
+      await page.locator("#studio-level").selectOption("1");
+      await page.locator("#studio-type").selectOption("Office");
+      await page.locator("#studio-level").selectOption("4");
+      for (const shape of ["Glass block", "Studio"])
+        await expect(
+          page.getByRole("img", {
+            name: `Office ${shape} illustrated level 4 style study`,
           }),
         ).toBeVisible();
       await page.locator("#studio-level").selectOption("1");
