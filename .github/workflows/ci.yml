@@ -101,6 +101,8 @@ jobs:
             | python3 -c 'import json,sys; assert json.load(sys.stdin)["status"] == "ok"'
           curl --cacert "$root_cert" -fsS https://localhost/api/paid-generations/status \
             | python3 -c 'import json,sys; assert json.load(sys.stdin) == {"enabled": False}'
+          docker compose -f infra/compose.yaml -f infra/compose.prod.yaml exec -T api node -e \
+            'if (process.env.IMAGE_GENERATION_ENABLED !== "false" || process.env.OPENAI_API_KEY) process.exit(1)'
           curl --cacert "$root_cert" -fsS https://localhost/ \
             | python3 -c 'import sys; assert "near.estate" in sys.stdin.read()'
           test "$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' http://localhost/)" = "308 https://localhost/"

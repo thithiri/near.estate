@@ -6,6 +6,7 @@ services:
     environment:
       APP_ORIGIN: https://${ESTATE_HOST:?Set the public hostname without a scheme}
       ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:?Set the deployed testnet contract}
+      IMAGE_GENERATION_ENABLED: "false"
     logging:
       driver: json-file
       options:
