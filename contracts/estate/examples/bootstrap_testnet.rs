@@ -78,8 +78,9 @@ async fn account_for_role(
 async fn main() -> Result<()> {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
     let roles: Vec<&str> = match args.as_slice() {
-        [apply] if apply == "--apply" =>
-            vec!["contract", "moderator", "inspector", "driver", "owner"],
+        [apply] if apply == "--apply" => {
+            vec!["contract", "moderator", "inspector", "driver", "owner"]
+        }
         [apply, role_flag, role] if apply == "--apply" && role_flag == "--role" => {
             match role.as_str() {
                 "contract" => vec!["contract"],

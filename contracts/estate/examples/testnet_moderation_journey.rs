@@ -1,4 +1,4 @@
-use anyhow::{ensure, Result};
+use anyhow::{ensure, Context, Result};
 use near_estate_contract::{
     BuildingType, CarBody, CarColor, MediaDecisionStatus, MediaIdentity, MediaKind, MediaProposal,
     PlotSeed, PlotView, RoadId, Side,
@@ -6,7 +6,7 @@ use near_estate_contract::{
 use near_sdk::json_types::U128;
 use near_sdk::serde_json::json;
 use near_workspaces::{
-    types::{AccessKey, AccessKeyPermission, KeyType, NearToken, SecretKey},
+    types::{AccessKey, AccessKeyPermission, Finality, KeyType, NearToken, SecretKey},
     Account, AccountId, Contract, Worker,
 };
 use sha2::{Digest, Sha256};
@@ -103,6 +103,20 @@ async fn journey_accounts(
     directory: &Path,
 ) -> Result<(Contract, Account, Account, Account, &'static str)> {
     if let Ok(key_path) = std::env::var("ESTATE_TESTNET_SPONSOR_KEY_FILE") {
+        let protocol = worker.protocol_config(Finality::Final.into()).await?;
+        let contract_balance = (wasm.len() as u128)
+            .checked_mul(
+                protocol
+                    .runtime_config
+                    .storage_amount_per_byte
+                    .as_yoctonear(),
+            )
+            .and_then(|amount| amount.checked_add(NearToken::from_near(1).as_yoctonear()))
+            .context("contract storage funding overflow")?
+            .max(NearToken::from_near(10).as_yoctonear());
+        let sponsor_minimum = contract_balance
+            .checked_add(NearToken::from_near(5).as_yoctonear())
+            .context("sponsor funding overflow")?;
         let key_path = PathBuf::from(key_path).canonicalize()?;
         ensure!(
             !key_path.starts_with(root().canonicalize()?),
@@ -138,9 +152,9 @@ async fn journey_accounts(
             "sponsor key must have full access"
         );
         ensure!(
-            sponsor.view_account().await?.balance.as_yoctonear()
-                >= NearToken::from_near(8).as_yoctonear(),
-            "sponsor needs at least 8 testnet NEAR"
+            sponsor.view_account().await?.balance.as_yoctonear() >= sponsor_minimum,
+            "sponsor needs at least {} yoctoNEAR for code storage, accounts and reserve",
+            sponsor_minimum
         );
         let stamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
         let suffix = format!("{:012x}", stamp & 0xffffffffffff);
@@ -151,7 +165,7 @@ async fn journey_accounts(
         let contract_account = sponsored_account(
             &sponsor,
             &format!("c{suffix}"),
-            NearToken::from_near(3),
+            NearToken::from_yoctonear(contract_balance),
             directory,
         )
         .await?;
@@ -413,7 +427,10 @@ async fn journey(
         "imageBytes": "synthetic hash only; API upload and visual review are separate gates"
     });
     let path = root().join("deployments/testnet-moderation-journey.json");
-    std::fs::write(&path, near_sdk::serde_json::to_vec_pretty(&evidence)?)?;
+    std::fs::write(
+        &path,
+        format!("{}\n", near_sdk::serde_json::to_string_pretty(&evidence)?),
+    )?;
     println!(
         "Verified restricted moderator testnet journey: {}",
         path.display()

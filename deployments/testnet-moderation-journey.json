@@ -1,0 +1,18 @@
+{
+  "network": "testnet",
+  "fundingMode": "operator-sponsored",
+  "contractId": "cdd9e90c27e30.dev-20261111023445-31126278967987.testnet",
+  "ownerId": "odd9e90c27e30.dev-20261111023445-31126278967987.testnet",
+  "moderatorId": "mdd9e90c27e30.dev-20261111023445-31126278967987.testnet",
+  "plotId": "plot-main-n-0",
+  "logoHash": "1f4cfecfe627e0233b9b45a926a8a2a75d51f9396b10dc05bdd6e028e7e24e99",
+  "proposalRevision": 1,
+  "approvedTransaction": "8E28uoCkhz7Q9VyVoghbQWj6JqPAWE99jXNRpYoqpjUZ",
+  "revokedTransaction": "AopDThN31e7kXbRyMBuaL8PmNpG6pBUyCsUVaG2cdTUd",
+  "restrictedKeyPublic": "ed25519:8q5u9Ja9m3Bj17vWU9awNDUWTtj4NsavHRzinCxXEH7s",
+  "restrictedKeyRemoved": true,
+  "finalMediaRevision": 2,
+  "finalMediaActive": false,
+  "wasmSha256": "15d316f796236300524aa553efe0712b3d798b9798312a558120837044fec22e",
+  "imageBytes": "synthetic hash only; API upload and visual review are separate gates"
+}
