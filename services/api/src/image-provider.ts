@@ -47,8 +47,10 @@ function validateConfig(config: ImageProviderConfig): void {
 
 async function boundedResponse(response: Response): Promise<Buffer> {
   const length = Number(response.headers.get("content-length"));
-  if (Number.isFinite(length) && length > MAX_RESPONSE_BYTES)
+  if (Number.isFinite(length) && length > MAX_RESPONSE_BYTES) {
+    void response.body?.cancel().catch(() => undefined);
     throw new ImageProviderError("Provider response is too large", "uncertain");
+  }
   if (!response.body)
     throw new ImageProviderError(
       "Provider returned an empty response",
@@ -57,6 +59,7 @@ async function boundedResponse(response: Response): Promise<Buffer> {
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let size = 0;
+  let complete = false;
   try {
     while (true) {
       const { done, value } = await reader.read();
@@ -69,7 +72,9 @@ async function boundedResponse(response: Response): Promise<Buffer> {
         );
       chunks.push(value);
     }
+    complete = true;
   } finally {
+    if (!complete) void reader.cancel().catch(() => undefined);
     reader.releaseLock();
   }
   return Buffer.concat(chunks, size);

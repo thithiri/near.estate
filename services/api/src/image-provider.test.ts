@@ -123,6 +123,28 @@ test("image adapter distinguishes definite rejection from uncertain outcomes", a
   });
 });
 
+test("oversized provider response cancels its stream and remains uncertain", async () => {
+  let cancelled = false;
+  const oversized = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new Uint8Array(24 * 1024 * 1024 + 1));
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+  const provider = new OpenAiImageProvider(
+    config,
+    (async () => new Response(oversized)) as typeof fetch,
+  );
+  await assert.rejects(provider.generate("Facade", "one.testnet"), (error) => {
+    assert.ok(error instanceof ImageProviderError);
+    assert.equal(error.outcome, "uncertain");
+    return true;
+  });
+  assert.equal(cancelled, true);
+});
+
 test("image adapter sends approved art to the edit endpoint as an image reference", async () => {
   const reference = await sharp({
     create: {
