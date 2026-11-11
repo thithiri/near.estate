@@ -1,1 +1,15 @@
-{"result":"passed","capturedAt":"2026-11-11T00:50:18.356Z","node":"v22.23.0","platform":"darwin","blocks":1000,"events":10000,"writerMs":856,"apiRequests":8681,"partialHeightsObserved":975,"minHeightObserved":8,"maxHeightObserved":1000,"requestLatencyMs":{"median":0.07,"p95":0.14,"max":13.9},"limits":"Local separate SQLite writer process and in-process API route requests; excludes network, provider, VPS disk and long-duration traffic"}
+{
+  "result": "passed",
+  "capturedAt": "2026-11-11T00:50:18.356Z",
+  "node": "v22.23.0",
+  "platform": "darwin",
+  "blocks": 1000,
+  "events": 10000,
+  "writerMs": 856,
+  "apiRequests": 8681,
+  "partialHeightsObserved": 975,
+  "minHeightObserved": 8,
+  "maxHeightObserved": 1000,
+  "requestLatencyMs": { "median": 0.07, "p95": 0.14, "max": 13.9 },
+  "limits": "Local separate SQLite writer process and in-process API route requests; excludes network, provider, VPS disk and long-duration traffic"
+}
