@@ -1,0 +1,9 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "codeSha256": "03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19",
+  "accountId": "dev-20261110121826-61851458515092.testnet",
+  "transactionHash": "ESWCdDBscJgSuhk2farfaTWQJ7zpVWUh51F8iFccqGrL",
+  "receiptId": "GM42WZDuuodyUThkdgPbhMpiswBoZRi2oLp4iSB8yF2b",
+  "failureReason": "{\"ActionError\":{\"index\":0,\"kind\":{\"FunctionCallError\":{\"ExecutionError\":\"Smart contract panicked: unknown parking session\"}}}}"
+}

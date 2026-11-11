@@ -183,8 +183,6 @@ async function main() {
   }
   assert.equal(outcome, "failure", `Probe transaction is ${outcome}`);
   const failure = await finalFailure(journal.call.hash);
-  journal.completed = true;
-  saveJournal();
   const evidence = {
     network: "testnet",
     contractId: deployment.contractId,
@@ -198,6 +196,8 @@ async function main() {
     resolve(root, "deployments/testnet-readable-error-smoke.json"),
     `${JSON.stringify(evidence, null, 2)}\n`,
   );
+  journal.completed = true;
+  saveJournal();
   console.log(JSON.stringify(evidence, null, 2));
 }
 

@@ -1,0 +1,41 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "beforeWasmSha256": "15d316f796236300524aa553efe0712b3d798b9798312a558120837044fec22e",
+  "afterWasmSha256": "03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19",
+  "beforeStateSha256": "747e08f525ac47949512f1195077e00d7e8aabb60539edf3ddebb84e47f529bf",
+  "beforeTowerViews": {
+    "floors": [8, 8, 8, 8],
+    "total": 32,
+    "floor2FirstOpen": 16
+  },
+  "beforeOwnerId": "dev-20261110121829-19069405494728.testnet",
+  "beforeAccountViews": {
+    "account": {
+      "balance": "51394444",
+      "car_ids": [3],
+      "starter_car_id": 3,
+      "active_session_id": null,
+      "last_emergency_repair_at": null,
+      "burger_decal": false,
+      "reserved_storage_bytes": 4096,
+      "used_storage_bytes": 240
+    },
+    "cars": [
+      {
+        "id": 3,
+        "owner": "dev-20261110121829-19069405494728.testnet",
+        "body": "Hatchback",
+        "color": "Green",
+        "tier": 1,
+        "durability": 88,
+        "parked_session_id": null
+      }
+    ],
+    "activeSession": null
+  },
+  "status": "verified",
+  "deploymentTransactionHash": "C5t3qKMZ6dWJcuPSoDJMyV4jnUYdbRobxs7zZvTdbyrn",
+  "deploymentBlockHash": "CYoUERHumMJiVrFA5wDhMFgs4v5HoxzsuiHzXJChHNfb",
+  "afterStateSha256": "747e08f525ac47949512f1195077e00d7e8aabb60539edf3ddebb84e47f529bf"
+}

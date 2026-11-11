@@ -1,0 +1,20 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "oldDriverId": "dev-20261110121829-19069405494728.testnet",
+  "settlerAndNewDriverId": "dev-20261110121826-61851458515092.testnet",
+  "plotId": "plot-river-s-0",
+  "slot": 0,
+  "oldSessionId": 13,
+  "oldExpiresAt": 1794386395,
+  "ownerPayoutAtomic": "30000000",
+  "newSessionId": 14,
+  "settleHash": "CWVWKDPAjSGXgYArwhDnwewLVeQTvrCBWPAAtXQYYjd2",
+  "reuseParkHash": "47MKWA783pt6wUf2XbSFAzP7WcwThpEeVvkeS1xSiwWH",
+  "reuseCollectHash": "DZsZEQ9hb5vAHUSdajMkNhSQMcqiWqCYv5PVuGgPYxLh",
+  "finalSessions": {
+    "owner": null,
+    "driver": null
+  },
+  "finalSlotFree": true
+}

@@ -163,6 +163,12 @@ async function main() {
     return;
   }
   if (journal?.completed) {
+    assert(
+      existsSync(
+        resolve(root, "deployments/testnet-expiry-reuse-journey.json"),
+      ),
+      "Completed expiry journey has no public evidence",
+    );
     console.log("Expiry and reuse journey already completed");
     return;
   }
@@ -254,8 +260,6 @@ async function main() {
     (entry) => entry.plot.plot.id === state.plotId,
   );
   assert.equal(finalPlot?.slots[state.slot], null);
-  state.completed = true;
-  saveJournal(state);
   const evidence = {
     network: "testnet",
     contractId: deployment.contractId,
@@ -280,6 +284,8 @@ async function main() {
     resolve(root, "deployments/testnet-expiry-reuse-journey.json"),
     `${JSON.stringify(evidence, null, 2)}\n`,
   );
+  state.completed = true;
+  saveJournal(state);
   console.log(JSON.stringify(evidence, null, 2));
 }
 
