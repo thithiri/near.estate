@@ -570,7 +570,7 @@ export class ChainScreen {
           ${active ? `<img class="owner-upload-preview" src="/api/assets/${html(active.content.asset_hash)}" alt="Approved ${kind.toLowerCase()}" />` : ""}
           ${active?.content.link ? `<a href="${html(active.content.link)}" target="_blank" rel="noopener noreferrer">Approved link</a>` : ""}
           ${decision?.status === "Rejected" || decision?.status === "Revoked" ? `<p class="chain-parked">${decision.status}: ${html(decision.reason ?? "No reason supplied")}</p>` : ""}
-          ${slot.active && !eligible ? `<button type="button" data-owner-reuse-media="${kind}" ${this.busy ? "disabled" : ""}>Reuse approved ${kind.toLowerCase()}</button>` : ""}
+          ${slot.active && !eligible && !slot.pending ? `<button type="button" data-owner-reuse-media="${kind}" ${this.busy ? "disabled" : ""}>Reuse approved ${kind.toLowerCase()}</button>` : ""}
           ${slot.active || slot.pending ? `<button type="button" data-owner-remove-media="${kind}" ${this.busy ? "disabled" : ""}>Remove ${kind.toLowerCase()}</button>` : ""}
         </div>`;
       })
