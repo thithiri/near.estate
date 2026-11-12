@@ -26,6 +26,8 @@ A player can own up to three cars, with one earning parking session at a time. O
 | Other NPC destinations | One repair garage, one cinema, one Near & Far Burgers stop, one practice-course entrance |
 | Private car storage | Unparked cars are stored without occupying a city space and earn nothing |
 
+**Version-2 city update (12 November 2026):** The live testnet city replaces the uniform plots above with variable frontages. It has 100 player plots of one, two or three units (30/60/10), with one curb space per unit for 180 curb spaces. The three 32-space towers are unchanged, so earning capacity is 276 spaces. See the [release record](../deployments/variable-city-release-db33845c80179c1a.json) and [VARIABLE_CITY_TESTNET_PLAN](VARIABLE_CITY_TESTNET_PLAN.md).
+
 NPC sites occupy separately seeded frontages and cannot be bought or selected as player building types. Tower capacity is fixed by the game configuration, not inferred from its image. Repair garages provide repair/upgrade menus; they do not add earning spaces.
 
 Street data contains ordered frontage entries for player plots, NPC sites, intersections and open areas. A connection records destination road, entry position, side and facing direction; end connections are explicit. Seed validation rejects overlapping frontages and broken links. Start with North-side rendering and a cross-street control for South; the map can jump between roads.

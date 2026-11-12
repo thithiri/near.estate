@@ -16,7 +16,10 @@ import {
   intersectionX,
   roadWidth,
 } from "../apps/web/src/city-navigation.js";
-import { readActiveVersion2Release } from "./testnet-v2-release-context.js";
+import {
+  readActiveVersion2Release,
+  repoRelativePath,
+} from "./testnet-v2-release-context.js";
 
 const mode = process.argv[2];
 if (mode !== "--plan" && mode !== "--verify")
@@ -193,7 +196,7 @@ async function audit() {
   return {
     network: "testnet",
     contractId: deployment.contractId,
-    releaseRecord: active.path,
+    releaseRecord: repoRelativePath(root, active.path),
     seedVersion: 2,
     roads: seed.streets.length,
     streetSides: seed.streets.length * 2,

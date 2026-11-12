@@ -6,12 +6,12 @@ Snapshot: 2026-11-11. This checklist follows the [V1 phase gates](V1_SPEC.md#imp
 
 ## Candidate identity
 
-| Item                   | Current evidence                                                                                | Status                                                                                                                                                    |
-| ---------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Testnet city           | `dev-20261110121817-59798568433631.testnet`, [deployment manifest](../deployments/testnet.json) | Deployed                                                                                                                                                  |
-| Live contract code     | SHA-256 `03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19`                      | Verified at testnet finality; [upgrade record](../deployments/testnet-code-upgrade-03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19.json) |
-| Previous contract code | SHA-256 `15d316f796236300524aa553efe0712b3d798b9798312a558120837044fec22e`                      | Private backup retained; rollback rehearsed                                                                                                               |
-| Web/API/worker release | Record source revision and container image digests when a release candidate is built            | Open                                                                                                                                                      |
+| Item                   | Current evidence                                                                                | Status                                                                                                                                                          |
+| ---------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Testnet city           | `dev-20261110121817-59798568433631.testnet`, [deployment manifest](../deployments/testnet.json) | Deployed                                                                                                                                                        |
+| Live contract code     | SHA-256 `db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa` (version-2 city)     | Verified at testnet finality by `npm run judge:verify`; [release record](../deployments/variable-city-release-db33845c80179c1a.json)                            |
+| Previous contract code | SHA-256 `8132e2ab092bdfa0ddb368f894edb5782b95a049cad094d4b2410d007b4fab0c` (version-1 city)     | Reverse WASM `5d63aacb…` rehearsed; [upgrade record](../deployments/testnet-code-upgrade-8132e2ab092bdfa0ddb368f894edb5782b95a049cad094d4b2410d007b4fab0c.json) |
+| Web/API/worker release | Record source revision and container image digests when a release candidate is built            | Open                                                                                                                                                            |
 
 ## Phase gates
 
@@ -114,12 +114,12 @@ The previous WASM lacked near-sdk's `--cfg near` host-function flag, so a reject
 
 Release decision: **not ready**. No invite-beta URL or published build is claimed.
 
-| Field                                         | Value                                                                                                                                                 |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Release revision and image digests            | Pending                                                                                                                                               |
-| Testnet contract code hash and upgrade record | `03e7a685…efeef126e19`; [verified upgrade](../deployments/testnet-code-upgrade-03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19.json) |
-| Both-wallet desktop/phone evidence            | Pending                                                                                                                                               |
-| Logo moderation evidence                      | Pending                                                                                                                                               |
-| VPS TLS, alerts and restore evidence          | Pending                                                                                                                                               |
-| Operator sign-off date                        | Pending                                                                                                                                               |
-| Public invite-beta URL                        | Pending                                                                                                                                               |
+| Field                                         | Value                                                                                                    |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Release revision and image digests            | Pending                                                                                                  |
+| Testnet contract code hash and upgrade record | `db33845c…2affa`; [version-2 release record](../deployments/variable-city-release-db33845c80179c1a.json) |
+| Both-wallet desktop/phone evidence            | Pending                                                                                                  |
+| Logo moderation evidence                      | Pending                                                                                                  |
+| VPS TLS, alerts and restore evidence          | Pending                                                                                                  |
+| Operator sign-off date                        | Pending                                                                                                  |
+| Public invite-beta URL                        | Pending                                                                                                  |

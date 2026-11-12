@@ -20,7 +20,10 @@ import { baseDecode, baseEncode } from "@near-js/utils";
 import { validateCitySeed, type ChainPlotV2 } from "@estate/shared";
 import { z } from "zod";
 import { ChainReader } from "../apps/web/src/chain-reader.js";
-import { readActiveVersion2Release } from "./testnet-v2-release-context.js";
+import {
+  readActiveVersion2Release,
+  repoRelativePath,
+} from "./testnet-v2-release-context.js";
 
 const mode = process.argv[2];
 if (mode !== "--plan" && mode !== "--apply" && mode !== "--verify")
@@ -460,7 +463,7 @@ async function main() {
   const evidence = {
     network: "testnet",
     contractId: state.contractId,
-    releaseRecord: state.releaseRecord,
+    releaseRecord: repoRelativePath(root, state.releaseRecord),
     driverId: state.driverId,
     widths: state.steps.map(
       ({ units, plotId, slot, sessionId, balanceBefore, balanceAfter }) => ({

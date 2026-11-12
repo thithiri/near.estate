@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { homedir } from "node:os";
 import { readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -24,7 +25,10 @@ const record = JSON.parse(readFileSync(release.path, "utf8")) as {
 };
 const livePath = realpathSync(liveArg);
 const frozenPath = realpathSync(frozenArg);
-assert.equal(livePath, realpathSync(record.serviceDbPath));
+const recordedDbPath = record.serviceDbPath.startsWith("~/")
+  ? resolve(homedir(), record.serviceDbPath.slice(2))
+  : record.serviceDbPath;
+assert.equal(livePath, realpathSync(recordedDbPath));
 assert(!livePath.startsWith(`${root}/`) && !frozenPath.startsWith(`${root}/`));
 assert.notEqual(livePath, frozenPath);
 const backup = JSON.parse(

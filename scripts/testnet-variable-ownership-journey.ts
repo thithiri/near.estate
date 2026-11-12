@@ -19,7 +19,10 @@ import {
 import { baseDecode, baseEncode } from "@near-js/utils";
 import { z } from "zod";
 import { ChainReader } from "../apps/web/src/chain-reader.js";
-import { readActiveVersion2Release } from "./testnet-v2-release-context.js";
+import {
+  readActiveVersion2Release,
+  repoRelativePath,
+} from "./testnet-v2-release-context.js";
 
 const mode = process.argv[2];
 if (mode !== "--plan" && mode !== "--apply" && mode !== "--verify")
@@ -411,7 +414,7 @@ async function main() {
   const evidence = {
     network: "testnet",
     contractId: journal.contractId,
-    releaseRecord: journal.releaseRecord,
+    releaseRecord: repoRelativePath(root, journal.releaseRecord),
     ownerId: journal.ownerId,
     coinBalanceBefore: journal.coinBalanceBefore,
     coinBalanceAfter: player.account.balance,

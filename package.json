@@ -10,6 +10,7 @@
   "scripts": {
     "postinstall": "patch-package",
     "dev:guest": "node scripts/dev-local.mjs --guest",
+    "judge:verify": "node scripts/judge-verify.mjs",
     "dev:city": "node scripts/dev-local.mjs --city",
     "dev:city:snapshot": "node scripts/snapshot-dev-city.mjs",
     "test:browser": "playwright test",

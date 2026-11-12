@@ -22,6 +22,24 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+/// Records paths under the home directory as `~/...` so a public release record never names the operator account.
+fn home_relative(path: &Path) -> String {
+    match std::env::var_os("HOME").map(PathBuf::from) {
+        Some(home) => match path.strip_prefix(&home) {
+            Ok(rest) => format!("~/{}", rest.to_string_lossy()),
+            Err(_) => path.to_string_lossy().into_owned(),
+        },
+        None => path.to_string_lossy().into_owned(),
+    }
+}
+
+fn expand_home(value: &str) -> PathBuf {
+    match (value.strip_prefix("~/"), std::env::var_os("HOME")) {
+        (Some(rest), Some(home)) => PathBuf::from(home).join(rest),
+        _ => PathBuf::from(value),
+    }
+}
+
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
@@ -552,7 +570,7 @@ async fn rollback(record_path: &Path, reverse_path: &Path, service_data_dir: &Pa
     if !record["serviceDbPath"].is_null() {
         ensure!(
             service_data_dir.join("estate.sqlite").canonicalize()?
-                == PathBuf::from(string(&record, "serviceDbPath")?).canonicalize()?,
+                == expand_home(string(&record, "serviceDbPath")?).canonicalize()?,
             "rollback service data differs from the release cutover database"
         );
     }
@@ -888,7 +906,7 @@ async fn reopen_city(args: &[String], mode: ReopenMode) -> Result<()> {
         );
         record["status"] = json!("resume_started");
         record["cutoverAtMs"] = json!(at_ms);
-        record["serviceDbPath"] = json!(root().join(&args[1]).canonicalize()?.to_string_lossy());
+        record["serviceDbPath"] = json!(home_relative(&root().join(&args[1]).canonicalize()?));
         record["serviceVerification"] = service;
         write_json(&record_path, &record)?;
         let result = deployer

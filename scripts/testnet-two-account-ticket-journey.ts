@@ -19,7 +19,10 @@ import {
 import { baseDecode, baseEncode } from "@near-js/utils";
 import { z } from "zod";
 import { ChainReader } from "../apps/web/src/chain-reader.js";
-import { readActiveVersion2Release } from "./testnet-v2-release-context.js";
+import {
+  readActiveVersion2Release,
+  repoRelativePath,
+} from "./testnet-v2-release-context.js";
 
 const mode = process.argv[2];
 if (
@@ -535,7 +538,7 @@ async function main() {
     network: "testnet",
     contractId: deployment.contractId,
     cityVersion,
-    releaseRecord,
+    releaseRecord: releaseRecord && repoRelativePath(root, releaseRecord),
     ownerId: owner.account_id,
     driverId: driver.account_id,
     plotId,

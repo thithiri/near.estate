@@ -65,7 +65,7 @@ test("full curbs leave the parking tower and free city stops available", async (
   await page.goto("/?full-curbs");
   await expect(page.locator("#action")).toBeDisabled();
   await page.getByRole("button", { name: "Map", exact: true }).first().click();
-  await page.getByRole("button", { name: /Main Parking Tower/ }).click();
+  await page.getByRole("button", { name: /^Main Parking Tower/ }).click();
   await expect(page.locator("#action")).toHaveText("Park in tower");
   await page.locator("#tower-floor").selectOption("2");
   await page.locator("#action").click();
@@ -74,7 +74,7 @@ test("full curbs leave the parking tower and free city stops available", async (
   const balanceWhileParked = await page.locator("#balance").textContent();
   const durabilityWhileParked = await page.locator("#durability").textContent();
   await page.getByRole("button", { name: "Map", exact: true }).first().click();
-  await page.getByRole("button", { name: /Near & Far Burgers/ }).click();
+  await page.getByRole("button", { name: /^Near & Far Burgers/ }).click();
   await page.locator("#destination-burger").click();
   await expect(page.locator("#burger-count")).toContainText("1 burger break");
   await expect(page.locator("#balance")).toHaveText(balanceWhileParked ?? "");

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, realpathSync } from "node:fs";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 
 type Deployment = {
   contractId: string;
@@ -119,4 +119,9 @@ export function readActiveVersion2Release(
     "Duplicate deed destination",
   );
   return { path, record, moves: map.moves };
+}
+
+/** Repository-relative form of a local path, so public evidence never records a home directory. */
+export function repoRelativePath(root: string, path: string): string {
+  return relative(realpathSync(root), realpathSync(path));
 }
