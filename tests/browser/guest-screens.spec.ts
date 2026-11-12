@@ -299,7 +299,7 @@ for (const viewport of [
     await noHorizontalOverflow(page);
 
     await navigation.getByRole("button", { name: "Map" }).click();
-    await page.getByRole("button", { name: "Harbor Cinema" }).click();
+    await page.locator('[data-site="npc-harbor-cinema"]').click();
     await expect(
       page.getByRole("heading", { name: "Harbor Cinema" }),
     ).toBeVisible();
@@ -308,7 +308,7 @@ for (const viewport of [
     await noHorizontalOverflow(page);
 
     await navigation.getByRole("button", { name: "Map" }).click();
-    await page.getByRole("button", { name: "Practice Course" }).click();
+    await page.locator('[data-site="npc-central-course"]').click();
     await expect(
       page.getByRole("heading", { name: "Practice Course", exact: true }),
     ).toBeVisible();

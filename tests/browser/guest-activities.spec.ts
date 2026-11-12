@@ -8,7 +8,7 @@ test("practice course finishes, saves a best time and leaves parking resources a
   const balance = await page.locator("#balance").textContent();
   const durability = await page.locator("#durability").textContent();
   await page.getByRole("button", { name: "Map", exact: true }).first().click();
-  await page.getByRole("button", { name: "Practice Course" }).click();
+  await page.locator('[data-site="npc-central-course"]').click();
   await page.locator("#practice-start").click();
   await page.keyboard.down("ArrowUp");
   await expect(page.locator("#practice-status")).toContainText("Finished!", {
@@ -27,7 +27,7 @@ test("practice course finishes, saves a best time and leaves parking resources a
 
   await page.reload();
   await page.getByRole("button", { name: "Map", exact: true }).first().click();
-  await page.getByRole("button", { name: "Practice Course" }).click();
+  await page.locator('[data-site="npc-central-course"]').click();
   await expect(page.locator("#practice-status")).toContainText(
     `Best ${Number(best).toFixed(2)}s`,
   );
@@ -41,7 +41,7 @@ test("cinema pauses, finishes and replays without changing parking resources", a
   const balance = await page.locator("#balance").textContent();
   const durability = await page.locator("#durability").textContent();
   await page.getByRole("button", { name: "Map", exact: true }).first().click();
-  await page.getByRole("button", { name: "Harbor Cinema" }).click();
+  await page.locator('[data-site="npc-harbor-cinema"]').click();
   const progress = () =>
     page
       .locator("#cinema-progress")
