@@ -21,6 +21,7 @@ jobs:
       - run: npm run check
       - run: npx playwright install chromium --only-shell
       - run: npm run test:browser
+      - run: npm run test:browser:city
       - run: npm run format:check
   contract:
     runs-on: ubuntu-latest

@@ -747,3 +747,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-13 — Covered public stats outages across screen sizes
 
 - The shared screen journey now runs in both offline guest and contract-enabled city configurations. In the city build it injects a 503 from the public advertiser-stats API, checks the visible error and Refresh action, and continues through map, cars, plots, studio, cinema and practice screens at desktop, landscape phone and portrait phone sizes. The guest-only five-test run and expanded `test:browser:city` eight-test run both pass. The earlier mixed-fixture failures were a test expectation mismatch: a contract-enabled build exposes public statistics even while its street is in guest mode. Physical-device and hosted API checks remain open.
+
+## 2026-11-13 — Added city browser checks to the hosted app job
+
+- The CI app job now invokes `test:browser:city` after its existing guest browser run. All eight city-fixture checks passed locally before this workflow edit, including RPC retry, stats outage, approved media and the version-2 street. The private GitHub remote remains inaccessible from this session, so the updated workflow has not run on a hosted runner.
