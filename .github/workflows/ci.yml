@@ -41,6 +41,8 @@ jobs:
       - run: cargo build --release --target wasm32-unknown-unknown -p near-estate-contract
       - run: cargo test --workspace
       - run: cargo test --manifest-path contracts/city-migration/Cargo.toml --features runtime --lib
+      - run: cargo build --manifest-path contracts/city-migration/Cargo.toml --release --target wasm32-unknown-unknown --features runtime
+      - run: cargo test --manifest-path contracts/city-migration/Cargo.toml --features runtime --test runtime_sandbox
       - run: npm run contract:layout:check
       - run: cargo test --manifest-path contracts/estate/Cargo.toml --example deploy_testnet
       - run: cargo test --manifest-path contracts/estate/Cargo.toml --example provision_moderator_key
