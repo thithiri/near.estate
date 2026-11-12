@@ -1,0 +1,41 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "releaseRecord": "deployments/variable-city-release-db33845c80179c1a.json",
+  "firstDriverId": "dev-20261110121829-19069405494728.testnet",
+  "secondDriverId": "dev-20261110121826-61851458515092.testnet",
+  "plotId": "plot-main-n-2",
+  "slot": 0,
+  "oldSessionId": 19,
+  "oldExpiresAt": 1794479572,
+  "cappedPayoutAtomic": "30000000",
+  "firstBalanceBefore": "51511110",
+  "firstBalanceAfter": "81651110",
+  "reusedSessionId": 21,
+  "secondBalanceBefore": "100706110",
+  "secondBalanceAfter": "100856110",
+  "transactions": [
+    {
+      "actor": "dev-20261110121829-19069405494728.testnet",
+      "method": "park",
+      "hash": "HHAG2je8BwfsWQ2vHMXxcXbpDHp7GPdkykCZtYTUkUMe"
+    },
+    {
+      "actor": "dev-20261110121826-61851458515092.testnet",
+      "method": "settle_expired",
+      "hash": "9s99qSnihC9wH8wdDpXyGgMCJnssvkK1zHyRp4qWieDu"
+    },
+    {
+      "actor": "dev-20261110121826-61851458515092.testnet",
+      "method": "park",
+      "hash": "EKbWBszEeD5GA7NqqfRH4gstpQuKVVWC2ggukkgnbqwH"
+    },
+    {
+      "actor": "dev-20261110121826-61851458515092.testnet",
+      "method": "collect",
+      "hash": "AQYU32u2kk1hBMS5Ffv7dMA7ZsygthdjvdY4JznL5e5Q"
+    }
+  ],
+  "finalSlotFree": true,
+  "verifiedAt": "2026-11-12T10:35:24.422Z"
+}

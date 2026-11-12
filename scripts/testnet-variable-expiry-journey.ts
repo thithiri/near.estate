@@ -177,6 +177,53 @@ function cappedPayout(session: ChainSession): bigint {
   );
 }
 
+async function expiredPayout(state: Journal): Promise<bigint> {
+  const transaction = state.transactions.find(
+    (entry) => entry.method === "settle_expired",
+  );
+  assert(transaction, "Expiry settlement transaction is missing");
+  const response = await fetch(reader.rpcUrl, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: "near-estate-expiry-payout",
+      method: "tx",
+      params: {
+        tx_hash: transaction.hash,
+        sender_account_id: transaction.actor,
+        wait_until: "FINAL",
+      },
+    }),
+  });
+  assert.equal(response.status, 200, "Expiry receipt RPC failed");
+  const envelope = (await response.json()) as {
+    result?: {
+      receipts_outcome?: Array<{
+        outcome: { executor_id: string; logs: string[] };
+      }>;
+    };
+  };
+  const events = envelope.result?.receipts_outcome
+    ?.filter((receipt) => receipt.outcome.executor_id === state.contractId)
+    .flatMap((receipt) => receipt.outcome.logs)
+    .filter((line) => line.startsWith("EVENT_JSON:"))
+    .map(
+      (line) =>
+        JSON.parse(line.slice("EVENT_JSON:".length)) as {
+          event: string;
+          data: Array<{ session_id: number; driver_payout: string }>;
+        },
+    );
+  const expired = events?.find(
+    (event) =>
+      event.event === "expired" &&
+      event.data[0]?.session_id === state.sessionId,
+  );
+  assert(expired, "Expiry receipt has no matching settlement event");
+  return BigInt(expired.data[0].driver_payout);
+}
+
 async function confirmPending(state: Journal, path: string) {
   const call = state.pending;
   if (!call) return;
@@ -368,8 +415,12 @@ async function main() {
     assert.equal((await reader.player(first.account_id)).active_session, null);
     assert.equal((await reader.player(second.account_id)).active_session, null);
     assert.equal(
-      BigInt(state.firstBalanceAfter!) - BigInt(state.firstBalanceBefore),
+      await expiredPayout(state),
       BigInt(state.expectedFirstPayout!),
+    );
+    assert(
+      BigInt(state.firstBalanceAfter!) - BigInt(state.firstBalanceBefore) >=
+        BigInt(state.expectedFirstPayout!),
     );
     assert(
       BigInt(state.secondBalanceAfter!) > BigInt(state.secondBalanceBefore),
@@ -438,9 +489,13 @@ async function main() {
     assert.equal(settled.active_session, null);
     assert.equal(await curb(state), null);
     assert.equal(
-      BigInt(settled.account.balance) - BigInt(state.firstBalanceBefore),
+      await expiredPayout(state),
       BigInt(state.expectedFirstPayout!),
       "Expired park did not pay the capped amount",
+    );
+    assert(
+      BigInt(settled.account.balance) - BigInt(state.firstBalanceBefore) >=
+        BigInt(state.expectedFirstPayout!),
     );
     state.firstBalanceAfter = settled.account.balance;
     save(path, state);
