@@ -38,14 +38,33 @@ async fn views(
         .args_json(json!({"plot_id": "plot-main-n-3"}))
         .await?
         .json()?;
-    let street = worker
-        .view(id, "get_street_side")
-        .args_json(json!({"road_id": "main", "side": "North"}))
-        .await?
-        .json()?;
     let config = worker.view(id, "get_config").await?.json()?;
     let roles = worker.view(id, "get_roles").await?.json()?;
-    Ok(vec![plot, street, config, roles])
+    let mut result = vec![plot, config, roles];
+    for road_id in ["main", "market", "river", "central", "harbor"] {
+        for side in ["North", "South"] {
+            let street: Value = worker
+                .view(id, "get_street_side")
+                .args_json(json!({"road_id": road_id, "side": side}))
+                .await?
+                .json()?;
+            let plots = street["plots"].as_array().context("street plots missing")?;
+            ensure!(plots.len() == 10, "street side has fewer than ten plots");
+            for entry in plots {
+                let units = entry["plot"]["plot"]["frontage_units"]
+                    .as_u64()
+                    .context("plot width missing")?;
+                ensure!(
+                    entry["slots"]
+                        .as_array()
+                        .is_some_and(|slots| slots.len() == units as usize),
+                    "street curb slots do not match plot width"
+                );
+            }
+            result.push(street);
+        }
+    }
+    Ok(result)
 }
 
 #[tokio::main]
@@ -136,6 +155,21 @@ async fn main() -> Result<()> {
         views(&sandbox, &id).await? == before_views,
         "candidate upgrade changed public city views"
     );
+    let restored = imported.as_account().deploy(&imported_code).await?;
+    ensure!(restored.is_success(), "old WASM rollback failed in sandbox");
+    let rollback_state = sandbox.view_state(&id).await?;
+    ensure!(
+        rollback_state == before,
+        "old WASM rollback changed stored city state"
+    );
+    ensure!(
+        hash(&sandbox.view_code(&id).await?) == expected_live_code,
+        "old WASM code hash differs after rollback"
+    );
+    ensure!(
+        views(&sandbox, &id).await? == before_views,
+        "old WASM rollback changed public city views"
+    );
     let evidence = json!({
         "scope": "read-only testnet import; candidate deployed only to local sandbox",
         "contractId": id,
@@ -147,13 +181,21 @@ async fn main() -> Result<()> {
         "stateEntries": before.len(),
         "stateSha256Before": before_hash,
         "stateSha256After": state_hash(&after),
+        "stateSha256AfterRollback": state_hash(&rollback_state),
+        "streetSideViewsChecked": 10,
+        "plotsCoveredByViews": 100,
         "publicViewsUnchanged": true,
+        "rollbackCodeSha256": expected_live_code,
+        "rollbackPublicViewsUnchanged": true,
     });
     let path = root().join(format!(
         "deployments/runtime-upgrade-sandbox-{}.json",
         &candidate_hash[..16]
     ));
-    std::fs::write(&path, near_sdk::serde_json::to_vec_pretty(&evidence)?)?;
+    std::fs::write(
+        &path,
+        format!("{}\n", near_sdk::serde_json::to_string_pretty(&evidence)?),
+    )?;
     println!("{}", near_sdk::serde_json::to_string_pretty(&evidence)?);
     Ok(())
 }

@@ -9,5 +9,10 @@
   "stateEntries": 381,
   "stateSha256Before": "75ca98a500152eab325be156b5a8b9ea66b72cf8711b5a48aaec352cd1eb96b8",
   "stateSha256After": "75ca98a500152eab325be156b5a8b9ea66b72cf8711b5a48aaec352cd1eb96b8",
-  "publicViewsUnchanged": true
+  "stateSha256AfterRollback": "75ca98a500152eab325be156b5a8b9ea66b72cf8711b5a48aaec352cd1eb96b8",
+  "streetSideViewsChecked": 10,
+  "plotsCoveredByViews": 100,
+  "publicViewsUnchanged": true,
+  "rollbackCodeSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+  "rollbackPublicViewsUnchanged": true
 }
