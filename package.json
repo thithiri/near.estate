@@ -32,6 +32,7 @@
     "city:migration:packet:test": "node --test scripts/check-variable-city-release-packet.test.mjs",
     "city:migration:release": "cargo run --manifest-path contracts/city-migration/Cargo.toml --example release_testnet --",
     "city:migration:wasm": "node scripts/build-variable-city-release.mjs",
+    "city:runtime:upgrade:rehearse": "cargo build --manifest-path contracts/city-migration/Cargo.toml --release --target wasm32-unknown-unknown --features runtime && cargo run --manifest-path contracts/city-migration/Cargo.toml --features runtime --example rehearse_runtime_upgrade -- --read-only-live-import",
     "city:migration:review": "tsx scripts/render-variable-deed-review.ts",
     "city:migration:media-review": "tsx scripts/render-deed-media-review.ts",
     "city:migration:media-review:check": "tsx scripts/render-deed-media-review.ts --check",
