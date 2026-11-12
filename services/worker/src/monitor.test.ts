@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -366,7 +366,13 @@ test("API health probe accepts only the expected service response", async () => 
   const healthy = new Response(
     JSON.stringify({ status: "ok", service: "api", schemaVersion: 1 }),
   );
-  assert.equal(await probeApiHealth(url, async () => healthy), true);
+  assert.equal(
+    await probeApiHealth(url, async (_input, init) => {
+      assert.equal(init?.redirect, "error");
+      return healthy;
+    }),
+    true,
+  );
   assert.equal(
     await probeApiHealth(
       url,
@@ -444,12 +450,18 @@ test("API outage alerts and recovery stay independent of database access", async
 
 test("webhook sends authenticated JSON and treats a rejected response as failure", async () => {
   const originalFetch = globalThis.fetch;
-  const calls: { url: string; authorization: string; body: unknown }[] = [];
+  const calls: {
+    url: string;
+    authorization: string;
+    redirect: string | undefined;
+    body: unknown;
+  }[] = [];
   let responseStatus = 204;
   globalThis.fetch = (async (input, init) => {
     calls.push({
       url: String(input),
       authorization: String(new Headers(init?.headers).get("authorization")),
+      redirect: init?.redirect,
       body: JSON.parse(String(init?.body)),
     });
     return new Response(null, { status: responseStatus });
@@ -473,6 +485,7 @@ test("webhook sends authenticated JSON and treats a rejected response as failure
     assert.deepEqual(calls[0], {
       url: options.webhookUrl,
       authorization: `Bearer ${options.webhookToken}`,
+      redirect: "error",
       body: event,
     });
     const heartbeat: MonitorHeartbeat = {
@@ -487,5 +500,44 @@ test("webhook sends authenticated JSON and treats a rejected response as failure
     await assert.rejects(sendMonitorWebhook(options, event), /HTTP 503/);
   } finally {
     globalThis.fetch = originalFetch;
+  }
+});
+
+test("monitor loads only a private absolute webhook token file", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "estate-monitor-token-"));
+  const tokenPath = join(directory, "token");
+  const environment = {
+    ESTATE_CONTRACT_ID: contractId,
+    ESTATE_MONITOR_WEBHOOK_URL: "https://alerts.example.com/estate",
+    ESTATE_MONITOR_WEBHOOK_TOKEN_FILE: tokenPath,
+  };
+  try {
+    await writeFile(tokenPath, "test-token-at-least-sixteen-bytes\n", {
+      mode: 0o600,
+    });
+    assert.equal(
+      readMonitorConfig(environment).webhookToken,
+      "test-token-at-least-sixteen-bytes",
+    );
+    assert.throws(
+      () =>
+        readMonitorConfig({
+          ...environment,
+          ESTATE_MONITOR_WEBHOOK_TOKEN_FILE: "relative/token",
+        }),
+      /path must be absolute/,
+    );
+    await chmod(tokenPath, 0o644);
+    assert.throws(() => readMonitorConfig(environment), /file must be private/);
+    assert.throws(
+      () =>
+        readMonitorConfig({
+          ...environment,
+          ESTATE_MONITOR_WEBHOOK_TOKEN_FILE: directory,
+        }),
+      /file must be private/,
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
   }
 });

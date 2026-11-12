@@ -127,6 +127,13 @@ export function readMonitorConfig(env: NodeJS.ProcessEnv): MonitorConfig {
       throw new Error("Monitor API health URL must be plain HTTP(S)");
   }
   const tokenFile = env.ESTATE_MONITOR_WEBHOOK_TOKEN_FILE?.trim();
+  if (tokenFile) {
+    if (!isAbsolute(tokenFile))
+      throw new Error("Monitor webhook token path must be absolute");
+    const tokenStat = statSync(tokenFile);
+    if (!tokenStat.isFile() || (tokenStat.mode & 0o077) !== 0)
+      throw new Error("Monitor webhook token file must be private");
+  }
   const webhookToken = tokenFile
     ? readFileSync(tokenFile, "utf8").trim()
     : null;
@@ -578,6 +585,7 @@ export async function probeApiHealth(
   try {
     const response = await fetcher(url, {
       cache: "no-store",
+      redirect: "error",
       signal: AbortSignal.timeout(5_000),
     });
     if (!response.ok) return false;
@@ -600,6 +608,7 @@ export async function sendMonitorWebhook(
     throw new Error("Monitor webhook is not configured");
   const response = await fetch(config.webhookUrl, {
     method: "POST",
+    redirect: "error",
     headers: {
       "content-type": "application/json",
       authorization: `Bearer ${config.webhookToken}`,

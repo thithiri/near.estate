@@ -719,3 +719,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 
 - Hash-checked the private saved `db33845c…` WASM, then used it as a reverse candidate against a fresh public import of the live `ad148df…` testnet city. The [sandbox rehearsal](../deployments/runtime-upgrade-sandbox-db33845c80179c1a.json) preserved 381 storage entries and all ten street-side views and restored the current binary afterward. The [read-only plan](../deployments/runtime-upgrade-plan-db33845c80179c1a.json) and [runner drill](../deployments/runtime-upgrade-drill-db33845c80179c1a.json) passed the same exact-state recovery path. A final public postcheck still showed the current code and an unpaused 100-plot city. No live rollback occurred; the plan becomes stale on any live game-state change.
 - Updated the incident runbook to use the version-2 commands and to distinguish interrupted-run recovery from reversing an already verified release. A future schema-changing rollback remains a separate engineering gate.
+
+## 2026-11-13 — Tightened monitor webhook handling
+
+- Monitor startup now rejects a relative, non-regular or group/world-readable bearer-token file. Authenticated webhook requests and API health probes reject redirects. The focused monitor suite passes all 11 cases and the worker type check passes. A real HTTPS receiver and target-VPS alert delivery still need their own drill.
