@@ -58,11 +58,14 @@ test("illustrated street loads approved media from extensionless asset URLs", as
       contentType: "text/html",
       body: `<!doctype html><html><body><script type="module">
         import { choices } from "/src/frontage-art.ts";
-        import { createGuestFrontage } from "/src/guest-frontage.ts";
+        import { createGuestFrontage, GuestFrontageTextureCache } from "/src/guest-frontage.ts";
         const diner = choices.find((choice) => choice.id === "diner");
         window.reviewFrontage = createGuestFrontage(diner, 0, 4, null, "Diner", {
           logoHash: "${logoHash}", billboardHash: "${billboardHash}"
         });
+        const cache = new GuestFrontageTextureCache();
+        cache.setViews([{ x: 0, width: diner.units * 85, group: window.reviewFrontage }]);
+        cache.updateVisible(0, diner.units * 85);
       </script></body></html>`,
     }),
   );
@@ -164,11 +167,14 @@ test("missing custom facade keeps the curated building visible", async ({
       contentType: "text/html",
       body: `<!doctype html><html><body><script type="module">
         import { choices } from "/src/frontage-art.ts";
-        import { createGuestFrontage } from "/src/guest-frontage.ts";
+        import { createGuestFrontage, GuestFrontageTextureCache } from "/src/guest-frontage.ts";
         const diner = choices.find((choice) => choice.id === "diner");
         window.reviewFrontage = createGuestFrontage(
           diner, 0, 4, null, "Diner", undefined, "${"a".repeat(64)}"
         );
+        const cache = new GuestFrontageTextureCache();
+        cache.setViews([{ x: 0, width: diner.units * 85, group: window.reviewFrontage }]);
+        cache.updateVisible(0, diner.units * 85);
       </script></body></html>`,
     }),
   );
