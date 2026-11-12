@@ -135,21 +135,56 @@ async fn main() -> Result<()> {
         before_root.city_version == 2 && before_root.plot_count == 100,
         "imported state is not the expected version-2 city"
     );
+    ensure!(!before_root.paused, "live city is already paused");
     let before_views = views(&sandbox, &id).await?;
     ensure!(
         !before_views[0].is_null(),
         "review plot missing before upgrade"
     );
+    let paused = imported
+        .as_account()
+        .call(&id, "set_paused")
+        .args_json(json!({"paused": true}))
+        .transact()
+        .await?;
+    ensure!(paused.is_success(), "sandbox city could not be paused");
+    let paused_state = sandbox.view_state(&id).await?;
+    let paused_root: CityRootV2 = BorshDeserialize::try_from_slice(
+        paused_state
+            .get(b"STATE".as_slice())
+            .context("paused city root missing")?,
+    )?;
+    ensure!(paused_root.paused, "sandbox city did not pause");
     let deployed = imported.as_account().deploy(&candidate).await?;
     ensure!(deployed.is_success(), "candidate sandbox deployment failed");
-    let after = sandbox.view_state(&id).await?;
+    let during_upgrade = sandbox.view_state(&id).await?;
     ensure!(
-        after == before,
-        "candidate upgrade changed stored city state"
+        during_upgrade == paused_state,
+        "candidate upgrade changed paused city state"
     );
     ensure!(
         hash(&sandbox.view_code(&id).await?) == candidate_hash,
         "candidate code hash differs after sandbox deployment"
+    );
+    let candidate_paused: bool = sandbox.view(&id, "is_paused").await?.json()?;
+    ensure!(
+        candidate_paused,
+        "candidate reopened the city during upgrade"
+    );
+    let reopened = imported
+        .as_account()
+        .call(&id, "set_paused")
+        .args_json(json!({"paused": false}))
+        .transact()
+        .await?;
+    ensure!(
+        reopened.is_success(),
+        "candidate could not reopen sandbox city"
+    );
+    let after = sandbox.view_state(&id).await?;
+    ensure!(
+        after == before,
+        "reopened candidate changed stored city state"
     );
     ensure!(
         views(&sandbox, &id).await? == before_views,
@@ -180,6 +215,8 @@ async fn main() -> Result<()> {
         "npcSiteCount": before_root.npc_site_count,
         "stateEntries": before.len(),
         "stateSha256Before": before_hash,
+        "pausedStateSha256": state_hash(&paused_state),
+        "candidatePreservedPausedState": true,
         "stateSha256After": state_hash(&after),
         "stateSha256AfterRollback": state_hash(&rollback_state),
         "streetSideViewsChecked": 10,

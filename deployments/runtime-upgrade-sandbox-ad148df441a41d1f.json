@@ -8,6 +8,8 @@
   "npcSiteCount": 7,
   "stateEntries": 381,
   "stateSha256Before": "75ca98a500152eab325be156b5a8b9ea66b72cf8711b5a48aaec352cd1eb96b8",
+  "pausedStateSha256": "a71d7b8762114cd5480d3139dda03af9ce310edd58cefdb09f7ea68e2bf480c1",
+  "candidatePreservedPausedState": true,
   "stateSha256After": "75ca98a500152eab325be156b5a8b9ea66b72cf8711b5a48aaec352cd1eb96b8",
   "stateSha256AfterRollback": "75ca98a500152eab325be156b5a8b9ea66b72cf8711b5a48aaec352cd1eb96b8",
   "streetSideViewsChecked": 10,
