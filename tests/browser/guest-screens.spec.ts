@@ -70,6 +70,10 @@ for (const viewport of [
   test(`guest screens remain reachable at ${viewport.name}`, async ({
     page,
   }) => {
+    if (process.env.ESTATE_BROWSER_CITY_FIXTURE === "1")
+      await page.route("**/api/stats/plots/*", (route) =>
+        route.fulfill({ status: 503, body: "Statistics service unavailable" }),
+      );
     await page.setViewportSize({
       width: viewport.width,
       height: viewport.height,
@@ -293,9 +297,20 @@ for (const viewport of [
     await expect(
       page.getByRole("heading", { name: "Advertiser stats" }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Guest preview" }),
-    ).toBeVisible();
+    if (process.env.ESTATE_BROWSER_CITY_FIXTURE === "1") {
+      await expect(page.locator("#stats-refresh")).toBeVisible();
+      await expect(page.getByRole("alert")).toContainText(
+        "Statistics unavailable (503)",
+      );
+      await page.locator("#stats-refresh").click();
+      await expect(page.getByRole("alert")).toContainText(
+        "Statistics unavailable (503)",
+      );
+    } else {
+      await expect(
+        page.getByRole("heading", { name: "Guest preview" }),
+      ).toBeVisible();
+    }
     await noHorizontalOverflow(page);
 
     await navigation.getByRole("button", { name: "Map" }).click();

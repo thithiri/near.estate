@@ -743,3 +743,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-13 — Added testnet street retry on mobile
 
 - If the first shared-street RPC read fails, the street status now offers Retry connection. An open-attempt generation guard ignores a delayed old failure after mode switching or a newer retry. Switching modes clears an earlier curb hint and its timer so the connection action is placed correctly. A 667 × 375 browser journey crossed the curb, injected a temporary RPC outage, clicked retry, loaded the version-2 street and proved a delayed stale failure could not replace the successful view. The web TypeScript check passes. Named-wallet signing and physical-device use remain open.
+
+## 2026-11-13 — Covered public stats outages across screen sizes
+
+- The shared screen journey now runs in both offline guest and contract-enabled city configurations. In the city build it injects a 503 from the public advertiser-stats API, checks the visible error and Refresh action, and continues through map, cars, plots, studio, cinema and practice screens at desktop, landscape phone and portrait phone sizes. The guest-only five-test run and expanded `test:browser:city` eight-test run both pass. The earlier mixed-fixture failures were a test expectation mismatch: a contract-enabled build exposes public statistics even while its street is in guest mode. Physical-device and hosted API checks remain open.

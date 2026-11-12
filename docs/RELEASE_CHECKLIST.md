@@ -71,6 +71,8 @@ Three guest Chromium journeys check the map, cars, plots, preset Studio, guest s
 
 The [initial testnet read recovery journey](../tests/browser/live-connection-retry.spec.ts) now runs at 667×375. It verifies a visible retry after an RPC failure, successful street load and rejection of a delayed stale failure after mode switches. This closes that local error state only; named-wallet and real-device journeys remain open.
 
+The expanded `test:browser:city` command now includes desktop and phone screen journeys in the contract-enabled build. A forced public-stats 503 shows an error and working Refresh action while the other screens stay reachable; all eight city-fixture browser checks pass. The offline guest suite separately passes all five checks. Hosted statistics and physical-device review remain open.
+
 A seventh guest browser journey now completes the practice course, checks all three checkpoints and the saved best time after reload, and confirms no change to coins or car durability. It passed locally against an already running guest preview through `test:browser:local`, which skips the isolated suite's build step. The [portrait screenshot](images/near-estate-practice-course-phone-v1.png) fits a 390px document width. This has not run in hosted CI or on a physical phone.
 
 An eighth journey now pauses and resumes the Harbor Cinema short, observes its 18-second ending, replays it and checks that coins and durability stay fixed. It passed locally using the same no-build browser path. The [portrait capture](images/near-estate-cinema-phone-v1.png) shows the film in progress; physical-device playback remains open.
