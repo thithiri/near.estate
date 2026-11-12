@@ -4,6 +4,8 @@
 
 **13 November release note:** The revocation-fix runtime WASM `ad148df441a41d1f…` is [verified live on testnet](../deployments/runtime-upgrade-live-ad148df441a41d1f.json). The pause, deploy and reopen transactions preserved the 381-entry city state hash; the prior WASM remains in a private mode-0600 backup. A [finalized-block postcheck](../deployments/runtime-upgrade-postcheck-ad148df441a41d1f.json) independently confirms the code hash, version 2, 100 plots, seven civic sites, roles and unpaused state. The [five-road map audit](../deployments/testnet-variable-map-journey.json) passes after this code-only release. Named-wallet browser signing, physical-device checks and target-VPS recovery remain open.
 
+The saved prior version-2 binary passed a read-only [reverse rehearsal](../deployments/runtime-upgrade-sandbox-db33845c80179c1a.json) and [runner drill](../deployments/runtime-upgrade-drill-db33845c80179c1a.json) against the current live-state import. This proves the code-only recovery path in a local sandbox, not a live reversal or a general schema-migration rollback. The [incident runbook](INCIDENTS.md) now uses the current version-2 commands.
+
 Snapshot: 2026-11-11. This checklist follows the [V1 phase gates](V1_SPEC.md#implementation-phases-and-numbered-tasks). A checked item needs direct evidence for the stated scope; local tests do not stand in for a browser, provider or VPS journey. Update this file and [DECISIONS.md](DECISIONS.md) after each gate.
 
 ## Candidate identity
