@@ -15,6 +15,7 @@
     "dev:city:snapshot": "node scripts/snapshot-dev-city.mjs",
     "release:probe": "node scripts/verify-public-release.mjs",
     "release:probe:test": "node --test scripts/verify-public-release.test.mjs",
+    "monitor:delivery:drill": "node scripts/drill-monitor-delivery.mjs",
     "test:browser": "playwright test",
     "test:browser:local": "ESTATE_BROWSER_LOCAL_URL=${ESTATE_BROWSER_LOCAL_URL:-http://127.0.0.1:5173} playwright test",
     "test:browser:city": "ESTATE_BROWSER_CITY_FIXTURE=1 playwright test tests/browser/variable-live-street.spec.ts tests/browser/sandbox-approved-street.spec.ts",

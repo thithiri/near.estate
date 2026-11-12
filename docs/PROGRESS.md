@@ -731,3 +731,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-13 — Refreshed the version-2 economy readout
 
 - Copied the local service SQLite database with SQLite's backup API, then ran the event catch-up and seven-day metrics report only on that disposable copy. The [refreshed report](../deployments/testnet-v2-beta-metrics-2026-11-13-refresh.json) reached finalized height 277421607 with `completeThroughNow: true` at measurement time; the catch-up found no new game events. It shows 180 curb and 96 tower spaces, both empty at the indexed cursor, 20 curb parks, one tower park and three first parks in the recorded window. Those actions are scripted test journeys, and older cost/grant events omit amounts, so no economy tuning is justified. The source service database was not changed.
+
+## 2026-11-13 — Exercised real monitor delivery over local HTTPS
+
+- Added a repeatable [delivery drill](../scripts/drill-monitor-delivery.mjs) using a temporary localhost TLS certificate and private bearer token. It started the real worker monitor in run mode, made storage and API unavailable, and the authenticated receiver observed `MONITOR_DATABASE_UNAVAILABLE`, `API_UNAVAILABLE` and a heartbeat. The [result](../deployments/local-monitor-delivery-2026-11-13.json) records the local scope without token or key bytes. Hosted alert delivery, independent missed-heartbeat notification and whole-VPS outage detection remain open.

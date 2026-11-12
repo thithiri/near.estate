@@ -1,0 +1,13 @@
+{
+  "scope": "local loopback HTTPS receiver, real worker monitor process",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "tlsVerifiedByClient": true,
+  "privateTokenFile": true,
+  "delivered": [
+    "MONITOR_DATABASE_UNAVAILABLE",
+    "API_UNAVAILABLE",
+    "heartbeat"
+  ],
+  "observedAt": "2026-11-12T22:02:54.952Z",
+  "hostedDeliveryVerified": false
+}
