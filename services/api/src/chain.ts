@@ -83,11 +83,13 @@ export class NearChainGateway implements ChainGateway {
       throw new Error(`NEAR RPC rejected access-key lookup: ${error}`);
     }
     const result = body.result;
+    // Only a full-access key proves wallet control. Function-call keys, such as the
+    // in-page gameplay key or another app's sign-in key, must not open an API session.
     return Boolean(
       result &&
         typeof result === "object" &&
-        "permission" in result &&
-        "block_hash" in result,
+        "block_hash" in result &&
+        (result as { permission?: unknown }).permission === "FullAccess",
     );
   }
 

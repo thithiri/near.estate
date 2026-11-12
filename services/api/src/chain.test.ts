@@ -114,3 +114,51 @@ test("API parses actual version-2 sandbox plot views before and after facade app
     logoApproved.plot.building.layout_revision,
   );
 });
+
+function accessKeyGateway(body: object): NearChainGateway {
+  return new NearChainGateway("estate.testnet", undefined, (async () =>
+    Response.json({ jsonrpc: "2.0", ...body })) as typeof fetch);
+}
+
+test("API sign-in accepts a full-access key", async () => {
+  const chain = accessKeyGateway({
+    result: {
+      nonce: 1,
+      permission: "FullAccess",
+      block_hash: "test-final-block",
+      block_height: 1,
+    },
+  });
+  assert.equal(await chain.hasAccessKey("player.testnet", "ed25519:key"), true);
+});
+
+test("API sign-in rejects a function-call key such as the gameplay key", async () => {
+  const chain = accessKeyGateway({
+    result: {
+      nonce: 1,
+      permission: {
+        FunctionCall: {
+          allowance: "250000000000000000000000",
+          receiver_id: "estate.testnet",
+          method_names: ["park", "collect"],
+        },
+      },
+      block_hash: "test-final-block",
+      block_height: 1,
+    },
+  });
+  assert.equal(
+    await chain.hasAccessKey("player.testnet", "ed25519:key"),
+    false,
+  );
+});
+
+test("API sign-in rejects an unknown key", async () => {
+  const chain = accessKeyGateway({
+    error: { name: "HANDLER_ERROR", cause: { name: "UNKNOWN_ACCESS_KEY" } },
+  });
+  assert.equal(
+    await chain.hasAccessKey("player.testnet", "ed25519:key"),
+    false,
+  );
+});
