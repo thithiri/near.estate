@@ -112,3 +112,19 @@ test("every road-end arrival faces inward and keeps the selected curb", () => {
     }
   }
 });
+
+test("unconnected street ends stop instead of silently changing roads", () => {
+  for (const seed of [city, validateCitySeed(rawSeedV2)]) {
+    const roads = new Map(seed.streets.map((road) => [road.id, road]));
+    for (const [id, directions] of [
+      ["main", [1]],
+      ["river", [-1]],
+      ["central", [-1, 1]],
+      ["harbor", [-1, 1]],
+    ] as const) {
+      const road = roads.get(id)!;
+      for (const direction of directions)
+        assert.equal(endConnection(road, direction as -1 | 1), undefined);
+    }
+  }
+});
