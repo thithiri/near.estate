@@ -676,3 +676,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-12 — Bounded the design picker image cache
 
 - The guest design picker now keeps references to at most 15 recently viewed building previews and drops failed images so a later selection can retry. This closes its unbounded image-element path while leaving the street's independent 32-texture budget intact. All seven design browser checks pass, including four-level cycling and a simulated image outage; web type checking passes. The archived box-style set is complete, and each of the 60 active sprites differs from its archived counterpart. Browser-managed image memory has not been measured on a physical phone.
+
+## 2026-11-12 — Kept rapid city travel within the street cache budget
+
+- A new repeated-travel profile exposed a transient 33rd or later facade entry when old requests were still in flight. Street image admission now waits for an offscreen pending request and its texture release before starting a replacement. The delayed-load unit test, eight focused art/city browser checks and web type checking pass. The [clean-revision profile](../deployments/local-street-profile-2026-11-12-travel.json) crossed 200 curb views in one phone-sized page with at most 32 cached images, no failed building responses or page errors, and 25 MiB reported JavaScript heap at the end. This was an 11-second SwiftShader stress check, not a physical-phone GPU or long-session measurement; Phase 2 task 20 remains open for those device checks.

@@ -1,0 +1,60 @@
+{
+  "capturedAt": "2026-11-12T11:49:21.908Z",
+  "sourceRevision": "397d9e7b4ec4dade329996e5fb653e208911f489",
+  "workingTreeDirty": false,
+  "scene": "guest Main Street, North side, ArrowRight held for eight seconds",
+  "browser": "Headless Chromium 158.0.8127.18 on darwin",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+  "method": "Headless desktop Chromium viewport emulation; requestAnimationFrame intervals, page JavaScript heap and the development facade-cache estimate; optional repeated map and curb travel",
+  "viewports": [
+    {
+      "widthCssPx": 1366,
+      "heightCssPx": 768,
+      "sampledFrames": 464,
+      "framesPerSecond": 58,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 16.8,
+      "jsHeapMiB": 23,
+      "guestTextures": {
+        "currentFacades": 10,
+        "cachedImages": 10,
+        "loadedImages": 10,
+        "estimatedDecodedBytes": 18604800
+      }
+    },
+    {
+      "widthCssPx": 667,
+      "heightCssPx": 375,
+      "sampledFrames": 480,
+      "framesPerSecond": 60,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 16.8,
+      "jsHeapMiB": 25,
+      "guestTextures": {
+        "currentFacades": 10,
+        "cachedImages": 10,
+        "loadedImages": 10,
+        "estimatedDecodedBytes": 18604800
+      },
+      "travel": {
+        "cycles": 20,
+        "streetVisits": 100,
+        "curbViews": 200,
+        "elapsedSeconds": 11,
+        "peakCachedImages": 32,
+        "peakEstimatedDecodedBytes": 55814400,
+        "finalTextures": {
+          "cycle": 20,
+          "road": "harbor",
+          "currentFacades": 10,
+          "cachedImages": 32,
+          "loadedImages": 32,
+          "estimatedDecodedBytes": 53747200
+        },
+        "failedImages": [],
+        "jsHeapMiB": 25
+      }
+    }
+  ],
+  "limits": "The cache estimate counts loaded facade pixel area, not physical GPU allocation. Even repeated travel here is not a physical phone, GPU-memory measurement or live testnet street."
+}
