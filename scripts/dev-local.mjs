@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
+import { createServer } from "node:http";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,12 +20,14 @@ const webPort = port("WEB_PORT", 5173);
 const apiPort = port("API_PORT", 3000);
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const children = [];
+let unavailableApi = null;
 let stopping = false;
 let exitCode = 0;
 
 function stop(signal = "SIGTERM") {
   if (stopping) return;
   stopping = true;
+  unavailableApi?.close();
   for (const child of children) {
     if (!child.pid) continue;
     try {
@@ -34,6 +37,21 @@ function stop(signal = "SIGTERM") {
       if (error.code !== "ESRCH") throw error;
     }
   }
+}
+
+function activeCityRelease(contractId) {
+  const matches = readdirSync(resolve(root, "deployments"))
+    .filter((name) => /^variable-city-release-[a-f0-9]+\.json$/.test(name))
+    .map((name) =>
+      JSON.parse(readFileSync(resolve(root, "deployments", name), "utf8")),
+    )
+    .filter(
+      (record) =>
+        record.contractId === contractId && record.status === "active",
+    );
+  if (matches.length > 1)
+    throw new Error("Multiple active release records match this contract");
+  return matches[0] ?? null;
 }
 
 function start(name, args, env) {
@@ -124,34 +142,109 @@ if (mode === "--guest") {
     process.env.ESTATE_CONTRACT_ID?.trim() || deployment.contractId;
   if (!/^[a-z0-9._-]+\.testnet$/.test(contractId))
     throw new Error("The city needs a deployed .testnet contract ID");
+  const withApi = Boolean(process.env.API_DATA_DIR);
   const startHeight =
-    devIndexer === "1" ? indexerStartHeight(contractId) : null;
-  const dataDir = resolve(
-    process.env.API_DATA_DIR ?? resolve(root, "data/local-dev"),
+    withApi && devIndexer === "1" ? indexerStartHeight(contractId) : null;
+  const dataDir = withApi ? resolve(process.env.API_DATA_DIR) : null;
+  if (dataDir) mkdirSync(dataDir, { recursive: true });
+  const release = withApi ? activeCityRelease(contractId) : null;
+  const needsCutover = Boolean(
+    release ||
+      (contractId === deployment.contractId &&
+        deployment.citySeedVersion === 2) ||
+      process.env.CITY_DEED_CUTOVER_AT_MS,
   );
-  mkdirSync(dataDir, { recursive: true });
+  if (
+    dataDir &&
+    needsCutover &&
+    !release &&
+    (!process.env.CITY_DEED_CUTOVER_AT_MS ||
+      !process.env.IMPRESSION_ACCEPT_AFTER_MS)
+  )
+    throw new Error(
+      "Version-2 API needs an active release record or explicit cutover and impression timestamps",
+    );
+  if (
+    release &&
+    (!Number.isSafeInteger(release.cutoverAtMs) ||
+      !Number.isSafeInteger(release.reopenedAtMs) ||
+      release.reopenedAtMs < release.cutoverAtMs)
+  )
+    throw new Error("Active city release has invalid cutover timestamps");
+  if (dataDir && needsCutover) {
+    const sqlitePath = resolve(dataDir, "estate.sqlite");
+    if (!existsSync(sqlitePath))
+      throw new Error(
+        "Version-2 dev API needs API_DATA_DIR with the migrated estate.sqlite database",
+      );
+    const { DatabaseSync } = await import("node:sqlite");
+    const db = new DatabaseSync(sqlitePath, { readOnly: true });
+    try {
+      const table = db
+        .prepare(
+          "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'deed_history_links'",
+        )
+        .get();
+      const link = table
+        ? db
+            .prepare("SELECT cutover_at_ms FROM deed_history_links LIMIT 1")
+            .get()
+        : null;
+      if (
+        !link ||
+        String(link.cutover_at_ms) !==
+          String(process.env.CITY_DEED_CUTOVER_AT_MS ?? release?.cutoverAtMs)
+      )
+        throw new Error(
+          "API_DATA_DIR needs the applied version-2 deed move at the active release cutover",
+        );
+    } finally {
+      db.close();
+    }
+  }
   buildShared();
   start("shared", ["run", "dev", "-w", "@estate/shared"], {});
   console.log(`Live city: http://localhost:${webPort}`);
   console.log(`Contract: ${contractId}`);
-  console.log(`Local API data: ${dataDir}`);
-  if (!process.env.API_DATA_DIR)
-    console.log(
-      "Set API_DATA_DIR to an existing private media volume to see approved uploads.",
-    );
-  start("api", ["run", "dev", "-w", "@estate/api"], {
-    APP_ORIGIN: `http://localhost:${webPort}`,
-    ESTATE_CONTRACT_ID: contractId,
-    API_DATA_DIR: dataDir,
-    PORT: String(apiPort),
-  });
-  if (startHeight !== null) {
-    console.log(`Event indexer: from block ${startHeight}`);
-    start("indexer", ["run", "dev", "-w", "@estate/worker"], {
+  if (dataDir) {
+    console.log(`Local API data: ${dataDir}`);
+    start("api", ["run", "dev", "-w", "@estate/api"], {
+      APP_ORIGIN: `http://localhost:${webPort}`,
       ESTATE_CONTRACT_ID: contractId,
-      INDEXER_START_HEIGHT: String(startHeight),
       API_DATA_DIR: dataDir,
+      PORT: String(apiPort),
+      CITY_DEED_CUTOVER_AT_MS: String(
+        process.env.CITY_DEED_CUTOVER_AT_MS ?? release?.cutoverAtMs ?? 0,
+      ),
+      IMPRESSION_ACCEPT_AFTER_MS: String(
+        process.env.IMPRESSION_ACCEPT_AFTER_MS ?? release?.reopenedAtMs ?? 0,
+      ),
     });
+    if (startHeight !== null) {
+      console.log(`Event indexer: from block ${startHeight}`);
+      start("indexer", ["run", "dev", "-w", "@estate/worker"], {
+        ESTATE_CONTRACT_ID: contractId,
+        INDEXER_START_HEIGHT: String(startHeight),
+        API_DATA_DIR: dataDir,
+      });
+    }
+  } else {
+    console.log(
+      "Web-only city preview: live chain and wallet are available; approved media and stats need API_DATA_DIR with the migrated service data.",
+    );
+    unavailableApi = createServer((_request, response) => {
+      response.writeHead(503, {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+      });
+      response.end(
+        JSON.stringify({
+          code: "LOCAL_API_UNAVAILABLE",
+          message: "Start dev:city with API_DATA_DIR for media and stats",
+        }),
+      );
+    });
+    unavailableApi.listen(apiPort, "127.0.0.1");
   }
   start(
     "web",
