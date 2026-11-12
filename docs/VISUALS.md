@@ -1,5 +1,17 @@
 # Current game visuals
 
+## Current variable-width buildings at every level
+
+The game now has fifteen generated building designs across one-, two- and three-unit plots. These sheets use the exact 60 normalized game sprites at their logical street size. Each highlighted building appears at levels 1–4 beside fixed level-2 neighbours, so plot width, sidewalk alignment and height progression can be reviewed together. Logo and billboard overlays are reviewed separately in the [media placement sheet](images/near-estate-new-media-placement-review-v1.png).
+
+![One-unit buildings at four levels beside neighbours](images/near-estate-guest-neighbours-1-unit-v1.png)
+
+![Two-unit buildings at four levels beside neighbours](images/near-estate-guest-neighbours-2-unit-v1.png)
+
+![Three-unit buildings at four levels beside neighbours](images/near-estate-guest-neighbours-3-unit-v1.png)
+
+The [current landscape Safari capture](images/near-estate-safari-iphone16e-parking-feedback-v2.png) shows this art in the playable street with the phone controls and parking feedback.
+
 ## Latest street and car review
 
 The current guest street gives each building almost its full plot width, leaving
