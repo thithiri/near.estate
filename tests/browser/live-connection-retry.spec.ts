@@ -116,12 +116,17 @@ test("a failed initial testnet read offers a retry and recovers the street", asy
     });
   });
   await page.goto("/");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.locator("#cross-side").click();
+  await page.locator("#cross-side").click();
+  await expect(page.locator("#status")).toHaveClass(/curb-feedback/);
   const mode = page.getByRole("button", {
     name: "Switch between guest and testnet street",
   });
   await mode.click();
   const retry = page.getByRole("button", { name: "Retry connection" });
   await expect(retry).toBeVisible();
+  await expect(page.locator("#status")).not.toHaveClass(/curb-feedback/);
   await expect(page.locator("#status")).toContainText("RPC");
   await retry.click();
   await expect.poll(() => versionReads).toBe(2);

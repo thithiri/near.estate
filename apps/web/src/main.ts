@@ -2701,6 +2701,7 @@ async function openLiveStreet(): Promise<void> {
     if (currentScreen === "Street") liveStreet.start();
   } catch (error) {
     if (!liveMode || generation !== liveOpenGeneration) return;
+    status.classList.remove("curb-feedback", "viewing-curb");
     status.textContent =
       error instanceof Error ? error.message : "Live street failed to open";
     const retry = document.createElement("button");
@@ -2721,6 +2722,8 @@ async function openLiveStreet(): Promise<void> {
 function toggleStreetMode(): void {
   completeCurbCrossing();
   if (!contractId) return;
+  if (curbFeedbackTimer !== null) window.clearTimeout(curbFeedbackTimer);
+  curbFeedbackTimer = null;
   liveOpenGeneration++;
   impressionReporter.pause();
   const previousIndex = frontageAtX(currentRoad(), carX, side) ?? 0;
@@ -2734,7 +2737,11 @@ function toggleStreetMode(): void {
   selection = selectionAtCar();
   updateGuestBuildingBanner();
   if (!liveMode) liveStreet?.stop();
-  status.classList.remove("live-connection-error");
+  status.classList.remove(
+    "curb-feedback",
+    "viewing-curb",
+    "live-connection-error",
+  );
   modeButton.textContent = liveMode ? "Guest mode" : "Testnet street";
   status.textContent = liveMode
     ? "Loading shared testnet street…"

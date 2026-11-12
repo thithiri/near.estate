@@ -1001,4 +1001,4 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 
 ## 2026-11-13 — Make an initial testnet street failure recoverable
 
-- An initial failed RPC read now leaves a visible Retry connection action in the street status. Each open attempt has a generation number; switching modes or starting another attempt invalidates older results so a delayed failure cannot overwrite a newer successful street. The local phone-landscape browser journey covers the first failure, retry success and stale-response race. Signed wallet actions remain a separate testnet release gate.
+- An initial failed RPC read now leaves a visible Retry connection action in the street status. Each open attempt has a generation number; switching modes or starting another attempt invalidates older results so a delayed failure cannot overwrite a newer successful street. Changing modes also clears the transient curb-feedback timer and positioning before showing a connection message. The local phone-landscape browser journey covers curb feedback, the first failure, retry success and stale-response race. Signed wallet actions remain a separate testnet release gate.
