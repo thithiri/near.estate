@@ -1,0 +1,25 @@
+{
+  "scope": "local checkout and Docker Desktop; hosted repository and Linux VPS not verified",
+  "checkedAt": "2026-11-12T22:07:30.745905+00:00",
+  "sourceRevision": "88f28e8a6cad7f0b9bf7c99acb122341ea6ed2a6",
+  "reachableCommitCount": 210,
+  "commitIdentities": [
+    "thithiri <141345177+thithiri@users.noreply.github.com>|thithiri <141345177+thithiri@users.noreply.github.com>"
+  ],
+  "formerNameHits": 0,
+  "productionAuditExit": 0,
+  "productionVulnerabilities": {
+    "info": 0,
+    "low": 17,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 17
+  },
+  "monitorMount": {
+    "image": "infra-monitor:latest",
+    "dummyHostMode": "0600",
+    "containerReadExit": 0,
+    "containerStat": "1000:1000 600"
+  }
+}

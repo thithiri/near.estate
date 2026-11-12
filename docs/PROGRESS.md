@@ -735,3 +735,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-13 — Exercised real monitor delivery over local HTTPS
 
 - Added a repeatable [delivery drill](../scripts/drill-monitor-delivery.mjs) using a temporary localhost TLS certificate and private bearer token. It started the real worker monitor in run mode, made storage and API unavailable, and the authenticated receiver observed `MONITOR_DATABASE_UNAVAILABLE`, `API_UNAVAILABLE` and a heartbeat. The [result](../deployments/local-monitor-delivery-2026-11-13.json) records the local scope without token or key bytes. Hosted alert delivery, independent missed-heartbeat notification and whole-VPS outage detection remain open.
+
+## 2026-11-13 — Refreshed identity and dependency checks
+
+- The [local security refresh](../deployments/local-security-refresh-2026-11-13.json) found one requested thithiri author/committer identity across 210 reachable commits and no forbidden old account name in the checkout. The production npm audit exited 0 with 17 low and no moderate, high or critical findings. A local Docker Desktop bind mount showed the monitor's UID-1000 process could read a dummy mode-0600 token; the Linux-VPS runbook now requires a mount-readability preflight. The private GitHub remote was not accessible from this session (`Repository not found` via Git and no access through the connector), so this does not refresh hosted CI evidence or prove the repository is absent.
