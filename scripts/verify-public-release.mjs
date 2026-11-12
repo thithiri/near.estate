@@ -30,6 +30,16 @@ async function json(fetcher, origin, path) {
   return response.json();
 }
 
+function webMeta(html, name) {
+  const matches = [
+    ...html.matchAll(
+      new RegExp(`<meta\\s+name="${name}"\\s+content="([^"]*)"\\s*\\/?>`, "g"),
+    ),
+  ];
+  if (matches.length !== 1) throw new Error(`Public web page lacks ${name}`);
+  return matches[0][1];
+}
+
 export async function verifyPublicRelease(
   origin,
   {
@@ -62,6 +72,8 @@ export async function verifyPublicRelease(
     throw new Error("The public release probe needs a public hostname");
   if (!Number.isSafeInteger(maxIndexerAgeSeconds) || maxIndexerAgeSeconds < 1)
     throw new Error("Indexer age limit must be a positive integer");
+  if (fetcher === fetch && process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0")
+    throw new Error("TLS certificate verification is disabled in this process");
   const base = url.origin;
   const [page, health, city, economy, generation] = await Promise.all([
     request(fetcher, `${base}/`),
@@ -71,6 +83,14 @@ export async function verifyPublicRelease(
     json(fetcher, base, "/api/paid-generations/status"),
   ]);
   requireResponse(page, "/");
+  const pageHtml = await page.text();
+  if (webMeta(pageHtml, "estate-contract-id") !== contractId)
+    throw new Error("Public web bundle is configured for the wrong contract");
+  if (
+    sourceRevision &&
+    webMeta(pageHtml, "estate-source-revision") !== sourceRevision
+  )
+    throw new Error("Public web bundle is running the wrong source revision");
   const contentPolicy = page.headers.get("content-security-policy") ?? "";
   if (
     !page.headers.get("content-type")?.includes("text/html") ||

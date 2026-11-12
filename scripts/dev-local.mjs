@@ -129,6 +129,7 @@ if (mode === "--guest") {
     ],
     {
       VITE_ESTATE_CONTRACT_ID: "",
+      VITE_ESTATE_SOURCE_REVISION: "local",
     },
   );
 } else {
@@ -260,6 +261,7 @@ if (mode === "--guest") {
     ],
     {
       VITE_ESTATE_CONTRACT_ID: contractId,
+      VITE_ESTATE_SOURCE_REVISION: "local",
       ESTATE_LOCAL_API_URL: `http://127.0.0.1:${apiPort}`,
     },
   );

@@ -9,7 +9,9 @@ COPY services/worker ./services/worker
 COPY contracts/estate/seed.json ./contracts/estate/seed.json
 COPY contracts/estate/seed-v2.json ./contracts/estate/seed-v2.json
 ARG VITE_ESTATE_CONTRACT_ID=""
+ARG ESTATE_SOURCE_REVISION=unknown
 ENV VITE_ESTATE_CONTRACT_ID=${VITE_ESTATE_CONTRACT_ID}
+ENV VITE_ESTATE_SOURCE_REVISION=${ESTATE_SOURCE_REVISION}
 RUN npm ci && npm run build -w @estate/shared && npm run build -w @estate/web
 
 FROM caddy:2-alpine

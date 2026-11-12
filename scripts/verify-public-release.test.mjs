@@ -33,14 +33,20 @@ function responses(changes = {}) {
     assert.equal(options.redirect, "error");
     const path = new URL(input).pathname;
     if (path === "/")
-      return new Response("<html>near.estate</html>", {
-        headers: {
-          "content-type": "text/html",
-          "content-security-policy":
-            "object-src 'none'; frame-ancestors 'none'",
-          "x-content-type-options": "nosniff",
+      return new Response(
+        `<html><meta name="estate-contract-id" content="${changes.webContractId ?? contractId}" /><meta
+          name="estate-source-revision"
+          content="${changes.webSourceRevision ?? sourceRevision}"
+        /></html>`,
+        {
+          headers: {
+            "content-type": "text/html",
+            "content-security-policy":
+              "object-src 'none'; frame-ancestors 'none'",
+            "x-content-type-options": "nosniff",
+          },
         },
-      });
+      );
     return Response.json(bodies[path]);
   };
   return fetcher;
@@ -59,6 +65,20 @@ test("public release probe accepts a fresh curated city over strict HTTPS", asyn
 
 test("public release probe rejects the wrong release, stale indexing and paid art", async () => {
   const options = { nowMs, sourceRevision };
+  await assert.rejects(
+    verifyPublicRelease(origin, {
+      ...options,
+      fetcher: responses({ webContractId: "other.testnet" }),
+    }),
+    /web bundle.*wrong contract/,
+  );
+  await assert.rejects(
+    verifyPublicRelease(origin, {
+      ...options,
+      fetcher: responses({ webSourceRevision: "b".repeat(40) }),
+    }),
+    /web bundle.*wrong source revision/,
+  );
   await assert.rejects(
     verifyPublicRelease(origin, {
       ...options,
