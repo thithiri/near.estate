@@ -133,15 +133,26 @@ test("a quick tap nudges the car across a plot boundary", async ({ page }) => {
 test("tapping the second empty stall parks there without an instruction row", async ({
   page,
 }) => {
-  await page.goto("/");
-  await expect(page.locator("footer#status")).toHaveCount(0);
-  await expect(page.locator("#status")).toBeEmpty();
-  const canvas = await page.locator("#street-canvas canvas").boundingBox();
-  expect(canvas).not.toBeNull();
-  const scale = Math.max(0.5, canvas!.height / 300);
-  await page.touchscreen.tap(canvas!.x + 127 * scale, canvas!.y + 224 * scale);
-  await expect(page.locator("#status")).toContainText("Parked in space 2");
-  await expect(page.locator("#collect")).toBeVisible();
+  for (const width of [844, 667]) {
+    await page.setViewportSize({ width, height: width === 844 ? 390 : 375 });
+    await page.goto("/");
+    await expect(page.locator("footer#status")).toHaveCount(0);
+    await expect(page.locator("#status")).toBeEmpty();
+    const canvas = await page.locator("#street-canvas canvas").boundingBox();
+    expect(canvas).not.toBeNull();
+    const scale = Math.max(0.5, canvas!.height / 300);
+    await page.touchscreen.tap(
+      canvas!.x + 127 * scale,
+      canvas!.y + 224 * scale,
+    );
+    await expect(page.locator("#status")).toContainText("Parked in space 2");
+    await expect(page.locator("#collect")).toBeVisible();
+    const feedback = await page.locator("#status").boundingBox();
+    const controls = await page.locator(".controlbar").boundingBox();
+    expect(feedback).not.toBeNull();
+    expect(controls).not.toBeNull();
+    expect(feedback!.x + feedback!.width + 8).toBeLessThanOrEqual(controls!.x);
+  }
 });
 
 test("releasing one road corner keeps the other held direction active", async ({

@@ -2691,6 +2691,23 @@ h3 {
   white-space: nowrap;
 }
 @media (max-width: 900px) and (orientation: landscape) {
+  #status,
+  #status.curb-feedback {
+    top: 58px;
+    left: max(12px, env(safe-area-inset-left));
+    max-width: min(
+      320px,
+      calc(
+        100vw - max(12px, env(safe-area-inset-left)) -
+          max(12px, env(safe-area-inset-right)) - 290px
+      )
+    );
+    transform: none;
+    text-align: left;
+  }
+  #status.curb-feedback.viewing-curb {
+    top: 100px;
+  }
   .controlbar {
     top: 5px;
     right: max(6px, env(safe-area-inset-right));

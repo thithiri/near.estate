@@ -1792,7 +1792,7 @@ function action(requestedSlot?: number): void {
       const site = city.npcSites.find((entry) => entry.id === target.id);
       if (site?.role === "ParkingTower") {
         const session = game.parkTower(site.id, selectedTowerFloor);
-        message = `Parked on floor ${selectedTowerFloor + 1}, space ${(session.space % TOWER_SPACES_PER_FLOOR) + 1}. Use C to collect earnings.`;
+        message = `Parked on floor ${selectedTowerFloor + 1}, space ${(session.space % TOWER_SPACES_PER_FLOOR) + 1}. Collect earnings when ready.`;
       } else {
         if (!site) return;
         activeSiteId = site.id;
@@ -1811,7 +1811,7 @@ function action(requestedSlot?: number): void {
       message = `Ticketed visitor for ${formatCoins(game.ticket(target.id).toString())} coins`;
     else if (target.kind === "Plot") {
       const session = game.park(target.id, requestedSlot);
-      message = `Parked in space ${session.space + 1}. Use C to collect earnings.`;
+      message = `Parked in space ${session.space + 1}. Collect earnings when ready.`;
     } else {
       return;
     }
@@ -1876,7 +1876,7 @@ async function liveAction(requestedSlot?: number): Promise<void> {
         site_id: target.id,
         space,
       });
-      status.textContent = `Parked on floor ${Math.floor(space / TOWER_SPACES_PER_FLOOR) + 1}, space ${(space % TOWER_SPACES_PER_FLOOR) + 1} on testnet. Use C to collect earnings.`;
+      status.textContent = `Parked on floor ${Math.floor(space / TOWER_SPACES_PER_FLOOR) + 1}, space ${(space % TOWER_SPACES_PER_FLOOR) + 1} on testnet. Collect earnings when ready.`;
     } else if (target.kind === "Plot") {
       const entry = livePlot(target.id);
       if (!entry) throw new Error("Plot state is still loading");
@@ -1914,7 +1914,7 @@ async function liveAction(requestedSlot?: number): Promise<void> {
           plot_id: target.id,
           slot,
         });
-        status.textContent = `Parked in curb space ${slot + 1} on testnet. Use C to collect earnings.`;
+        status.textContent = `Parked in curb space ${slot + 1} on testnet. Collect earnings when ready.`;
       }
     }
   } catch (error) {
