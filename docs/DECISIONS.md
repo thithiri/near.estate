@@ -998,3 +998,7 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 ## 2026-11-13 — Verify contract code during the external release probe
 
 - The public HTTPS probe now checks on-chain finality directly after checking the web/API candidate: `view_account` supplies the contract's code hash and finalized block, and a pinned `call_function` verifies `is_paused` is false. This catches a contract change or paused city that the public API could otherwise hide. The [FastNEAR view-account](https://docs.fastnear.com/rpc/account/view-account) and [call-function](https://docs.fastnear.com/rpc/contract/call-function) references confirm the request and response shapes; the current read-only postcheck script already uses the same testnet methods. The probe still cannot prove a wallet or hosted service journey without a public deployment.
+
+## 2026-11-13 — Make an initial testnet street failure recoverable
+
+- An initial failed RPC read now leaves a visible Retry connection action in the street status. Each open attempt has a generation number; switching modes or starting another attempt invalidates older results so a delayed failure cannot overwrite a newer successful street. The local phone-landscape browser journey covers the first failure, retry success and stale-response race. Signed wallet actions remain a separate testnet release gate.

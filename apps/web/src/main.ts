@@ -133,6 +133,7 @@ let chainScreen: ChainScreen | null = null;
 let liveStreet: LiveStreet | null = null;
 let liveMode = false;
 let liveCityVersion: 1 | 2 = 1;
+let liveOpenGeneration = 0;
 let chainOwnerFocus = false;
 let readerPromise: Promise<ChainReader> | null = null;
 let walletPromise: Promise<GameWalletClient> | null = null;
@@ -2650,10 +2651,12 @@ async function openChainScreen(focusOwned = false): Promise<void> {
 
 async function openLiveStreet(): Promise<void> {
   if (!liveMode || !contractId) return;
+  const generation = ++liveOpenGeneration;
   try {
     const reader = await getReader();
+    if (!liveMode || generation !== liveOpenGeneration) return;
     const version = await reader.cityVersion();
-    if (!liveMode) return;
+    if (!liveMode || generation !== liveOpenGeneration) return;
     if (version !== liveCityVersion) {
       liveStreet?.stop();
       liveStreet = null;
@@ -2680,7 +2683,7 @@ async function openLiveStreet(): Promise<void> {
     }
     if (!liveStreet) {
       const { LiveStreet } = await import("./live-street.js");
-      if (!liveMode) return;
+      if (!liveMode || generation !== liveOpenGeneration) return;
       liveStreet = new LiveStreet(
         reader,
         getWalletClient,
@@ -2697,14 +2700,28 @@ async function openLiveStreet(): Promise<void> {
     }
     if (currentScreen === "Street") liveStreet.start();
   } catch (error) {
+    if (!liveMode || generation !== liveOpenGeneration) return;
     status.textContent =
       error instanceof Error ? error.message : "Live street failed to open";
+    const retry = document.createElement("button");
+    retry.id = "retry-live-connection";
+    retry.type = "button";
+    retry.textContent = "Retry connection";
+    retry.addEventListener("click", () => {
+      if (!liveMode) return;
+      status.classList.remove("live-connection-error");
+      status.textContent = "Loading shared testnet street…";
+      void openLiveStreet();
+    });
+    status.append(retry);
+    status.classList.add("live-connection-error");
   }
 }
 
 function toggleStreetMode(): void {
   completeCurbCrossing();
   if (!contractId) return;
+  liveOpenGeneration++;
   impressionReporter.pause();
   const previousIndex = frontageAtX(currentRoad(), carX, side) ?? 0;
   liveMode = !liveMode;
@@ -2717,6 +2734,7 @@ function toggleStreetMode(): void {
   selection = selectionAtCar();
   updateGuestBuildingBanner();
   if (!liveMode) liveStreet?.stop();
+  status.classList.remove("live-connection-error");
   modeButton.textContent = liveMode ? "Guest mode" : "Testnet street";
   status.textContent = liveMode
     ? "Loading shared testnet street…"

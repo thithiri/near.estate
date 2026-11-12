@@ -69,6 +69,8 @@ Two Chromium guest browser journeys now run with `npm run test:browser` and in t
 
 Three guest Chromium journeys check the map, cars, plots, preset Studio, guest stats, cinema and practice entry at 1280×720, 667×375 and 390×844. Each visited state checks for horizontal overflow and uncaught page errors. A sixth journey uses emulated phone touch input to hold, slide and release the drive controls, then parks. Physical touch devices, GPU memory and named-wallet journeys remain open.
 
+The [initial testnet read recovery journey](../tests/browser/live-connection-retry.spec.ts) now runs at 667×375. It verifies a visible retry after an RPC failure, successful street load and rejection of a delayed stale failure after mode switches. This closes that local error state only; named-wallet and real-device journeys remain open.
+
 A seventh guest browser journey now completes the practice course, checks all three checkpoints and the saved best time after reload, and confirms no change to coins or car durability. It passed locally against an already running guest preview through `test:browser:local`, which skips the isolated suite's build step. The [portrait screenshot](images/near-estate-practice-course-phone-v1.png) fits a 390px document width. This has not run in hosted CI or on a physical phone.
 
 An eighth journey now pauses and resumes the Harbor Cinema short, observes its 18-second ending, replays it and checks that coins and durability stay fixed. It passed locally using the same no-build browser path. The [portrait capture](images/near-estate-cinema-phone-v1.png) shows the film in progress; physical-device playback remains open.

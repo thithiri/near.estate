@@ -1898,6 +1898,24 @@ button:disabled {
 #status:empty {
   display: none;
 }
+#status.live-connection-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  pointer-events: auto;
+}
+#retry-live-connection {
+  flex: none;
+  padding: 6px 10px;
+  border: 1px solid #3e626e;
+  border-radius: 8px;
+  background: #e8f8f4;
+  color: #173b48;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
 #status.curb-feedback {
   top: 52px;
   left: 12px;

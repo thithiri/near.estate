@@ -739,3 +739,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-13 — Refreshed identity and dependency checks
 
 - The [local security refresh](../deployments/local-security-refresh-2026-11-13.json) found one requested thithiri author/committer identity across 210 reachable commits and no forbidden old account name in the checkout. The production npm audit exited 0 with 17 low and no moderate, high or critical findings. A local Docker Desktop bind mount showed the monitor's UID-1000 process could read a dummy mode-0600 token; the Linux-VPS runbook now requires a mount-readability preflight. The private GitHub remote was not accessible from this session (`Repository not found` via Git and no access through the connector), so this does not refresh hosted CI evidence or prove the repository is absent.
+
+## 2026-11-13 — Added testnet street retry on mobile
+
+- If the first shared-street RPC read fails, the street status now offers Retry connection. An open-attempt generation guard ignores a delayed old failure after mode switching or a newer retry. A 667 × 375 browser journey injected a temporary RPC outage, clicked retry, loaded the version-2 street and then proved a delayed stale failure could not replace the successful view. The web TypeScript check passes. Named-wallet signing and physical-device use remain open.
