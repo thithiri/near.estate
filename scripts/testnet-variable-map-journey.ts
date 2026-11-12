@@ -197,6 +197,10 @@ async function audit() {
     network: "testnet",
     contractId: deployment.contractId,
     releaseRecord: repoRelativePath(root, active.path),
+    runtimeUpgradeRecords: active.runtimeUpgrades.map((path) =>
+      repoRelativePath(root, path),
+    ),
+    currentCodeSha256: deployment.wasmSha256,
     seedVersion: 2,
     roads: seed.streets.length,
     streetSides: seed.streets.length * 2,

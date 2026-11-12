@@ -66,6 +66,37 @@ test("active release keeps the final deed destinations bound to reviewed bytes",
       valid.moves.map((move) => move.to),
       ["plot-main-s-4", "plot-market-s-5"],
     );
+    assert.deepEqual(valid.runtimeUpgrades, []);
+
+    const runtimeUpgrade = resolve(
+      root,
+      `deployments/runtime-upgrade-live-${"b".repeat(16)}.json`,
+    );
+    const verifiedUpgrade = {
+      contractId: deployment.contractId,
+      status: "verified",
+      beforeWasmSha256: "a".repeat(64),
+      afterWasmSha256: "b".repeat(64),
+      finalCodeSha256: "b".repeat(64),
+      pauseTransactionHash: "pause-hash",
+      deployTransactionHash: "deploy-hash",
+      reopenTransactionHash: "reopen-hash",
+    };
+    writeFileSync(runtimeUpgrade, JSON.stringify(verifiedUpgrade));
+    deployment.wasmSha256 = "b".repeat(64);
+    assert.deepEqual(
+      readActiveVersion2Release(root, release, deployment).runtimeUpgrades,
+      [runtimeUpgrade],
+    );
+    writeFileSync(
+      runtimeUpgrade,
+      JSON.stringify({ ...verifiedUpgrade, status: "rolled_back" }),
+    );
+    assert.throws(
+      () => readActiveVersion2Release(root, release, deployment),
+      /No verified code-only upgrade/,
+    );
+    deployment.wasmSha256 = "a".repeat(64);
 
     writeFileSync(
       map,

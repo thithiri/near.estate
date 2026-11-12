@@ -38,6 +38,7 @@
     "city:runtime:upgrade:apply": "cargo run --manifest-path contracts/city-migration/Cargo.toml --features runtime --example runtime_upgrade_testnet -- --apply",
     "city:runtime:upgrade:recover": "cargo run --manifest-path contracts/city-migration/Cargo.toml --features runtime --example runtime_upgrade_testnet -- --recover",
     "city:runtime:upgrade:finalize": "cargo run --manifest-path contracts/city-migration/Cargo.toml --features runtime --example runtime_upgrade_testnet -- --finalize",
+    "city:runtime:upgrade:postcheck": "node scripts/verify-runtime-upgrade-live.mjs --write",
     "city:migration:review": "tsx scripts/render-variable-deed-review.ts",
     "city:migration:media-review": "tsx scripts/render-deed-media-review.ts",
     "city:migration:media-review:check": "tsx scripts/render-deed-media-review.ts --check",

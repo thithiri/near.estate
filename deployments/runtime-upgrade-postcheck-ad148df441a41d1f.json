@@ -1,0 +1,21 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "releaseRecord": "deployments/runtime-upgrade-live-ad148df441a41d1f.json",
+  "mapAuditRecord": "deployments/testnet-variable-map-journey.json",
+  "finalizedBlockHeight": 277418599,
+  "finalizedBlockHash": "9TJ7it5BDrUmbDJyWF9towT2qt2ChBfnUMM2xG2tPaF1",
+  "codeSha256": "ad148df441a41d1f7263974fb1db6821b70b7754a3a46c8c594b759e0822b887",
+  "cityVersion": 2,
+  "plotCount": 100,
+  "curbSpaces": 180,
+  "npcSiteCount": 7,
+  "paused": false,
+  "roles": [
+    "dev-20261110121817-59798568433631.testnet",
+    "dev-20261110121820-76563125621460.testnet",
+    "dev-20261110121823-64776049168223.testnet"
+  ],
+  "statePreservedAtRelease": true,
+  "checkedAt": "2026-11-12T21:29:39.810Z"
+}

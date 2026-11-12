@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFileSync, realpathSync } from "node:fs";
+import { lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { relative, resolve } from "node:path";
 
 type Deployment = {
@@ -23,15 +23,86 @@ type MovePlan = {
   moves: Array<{ from: string; to: string }>;
 };
 
+type RuntimeUpgrade = {
+  contractId: string;
+  status: string;
+  beforeWasmSha256: string;
+  afterWasmSha256: string;
+  finalCodeSha256: string;
+  pauseTransactionHash: string;
+  deployTransactionHash: string;
+  reopenTransactionHash: string;
+};
+
 function sha256(bytes: Buffer): string {
   return createHash("sha256").update(bytes).digest("hex");
+}
+
+function codeOnlyUpgradePath(
+  root: string,
+  contractId: string,
+  releaseCode: string,
+  deployedCode: string,
+): string[] {
+  if (releaseCode === deployedCode) return [];
+  const directory = resolve(root, "deployments");
+  const upgrades = readdirSync(directory)
+    .filter((name) => /^runtime-upgrade-live-[0-9a-f]{16}\.json$/.test(name))
+    .map((name) => {
+      const path = resolve(directory, name);
+      const stat = lstatSync(path);
+      assert(
+        stat.isFile() && !stat.isSymbolicLink(),
+        "Upgrade record must be a regular file",
+      );
+      const record = JSON.parse(readFileSync(path, "utf8")) as RuntimeUpgrade;
+      return { path, name, record };
+    })
+    .filter(
+      ({ name, record }) =>
+        record.contractId === contractId &&
+        record.status === "verified" &&
+        /^[0-9a-f]{64}$/.test(record.beforeWasmSha256) &&
+        /^[0-9a-f]{64}$/.test(record.afterWasmSha256) &&
+        name ===
+          `runtime-upgrade-live-${record.afterWasmSha256.slice(0, 16)}.json` &&
+        record.finalCodeSha256 === record.afterWasmSha256 &&
+        [
+          record.pauseTransactionHash,
+          record.deployTransactionHash,
+          record.reopenTransactionHash,
+        ].every((hash) => typeof hash === "string" && hash.length > 0),
+    );
+  const paths = [{ code: releaseCode, records: [] as string[] }];
+  const seen = new Set([releaseCode]);
+  for (let index = 0; index < paths.length; index++) {
+    const current = paths[index];
+    for (const upgrade of upgrades.filter(
+      ({ record }) => record.beforeWasmSha256 === current.code,
+    )) {
+      const next = upgrade.record.afterWasmSha256;
+      if (seen.has(next)) continue;
+      const records = [...current.records, upgrade.path];
+      if (next === deployedCode) return records;
+      seen.add(next);
+      paths.push({ code: next, records });
+    }
+  }
+  assert.fail(
+    "No verified code-only upgrade links release code to deployment manifest",
+  );
 }
 
 export function readActiveVersion2Release(
   root: string,
   recordPath: string,
   deployment: Deployment,
-): { path: string; record: ReleaseRecord; moves: MovePlan["moves"] } {
+): {
+  path: string;
+  record: ReleaseRecord;
+  moves: MovePlan["moves"];
+  runtimeUpgrades: string[];
+} {
   assert(
     recordPath.startsWith("/"),
     "Pass an absolute version-2 release-record path",
@@ -53,10 +124,11 @@ export function readActiveVersion2Release(
     2,
     "Deployment manifest is not version 2",
   );
-  assert.equal(
+  const runtimeUpgrades = codeOnlyUpgradePath(
+    root,
+    deployment.contractId,
     record.afterWasmSha256,
     deployment.wasmSha256,
-    "Release code differs from deployment manifest",
   );
 
   const preflightPath = resolve(root, record.preflightFile);
@@ -118,7 +190,7 @@ export function readActiveVersion2Release(
     map.moves.length,
     "Duplicate deed destination",
   );
-  return { path, record, moves: map.moves };
+  return { path, record, moves: map.moves, runtimeUpgrades };
 }
 
 /** Repository-relative form of a local path, so public evidence never records a home directory. */
