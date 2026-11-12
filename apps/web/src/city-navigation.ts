@@ -78,18 +78,26 @@ export function endConnection(
   );
 }
 
+export function arrivalDirection(connection: RoadConnection): -1 | 1 {
+  // Older seeds mark both road-end arrivals Right; the entry edge determines
+  // the usable direction into the next street.
+  if (connection.kind === "End") return connection.toAt === 0 ? 1 : -1;
+  return connection.facing === "Left" ? -1 : 1;
+}
+
 export function destination(
   city: CitySeed,
   connection: RoadConnection,
+  side: "North" | "South" = connection.toSide,
 ): { roadId: string; side: "North" | "South"; x: number } {
   const road = city.streets.find((entry) => entry.id === connection.toRoadId);
   if (!road) throw new Error("Connected street is missing");
   return {
     roadId: road.id,
-    side: connection.toSide,
+    side,
     x:
-      frontageX(road, connection.toAt, connection.toSide) +
-      frontageWidth(road, connection.toAt, connection.toSide) / 2,
+      frontageX(road, connection.toAt, side) +
+      frontageWidth(road, connection.toAt, side) / 2,
   };
 }
 

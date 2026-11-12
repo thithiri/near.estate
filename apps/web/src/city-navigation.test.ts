@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { validateCitySeed } from "@estate/shared";
 import rawSeed from "../../../contracts/estate/seed.json";
+import rawSeedV2 from "../../../contracts/estate/seed-v2.json";
 import {
+  arrivalDirection,
   cityMapCurbPoint,
   cityMapPoint,
   connectionAtX,
@@ -89,4 +91,24 @@ test("end exits and cross-street destination preserve a reachable position", () 
   assert.equal(rightExit.toRoadId, "river");
   const river = city.streets.find((road) => road.id === "river")!;
   assert.equal(frontageAtX(river, destination(city, rightExit).x), 11);
+});
+
+test("every road-end arrival faces inward and keeps the selected curb", () => {
+  for (const seed of [city, validateCitySeed(rawSeedV2)]) {
+    for (const road of seed.streets) {
+      for (const connection of road.connections) {
+        if (connection.kind !== "End") continue;
+        const target = seed.streets.find(
+          (entry) => entry.id === connection.toRoadId,
+        )!;
+        const expectedDirection = connection.toAt === 0 ? 1 : -1;
+        assert.equal(arrivalDirection(connection), expectedDirection);
+        for (const side of ["North", "South"] as const) {
+          const arrival = destination(seed, connection, side);
+          assert.equal(arrival.side, side);
+          assert.equal(frontageAtX(target, arrival.x, side), connection.toAt);
+        }
+      }
+    }
+  }
 });

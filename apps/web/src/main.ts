@@ -22,6 +22,7 @@ import {
 import rawSeed from "../../../contracts/estate/seed.json";
 import rawGuestSeed from "../../../contracts/estate/seed-v2.json";
 import {
+  arrivalDirection,
   cityMapCurbPoint,
   connectionAtX,
   curbDirection,
@@ -210,6 +211,9 @@ if (import.meta.env.DEV)
     __nearEstateGuestTextureStats: () => guestFacadeTextures.stats(),
     __nearEstateDriveView: () => ({
       carX,
+      roadId,
+      side,
+      driveDirection,
       worldX: world.x,
       worldScale: world.scale.x,
       moving,
@@ -526,7 +530,12 @@ function moveToRoad(
 }
 
 function followConnection(connection: RoadConnection): void {
-  const next = destination(city, connection);
+  const next = destination(
+    city,
+    connection,
+    connection.kind === "End" ? side : connection.toSide,
+  );
+  if (connection.kind === "End") driveDirection = arrivalDirection(connection);
   moveToRoad(next.roadId, next.side, next.x);
   status.textContent = `Now on ${currentRoad().name}.`;
 }
