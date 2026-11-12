@@ -12,6 +12,8 @@ compile_error!("repair-npc and reverse features cannot be combined");
 mod repair_npc;
 #[cfg(feature = "runtime")]
 mod runtime;
+#[cfg(all(test, feature = "runtime"))]
+mod runtime_tests;
 
 use near_estate_contract::{
     AccountState, Car, GameConfig, GameConfigV2, NPCSite, ParkingSession, Plot, PlotSeedV2, PlotV2,

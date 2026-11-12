@@ -951,3 +951,8 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 ## 2026-11-12 — Keep the camera steady when left drive ends
 
 - The street camera previously chose its left-facing 60% anchor only while `moving < 0`; releasing Left changed `moving` to zero and immediately returned to the right-facing 40% anchor. Once away from the road edge, that shifted the whole road and car by about one-fifth of the viewport. Move the anchor gradually toward the driving direction while the player holds a control, then preserve it on release. A development-only view reports car, world and anchor positions for the touch regression. The full eight-case touch suite passed once, and the left-release case passed five repeated runs after accounting for the final in-flight driving frame. A physical handset remains unverified.
+
+## 2026-11-13 — Test the live version-2 runtime directly
+
+- The deployed city executes `contracts/city-migration` with its `runtime` feature, so run that crate's unit tests in the local `contract:test` command and the contract CI job. The first focused cases cover a third curb space and street view, capped collection, a parked session retaining its meter terms after a rule change, and illegal parking ticket proceeds. This reduces the gap between the V1 test suite and the live code without claiming a complete V2 sandbox or named-wallet journey.
+- Checked near-sdk 5.30.1's installed `test_utils` source: `testing_env!` carries mocked storage into the next context, `VMContextBuilder::block_timestamp` takes nanoseconds, and `LookupMap::new` accepts a byte slice for multi-byte prefixes. The runtime tests use those exact APIs. Paid image testing and hosted build runs remain deferred.

@@ -34,7 +34,7 @@ Every claim below points to a record in [`deployments/`](deployments/) and, wher
 
 - **Wallet signing in the browser.** No named wallet (Meteor, plus a second wallet) has yet completed a browser journey on desktop or phone. The on-chain journeys above were signed by scripts with testnet keys kept outside the repository.
 - **Real phones.** Phone checks use emulated viewports in headless Chromium. Physical-device frame rate and GPU memory are unmeasured.
-- **Test coverage of the live code.** The contract test suites exercise the version-1 contract. The live version-2 runtime ports its parking and settlement code nearly verbatim, but its own coverage is the sandbox rehearsal in `contracts/city-migration/examples/rehearse.rs`, and CI does not build that crate.
+- **Test coverage of the live code.** The version-2 runtime now has direct unit tests for three-unit curb parking, capped collection, stored meter terms after a rule change, and owner ticket payout. CI is configured to run them alongside the version-1 suites; that hosted run is pending. The version-2 runtime still lacks a full near-workspaces sandbox suite and a fresh deployed-code browser journey with a named wallet.
 - **Moderator revocation race.** An owner can submit a new proposal that makes a moderator's pending revocation stale. That revocation then has to be retried. A fix requires a contract upgrade.
 - **Advertiser statistics.** Impressions are client-reported estimates with per-session deduplication. They are not billing-grade.
 - **Generated building art.** Paid image generation is disabled. Facades are curated, and generated art has had fake-provider tests only.
