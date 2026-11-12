@@ -28,6 +28,7 @@ RUN npm pkg delete scripts.postinstall && npm ci --omit=dev --workspace @estate/
 FROM node:22-alpine
 ARG ESTATE_SOURCE_REVISION=unknown
 LABEL org.opencontainers.image.revision=${ESTATE_SOURCE_REVISION}
+ENV ESTATE_SOURCE_REVISION=${ESTATE_SOURCE_REVISION}
 WORKDIR /app
 COPY --from=runtime-deps /app/node_modules ./node_modules
 COPY --from=build /app/packages/shared/package.json ./packages/shared/package.json

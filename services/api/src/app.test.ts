@@ -543,6 +543,8 @@ async function setup(
   const app = createApiApp({
     store,
     chain,
+    contractId: "city.testnet",
+    sourceRevision: "a".repeat(40),
     appOrigin: ORIGIN,
     clock: () => now,
     moderator,
@@ -1099,7 +1101,15 @@ test("moderator status checks the live restricted key behind Basic auth", async 
       code: "MODERATOR_KEY_UNAVAILABLE",
       message: "Moderator role or restricted key is unavailable",
     });
-    assert.equal((await context.app.request("/health")).status, 200);
+    const health = await context.app.request("/health");
+    assert.equal(health.status, 200);
+    assert.deepEqual(await health.json(), {
+      status: "ok",
+      service: "api",
+      schemaVersion: 1,
+      contractId: "city.testnet",
+      sourceRevision: "a".repeat(40),
+    });
   } finally {
     await context.close();
   }

@@ -133,6 +133,8 @@ const MAX_UNRESOLVED_MEDIA_PROPOSALS_PER_SLOT = 3;
 export type ApiOptions = {
   store: ApiStore;
   chain: ChainGateway | null;
+  contractId?: string | null;
+  sourceRevision?: string | null;
   appOrigin: string;
   clock?: () => number;
   moderator?: ModeratorGateway | null;
@@ -465,6 +467,8 @@ function replyError(
 export function createApiApp({
   store,
   chain,
+  contractId = null,
+  sourceRevision = null,
   appOrigin,
   clock = () => Math.floor(Date.now() / 1000),
   moderator = null,
@@ -802,7 +806,13 @@ export function createApiApp({
   });
 
   app.get("/health", (c) =>
-    c.json({ status: "ok", service: "api", schemaVersion: 1 }),
+    c.json({
+      status: "ok",
+      service: "api",
+      schemaVersion: 1,
+      contractId,
+      sourceRevision,
+    }),
   );
   app.get("/config", (c) => c.json(DEFAULT_CONFIG));
   app.get("/city", (c) => {

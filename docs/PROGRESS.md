@@ -708,3 +708,8 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-12 — Fixed the left-control camera snap
 
 - Releasing Left no longer switches the camera back to its right-facing anchor. The anchor eases toward the held direction and stays where it is after release, while the car and road follow the same position. A touch browser regression measures road shift separately from the final movement frame; it passed five repeated runs, and the full eight-case touch suite passed. The web type check passed. Physical phone touch behavior remains to be checked.
+
+## 2026-11-13 — Added an external release probe
+
+- Opened the local live-city preview in Chrome. The testnet street read the variable-width plots and the wallet chooser offered Meteor, but Meteor's web handoff reported no account available for connecting to an external app. The optional Intear path still needs a real account and signing check. No wallet key was imported or transaction signed.
+- Added `release:probe` for an operator to run from outside the target VPS. It rejects insecure/local origins and checks normal HTTPS, the public API's exact contract and source revision, five-road/100-plot/seven-site city, indexer cursor freshness, disabled paid generation and web security headers. Focused failure tests and API type checking pass. The public-domain probe and hosted restore/alerts remain pending until a VPS is available.

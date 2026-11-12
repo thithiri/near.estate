@@ -136,6 +136,8 @@ requirePaidModeration(
 const app = createApiApp({
   store,
   chain,
+  contractId,
+  sourceRevision: process.env.ESTATE_SOURCE_REVISION ?? null,
   citySeed,
   cityVersionReader: chain ? () => chain.cityVersion() : undefined,
   appOrigin,
