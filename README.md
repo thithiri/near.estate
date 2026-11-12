@@ -17,7 +17,7 @@ With `dev:guest` running, use `npm run profile:street` in another terminal for a
 
 For a contract code swap, `npm run contract:layout:check` runs the frozen storage-layout tests locally. The testnet code-upgrade tool runs this guard automatically before its sandbox rehearsal or live apply. A changed layout needs a migration procedure instead of the ordinary code-upgrade path.
 
-With `dev:city` running against a migrated `API_DATA_DIR`, `ESTATE_BROWSER_LIVE_URL=http://localhost:5173 npm run test:browser:live` checks the public testnet street and advertiser stats in Chromium. It uses the running city and API, makes no wallet transaction and fails if the indexed block is over ten minutes old. Set the URL to your chosen `WEB_PORT` when different.
+With `dev:city` running against a migrated `API_DATA_DIR`, `ESTATE_BROWSER_LIVE_URL=http://localhost:5173 npm run test:browser:live` checks the public testnet street and advertiser stats in Chromium. It uses the running city and API, makes no wallet transaction and fails if the indexed block is over ten minutes old. Set the URL to your chosen `WEB_PORT` when different. For an isolated local data snapshot with its indexer disabled, add `ESTATE_BROWSER_SNAPSHOT=1`; this skips only the ten-minute cursor check and is accepted only with a localhost URL.
 
 For the second-wallet compatibility spike, start a separate local city with `VITE_EXPERIMENTAL_INTEAR=1 npm run dev:city`. This adds Intear to the local wallet chooser; normal builds show Meteor only. With that city running, set `ESTATE_EXPERIMENTAL_INTEAR=1` alongside `ESTATE_BROWSER_LIVE_URL` to check that Intear's connection screen opens. Sign-in, artwork signing and gameplay-key approval still need a real-wallet test before this option can be released.
 

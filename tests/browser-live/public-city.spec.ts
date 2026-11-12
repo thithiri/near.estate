@@ -7,23 +7,25 @@ test("public testnet city and advertiser stats load together", async ({
   await page.getByRole("button", { name: "Open live testnet city" }).click();
   await expect(page.getByRole("heading", { name: "Live city" })).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Near Garden · Plot 3" }),
+    page.getByRole("heading", { name: "Near Garden · Plot 4" }),
   ).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole("button", { name: "Map", exact: true }).first().click();
   await page.locator("#map-stats").click();
   const statsResponse = page.waitForResponse((response) =>
-    response.url().includes("/api/stats/plots/plot-main-n-2"),
+    response.url().includes("/api/stats/plots/plot-main-n-3"),
   );
-  await page.locator("#stats-plot").selectOption("plot-main-n-2");
+  await page.locator("#stats-plot").selectOption("plot-main-n-3");
   const response = await statsResponse;
   expect(response.ok()).toBe(true);
   const stats = await response.json();
-  expect(stats.plotId).toBe("plot-main-n-2");
+  expect(stats.plotId).toBe("plot-main-n-3");
+  expect(stats.linkedHistory?.sourcePlotId).toBe("plot-main-n-2");
   expect(stats.freshness.indexedThroughHeight).toBeGreaterThan(0);
-  expect(stats.freshness.indexedThroughAt).toBeGreaterThan(
-    Date.now() - 600_000,
-  );
+  if (process.env.ESTATE_BROWSER_SNAPSHOT !== "1")
+    expect(stats.freshness.indexedThroughAt).toBeGreaterThan(
+      Date.now() - 600_000,
+    );
   await expect(page.locator(".owner-stats-grid")).toBeVisible();
   await expect(
     page.locator(".owner-stats-grid > div").nth(2).locator("strong"),

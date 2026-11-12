@@ -1,5 +1,13 @@
 # Current game visuals
 
+## Current testnet city street
+
+These captures use the released variable-width city on NEAR testnet and a protected local copy of its migrated media database. The moved Near Garden deed appears at Plot 4 with its approved “NE” logo. They show the read-only shared street; a wallet was not connected for driving or signing.
+
+![Current Main Street on a landscape phone](images/near-estate-live-v2-street-phone-v1.png)
+
+![Current Main Street on desktop](images/near-estate-live-v2-street-desktop-v1.png)
+
 ## Current variable-width buildings at every level
 
 The game now has fifteen generated building designs across one-, two- and three-unit plots. These sheets use the exact 60 normalized game sprites at their logical street size. Each highlighted building appears at levels 1–4 beside fixed level-2 neighbours, so plot width, sidewalk alignment and height progression can be reviewed together. Logo and billboard overlays are reviewed separately in the [media placement sheet](images/near-estate-new-media-placement-review-v1.png).

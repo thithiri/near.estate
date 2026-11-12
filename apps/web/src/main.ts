@@ -255,7 +255,7 @@ function requestPlotPrice(plotId: string): void {
     });
 }
 
-function requestApprovedManifest(hash: string, version: 1 | 2): void {
+function requestApprovedManifest(hash: string): void {
   if (approvedManifests.has(hash) || loadingManifests.has(hash)) return;
   loadingManifests.add(hash);
   void fetch(`/api/manifests/${hash}`)
@@ -263,7 +263,10 @@ function requestApprovedManifest(hash: string, version: 1 | 2): void {
       if (!response.ok) return;
       const value: unknown = await response.json();
       const manifest =
-        version === 2
+        typeof value === "object" &&
+        value !== null &&
+        "schemaVersion" in value &&
+        value.schemaVersion === 2
           ? validateAssetManifestV2(value)
           : validateAssetManifest(value);
       const digest =
@@ -842,7 +845,7 @@ function drawWorld(): void {
     );
     const building = chainEntry?.plot.plot.building;
     const approvedHash = building?.approved_manifest_hash;
-    if (approvedHash) requestApprovedManifest(approvedHash, liveCityVersion);
+    if (approvedHash) requestApprovedManifest(approvedHash);
     const approvedManifest = approvedHash
       ? approvedManifests.get(approvedHash)
       : undefined;
