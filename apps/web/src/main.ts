@@ -144,6 +144,7 @@ type Selection =
   | { kind: "None" };
 let selection: Selection = { kind: "Plot", id: "plot-main-n-0" };
 let carX = 85;
+let cameraAnchor = 0.4;
 let selectedTowerFloor = 0;
 let moving: -1 | 0 | 1 = 0;
 let driveDirection: -1 | 1 = 1;
@@ -207,6 +208,13 @@ const guestFacadeTextures = new GuestFrontageTextureCache();
 if (import.meta.env.DEV)
   Object.assign(window, {
     __nearEstateGuestTextureStats: () => guestFacadeTextures.stats(),
+    __nearEstateDriveView: () => ({
+      carX,
+      worldX: world.x,
+      worldScale: world.scale.x,
+      moving,
+      cameraAnchor,
+    }),
   });
 const impressionReporter = new ImpressionReporter();
 const approvedManifests = new Map<string, AssetManifest | AssetManifestV2>();
@@ -509,6 +517,7 @@ function moveToRoad(
   roadId = nextRoadId;
   side = nextSide;
   carX = x;
+  cameraAnchor = driveDirection < 0 ? 0.6 : 0.4;
   moving = 0;
   selection = selectionAtCar();
   drawWorld();
@@ -2778,6 +2787,8 @@ app.ticker.add((ticker) => {
   const dt = Math.min(ticker.deltaMS / 1000, 0.05);
   if (moving) {
     moveCarBy(moving * DRIVE_SPEED * dt);
+    const targetAnchor = driveDirection < 0 ? 0.6 : 0.4;
+    cameraAnchor += (targetAnchor - cameraAnchor) * (1 - Math.exp(-dt / 0.14));
   }
   const scale = Math.max(0.5, canvasHost.clientHeight / 300);
   backdrop.scale.set(scale);
@@ -2787,7 +2798,7 @@ app.ticker.add((ticker) => {
     0,
     Math.min(
       roadWidth(currentRoad()) - visibleWidth,
-      carX - visibleWidth * (moving < 0 ? 0.6 : 0.4),
+      carX - visibleWidth * cameraAnchor,
     ),
   );
   world.x = -cameraLeft * scale;

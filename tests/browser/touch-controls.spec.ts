@@ -121,6 +121,75 @@ test("holding phone drive controls moves and releasing stops the car", async ({
   await expect(page.locator("#collect")).toBeVisible();
 });
 
+test("releasing left drive does not shift the street or car", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await holdTouch(page, "#right", 3_600);
+  const left = await page.locator("#left").boundingBox();
+  expect(left).not.toBeNull();
+  const touch = {
+    x: left!.x + left!.width / 2,
+    y: left!.y + left!.height / 2,
+    id: 1,
+    radiusX: 4,
+    radiusY: 4,
+  };
+  const readView = () =>
+    page.evaluate(() => {
+      const read = (
+        window as Window & {
+          __nearEstateDriveView?: () => {
+            carX: number;
+            worldX: number;
+            worldScale: number;
+            moving: number;
+            cameraAnchor: number;
+          };
+        }
+      ).__nearEstateDriveView;
+      if (!read) throw new Error("Development drive view unavailable");
+      return read();
+    });
+  const cdp = await page.context().newCDPSession(page);
+  let touchActive = false;
+  try {
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [touch],
+    });
+    touchActive = true;
+    await page.waitForTimeout(800);
+    const before = await readView();
+    expect(before.moving).toBe(-1);
+    expect(before.cameraAnchor).toBeGreaterThan(0.55);
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    touchActive = false;
+    await page.waitForTimeout(150);
+    const after = await readView();
+    expect(after.moving).toBe(0);
+    const roadJump = Math.abs(
+      after.worldX -
+        before.worldX +
+        (after.carX - before.carX) * after.worldScale,
+    );
+    expect(roadJump).toBeLessThan(4);
+    expect(Math.abs(after.cameraAnchor - before.cameraAnchor)).toBeLessThan(
+      0.01,
+    );
+  } finally {
+    if (touchActive)
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchEnd",
+        touchPoints: [],
+      });
+    await cdp.detach();
+  }
+});
+
 test("a quick tap nudges the car across a plot boundary", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#plot-title")).toContainText("Plot 1");

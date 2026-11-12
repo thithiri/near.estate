@@ -947,3 +947,7 @@ The [invite-beta release checklist](RELEASE_CHECKLIST.md) is the current cross-p
 ## 2026-11-12 — Keep destination checks tied to destination cards
 
 - The revised map exposes both a labeled SVG pin and a destination card for each civic site. The older screen and activity checks selected Harbor Cinema by an ambiguous button name and failed before reaching cinema or practice-course verification. Select the stable site IDs on the destination cards so the flow checks the intended controls while the separate map test covers pins. The ten focused guest browser checks now pass across desktop, landscape phone and portrait phone viewports, including cinema pause/replay and the practice-course best time. This is local browser evidence, not a physical-device or named-wallet check.
+
+## 2026-11-12 — Keep the camera steady when left drive ends
+
+- The street camera previously chose its left-facing 60% anchor only while `moving < 0`; releasing Left changed `moving` to zero and immediately returned to the right-facing 40% anchor. Once away from the road edge, that shifted the whole road and car by about one-fifth of the viewport. Move the anchor gradually toward the driving direction while the player holds a control, then preserve it on release. A development-only view reports car, world and anchor positions for the touch regression. The full eight-case touch suite passed once, and the left-release case passed five repeated runs after accounting for the final in-flight driving frame. A physical handset remains unverified.
