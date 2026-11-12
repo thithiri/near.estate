@@ -8,8 +8,43 @@ const sprites = new Map(
     entry.sprite,
   ]),
 );
-const images = new Map<string, HTMLImageElement>();
-const loading = new Map<string, Promise<void>>();
+const MAX_PREVIEW_IMAGES = 15;
+type PreviewImage = {
+  image: HTMLImageElement;
+  promise: Promise<void>;
+  finish: (loaded: boolean) => void;
+};
+const images = new Map<string, PreviewImage>();
+
+function touchImage(url: string, entry: PreviewImage): void {
+  images.delete(url);
+  images.set(url, entry);
+}
+
+function trimImages(): void {
+  while (images.size > MAX_PREVIEW_IMAGES) {
+    const oldest = images.entries().next().value;
+    if (!oldest) return;
+    const [url, entry] = oldest;
+    images.delete(url);
+    if (!entry.image.complete) entry.image.removeAttribute("src");
+    entry.finish(false);
+  }
+}
+
+export function guestPreviewImageStats(): {
+  cachedImages: number;
+  loadedImages: number;
+  maxImages: number;
+} {
+  return {
+    cachedImages: images.size,
+    loadedImages: [...images.values()].filter(
+      ({ image }) => image.complete && image.naturalWidth > 0,
+    ).length,
+    maxImages: MAX_PREVIEW_IMAGES,
+  };
+}
 
 export function guestBuildingUrl(choice: Choice, level: BuildingLevel): string {
   const sprite = sprites.get(`${choice.id}:${level}`);
@@ -23,17 +58,31 @@ export function preloadGuestBuilding(
   level: BuildingLevel,
 ): Promise<void> {
   const url = guestBuildingUrl(choice, level);
-  const existing = loading.get(url);
-  if (existing) return existing;
+  const existing = images.get(url);
+  if (existing) {
+    touchImage(url, existing);
+    return existing.promise;
+  }
   const image = new Image();
-  images.set(url, image);
-  const task = new Promise<void>((resolve) => {
-    image.onload = () => resolve();
-    image.onerror = () => resolve();
-    image.src = url;
+  let settled = false;
+  let finish!: PreviewImage["finish"];
+  const promise = new Promise<void>((resolve) => {
+    finish = (loaded) => {
+      if (settled) return;
+      settled = true;
+      image.onload = null;
+      image.onerror = null;
+      if (!loaded && images.get(url)?.image === image) images.delete(url);
+      resolve();
+    };
   });
-  loading.set(url, task);
-  return task;
+  const entry: PreviewImage = { image, promise, finish };
+  image.onload = () => finish(true);
+  image.onerror = () => finish(false);
+  images.set(url, entry);
+  image.src = url;
+  trimImages();
+  return promise;
 }
 
 export function paintGuestMedia(
@@ -132,7 +181,10 @@ export function paintGuestChoice(
   selectedBuilding = true,
   ad: ImageBitmap | null = null,
 ): void {
-  const image = images.get(guestBuildingUrl(choice, level));
+  const url = guestBuildingUrl(choice, level);
+  const entry = images.get(url);
+  if (entry) touchImage(url, entry);
+  const image = entry?.image;
   if (!image?.complete || image.naturalWidth === 0) {
     paintBuilding(ctx, choice, 0, 190, logo, selectedBuilding, level);
     if (ad) paintGuestMedia(ctx, choice, level, logo, selectedBuilding, ad);

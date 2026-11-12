@@ -79,6 +79,78 @@ test("portrait picker shows a building choice above the bottom navigation", asyn
   expect(firstCard!.y).toBeLessThan(navigation!.y);
 });
 
+test("building picker releases older previews while cycling through four levels", async ({
+  page,
+}) => {
+  const failedImages: string[] = [];
+  page.on("response", (response) => {
+    if (response.url().includes("/guest-buildings/") && !response.ok())
+      failedImages.push(`${response.status()} ${response.url()}`);
+  });
+  const previewStats = () =>
+    page.evaluate(async () => {
+      const { guestPreviewImageStats } = await import(
+        "/src/guest-illustration.ts"
+      );
+      return guestPreviewImageStats();
+    });
+  await page.goto("/");
+  await page.locator('.topbar [data-screen="Menu"]').click();
+  await page.locator('[data-menu-go="My Plots"]').click();
+  await page.getByRole("button", { name: "Choose street design" }).click();
+  for (const [level, expected] of [
+    [1, 5],
+    [2, 10],
+    [3, 15],
+    [4, 15],
+    [1, 15],
+  ] as const) {
+    await page
+      .getByRole("button", {
+        name: `Level ${level} · ${[70, 100, 130, 160][level - 1]}px`,
+      })
+      .click();
+    await expect
+      .poll(async () => {
+        const stats = await previewStats();
+        return stats.loadedImages === stats.cachedImages
+          ? stats.loadedImages
+          : 0;
+      })
+      .toBe(expected);
+    expect((await previewStats()).cachedImages).toBeLessThanOrEqual(15);
+  }
+  expect((await previewStats()).maxImages).toBe(15);
+  expect(failedImages).toEqual([]);
+});
+
+test("building picker retries a failed illustration without losing its fallback", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator('.topbar [data-screen="Menu"]').click();
+  await page.locator('[data-menu-go="My Plots"]').click();
+  await page.getByRole("button", { name: "Choose street design" }).click();
+  let attempts = 0;
+  await page.route("**/guest-buildings/diner-l4.png", async (route) => {
+    attempts++;
+    if (attempts === 1)
+      await route.fulfill({ status: 503, body: "Temporary image outage" });
+    else await route.continue();
+  });
+  const diner = page.getByRole("button", { name: "Use Diner on plot 4" });
+  const canvasImage = () =>
+    diner
+      .locator("canvas")
+      .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
+  await page.getByRole("button", { name: "Level 4 · 160px" }).click();
+  await expect.poll(() => attempts).toBe(1);
+  const fallback = await canvasImage();
+  await page.getByRole("button", { name: "Level 4 · 160px" }).click();
+  await expect.poll(() => attempts).toBe(2);
+  await expect.poll(canvasImage).not.toBe(fallback);
+});
+
 test("a local ad image fills an eligible billboard in the building picker", async ({
   page,
 }) => {
