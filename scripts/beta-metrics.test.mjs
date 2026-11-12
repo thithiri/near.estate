@@ -8,6 +8,17 @@ const now = Date.parse("2026-11-10T12:00:00Z") / 1_000;
 const city = JSON.parse(
   readFileSync(new URL("../contracts/estate/seed.json", import.meta.url)),
 );
+const variableCity = JSON.parse(
+  readFileSync(new URL("../contracts/estate/seed-v2.json", import.meta.url)),
+);
+const variableCityRelease = JSON.parse(
+  readFileSync(
+    new URL(
+      "../deployments/variable-city-release-db33845c80179c1a.json",
+      import.meta.url,
+    ),
+  ),
+);
 
 test("empty beta data reports missing measurements rather than zero rates", () => {
   const db = new DatabaseSync(":memory:");
@@ -267,6 +278,96 @@ test("seven-day occupancy counts curb settlements and tower expiry against seede
       report.parking.timeWeightedOccupancyPercent,
       150 / (256 * duration),
     );
+  } finally {
+    db.close();
+  }
+});
+
+test("version-2 beta occupancy switches from 160 to 180 curbs at city cutover", () => {
+  const db = new DatabaseSync(":memory:");
+  try {
+    db.exec(`
+      CREATE TABLE indexer_state (id INTEGER, contract_id TEXT, start_height INTEGER, last_height INTEGER, last_timestamp_ns TEXT);
+      CREATE TABLE indexed_blocks (height INTEGER, timestamp_ns TEXT);
+      CREATE TABLE chain_events (block_height INTEGER, block_day TEXT, event_name TEXT, payload_json TEXT, log_index INTEGER, data_index INTEGER);
+    `);
+    const cutover = Math.floor(variableCityRelease.cutoverAtMs / 1_000);
+    const cursorSecond =
+      Math.ceil(variableCityRelease.reopenedAtMs / 1_000) + 900;
+    const firstSecond = (Math.floor(cursorSecond / 86_400) - 6) * 86_400;
+    const block = db.prepare("INSERT INTO indexed_blocks VALUES (?, ?)");
+    const event = db.prepare(
+      "INSERT INTO chain_events VALUES (?, '2026-11-12', ?, ?, 0, ?)",
+    );
+    block.run(1, (BigInt(firstSecond - 20) * 1_000_000_000n).toString());
+    for (const [index, plot] of city.plots.entries())
+      event.run(1, "plot_seeded", JSON.stringify({ plot_id: plot.id }), index);
+    for (const [index, site] of city.npcSites
+      .filter((item) => item.role === "ParkingTower")
+      .entries())
+      event.run(
+        1,
+        "npc_site_seeded",
+        JSON.stringify({ site_id: site.id }),
+        city.plots.length + index,
+      );
+    block.run(2, (BigInt(cutover - 120) * 1_000_000_000n).toString());
+    event.run(
+      2,
+      "parked",
+      JSON.stringify({
+        session_id: 1,
+        location_id: city.plots[0].id,
+        facility: "Curb",
+        expires_at: cutover - 60,
+      }),
+      0,
+    );
+    block.run(3, (BigInt(cutover - 70) * 1_000_000_000n).toString());
+    event.run(3, "collected", JSON.stringify({ session_id: 1 }), 0);
+    const newPlot = variableCity.plots.find((plot) => plot.frontageUnits === 3);
+    assert.ok(newPlot);
+    const newParkAt = Math.ceil(variableCityRelease.reopenedAtMs / 1_000) + 300;
+    block.run(4, (BigInt(newParkAt) * 1_000_000_000n).toString());
+    event.run(
+      4,
+      "parked",
+      JSON.stringify({
+        session_id: 2,
+        location_id: newPlot.id,
+        facility: "Curb",
+        expires_at: cursorSecond + 100,
+      }),
+      0,
+    );
+    block.run(5, (BigInt(cursorSecond) * 1_000_000_000n).toString());
+    db.prepare("INSERT INTO indexer_state VALUES (1, ?, 1, ?, ?)").run(
+      variableCityRelease.contractId,
+      variableCityRelease.frozenBlock.height + 200,
+      (BigInt(cursorSecond) * 1_000_000_000n).toString(),
+    );
+
+    const report = readBetaMetrics(db, cursorSecond + 5);
+    assert.equal(report.parking.capacityVersion, 2);
+    assert.deepEqual(report.parking.indexedOccupancy?.curbs, {
+      occupied: 1,
+      capacity: 180,
+      percent: 1 / 180,
+    });
+    assert.equal(
+      report.parking.timeWeightedOccupancy?.curbs.availableSlotSeconds,
+      160 * (cutover - firstSecond) + 180 * (cursorSecond - cutover),
+    );
+    assert.equal(
+      report.parking.timeWeightedOccupancy?.curbs.occupiedSlotSeconds,
+      50 + cursorSecond - newParkAt,
+    );
+    db.prepare(
+      "DELETE FROM chain_events WHERE event_name = 'plot_seeded' AND payload_json = ?",
+    ).run(JSON.stringify({ plot_id: city.plots.at(-1).id }));
+    const incomplete = readBetaMetrics(db, cursorSecond + 5);
+    assert.equal(incomplete.parking.indexedOccupancy, null);
+    assert.equal(incomplete.parking.timeWeightedOccupancy, null);
   } finally {
     db.close();
   }

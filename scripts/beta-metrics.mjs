@@ -7,6 +7,33 @@ const city = JSON.parse(
     "utf8",
   ),
 );
+const variableCity = JSON.parse(
+  readFileSync(
+    new URL("../contracts/estate/seed-v2.json", import.meta.url),
+    "utf8",
+  ),
+);
+const variableCityRelease = JSON.parse(
+  readFileSync(
+    new URL(
+      "../deployments/variable-city-release-db33845c80179c1a.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+);
+const deployment = JSON.parse(
+  readFileSync(new URL("../deployments/testnet.json", import.meta.url), "utf8"),
+);
+const variablePlotWidths = new Map(
+  variableCity.plots.map((plot) => [plot.id, plot.frontageUnits]),
+);
+const variableCurbCapacity = [...variablePlotWidths.values()].reduce(
+  (sum, width) => sum + width,
+  0,
+);
+if (variablePlotWidths.size !== 100 || variableCurbCapacity !== 180)
+  throw new Error("Version-2 curb seed has unexpected capacity");
 const towerIds = new Set(
   city.npcSites
     .filter((site) => site.role === "ParkingTower")
@@ -18,6 +45,26 @@ function hasTable(db, name) {
     db
       .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
       .get(name),
+  );
+}
+
+function capacityVersion(cursor, cursorSecond) {
+  return cursor?.contract_id === variableCityRelease.contractId &&
+    deployment.contractId === variableCityRelease.contractId &&
+    deployment.citySeedVersion === 2 &&
+    variableCityRelease.status === "active" &&
+    Number.isSafeInteger(cursor?.last_height) &&
+    cursor.last_height >= variableCityRelease.frozenBlock.height &&
+    cursorSecond !== null &&
+    cursorSecond >= Math.ceil(variableCityRelease.reopenedAtMs / 1_000)
+    ? 2
+    : 1;
+}
+
+function completeLegacySeed(plots) {
+  return (
+    plots.size === city.plots.length &&
+    city.plots.every((plot) => plots.has(plot.id))
   );
 }
 
@@ -103,7 +150,7 @@ function unpricedEvents(db, firstDay, lastDay) {
   return { costs, grants };
 }
 
-function indexedOccupancy(db, cursorSecond) {
+function indexedOccupancy(db, cursorSecond, version) {
   if (cursorSecond === null || !hasTable(db, "chain_events")) return null;
   const plots = new Set();
   const towers = new Set();
@@ -121,7 +168,7 @@ function indexedOccupancy(db, cursorSecond) {
       parked.set(payload.session_id, payload);
     }
   }
-  if (!plots.size) return null;
+  if (!plots.size || (version === 2 && !completeLegacySeed(plots))) return null;
   const settlements = db.prepare(
     `SELECT payload_json FROM chain_events
      WHERE event_name IN ('collected', 'expired', 'ticketed')`,
@@ -131,7 +178,12 @@ function indexedOccupancy(db, cursorSecond) {
   let occupiedCurbs = 0;
   let occupiedTowers = 0;
   for (const session of parked.values()) {
-    if (session.facility === "Curb" && plots.has(session.location_id))
+    if (
+      session.facility === "Curb" &&
+      (version === 2
+        ? variablePlotWidths.has(session.location_id)
+        : plots.has(session.location_id))
+    )
       occupiedCurbs++;
     if (session.facility === "Tower" && towers.has(session.location_id))
       occupiedTowers++;
@@ -140,8 +192,9 @@ function indexedOccupancy(db, cursorSecond) {
     asOf: cursorSecond,
     curbs: {
       occupied: occupiedCurbs,
-      capacity: plots.size * 2,
-      percent: occupiedCurbs / (plots.size * 2),
+      capacity: version === 2 ? variableCurbCapacity : plots.size * 2,
+      percent:
+        occupiedCurbs / (version === 2 ? variableCurbCapacity : plots.size * 2),
     },
     towers: towers.size
       ? {
@@ -153,7 +206,7 @@ function indexedOccupancy(db, cursorSecond) {
   };
 }
 
-function timeWeightedOccupancy(db, firstSecond, cursorSecond) {
+function timeWeightedOccupancy(db, firstSecond, cursorSecond, version) {
   if (
     cursorSecond === null ||
     cursorSecond <= firstSecond ||
@@ -195,20 +248,26 @@ function timeWeightedOccupancy(db, firstSecond, cursorSecond) {
   }
 
   // The fixed launch-city capacity is known only if its complete seed is indexed.
-  if (
-    plots.size !== city.plots.length ||
-    city.plots.some((plot) => !plots.has(plot.id)) ||
-    towers.size !== towerIds.size
-  )
-    return null;
+  if (!completeLegacySeed(plots) || towers.size !== towerIds.size) return null;
 
   const endSecond = cursorSecond;
   const capacitySeconds = (seededAt, slots) =>
     slots * Math.max(0, endSecond - Math.max(firstSecond, seededAt));
-  const curbCapacitySeconds = [...plots.values()].reduce(
-    (total, seededAt) => total + capacitySeconds(seededAt, 2),
+  const cutoverSecond = Math.floor(variableCityRelease.cutoverAtMs / 1_000);
+  const legacyEnd =
+    version === 2 ? Math.min(endSecond, cutoverSecond) : endSecond;
+  const legacyCurbCapacitySeconds = [...plots.values()].reduce(
+    (total, seededAt) =>
+      total + 2 * Math.max(0, legacyEnd - Math.max(firstSecond, seededAt)),
     0,
   );
+  const variableCurbCapacitySeconds =
+    version === 2
+      ? variableCurbCapacity *
+        Math.max(0, endSecond - Math.max(firstSecond, cutoverSecond))
+      : 0;
+  const curbCapacitySeconds =
+    legacyCurbCapacitySeconds + variableCurbCapacitySeconds;
   const towerCapacitySeconds = [...towers.values()].reduce(
     (total, seededAt) => total + capacitySeconds(seededAt, 32),
     0,
@@ -216,11 +275,26 @@ function timeWeightedOccupancy(db, firstSecond, cursorSecond) {
   let curbOccupiedSeconds = 0;
   let towerOccupiedSeconds = 0;
   for (const [id, session] of sessions) {
+    const variableSession =
+      version === 2 &&
+      session.facility === "Curb" &&
+      session.startedAt >= cutoverSecond;
     const seedTime =
       session.facility === "Curb"
-        ? plots.get(session.location_id)
+        ? variableSession
+          ? variablePlotWidths.has(session.location_id)
+            ? cutoverSecond
+            : undefined
+          : plots.get(session.location_id)
         : towers.get(session.location_id);
     if (seedTime === undefined) continue;
+    if (
+      version === 2 &&
+      session.facility === "Curb" &&
+      !variableSession &&
+      (settlements.get(id) ?? session.expires_at) > cutoverSecond
+    )
+      return null;
     const occupiedFrom = Math.max(firstSecond, seedTime, session.startedAt);
     const occupiedUntil = Math.min(
       endSecond,
@@ -396,7 +470,13 @@ export function readBetaMetrics(
         .all(today - 6, today)
     : [];
 
-  const occupancy = timeWeightedOccupancy(db, firstSecond, cursorSecond);
+  const version = capacityVersion(cursor, cursorSecond);
+  const occupancy = timeWeightedOccupancy(
+    db,
+    firstSecond,
+    cursorSecond,
+    version,
+  );
   return {
     windowUtc: { firstDay, lastDay },
     source: {
@@ -419,10 +499,11 @@ export function readBetaMetrics(
       curbParks: economy.curbParks,
       towerParks: economy.towerParks,
       towerShareOfParks: totalParks ? economy.towerParks / totalParks : null,
-      indexedOccupancy: indexedOccupancy(db, cursorSecond),
+      indexedOccupancy: indexedOccupancy(db, cursorSecond, version),
       timeWeightedOccupancy: occupancy,
       timeWeightedOccupancyPercent: occupancy?.combinedPercent ?? null,
-      note: "Current and time-weighted occupancy are reconstructed from indexed park, settlement and expiry times. Time-weighted figures require every launch-city seed event and end at the last indexed block; stale or incomplete indexing limits the measurement.",
+      capacityVersion: version,
+      note: "Current and time-weighted occupancy use indexed park, settlement and expiry times. The version-2 capacity switch uses the operator release cutover time because migration emitted no plot-seed events. Time-weighted figures require every launch-city seed event and end at the last indexed block; stale or incomplete indexing limits the measurement.",
     },
     coinPacing: {
       grossEarnedSubunits: economy.grossCoinSubunits.toString(),
