@@ -218,7 +218,7 @@ export class GuestFrontageTextureCache {
   private views: GuestFrontageView[] = [];
   private entries = new Map<string, CachedTexture>();
   private retiring = new Map<string, Promise<void>>();
-  private pruning = false;
+  private admission: Promise<void> = Promise.resolve();
 
   stats(): {
     currentFacades: number;
@@ -273,10 +273,11 @@ export class GuestFrontageTextureCache {
       const group = view.group;
       const wasWanted = group.wanted;
       group.wanted = selected.has(index);
-      if (!group.wanted || group.destroyed) {
-        if (wasWanted) this.detach(group);
-        continue;
-      }
+      if ((!group.wanted || group.destroyed) && wasWanted) this.detach(group);
+    }
+    for (const view of this.views) {
+      const group = view.group;
+      if (!group.wanted || group.destroyed) continue;
       for (const key of assetKeys(group)) {
         const cached = this.entries.get(key);
         if (cached) cached.lastUsed = performance.now();
@@ -331,7 +332,6 @@ export class GuestFrontageTextureCache {
           media.rect,
         );
     }
-    if (this.entries.size > MAX_LOADED_TEXTURES) void this.prune();
   }
 
   private detach(group: GuestFrontage): void {
@@ -366,9 +366,9 @@ export class GuestFrontageTextureCache {
     )
       return;
     state.loading = true;
-    void this.load(key, url, kind, rect)
+    void this.load(group, key, url, kind, rect)
       .then((texture) => {
-        if (group.destroyed || !group.wanted) return;
+        if (!texture || group.destroyed || !group.wanted) return;
         apply(texture);
         state.loaded = true;
         state.failures = 0;
@@ -384,88 +384,96 @@ export class GuestFrontageTextureCache {
       });
   }
 
-  private load(
+  private async load(
+    group: GuestFrontage,
     key: string,
     url: string,
     kind: CachedTexture["kind"],
     rect?: ArtRect,
-  ): Promise<Texture> {
-    const retiring = this.retiring.get(key);
-    if (retiring)
-      return retiring
-        .catch(() => undefined)
-        .then(() => this.load(key, url, kind, rect));
-    const existing = this.entries.get(key);
-    if (existing) {
-      existing.lastUsed = performance.now();
-      return existing.promise;
+  ): Promise<Texture | null> {
+    const previous = this.admission;
+    let release!: () => void;
+    this.admission = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    try {
+      if (group.destroyed || !group.wanted) return null;
+      await this.retiring.get(key);
+      if (group.destroyed || !group.wanted) return null;
+      const existing = this.entries.get(key);
+      if (existing) {
+        existing.lastUsed = performance.now();
+        return existing.promise;
+      }
+      while (this.entries.size >= MAX_LOADED_TEXTURES) {
+        const wantedKeys = new Set(
+          this.views.flatMap((view) =>
+            view.group.wanted ? assetKeys(view.group) : [],
+          ),
+        );
+        const oldest = [...this.entries]
+          .filter(([candidate]) => !wantedKeys.has(candidate))
+          .sort((a, b) => a[1].lastUsed - b[1].lastUsed)[0];
+        if (!oldest)
+          throw new Error("Guest building texture budget has no free slot");
+        const [oldKey, oldEntry] = oldest;
+        this.entries.delete(oldKey);
+        await this.retire(oldKey, oldEntry);
+        if (group.destroyed || !group.wanted) return null;
+      }
+      const promise =
+        kind === "CoveredAd"
+          ? coveredAdTexture(url, rect!.width, rect!.height)
+          : Assets.load<Texture>(
+              url.startsWith("/api/assets/")
+                ? { alias: url, src: url, parser: "texture" }
+                : url,
+            );
+      const entry: CachedTexture = {
+        promise,
+        loaded: false,
+        texture: null,
+        lastUsed: performance.now(),
+        kind,
+        url,
+      };
+      this.entries.set(key, entry);
+      entry.promise = promise
+        .then((texture) => {
+          entry.loaded = true;
+          entry.texture = texture;
+          return texture;
+        })
+        .catch((error: unknown) => {
+          if (this.entries.get(key) === entry) this.entries.delete(key);
+          throw error;
+        });
+      return entry.promise;
+    } finally {
+      release();
     }
-    const promise =
-      kind === "CoveredAd"
-        ? coveredAdTexture(url, rect!.width, rect!.height)
-        : Assets.load<Texture>(
-            url.startsWith("/api/assets/")
-              ? { alias: url, src: url, parser: "texture" }
-              : url,
-          );
-    const entry: CachedTexture = {
-      promise,
-      loaded: false,
-      texture: null,
-      lastUsed: performance.now(),
-      kind,
-      url,
-    };
-    this.entries.set(key, entry);
-    entry.promise = promise
-      .then((texture) => {
-        entry.loaded = true;
-        entry.texture = texture;
-        return texture;
-      })
-      .catch((error: unknown) => {
-        if (this.entries.get(key) === entry) this.entries.delete(key);
-        throw error;
-      });
-    return entry.promise;
   }
 
-  private async prune(): Promise<void> {
-    if (this.pruning) return;
-    this.pruning = true;
-    try {
-      const loaded = [...this.entries].filter(([, entry]) => entry.loaded);
-      loaded.sort((a, b) => a[1].lastUsed - b[1].lastUsed);
-      let loadedCount = loaded.length;
-      for (const [key, entry] of loaded) {
-        if (loadedCount <= MAX_LOADED_TEXTURES) break;
-        if (this.entries.get(key) !== entry) continue;
-        if (
-          this.views.some(
-            (view) => view.group.wanted && assetKeys(view.group).includes(key),
-          )
-        )
-          continue;
-        this.entries.delete(key);
-        loadedCount--;
-        const retiring =
-          entry.kind === "CoveredAd"
-            ? Promise.resolve().then(() => {
-                if (entry.texture && entry.texture !== Texture.EMPTY)
-                  entry.texture.destroy(true);
-              })
-            : Assets.unload(entry.url);
-        this.retiring.set(key, retiring);
+  private async retire(key: string, entry: CachedTexture): Promise<void> {
+    const task = entry.promise
+      .then(async (texture) => {
         try {
-          await retiring;
+          if (entry.kind === "CoveredAd") texture.destroy(true);
+          else await Assets.unload(entry.url);
         } catch (error) {
           console.warn("Could not release guest building texture", error);
-        } finally {
-          this.retiring.delete(key);
         }
-      }
-    } finally {
-      this.pruning = false;
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        this.retiring.delete(key);
+      });
+    this.retiring.set(key, task);
+    try {
+      await task;
+    } catch {
+      // A failed image load has no texture to release.
     }
   }
 }

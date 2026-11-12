@@ -97,6 +97,62 @@ test("guest facades load near the camera and release old street textures", async
   }
 });
 
+test("rapid street changes never start more than 32 facade loads", async () => {
+  const realLoad = Assets.load;
+  const realUnload = Assets.unload;
+  const pending = new Map<string, () => void>();
+  let inFlight = 0;
+  let peakInFlight = 0;
+  Assets.load = ((request: unknown) => {
+    assert.equal(typeof request, "string");
+    const url = request as string;
+    inFlight++;
+    peakInFlight = Math.max(peakInFlight, inFlight);
+    return new Promise<Texture>((resolve) => {
+      pending.set(url, () => {
+        pending.delete(url);
+        inFlight--;
+        resolve(
+          new Texture({
+            source: new TextureSource({ width: 340, height: 760 }),
+          }),
+        );
+      });
+    });
+  }) as typeof Assets.load;
+  Assets.unload = (async () => undefined) as typeof Assets.unload;
+  try {
+    const cache = new GuestFrontageTextureCache();
+    const first = Array.from({ length: 32 }, (_, index) => frontage(index));
+    const second = Array.from({ length: 32 }, (_, index) =>
+      frontage(index + 32),
+    );
+    cache.setViews(first.map((group) => ({ x: 0, width: 85, group })));
+    cache.updateVisible(0, 100);
+    await flush();
+    assert.equal(inFlight, 32);
+    assert.equal(cache.stats().cachedImages, 32);
+
+    cache.setViews(second.map((group) => ({ x: 0, width: 85, group })));
+    cache.updateVisible(0, 100);
+    await flush();
+    assert.equal(inFlight, 32);
+    assert.ok(cache.stats().cachedImages <= 32);
+    for (const group of first) pending.get(group.illustrationUrl)?.();
+    for (let attempt = 0; attempt < 10 && inFlight < 32; attempt++)
+      await flush();
+    assert.equal(inFlight, 32);
+    assert.equal(cache.stats().cachedImages, 32);
+    assert.equal(peakInFlight, 32);
+    for (const group of second) pending.get(group.illustrationUrl)?.();
+    await flush();
+    assert.ok(second.every((group) => group.illustrationState.loaded));
+  } finally {
+    Assets.load = realLoad;
+    Assets.unload = realUnload;
+  }
+});
+
 test("a failed approved facade keeps the illustrated building until retry", async () => {
   const realLoad = Assets.load;
   const realWarn = console.warn;
