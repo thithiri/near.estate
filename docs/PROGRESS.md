@@ -727,3 +727,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-13 — Added independent chain proof to the public release probe
 
 - The external HTTPS probe now reads the testnet account at finality, checks its code hash against the deployment manifest, then calls `is_paused` at that exact block. It rejects a changed binary, a paused city or a view from another block. The three focused probe tests pass, including these failure cases. The actual public-host run still awaits a target VPS and hostname.
+
+## 2026-11-13 — Refreshed the version-2 economy readout
+
+- Copied the local service SQLite database with SQLite's backup API, then ran the event catch-up and seven-day metrics report only on that disposable copy. The [refreshed report](../deployments/testnet-v2-beta-metrics-2026-11-13-refresh.json) reached finalized height 277421607 with `completeThroughNow: true` at measurement time; the catch-up found no new game events. It shows 180 curb and 96 tower spaces, both empty at the indexed cursor, 20 curb parks, one tower park and three first parks in the recorded window. Those actions are scripted test journeys, and older cost/grant events omit amounts, so no economy tuning is justified. The source service database was not changed.

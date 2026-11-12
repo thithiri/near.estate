@@ -1,0 +1,85 @@
+{
+  "windowUtc": {
+    "firstDay": "2026-11-06",
+    "lastDay": "2026-11-12"
+  },
+  "source": {
+    "contractId": "dev-20261110121817-59798568433631.testnet",
+    "startHeight": 277066408,
+    "indexedThroughHeight": 277421607,
+    "indexedThroughAt": 1794520727,
+    "completeThroughNow": true,
+    "matchesDeployedCity": true
+  },
+  "onboarding": {
+    "registrations": 3,
+    "firstParks": 3,
+    "medianSecondsToFirstPark": 9,
+    "note": "First parking after a registration indexed in this seven-day window; wallet sign-in time is not recorded."
+  },
+  "parking": {
+    "curbParks": 20,
+    "towerParks": 1,
+    "towerShareOfParks": 0.047619047619047616,
+    "indexedOccupancy": {
+      "asOf": 1794520727,
+      "curbs": {
+        "occupied": 0,
+        "capacity": 180,
+        "percent": 0
+      },
+      "towers": {
+        "occupied": 0,
+        "capacity": 96,
+        "percent": 0
+      }
+    },
+    "timeWeightedOccupancy": {
+      "windowStart": 1793923200,
+      "indexedThroughAt": 1794520727,
+      "curbs": {
+        "occupiedSlotSeconds": 11277,
+        "availableSlotSeconds": 34039976,
+        "percent": 0.00033128695507893426
+      },
+      "towers": {
+        "occupiedSlotSeconds": 5,
+        "availableSlotSeconds": 19876864,
+        "percent": 2.5154873525320696e-07
+      },
+      "combinedPercent": 0.00020924816810480732
+    },
+    "timeWeightedOccupancyPercent": 0.00020924816810480732,
+    "capacityVersion": 2,
+    "note": "Current and time-weighted occupancy use indexed park, settlement and expiry times. The version-2 capacity switch uses the operator release cutover time because migration emitted no plot-seed events. Time-weighted figures require every launch-city seed event and end at the last indexed block; stale or incomplete indexing limits the measurement."
+  },
+  "coinPacing": {
+    "grossEarnedSubunits": "183024997",
+    "knownSpentSubunits": "200000000",
+    "amountCoverageComplete": false,
+    "unpricedCostEvents": 2,
+    "unpricedGrantEvents": 2,
+    "note": "Coin totals cover indexed events only; unpriced historical purchases and starter grants are excluded from their respective totals."
+  },
+  "generation": {
+    "reviewedPaidCandidates": 0,
+    "approvedPaidCandidates": 0,
+    "paidCandidateApprovalRate": null,
+    "note": "A paid candidate review rate requires real provider jobs and human review."
+  },
+  "provider": {
+    "completedAttempts": 0,
+    "tokenUsage": {
+      "reportedAttempts": 0,
+      "inputTokens": null,
+      "outputTokens": null,
+      "totalTokens": null
+    },
+    "medianAttemptSeconds": null,
+    "conservativeBudgetDebitUsdMicros": "0",
+    "actualProviderCostUsdMicros": null,
+    "actualInvoicedCostUsdMicros": null,
+    "costSource": null,
+    "note": "The ledger records a conservative budget debit. Attach a complete Costs API export from a dedicated provider project for actual reported cost; invoice cost requires separate reconciliation."
+  }
+}
