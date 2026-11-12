@@ -1,0 +1,46 @@
+{
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "cutoverHeight": 277344338,
+  "cutoverAtMs": 1794475988000,
+  "frozenSqliteSha256": "e116ab4641d35778852cd84f9eb331edd99115967d2995b11617195708dd095f",
+  "destinationBaselineDays": 1,
+  "plots": [
+    {
+      "from": "plot-main-n-2",
+      "to": "plot-main-n-3",
+      "currentTotals": {
+        "impressions": 0,
+        "dwellMs": 0,
+        "averageVisibleMs": 0,
+        "parks": 0,
+        "tickets": 0
+      },
+      "linkedTotals": {
+        "impressions": 11,
+        "dwellMs": 128733,
+        "averageVisibleMs": 11703,
+        "parks": 2,
+        "tickets": 0
+      }
+    },
+    {
+      "from": "plot-market-n-1",
+      "to": "plot-market-n-2",
+      "currentTotals": {
+        "impressions": 0,
+        "dwellMs": 0,
+        "averageVisibleMs": 0,
+        "parks": 1,
+        "tickets": 1
+      },
+      "linkedTotals": {
+        "impressions": 0,
+        "dwellMs": 0,
+        "averageVisibleMs": 0,
+        "parks": 1,
+        "tickets": 1
+      }
+    }
+  ],
+  "verifiedAt": "2026-11-12T10:15:52.470Z"
+}

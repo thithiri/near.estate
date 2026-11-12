@@ -10,6 +10,7 @@ import test from "node:test";
 import { PlotStats, validateCitySeed } from "@estate/shared";
 import { createApiApp } from "./app.js";
 import {
+  backfillDeedDestinationDays,
   captureDeedHistory,
   verifyActiveCityCutover,
   verifyDeedHistoryCutover,
@@ -25,6 +26,7 @@ test("moved deed history stays separate and frozen after the old plot is reused"
   const now = Math.floor(Date.UTC(2026, 10, 12, 12) / 1_000);
   const source = "plot-main-n-2";
   const target = "plot-main-n-3";
+  let frozen: DatabaseSync | null = null;
   try {
     const ledger = new ImpressionLedger(db);
     ledger.issueSession("history-session", now);
@@ -34,6 +36,20 @@ test("moved deed history stays separate and frozen after the old plot is reused"
         {
           eventId: randomUUID(),
           plotId: source,
+          surface: "Logo",
+          observedAt: now * 1_000 - 2_000,
+          msVisible: 1_500,
+        },
+      ],
+      now,
+    );
+    ledger.issueSession("destination-history-session", now);
+    ledger.recordBatch(
+      "destination-history-session",
+      [
+        {
+          eventId: randomUUID(),
+          plotId: target,
           surface: "Logo",
           observedAt: now * 1_000 - 2_000,
           msVisible: 1_500,
@@ -130,6 +146,9 @@ test("moved deed history stays separate and frozen after the old plot is reused"
         captureDeedHistory(db, "estate.testnet", moves, 122, now * 1_000 - 1),
       /Impressions after the cutover/,
     );
+    const frozenPath = join(dir, "frozen.sqlite");
+    db.exec(`VACUUM INTO '${frozenPath}'`);
+    frozen = new DatabaseSync(frozenPath, { readOnly: true });
     const capture = captureDeedHistory(
       db,
       "estate.testnet",
@@ -143,6 +162,34 @@ test("moved deed history stays separate and frozen after the old plot is reused"
       { ...capture, workflowRowsVerified: 5 },
     );
     assert.deepEqual(activeCheck(), { ...capture, workflowRowsVerified: 5 });
+    db.exec("DROP TABLE deed_destination_days");
+    assert.throws(
+      () => readPlotStats(db, target, now),
+      /missing its destination baseline/,
+    );
+    assert.equal(
+      backfillDeedDestinationDays(
+        db,
+        frozen,
+        "estate.testnet",
+        moves,
+        122,
+        now * 1_000,
+      ),
+      1,
+    );
+    assert.throws(
+      () =>
+        backfillDeedDestinationDays(
+          db,
+          frozen!,
+          "estate.testnet",
+          moves,
+          122,
+          now * 1_000,
+        ),
+      /already exist/,
+    );
     assert.throws(
       () => activeCheck(now * 1_000 + 1, now * 1_000 + 2),
       /link differs/,
@@ -226,6 +273,17 @@ test("moved deed history stays separate and frozen after the old plot is reused"
       );
     }
     db.prepare(
+      "UPDATE media_upload_attempts SET plot_id = ? WHERE id = 'attempt-1'",
+    ).run(source);
+    assert.throws(() => activeCheck(), /Moved deed workflow row missing/);
+    db.prepare(
+      "UPDATE media_upload_attempts SET plot_id = ? WHERE id = 'attempt-1'",
+    ).run(target);
+    db.prepare(
+      "DELETE FROM media_upload_attempts WHERE id = 'attempt-1'",
+    ).run();
+    assert.deepEqual(activeCheck(), { ...capture, workflowRowsVerified: 5 });
+    db.prepare(
       `INSERT INTO media_upload_attempts (id, account_id, plot_id, created_at)
        VALUES ('stray-attempt', 'owner.testnet', ?, ?)`,
     ).run(source, now);
@@ -255,11 +313,32 @@ test("moved deed history stays separate and frozen after the old plot is reused"
     assert.equal(store.mediaProposal("proposal-1")?.plotId, target);
     assert.equal(store.upload("upload-1")?.plotId, target);
     const first = PlotStats.parse(readPlotStats(db, target, now));
-    assert.equal(first.totals.parks, 4);
+    assert.equal(first.totals.parks, 0);
+    assert.equal(first.totals.impressions, 0);
     assert.equal(first.linkedHistory?.sourcePlotId, source);
     assert.equal(first.linkedHistory?.totals.parks, 2);
     assert.equal(first.linkedHistory?.totals.tickets, 1);
     assert.equal(first.linkedHistory?.totals.impressions, 1);
+    db.prepare("UPDATE plot_daily_stats SET parks = 5 WHERE plot_id = ?").run(
+      target,
+    );
+    ledger.issueSession("destination-after-session", now + 60);
+    ledger.recordBatch(
+      "destination-after-session",
+      [
+        {
+          eventId: randomUUID(),
+          plotId: target,
+          surface: "Logo",
+          observedAt: (now + 60) * 1_000 - 2_000,
+          msVisible: 1_500,
+        },
+      ],
+      now + 60,
+    );
+    const current = PlotStats.parse(readPlotStats(db, target, now + 60));
+    assert.equal(current.totals.parks, 1);
+    assert.equal(current.totals.impressions, 1);
     const citySeed = validateCitySeed(
       JSON.parse(
         readFileSync(
@@ -309,6 +388,7 @@ test("moved deed history stays separate and frozen after the old plot is reused"
       /already captured/,
     );
   } finally {
+    frozen?.close();
     store.close();
     rmSync(dir, { recursive: true, force: true });
   }

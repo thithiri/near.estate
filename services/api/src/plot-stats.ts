@@ -20,6 +20,35 @@ function readPlotStatsUnwrapped(
     .toISOString()
     .slice(0, 10);
   const endDay = new Date(today * 86_400_000).toISOString().slice(0, 10);
+  const link = exists(db, "deed_history_links")
+    ? (db
+        .prepare(
+          "SELECT source_plot_id, cutover_height, cutover_at_ms FROM deed_history_links WHERE target_plot_id = ?",
+        )
+        .get(plotId) as
+        | {
+            source_plot_id: string;
+            cutover_height: number;
+            cutover_at_ms: number;
+          }
+        | undefined)
+    : undefined;
+  if (link && !exists(db, "deed_destination_days"))
+    throw new Error("Moved deed is missing its destination baseline");
+  const baselineRows = link
+    ? (db
+        .prepare(
+          "SELECT day, impressions, dwell_ms, parks, tickets FROM deed_destination_days WHERE source_plot_id = ? AND day BETWEEN ? AND ?",
+        )
+        .all(link.source_plot_id, startDay, endDay) as Array<{
+        day: string;
+        impressions: number;
+        dwell_ms: number;
+        parks: number;
+        tickets: number;
+      }>)
+    : [];
+  const baseline = new Map(baselineRows.map((row) => [row.day, row]));
   const adRows = db
     .prepare(
       "SELECT day, impressions, dwell_ms FROM impression_daily_stats WHERE plot_id = ? AND day BETWEEN ? AND ?",
@@ -47,15 +76,23 @@ function readPlotStatsUnwrapped(
     const day = new Date((today - offset) * 86_400_000)
       .toISOString()
       .slice(0, 10);
-    const impressions = ads.get(day)?.impressions ?? 0;
-    const dwellMs = ads.get(day)?.dwell_ms ?? 0;
+    const before = baseline.get(day);
+    const impressions =
+      (ads.get(day)?.impressions ?? 0) - (before?.impressions ?? 0);
+    const dwellMs = (ads.get(day)?.dwell_ms ?? 0) - (before?.dwell_ms ?? 0);
+    const parks = (chain.get(day)?.parks ?? 0) - (before?.parks ?? 0);
+    const tickets = (chain.get(day)?.tickets ?? 0) - (before?.tickets ?? 0);
+    if ([impressions, dwellMs, parks, tickets].some((value) => value < 0))
+      throw new Error(
+        `Moved deed totals fell below the frozen baseline on ${day}`,
+      );
     days.push({
       day,
       impressions,
       dwellMs,
       averageVisibleMs: impressions ? Math.round(dwellMs / impressions) : 0,
-      parks: chain.get(day)?.parks ?? 0,
-      tickets: chain.get(day)?.tickets ?? 0,
+      parks,
+      tickets,
     });
   }
   const totals = days.reduce(
@@ -71,19 +108,6 @@ function readPlotStatsUnwrapped(
   totals.averageVisibleMs = totals.impressions
     ? Math.round(totals.dwellMs / totals.impressions)
     : 0;
-  const link = exists(db, "deed_history_links")
-    ? (db
-        .prepare(
-          "SELECT source_plot_id, cutover_height, cutover_at_ms FROM deed_history_links WHERE target_plot_id = ?",
-        )
-        .get(plotId) as
-        | {
-            source_plot_id: string;
-            cutover_height: number;
-            cutover_at_ms: number;
-          }
-        | undefined)
-    : undefined;
   let linkedHistory: PlotStats["linkedHistory"];
   if (link) {
     const priorRows = db
@@ -140,9 +164,13 @@ function readPlotStatsUnwrapped(
   }
   const impression = db
     .prepare(
-      "SELECT MAX(received_at_ms) AS received FROM impression_events WHERE plot_id = ?",
+      link
+        ? "SELECT MAX(received_at_ms) AS received FROM impression_events WHERE plot_id = ? AND received_at_ms > ?"
+        : "SELECT MAX(received_at_ms) AS received FROM impression_events WHERE plot_id = ?",
     )
-    .get(plotId) as { received: number | null };
+    .get(...(link ? [plotId, link.cutover_at_ms] : [plotId])) as {
+    received: number | null;
+  };
   const cursor = exists(db, "indexer_state")
     ? (db
         .prepare(

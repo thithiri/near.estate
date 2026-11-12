@@ -1,0 +1,71 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "releaseRecord": "deployments/variable-city-release-db33845c80179c1a.json",
+  "driverId": "dev-20261110121826-61851458515092.testnet",
+  "widths": [
+    {
+      "units": 1,
+      "plotId": "plot-main-n-1",
+      "slot": 0,
+      "sessionId": 16,
+      "balanceBefore": "100256110",
+      "balanceAfter": "100406110"
+    },
+    {
+      "units": 2,
+      "plotId": "plot-main-n-0",
+      "slot": 1,
+      "sessionId": 17,
+      "balanceBefore": "100406110",
+      "balanceAfter": "100556110"
+    },
+    {
+      "units": 3,
+      "plotId": "plot-main-n-7",
+      "slot": 2,
+      "sessionId": 18,
+      "balanceBefore": "100556110",
+      "balanceAfter": "100706110"
+    }
+  ],
+  "transactions": [
+    {
+      "accountId": "dev-20261110121826-61851458515092.testnet",
+      "method": "park",
+      "label": "park:1",
+      "hash": "9y3cn85CBWcADqqkpcxEsre2Qn37LSrdCp5XM5qu7c5x"
+    },
+    {
+      "accountId": "dev-20261110121826-61851458515092.testnet",
+      "method": "collect",
+      "label": "collect:1",
+      "hash": "6E7kPGwhL3oMs4JbJTXLtCFurzcSB7PJwnE2ZCVAciAh"
+    },
+    {
+      "accountId": "dev-20261110121826-61851458515092.testnet",
+      "method": "park",
+      "label": "park:2",
+      "hash": "Hdy93oRioTcnbY7AgeC79J6kbbzmDgXkyKinWdmKc6PJ"
+    },
+    {
+      "accountId": "dev-20261110121826-61851458515092.testnet",
+      "method": "collect",
+      "label": "collect:2",
+      "hash": "Cc9A5jr8eQFyPevmpN8u7QdTgr1ye6RsbWjKsQjEKYQr"
+    },
+    {
+      "accountId": "dev-20261110121826-61851458515092.testnet",
+      "method": "park",
+      "label": "park:3",
+      "hash": "9wBTMjk2h3oUyKzbibNKCjKnQMkAbDW4h1YyAW5ZRbKD"
+    },
+    {
+      "accountId": "dev-20261110121826-61851458515092.testnet",
+      "method": "collect",
+      "label": "collect:3",
+      "hash": "FGcM48CvfD6u2wSaYncmxXVydQiPd65tTP5tozzYEWgg"
+    }
+  ],
+  "verifiedAt": "2026-11-12T09:59:27.477Z"
+}

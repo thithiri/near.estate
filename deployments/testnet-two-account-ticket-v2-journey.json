@@ -1,0 +1,45 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "cityVersion": 2,
+  "releaseRecord": "deployments/variable-city-release-db33845c80179c1a.json",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "driverId": "dev-20261110121826-61851458515092.testnet",
+  "plotId": "plot-market-n-2",
+  "sessionId": 20,
+  "legalAtPark": false,
+  "ticketPayoutAtomic": "140000",
+  "finalDriverSession": null,
+  "pendingRestoredRule": {
+    "rule": {
+      "kind": "Free"
+    },
+    "effective_at": 1794478126
+  },
+  "transactions": [
+    {
+      "accountId": "dev-20261110121829-19069405494728.testnet",
+      "method": "set_rule",
+      "hash": "EF9AA7C4tC3iDv7DrKXoBRnwzXHzaF2FATAmm7EyG2wz"
+    },
+    {
+      "accountId": "dev-20261110121826-61851458515092.testnet",
+      "method": "park",
+      "hash": "96WD6yXLwE8jBmrq4oUPNKPcxnF5qiBFecmA4MnxA7YT"
+    },
+    {
+      "accountId": "dev-20261110121829-19069405494728.testnet",
+      "method": "ticket",
+      "hash": "7KrT6zHNfAzMbQ871KyBrEMjFN34Kw9i2av2d54Du8LY"
+    },
+    {
+      "accountId": "dev-20261110121829-19069405494728.testnet",
+      "method": "set_rule",
+      "hash": "6nGHsP4NHwjDS2xZFG6xpJZYS8voyQ6c5jXdUdrZ3oRP"
+    }
+  ],
+  "restoredEffectiveRule": {
+    "kind": "Free"
+  },
+  "restoredVerifiedAt": "2026-11-12T10:08:58.359Z"
+}

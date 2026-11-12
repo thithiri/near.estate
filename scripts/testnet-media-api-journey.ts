@@ -28,6 +28,7 @@ import { createApiApp } from "../services/api/src/app.js";
 import { NearChainGateway } from "../services/api/src/chain.js";
 import { NearModeratorGateway } from "../services/api/src/moderator.js";
 import { ApiStore } from "../services/api/src/store.js";
+import { readActiveVersion2Release } from "./testnet-v2-release-context.js";
 
 const mode = process.argv[2];
 if (
@@ -44,12 +45,15 @@ if (
   mode !== "--prepare-shared-level2-revalidate" &&
   mode !== "--approve-shared-level2-revalidate" &&
   mode !== "--prepare-shared-level2-revalidate-billboard" &&
-  mode !== "--approve-shared-level2-revalidate-billboard"
+  mode !== "--approve-shared-level2-revalidate-billboard" &&
+  mode !== "--prepare-v2-logo" &&
+  mode !== "--approve-v2-logo"
 )
   throw new Error(
-    "Pass --prepare/--approve, optionally with -shared, -revalidate or -billboard",
+    "Pass --prepare/--approve, optionally with -shared, -revalidate, -billboard or -v2-logo",
   );
-const sharedCity = mode.includes("-shared");
+const version2 = mode.endsWith("-v2-logo");
+const sharedCity = mode.includes("-shared") || version2;
 const revalidating = mode.includes("-revalidate");
 const level2Revalidation = mode.includes("-level2-revalidate");
 const kind = mode.endsWith("-billboard") ? "Billboard" : "Logo";
@@ -95,7 +99,17 @@ const original = JSON.parse(readFileSync(evidencePath, "utf8")) as {
   contractId: string;
   ownerId?: string;
   moderatorId: string;
+  wasmSha256?: string;
+  citySeedVersion?: number;
 };
+if (version2) {
+  assert(original.wasmSha256 && original.citySeedVersion === 2);
+  readActiveVersion2Release(projectRoot, process.argv[3] ?? "", {
+    contractId: original.contractId,
+    wasmSha256: original.wasmSha256,
+    citySeedVersion: original.citySeedVersion,
+  });
+}
 const contract = credential("ESTATE_MEDIA_CONTRACT_KEY_FILE");
 const owner = credential("ESTATE_MEDIA_OWNER_KEY_FILE");
 const runtime = credential("ESTATE_MODERATOR_RUNTIME_KEY_FILE");
@@ -123,22 +137,28 @@ const app = createApiApp({
   appOrigin: origin,
   adminCredentials: { user: "local-reviewer", password: adminPassword },
 });
-const plotId = sharedCity ? "plot-main-n-2" : "plot-main-n-1";
+const plotId = version2
+  ? "plot-main-n-7"
+  : sharedCity
+    ? "plot-main-n-2"
+    : "plot-main-n-1";
 const preparedPath = resolve(
   dataDir,
-  level2Revalidation
-    ? kind === "Billboard"
-      ? "shared-level2-billboard-revalidation-prepared.json"
-      : "shared-level2-logo-revalidation-prepared.json"
-    : revalidating
+  version2
+    ? "v2-three-unit-logo-prepared.json"
+    : level2Revalidation
       ? kind === "Billboard"
-        ? "shared-billboard-revalidation-prepared.json"
-        : "shared-logo-revalidation-prepared.json"
-      : kind === "Billboard"
-        ? "shared-billboard-prepared.json"
-        : sharedCity
-          ? "shared-media-prepared.json"
-          : "prepared.json",
+        ? "shared-level2-billboard-revalidation-prepared.json"
+        : "shared-level2-logo-revalidation-prepared.json"
+      : revalidating
+        ? kind === "Billboard"
+          ? "shared-billboard-revalidation-prepared.json"
+          : "shared-logo-revalidation-prepared.json"
+        : kind === "Billboard"
+          ? "shared-billboard-prepared.json"
+          : sharedCity
+            ? "shared-media-prepared.json"
+            : "prepared.json",
 );
 const ownerTxJournalPath = resolve(
   dataDir,
@@ -381,6 +401,10 @@ try {
       );
     }
     assert.equal(plot?.plot.owner, owner.accountId);
+    if (version2) {
+      assert("frontage_units" in plot.plot);
+      assert.equal(plot.plot.frontage_units, 3);
+    }
     if (level2Revalidation) {
       assert.equal(plot.plot.building.level, 2);
       assert(
@@ -643,19 +667,21 @@ try {
     };
     const path = resolve(
       projectRoot,
-      level2Revalidation
-        ? kind === "Billboard"
-          ? "deployments/testnet-shared-level2-billboard-revalidation.json"
-          : "deployments/testnet-shared-level2-logo-revalidation.json"
-        : revalidating
+      version2
+        ? "deployments/testnet-v2-three-unit-logo-journey.json"
+        : level2Revalidation
           ? kind === "Billboard"
-            ? "deployments/testnet-shared-billboard-revalidation.json"
-            : "deployments/testnet-shared-logo-revalidation.json"
-          : kind === "Billboard"
-            ? "deployments/testnet-shared-billboard-journey.json"
-            : sharedCity
-              ? "deployments/testnet-shared-media-journey.json"
-              : "deployments/testnet-media-api-journey.json",
+            ? "deployments/testnet-shared-level2-billboard-revalidation.json"
+            : "deployments/testnet-shared-level2-logo-revalidation.json"
+          : revalidating
+            ? kind === "Billboard"
+              ? "deployments/testnet-shared-billboard-revalidation.json"
+              : "deployments/testnet-shared-logo-revalidation.json"
+            : kind === "Billboard"
+              ? "deployments/testnet-shared-billboard-journey.json"
+              : sharedCity
+                ? "deployments/testnet-shared-media-journey.json"
+                : "deployments/testnet-media-api-journey.json",
     );
     writeFileSync(path, `${JSON.stringify(evidence, null, 2)}\n`);
     console.log(JSON.stringify(evidence, null, 2));

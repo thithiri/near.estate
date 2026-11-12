@@ -14,6 +14,79 @@ function requireTable(db: DatabaseSync, name: string): void {
     throw new Error(`Deed history needs the ${name} table`);
 }
 
+function hasTable(db: DatabaseSync, name: string): boolean {
+  return Boolean(
+    db
+      .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(name),
+  );
+}
+
+type DailyTotals = {
+  impressions: number;
+  dwellMs: number;
+  parks: number;
+  tickets: number;
+};
+
+function dailyTotals(
+  db: DatabaseSync,
+  plotId: string,
+): Map<string, DailyTotals> {
+  const rows = new Map<string, DailyTotals>();
+  for (const row of db
+    .prepare(
+      "SELECT day, impressions, dwell_ms FROM impression_daily_stats WHERE plot_id = ?",
+    )
+    .all(plotId) as Array<{
+    day: string;
+    impressions: number;
+    dwell_ms: number;
+  }>)
+    rows.set(row.day, {
+      impressions: row.impressions,
+      dwellMs: row.dwell_ms,
+      parks: 0,
+      tickets: 0,
+    });
+  for (const row of db
+    .prepare(
+      "SELECT day, parks, tickets FROM plot_daily_stats WHERE plot_id = ?",
+    )
+    .all(plotId) as Array<{ day: string; parks: number; tickets: number }>) {
+    const current = rows.get(row.day) ?? {
+      impressions: 0,
+      dwellMs: 0,
+      parks: 0,
+      tickets: 0,
+    };
+    current.parks = row.parks;
+    current.tickets = row.tickets;
+    rows.set(row.day, current);
+  }
+  return rows;
+}
+
+function createDestinationDaysTable(db: DatabaseSync): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS deed_destination_days (
+      source_plot_id TEXT NOT NULL REFERENCES deed_history_links(source_plot_id),
+      day TEXT NOT NULL,
+      impressions INTEGER NOT NULL,
+      dwell_ms INTEGER NOT NULL,
+      parks INTEGER NOT NULL,
+      tickets INTEGER NOT NULL,
+      PRIMARY KEY (source_plot_id, day)
+    ) STRICT;
+    CREATE TRIGGER IF NOT EXISTS deed_destination_days_no_update
+      BEFORE UPDATE ON deed_destination_days
+      BEGIN SELECT RAISE(ABORT, 'deed history is immutable'); END;
+    CREATE TRIGGER IF NOT EXISTS deed_destination_days_no_delete
+      BEFORE DELETE ON deed_destination_days
+      BEGIN SELECT RAISE(ABORT, 'deed history is immutable'); END;
+  `);
+}
+
 function validateCutoverInput(
   contractId: string,
   moves: DeedMove[],
@@ -123,6 +196,7 @@ export function captureDeedHistory(
         BEFORE DELETE ON deed_history_workflow_rows
         BEGIN SELECT RAISE(ABORT, 'deed history is immutable'); END;
     `);
+    createDestinationDaysTable(db);
     let days = 0;
     for (const move of moves) {
       const laterEvent = db
@@ -152,50 +226,7 @@ export function captureDeedHistory(
         cutoverAtMs,
         cursor.last_height,
       );
-      const rows = new Map<
-        string,
-        {
-          impressions: number;
-          dwellMs: number;
-          parks: number;
-          tickets: number;
-        }
-      >();
-      for (const row of db
-        .prepare(
-          "SELECT day, impressions, dwell_ms FROM impression_daily_stats WHERE plot_id = ?",
-        )
-        .all(move.from) as Array<{
-        day: string;
-        impressions: number;
-        dwell_ms: number;
-      }>)
-        rows.set(row.day, {
-          impressions: row.impressions,
-          dwellMs: row.dwell_ms,
-          parks: 0,
-          tickets: 0,
-        });
-      for (const row of db
-        .prepare(
-          "SELECT day, parks, tickets FROM plot_daily_stats WHERE plot_id = ?",
-        )
-        .all(move.from) as Array<{
-        day: string;
-        parks: number;
-        tickets: number;
-      }>) {
-        const current = rows.get(row.day) ?? {
-          impressions: 0,
-          dwellMs: 0,
-          parks: 0,
-          tickets: 0,
-        };
-        current.parks = row.parks;
-        current.tickets = row.tickets;
-        rows.set(row.day, current);
-      }
-      for (const [day, row] of rows) {
+      for (const [day, row] of dailyTotals(db, move.from)) {
         db.prepare(
           "INSERT INTO deed_history_days VALUES (?, ?, ?, ?, ?, ?)",
         ).run(
@@ -208,6 +239,17 @@ export function captureDeedHistory(
         );
         days++;
       }
+      for (const [day, row] of dailyTotals(db, move.to))
+        db.prepare(
+          "INSERT INTO deed_destination_days VALUES (?, ?, ?, ?, ?, ?)",
+        ).run(
+          move.from,
+          day,
+          row.impressions,
+          row.dwellMs,
+          row.parks,
+          row.tickets,
+        );
       // These rows describe the deed and its moderation workflow, rather than
       // physical street activity. Keep raw events and impressions at the old ID.
       const workflowTables = [
@@ -249,6 +291,95 @@ export function captureDeedHistory(
     }
     db.exec("COMMIT");
     return { cursorHeight: cursor.last_height, links: moves.length, days };
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+}
+
+/** Repair a release performed before destination baselines were captured. */
+export function backfillDeedDestinationDays(
+  db: DatabaseSync,
+  frozenDb: DatabaseSync,
+  contractId: string,
+  moves: DeedMove[],
+  cutoverHeight: number,
+  cutoverAtMs: number,
+): number {
+  validateCutoverInput(contractId, moves, cutoverHeight, cutoverAtMs);
+  if (hasTable(db, "deed_destination_days"))
+    throw new Error("Destination baselines already exist");
+  requireTable(db, "deed_history_links");
+  for (const table of [
+    "indexer_state",
+    "chain_events",
+    "impression_events",
+    "plot_daily_stats",
+    "impression_daily_stats",
+  ])
+    requireTable(frozenDb, table);
+  const cursor = frozenDb
+    .prepare("SELECT contract_id, last_height FROM indexer_state WHERE id = 1")
+    .get() as { contract_id: string; last_height: number } | undefined;
+  if (
+    !cursor ||
+    cursor.contract_id !== contractId ||
+    cursor.last_height < cutoverHeight
+  )
+    throw new Error("Frozen database does not cover the deed cutover");
+  const liveLinks = db
+    .prepare("SELECT COUNT(*) AS count FROM deed_history_links")
+    .get() as { count: number };
+  if (liveLinks.count !== moves.length)
+    throw new Error("Live deed links differ from the reviewed move map");
+  for (const move of moves) {
+    const link = db
+      .prepare(
+        "SELECT cutover_height, cutover_at_ms FROM deed_history_links WHERE source_plot_id = ? AND target_plot_id = ?",
+      )
+      .get(move.from, move.to) as
+      | { cutover_height: number; cutover_at_ms: number }
+      | undefined;
+    if (
+      !link ||
+      link.cutover_height !== cutoverHeight ||
+      link.cutover_at_ms !== cutoverAtMs
+    )
+      throw new Error("Live deed link differs from the frozen release");
+    if (
+      frozenDb
+        .prepare(
+          "SELECT 1 FROM chain_events WHERE location_id = ? AND block_height > ? LIMIT 1",
+        )
+        .get(move.to, cutoverHeight) ||
+      frozenDb
+        .prepare(
+          "SELECT 1 FROM impression_events WHERE plot_id = ? AND received_at_ms > ? LIMIT 1",
+        )
+        .get(move.to, cutoverAtMs)
+    )
+      throw new Error("Frozen destination has post-cutover activity");
+  }
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    createDestinationDaysTable(db);
+    let days = 0;
+    for (const move of moves)
+      for (const [day, row] of dailyTotals(frozenDb, move.to)) {
+        db.prepare(
+          "INSERT INTO deed_destination_days VALUES (?, ?, ?, ?, ?, ?)",
+        ).run(
+          move.from,
+          day,
+          row.impressions,
+          row.dwellMs,
+          row.parks,
+          row.tickets,
+        );
+        days++;
+      }
+    db.exec("COMMIT");
+    return days;
   } catch (error) {
     db.exec("ROLLBACK");
     throw error;
@@ -364,12 +495,21 @@ export function verifyDeedHistoryCutover(
     for (const row of recordedRows) {
       if (!workflowTables.includes(row.table_name))
         throw new Error(`Unknown deed workflow table ${row.table_name}`);
-      if (
+      const current = db
+        .prepare(`SELECT plot_id FROM ${row.table_name} WHERE id = ? LIMIT 1`)
+        .get(row.row_id) as { plot_id: string } | undefined;
+      const prunedRateLimit =
+        row.table_name === "media_upload_attempts" && !current;
+      const prunedUnusedUpload =
+        row.table_name === "media_uploads" &&
+        !current &&
         !db
-          .prepare(
-            `SELECT 1 FROM ${row.table_name} WHERE id = ? AND plot_id = ? LIMIT 1`,
-          )
-          .get(row.row_id, move.to)
+          .prepare("SELECT 1 FROM media_proposals WHERE upload_id = ? LIMIT 1")
+          .get(row.row_id);
+      if (
+        current?.plot_id !== move.to &&
+        !prunedRateLimit &&
+        !prunedUnusedUpload
       )
         throw new Error(
           `Moved deed workflow row missing from ${move.to} in ${row.table_name}`,

@@ -1,0 +1,55 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "releaseRecord": "deployments/variable-city-release-db33845c80179c1a.json",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "coinBalanceBefore": "51511110",
+  "coinBalanceAfter": "51511110",
+  "purchases": [
+    {
+      "units": 1,
+      "plotId": "plot-main-n-1",
+      "initialDesignChoice": 2,
+      "selectedDesignChoice": 3,
+      "priceYocto": "500000000000000000000000",
+      "storageReserveYocto": "40960000000000000000000",
+      "totalYocto": "540960000000000000000000",
+      "purchased": true,
+      "designChosen": true
+    },
+    {
+      "units": 3,
+      "plotId": "plot-main-n-7",
+      "initialDesignChoice": 4,
+      "selectedDesignChoice": 0,
+      "priceYocto": "1500000000000000000000000",
+      "storageReserveYocto": "40960000000000000000000",
+      "totalYocto": "1540960000000000000000000",
+      "purchased": true,
+      "designChosen": true
+    }
+  ],
+  "transactions": [
+    {
+      "method": "buy_plot",
+      "label": "buy:1",
+      "hash": "CmBMx1CGYF8TLwJDUhbuaYC2qijBJny58dCd4XhYfEZb"
+    },
+    {
+      "method": "choose_design",
+      "label": "design:1",
+      "hash": "4JP3S8nnRk852caiAiTGkqGvaKCTrbVH56N5K2jrGz33"
+    },
+    {
+      "method": "buy_plot",
+      "label": "buy:3",
+      "hash": "GFPfo3WxFRVxyzn7U4zL9QpM9uLCGP79mZbZ6K5jzSYA"
+    },
+    {
+      "method": "choose_design",
+      "label": "design:3",
+      "hash": "G3ysJHBLThyiZg7yNUzqWxvW4U9bqxTko5vHw5ZQbPQL"
+    }
+  ],
+  "verifiedAt": "2026-11-12T10:00:21.515Z"
+}

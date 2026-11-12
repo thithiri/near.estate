@@ -152,6 +152,17 @@ test("payload variants accept paid building changes and emergency repair", () =>
       envelope("building_updated", {
         plot_id,
         revision: 3,
+        change: "design",
+        design_choice: 4,
+      }),
+    ).success,
+    true,
+  );
+  assert.equal(
+    GameEvent.safeParse(
+      envelope("building_updated", {
+        plot_id,
+        revision: 3,
         change: "level",
         level: 2,
         cost: "200000000",
@@ -164,6 +175,25 @@ test("payload variants accept paid building changes and emergency repair", () =>
       envelope("car_repaired", { car_id: 1, points: 2, emergency: true }),
     ).success,
     true,
+  );
+});
+
+test("variable-width curb events accept slot 2 and reject slots beyond it", () => {
+  assert.equal(
+    GameEvent.safeParse(envelope("parked", { ...samples.parked, slot: 2 }))
+      .success,
+    true,
+  );
+  assert.equal(
+    GameEvent.safeParse(
+      envelope("collected", { ...samples.collected, slot: 2 }),
+    ).success,
+    true,
+  );
+  assert.equal(
+    GameEvent.safeParse(envelope("parked", { ...samples.parked, slot: 3 }))
+      .success,
+    false,
   );
 });
 
@@ -210,7 +240,7 @@ test("event log parser separates ordinary logs from validated game events", () =
   assert.throws(() => parseGameEventLog("EVENT_JSON:{not json}"));
   assert.throws(() =>
     parseGameEventLog(
-      `EVENT_JSON:${JSON.stringify(envelope("parked", { ...samples.parked, slot: 2 }))}`,
+      `EVENT_JSON:${JSON.stringify(envelope("parked", { ...samples.parked, slot: 3 }))}`,
     ),
   );
 });

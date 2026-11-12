@@ -169,6 +169,14 @@ export const GameEventPayloads = {
       .object({
         plot_id: locationId,
         revision,
+        change: z.literal("design"),
+        design_choice: z.number().int().min(0).max(4),
+      })
+      .strict(),
+    z
+      .object({
+        plot_id: locationId,
+        revision,
         change: z.literal("type"),
         cost: CoinString,
       })
@@ -225,12 +233,12 @@ export const GameEvent = z
             value.event === "ticketed") &&
           payload.facility === "Curb" &&
           typeof payload.slot === "number" &&
-          payload.slot > 1
+          payload.slot > 2
         ) {
           context.addIssue({
             code: "custom",
             path: ["data", index, "slot"],
-            message: "curb slot must be 0 or 1",
+            message: "curb slot must be 0, 1 or 2",
           });
         }
         if (value.event === "ticketed" && payload.driver_payout !== "0") {

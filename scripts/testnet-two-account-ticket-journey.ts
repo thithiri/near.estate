@@ -93,6 +93,66 @@ function credentialFrom(name: "OWNER" | "DRIVER") {
   return { ...value, path };
 }
 
+// The version-2 plan reads public account IDs from the completed version-1
+// journey. It should not need either player's signing key.
+if (mode === "--plan" && cityVersion === 2) {
+  const prior = JSON.parse(
+    readFileSync(
+      resolve(root, "deployments/testnet-two-account-ticket-journey.json"),
+      "utf8",
+    ),
+  ) as { contractId: string; ownerId: string; driverId: string };
+  assert.equal(prior.contractId, deployment.contractId);
+  assert.notEqual(prior.ownerId, prior.driverId);
+  const before = await reader.plot(plotId);
+  const metered = await reader.plot(meteredPlotId);
+  assert(before && metered, "Moved owner deeds are missing");
+  assert.equal(before.plot.owner, prior.ownerId);
+  assert.equal(metered.plot.owner, prior.ownerId);
+  assert.equal(before.effective_rule.kind, "Free");
+  assert.equal(metered.effective_rule.kind, "Meter");
+  assert("frontage_units" in before.plot);
+  assert("frontage_units" in metered.plot);
+  assert.equal(before.plot.frontage_units, 2);
+  assert.equal(metered.plot.frontage_units, 2);
+  const parkDurabilityCost = (
+    await reader.view(
+      "get_config",
+      {},
+      z.object({ park_durability_cost: z.number().int().positive() }),
+    )
+  ).park_durability_cost;
+  const [ownerPlayer, driverPlayer] = await Promise.all([
+    reader.player(prior.ownerId),
+    reader.player(prior.driverId),
+  ]);
+  assert(
+    ownerPlayer.account && driverPlayer.account,
+    "Both players must register",
+  );
+  assert(driverPlayer.cars.some((car) => car.durability >= parkDurabilityCost));
+  console.log(
+    JSON.stringify(
+      {
+        contractId: deployment.contractId,
+        cityVersion,
+        releaseRecord,
+        plotId,
+        ownerId: prior.ownerId,
+        driverId: prior.driverId,
+        currentOwner: before.plot.owner,
+        effectiveRule: before.effective_rule,
+        pendingRule: before.plot.pending_rule,
+        driverActiveSession: driverPlayer.active_session?.id ?? null,
+        nextAction: "set NoParking",
+      },
+      null,
+      2,
+    ),
+  );
+  process.exit(0);
+}
+
 const owner = credentialFrom("OWNER");
 const driver = credentialFrom("DRIVER");
 assert.notEqual(owner.account_id, driver.account_id);
@@ -318,10 +378,12 @@ async function main() {
       "Free",
       "Ticket deed must start with its migrated Free rule",
     );
-    assert.equal(
-      before.plot.pending_rule,
-      null,
-      "Moved ticket deed has a pending rule change",
+    const pending = before.plot.pending_rule;
+    assert(
+      pending === null ||
+        (pending.rule.kind === "Free" &&
+          pending.effective_at <= Math.floor(Date.now() / 1_000)),
+      "Moved ticket deed has an unexpired or different pending rule change",
     );
   }
   const parkDurabilityCost = (

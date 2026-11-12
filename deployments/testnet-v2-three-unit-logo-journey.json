@@ -1,0 +1,22 @@
+{
+  "network": "testnet",
+  "sharedCity": true,
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "moderatorId": "dev-20261110121820-76563125621460.testnet",
+  "plotId": "plot-main-n-7",
+  "kind": "Logo",
+  "proposalId": "58e872f0-f1e8-4af1-8e2a-74cc56a1cbd6",
+  "logoHash": "a7ceb962124bd4f3c1b6db35e8f47f6e5cfc0c6bd9e0596b613750084cbc4ef8",
+  "link": "https://near.org",
+  "uploadedImageBytes": 3192,
+  "reusedApprovedImage": false,
+  "publicAssetHashVerified": true,
+  "activeOnChain": true,
+  "ownerTransactions": [
+    {
+      "action": "propose_media",
+      "hash": "6mssfCZ6bxTQZr7197H8ypvb5j35k9nPHmcoZXWV51qc"
+    }
+  ]
+}
