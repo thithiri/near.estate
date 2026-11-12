@@ -142,7 +142,7 @@ Release decision: **not ready**. No invite-beta URL or published build is claime
 | Field                                         | Value                                                                                                    |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | Release revision and image digests            | Pending                                                                                                  |
-| Testnet contract code hash and upgrade record | `db33845c…2affa`; [version-2 release record](../deployments/variable-city-release-db33845c80179c1a.json) |
+| Testnet contract code hash and upgrade record | `ad148df4…2b887`; [verified code upgrade](../deployments/runtime-upgrade-live-ad148df441a41d1f.json) and [finalized-block postcheck](../deployments/runtime-upgrade-postcheck-ad148df441a41d1f.json) |
 | Both-wallet desktop/phone evidence            | Pending                                                                                                  |
 | Logo moderation evidence                      | Pending                                                                                                  |
 | VPS TLS, alerts and restore evidence          | Pending                                                                                                  |
