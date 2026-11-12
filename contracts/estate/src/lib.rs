@@ -1088,7 +1088,7 @@ impl Contract {
             .clone()
             .unwrap_or_else(|| env::panic_str("unowned plot"));
         require!(
-            plot.building.appearance_revision == expected_revision
+            plot.building.appearance_revision >= expected_revision
                 && plot.building.approved_manifest_hash.as_deref()
                     == Some(expected_manifest_hash.as_str()),
             "stale or mismatched appearance revocation"
@@ -1285,7 +1285,7 @@ impl Contract {
         let now = Self::now_seconds();
         let slot = Self::media_slot_mut(&mut plot, kind);
         require!(
-            slot.revision == expected_media_revision
+            slot.revision >= expected_media_revision
                 && slot
                     .active
                     .as_ref()
@@ -3740,6 +3740,83 @@ mod tests {
         assert!(revoked.building.approved_manifest_hash.is_none());
         assert_eq!(revoked.building.appearance_revision, third.revision + 1);
         assert!(revoked.building.last_facade_approved_at.is_some());
+    }
+
+    #[test]
+    fn moderator_facade_revocation_survives_new_owner_proposal() {
+        let owner = account("owner.testnet");
+        let moderator = account("moderator.testnet");
+        let mut facade = seeded_contract();
+        owned_test_plot(&mut facade, &owner);
+        context(&owner, 0, 1_100);
+        let approved_ref = facade.propose_appearance("plot-main-n-0".to_string(), 1, hash('a'));
+        context(&moderator, 0, 1_200);
+        facade.approve_appearance("plot-main-n-0".to_string(), approved_ref.clone());
+        context(&owner, 0, 1_300);
+        let pending_ref = facade.propose_appearance(
+            "plot-main-n-0".to_string(),
+            approved_ref.revision,
+            hash('b'),
+        );
+        context(&moderator, 0, 1_400);
+        let revoked = facade.revoke_appearance(
+            "plot-main-n-0".to_string(),
+            approved_ref.revision,
+            approved_ref.manifest_hash,
+            "Unsafe facade".to_string(),
+        );
+        assert!(revoked.building.approved_manifest_hash.is_none());
+        assert!(revoked.building.pending_appearance.is_none());
+        assert!(revoked.building.appearance_revision > pending_ref.revision);
+    }
+
+    #[test]
+    fn moderator_logo_revocation_survives_new_owner_proposal() {
+        let owner = account("owner.testnet");
+        let moderator = account("moderator.testnet");
+        let mut media = seeded_contract();
+        owned_test_plot(&mut media, &owner);
+        let approved_content = MediaIdentity {
+            asset_hash: hash('c'),
+            link: None,
+        };
+        context(&owner, 0, 1_500);
+        let approved_ref = media.propose_media(
+            "plot-main-n-0".to_string(),
+            MediaKind::Logo,
+            0,
+            1,
+            approved_content.clone(),
+        );
+        context(&moderator, 0, 1_600);
+        media.approve_media(
+            "plot-main-n-0".to_string(),
+            MediaKind::Logo,
+            approved_ref.clone(),
+        );
+        context(&owner, 0, 1_700);
+        let pending_ref = media.propose_media(
+            "plot-main-n-0".to_string(),
+            MediaKind::Logo,
+            approved_ref.revision,
+            1,
+            MediaIdentity {
+                asset_hash: hash('d'),
+                link: None,
+            },
+        );
+        context(&moderator, 0, 1_800);
+        let revoked = media.revoke_media(
+            "plot-main-n-0".to_string(),
+            MediaKind::Logo,
+            approved_ref.revision,
+            approved_content,
+            "Unsafe logo".to_string(),
+        );
+        assert!(!revoked.logo_eligible);
+        assert!(revoked.plot.logo.active.is_none());
+        assert!(revoked.plot.logo.pending.is_none());
+        assert!(revoked.plot.logo.revision > pending_ref.revision);
     }
 
     #[test]

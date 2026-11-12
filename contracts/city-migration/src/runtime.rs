@@ -1182,7 +1182,7 @@ impl Contract {
             .clone()
             .unwrap_or_else(|| env::panic_str("unowned plot"));
         require!(
-            plot.building.appearance_revision == expected_revision
+            plot.building.appearance_revision >= expected_revision
                 && plot.building.approved_manifest_hash.as_deref()
                     == Some(expected_manifest_hash.as_str()),
             "stale or mismatched appearance revocation"
@@ -1412,7 +1412,7 @@ impl Contract {
         let now = Self::now_seconds();
         let slot = Self::media_slot_mut(&mut plot, kind);
         require!(
-            slot.revision == expected_media_revision
+            slot.revision >= expected_media_revision
                 && slot
                     .active
                     .as_ref()

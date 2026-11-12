@@ -626,6 +626,9 @@ async function setup(
     setPendingAppearance(value: typeof pendingAppearance) {
       pendingAppearance = value;
     },
+    setLastAppearanceDecision(value: typeof lastAppearanceDecision) {
+      lastAppearanceDecision = value;
+    },
     setMediaSlot(kind: "Logo" | "Billboard", value: ChainMediaSlot) {
       if (kind === "Logo") logoSlot = value;
       else billboardSlot = value;
@@ -647,6 +650,106 @@ async function setup(
     },
   };
 }
+
+test("revocation clears replaced facade and media proposals from the review queue", async () => {
+  const context = await setup();
+  try {
+    const { verified } = await context.signIn();
+    const cookie = verified.headers.get("set-cookie")!.split(";")[0]!;
+    const look = await renderMockCandidate("Retail", 1, 1, "#F6C85F");
+    const job = context.store.createGeneration({
+      accountId: ACCOUNT,
+      plotId: PLOT,
+      buildingType: "Retail",
+      level: 1,
+      layoutRevision: 1,
+      appearanceRevision: 1,
+      description: "Replacement shop",
+      candidates: [
+        {
+          id: 1,
+          variant: 1,
+          palette: "#F6C85F",
+          manifest: look.manifest,
+          manifestHash: look.manifestHash,
+          spriteHash: look.spriteHash,
+          thumbnailHash: look.thumbnailHash,
+        },
+      ],
+      createdAt: 1_000,
+    });
+    assert(context.store.selectGeneration(job.id, ACCOUNT, 1));
+    context.store.markGenerationSubmitted(job.id, 2);
+    context.setAppearanceRevision(4);
+    context.setLastAppearanceDecision({
+      reference: {
+        revision: 4,
+        owner: ACCOUNT,
+        building_type: "Retail",
+        level: 1,
+        manifest_hash: "a".repeat(64),
+      },
+      status: "Revoked",
+      decided_at: 1_020,
+      reason: "Unsafe old facade",
+    });
+    const facade = await context.app.request(`/generations/${job.id}`, {
+      headers: { cookie },
+    });
+    assert.equal(facade.status, 200);
+    assert.equal((await facade.json()).status, "rejected");
+    assert.equal(context.store.generation(job.id)?.status, "rejected");
+
+    const upload = context.store.recordUpload({
+      accountId: ACCOUNT,
+      plotId: PLOT,
+      kind: "Logo",
+      hash: "d".repeat(64),
+      layoutRevision: 1,
+      createdAt: 1_000,
+    });
+    const media = context.store.createMediaProposal({
+      uploadId: upload.id,
+      accountId: ACCOUNT,
+      plotId: PLOT,
+      kind: "Logo",
+      assetHash: upload.hash,
+      link: null,
+      buildingType: "Retail",
+      level: 1,
+      layoutRevision: 1,
+      expectedMediaRevision: 1,
+      createdAt: 1_001,
+    });
+    context.store.markMediaSubmitted(media.id, 2);
+    context.setMediaSlot("Logo", {
+      ...emptyMediaSlot,
+      revision: 3,
+      last_decision: {
+        proposal: {
+          revision: 3,
+          owner: ACCOUNT,
+          building_type: "Retail",
+          level: 1,
+          layout_revision: 1,
+          content: { asset_hash: "c".repeat(64), link: null },
+        },
+        status: "Revoked",
+        decided_at: 1_021,
+        reason: "Unsafe old logo",
+      },
+    });
+    const logo = await context.app.request(`/media/proposals/${media.id}`, {
+      headers: { cookie },
+    });
+    assert.equal(logo.status, 200);
+    assert.equal((await logo.json()).status, "rejected");
+    assert.equal(context.store.mediaProposal(media.id)?.status, "rejected");
+    assert.equal(context.store.mediaReviewQueue().length, 0);
+  } finally {
+    await context.close();
+  }
+});
 
 test("migration pause stops impression sessions and batch writes", async () => {
   const context = await setup(false, { enabled: false, acceptAfterMs: 0 });

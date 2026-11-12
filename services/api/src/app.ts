@@ -597,7 +597,21 @@ export function createApiApp({
     if (!expected) return job;
     const plot = await chain.plot(job.plotId);
     const decision = plot?.plot.building.last_appearance_decision;
-    if (!decision || !sameReference(decision.reference, expected)) return job;
+    if (!decision || !sameReference(decision.reference, expected)) {
+      if (
+        decision?.status === "Revoked" &&
+        decision.reference.revision > expected.revision &&
+        plot?.plot.building.pending_appearance === null &&
+        plot.plot.building.approved_manifest_hash === null
+      )
+        return store.markGenerationDecided(
+          job.id,
+          "rejected",
+          decision.decided_at,
+          "No longer pending after on-chain revocation",
+        );
+      return job;
+    }
     if (
       decision.status === "Approved" &&
       plot?.plot.building.approved_manifest_hash === expected.manifest_hash
@@ -655,8 +669,21 @@ export function createApiApp({
       record.kind === "Logo" ? plot?.plot.logo : plot?.plot.billboard;
     const decision = slot?.last_decision;
     const active = slot?.active;
-    if (!decision || !sameMediaProposal(decision.proposal, expected))
+    if (!decision || !sameMediaProposal(decision.proposal, expected)) {
+      if (
+        decision?.status === "Revoked" &&
+        decision.proposal.revision > expected.revision &&
+        slot?.pending === null &&
+        active === null
+      )
+        return store.markMediaDecided(
+          record.id,
+          "rejected",
+          decision.decided_at,
+          "No longer pending after on-chain revocation",
+        );
       return record;
+    }
     if (
       decision.status === "Approved" &&
       active?.content.asset_hash === expected.content.asset_hash &&

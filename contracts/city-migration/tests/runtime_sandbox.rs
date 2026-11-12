@@ -209,5 +209,135 @@ async fn deployed_runtime_parks_and_tickets_a_three_unit_curb() -> Result<()> {
         read_u128(&owner_after_duplicate, "balance")? == balance_after,
         "duplicate ticket changed owner balance"
     );
+
+    let first_facade = owner
+        .call(city.id(), "propose_appearance")
+        .args_json(json!({
+            "plot_id": plot_id,
+            "expected_revision": 1,
+            "manifest_hash": "a".repeat(64)
+        }))
+        .transact()
+        .await?;
+    ensure!(
+        first_facade.is_success(),
+        "facade proposal failed: {first_facade:?}"
+    );
+    let first_facade: Value = first_facade.json()?;
+    let approved_facade = moderator
+        .call(city.id(), "approve_appearance")
+        .args_json(json!({"plot_id": plot_id, "expected": first_facade}))
+        .transact()
+        .await?;
+    ensure!(
+        approved_facade.is_success(),
+        "facade approval failed: {approved_facade:?}"
+    );
+    let replacement_facade = owner
+        .call(city.id(), "propose_appearance")
+        .args_json(json!({
+            "plot_id": plot_id,
+            "expected_revision": first_facade["revision"],
+            "manifest_hash": "b".repeat(64)
+        }))
+        .transact()
+        .await?;
+    ensure!(
+        replacement_facade.is_success(),
+        "replacement facade failed: {replacement_facade:?}"
+    );
+    let revoked_facade = moderator
+        .call(city.id(), "revoke_appearance")
+        .args_json(json!({
+            "plot_id": plot_id,
+            "expected_revision": first_facade["revision"],
+            "expected_manifest_hash": "a".repeat(64),
+            "reason": "Unsafe facade"
+        }))
+        .transact()
+        .await?;
+    ensure!(
+        revoked_facade.is_success(),
+        "facade revocation raced: {revoked_facade:?}"
+    );
+    let plot_after_facade: Value = city
+        .view("get_plot")
+        .args_json(json!({"plot_id": plot_id}))
+        .await?
+        .json()?;
+    ensure!(
+        plot_after_facade["plot"]["building"]["approved_manifest_hash"].is_null()
+            && plot_after_facade["plot"]["building"]["pending_appearance"].is_null(),
+        "facade or pending replacement survived revocation"
+    );
+
+    let layout_revision = plot_after_facade["plot"]["building"]["layout_revision"]
+        .as_u64()
+        .context("layout revision missing")?;
+    let first_logo = owner
+        .call(city.id(), "propose_media")
+        .args_json(json!({
+            "plot_id": plot_id,
+            "kind": "Logo",
+            "expected_media_revision": 0,
+            "expected_layout_revision": layout_revision,
+            "content": {"asset_hash": "c".repeat(64), "link": null}
+        }))
+        .transact()
+        .await?;
+    ensure!(
+        first_logo.is_success(),
+        "logo proposal failed: {first_logo:?}"
+    );
+    let first_logo: Value = first_logo.json()?;
+    let approved_logo = moderator
+        .call(city.id(), "approve_media")
+        .args_json(json!({"plot_id": plot_id, "kind": "Logo", "expected": first_logo}))
+        .transact()
+        .await?;
+    ensure!(
+        approved_logo.is_success(),
+        "logo approval failed: {approved_logo:?}"
+    );
+    let replacement_logo = owner
+        .call(city.id(), "propose_media")
+        .args_json(json!({
+            "plot_id": plot_id,
+            "kind": "Logo",
+            "expected_media_revision": first_logo["revision"],
+            "expected_layout_revision": layout_revision,
+            "content": {"asset_hash": "d".repeat(64), "link": null}
+        }))
+        .transact()
+        .await?;
+    ensure!(
+        replacement_logo.is_success(),
+        "replacement logo failed: {replacement_logo:?}"
+    );
+    let revoked_logo = moderator
+        .call(city.id(), "revoke_media")
+        .args_json(json!({
+            "plot_id": plot_id,
+            "kind": "Logo",
+            "expected_media_revision": first_logo["revision"],
+            "expected_content": {"asset_hash": "c".repeat(64), "link": null},
+            "reason": "Unsafe logo"
+        }))
+        .transact()
+        .await?;
+    ensure!(
+        revoked_logo.is_success(),
+        "logo revocation raced: {revoked_logo:?}"
+    );
+    let plot_after_logo: Value = city
+        .view("get_plot")
+        .args_json(json!({"plot_id": plot_id}))
+        .await?
+        .json()?;
+    ensure!(
+        plot_after_logo["plot"]["logo"]["active"].is_null()
+            && plot_after_logo["plot"]["logo"]["pending"].is_null(),
+        "logo or pending replacement survived revocation"
+    );
     Ok(())
 }

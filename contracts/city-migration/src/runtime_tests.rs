@@ -1,6 +1,9 @@
 use super::*;
-use near_estate_contract::{BuildingType, CarBody, CarColor, ParkingRule, PendingRule};
+use near_estate_contract::{
+    BuildingType, CarBody, CarColor, MediaIdentity, MediaKind, ParkingRule, PendingRule,
+};
 use near_sdk::{test_utils::VMContextBuilder, testing_env};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 
 const PLOT_ID: &str = "plot-main-n-1";
 const COIN: u128 = 1_000_000;
@@ -200,4 +203,98 @@ fn illegal_three_unit_space_tickets_to_owner_and_frees_car() {
             .ticket_cooldown_until
             > 1_600
     );
+}
+
+#[test]
+fn moderator_can_revoke_active_facade_after_owner_submits_replacement() {
+    let mut contract = fixture(ParkingRule::Free);
+    context("owner.testnet", 1_000);
+    let first = contract.propose_appearance(PLOT_ID.to_owned(), 1, "a".repeat(64));
+    context("moderator.testnet", 1_100);
+    contract.approve_appearance(PLOT_ID.to_owned(), first.clone());
+    context("owner.testnet", 1_200);
+    let replacement =
+        contract.propose_appearance(PLOT_ID.to_owned(), first.revision, "b".repeat(64));
+    context("moderator.testnet", 1_300);
+    assert!(catch_unwind(AssertUnwindSafe(|| contract.revoke_appearance(
+        PLOT_ID.to_owned(),
+        replacement.revision + 1,
+        first.manifest_hash.clone(),
+        "Future revision".to_owned(),
+    )))
+    .is_err());
+    assert!(catch_unwind(AssertUnwindSafe(|| contract.revoke_appearance(
+        PLOT_ID.to_owned(),
+        first.revision,
+        replacement.manifest_hash.clone(),
+        "Wrong active facade".to_owned(),
+    )))
+    .is_err());
+    let revoked = contract.revoke_appearance(
+        PLOT_ID.to_owned(),
+        first.revision,
+        first.manifest_hash,
+        "Unsafe facade".to_owned(),
+    );
+    assert!(revoked.building.approved_manifest_hash.is_none());
+    assert!(revoked.building.pending_appearance.is_none());
+    assert!(revoked.building.appearance_revision > replacement.revision);
+}
+
+#[test]
+fn moderator_can_revoke_active_logo_after_owner_submits_replacement() {
+    let mut contract = fixture(ParkingRule::Free);
+    let first_content = MediaIdentity {
+        asset_hash: "a".repeat(64),
+        link: None,
+    };
+    context("owner.testnet", 1_000);
+    let first = contract.propose_media(
+        PLOT_ID.to_owned(),
+        MediaKind::Logo,
+        0,
+        1,
+        first_content.clone(),
+    );
+    context("moderator.testnet", 1_100);
+    contract.approve_media(PLOT_ID.to_owned(), MediaKind::Logo, first.clone());
+    context("owner.testnet", 1_200);
+    let replacement = contract.propose_media(
+        PLOT_ID.to_owned(),
+        MediaKind::Logo,
+        first.revision,
+        1,
+        MediaIdentity {
+            asset_hash: "b".repeat(64),
+            link: None,
+        },
+    );
+    context("moderator.testnet", 1_300);
+    assert!(catch_unwind(AssertUnwindSafe(|| contract.revoke_media(
+        PLOT_ID.to_owned(),
+        MediaKind::Logo,
+        replacement.revision + 1,
+        first_content.clone(),
+        "Future revision".to_owned(),
+    )))
+    .is_err());
+    assert!(catch_unwind(AssertUnwindSafe(|| contract.revoke_media(
+        PLOT_ID.to_owned(),
+        MediaKind::Logo,
+        first.revision,
+        replacement.content.clone(),
+        "Wrong active logo".to_owned(),
+    )))
+    .is_err());
+    let revoked = contract.revoke_media(
+        PLOT_ID.to_owned(),
+        MediaKind::Logo,
+        first.revision,
+        first_content,
+        "Unsafe logo".to_owned(),
+    );
+    assert!(!revoked.logo_eligible);
+    assert!(revoked.plot.logo.active.is_none());
+    assert!(revoked.plot.logo.pending.is_none());
+    assert!(revoked.plot.logo.revision > replacement.revision);
 }
