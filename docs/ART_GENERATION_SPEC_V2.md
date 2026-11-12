@@ -1,6 +1,6 @@
 # near.estate illustrated asset specification · local version 2
 
-This is the base visual grammar for the variable-width guest city and a future owner image prompt. The local game uses 60 illustrated building sprites: fifteen designs at four levels. Nine new four-level strips were made with the built-in image generator; six building designs reuse the earlier illustrated level sets. Six four-color car strips provide all 24 body/color combinations. The sources are in [`art/source/guest-building-strips`](../art/source/guest-building-strips), [`art/source/guest-car-strips`](../art/source/guest-car-strips) and [`art/source/illustrated`](../art/source/illustrated). [`prepare-guest-illustrations.mjs`](../scripts/prepare-guest-illustrations.mjs) trims, fits and hashes the game assets.
+This is the base visual grammar for the variable-width guest city and a future owner image prompt. The local game uses 60 illustrated building sprites: fifteen designs at four levels. All fifteen current four-level source strips were newly generated with the built-in image generator. The preceding nine source strips, 60 game sprites and early box-style choice sheet are preserved in [`art/archive/2026-11-12-before-new-building-art`](../art/archive/2026-11-12-before-new-building-art). Six four-color car strips provide all 24 body/color combinations. The current sources are in [`art/source/guest-building-strips`](../art/source/guest-building-strips) and [`art/source/guest-car-strips`](../art/source/guest-car-strips). [`prepare-guest-illustrations.mjs`](../scripts/prepare-guest-illustrations.mjs) trims, fits and hashes the game assets; [`render-guest-building-sheet.mjs`](../scripts/render-guest-building-sheet.mjs) builds the review sheet from those exact sprites.
 
 ## Game art direction
 
@@ -14,7 +14,7 @@ One frontage unit is 85 logical pixels and holds one curb space. A building imag
 | 2 units |            164 px |           2 | 20 × 20 px |
 | 3 units |            249 px |           3 | 24 × 24 px |
 
-Levels 1–4 cap visible height at **70 / 100 / 130 / 160 logical pixels**. A level adds an architectural tier or feature and retains the silhouette. Each source is trimmed and scaled within its plot width and height cap. Most local illustrations are widened to use their frontage. Craft Works limits that final width adjustment to 1.35×, leaving a small side setback so its doors and windows do not look stretched. Future source art should be drawn close to its target plot ratio. Each image keeps a blank, front-facing storefront sign. The illustrated Diner and Arcade have separate rooftop billboard panels at levels 3–4. Other designs need new art or design-specific media surfaces before billboard uploads are offered. The game overlays the owner logo and building name separately; the generated pixels must contain no logo, business name or ad copy. A moderator must inspect exact media rectangles against each final image before owner publication. A blank shape in an image is not by itself an approved media slot.
+Levels 1–4 cap visible height at **70 / 100 / 130 / 160 logical pixels**. A level adds an architectural tier or feature and retains the silhouette. Each source is trimmed and scaled within its plot width and height cap. Current sources are widened to fill the frontage after fitting within the height cap; Craft Works was regenerated with proportionate garage doors and windows, so it no longer needs a special width limit. Future source art should be drawn close to its target plot ratio. Each image keeps a blank, front-facing storefront sign. The Diner and Arcade reserve rooftop billboard placements at levels 3–4, with the approved ad drawn over the facade. The [placement review](images/near-estate-new-media-placement-review-v1.png) shows those exact shared rectangles on the new art. Other designs need design-specific media surfaces before billboard uploads are offered. The game overlays the owner logo and building name separately; the generated pixels must contain no logo, business name or ad copy. A moderator must inspect exact media rectangles against each final image before owner publication. A blank shape in an image is not by itself an approved media slot.
 
 ## Building prompt base
 
@@ -30,11 +30,11 @@ Straight-on elevation, centered, full building visible, level bottom edge. Prese
 Genuinely transparent background. No sky, ground, sidewalk, road, car, person, cast shadow, text, letters, advertising, logo, watermark, border or UI.
 ```
 
-| Width | Designs and defining silhouette                                                                                                                                                                                                 | Source                                                                                      |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| 1     | News kiosk: flat canopy and open counter; Coffee pod: curved roof and round glazing; Townhouse: steep gable and planted stoop; Flower stall: scalloped canopy and flowers; Bike repair: sawtooth workshop roof and service door | Four new strips; Townhouse reuses the earlier Homes Townhouse levels                        |
-| 2     | Corner shop: left brick corner tower; Diner: rounded enamel body; Glass studio: slanted roof and blue glazing; Bookshop: twin gables and recessed door; Arcade: stepped marquee and glowing bays                                | Three earlier illustrated level sets; Bookshop and Arcade are new strips                    |
-| 3     | Market hall: sawtooth roof and central entrance; Garden bistro: planted terrace; Office campus: joined glass volumes; Food hall: three open market bays; Craft works: brick workshop and industrial roof                        | Two earlier illustrated level sets; Office campus, Food hall and Craft works are new strips |
+| Width | Designs and defining silhouette                                                                                                                                                                                                 | Source                     |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| 1     | News kiosk: flat canopy and open counter; Coffee pod: curved roof and round glazing; Townhouse: steep gable and planted stoop; Flower stall: scalloped canopy and flowers; Bike repair: sawtooth workshop roof and service door | Five new four-level strips |
+| 2     | Corner shop: left brick corner tower; Diner: rounded enamel body; Glass studio: slanted roof and blue glazing; Bookshop: twin gables and recessed door; Arcade: stepped marquee and glowing bays                                | Five new four-level strips |
+| 3     | Market hall: sawtooth roof and central entrance; Garden bistro: planted terrace; Office campus: joined glass volumes; Food hall: three open market bays; Craft works: brick workshop and industrial roof                        | Five new four-level strips |
 
 The version-2 contract stores `design_choice` as a number from 0 to 4; plot width selects the column. This fixed order is shared with the client catalog:
 
@@ -46,7 +46,31 @@ The version-2 contract stores `design_choice` as a number from 0 to 4; plot widt
 |      3 | Flower stall | Bookshop     | Food hall     |
 |      4 | Bike repair  | Arcade       | Craft works   |
 
-The initial value follows the guest street's deterministic layout. An owner can choose another entry within the same width without changing plot size or parking capacity. Choosing a design resets the current custom facade and advances the media layout revision; any existing logo or billboard needs review for the new facade before it appears again. The version-gated owner screen now offers this choice when a version-2 contract is reported; the deployed testnet contract still reports version 1.
+The initial value follows the guest street's deterministic layout. An owner can choose another entry within the same width without changing plot size or parking capacity. Choosing a design resets the current custom facade and advances the media layout revision; any existing logo or billboard needs review for the new facade before it appears again. The version-2 owner screen offers this choice on the currently deployed testnet city.
+
+### Current source-strip briefs
+
+The fifteen new sources use the same Harbor Arcade prompt base above, with four adjacent straight-on elevations ordered level 1 to 4, common baseline, separate transparent quarters and empty sign surfaces. The design and growth briefs used for the current art are:
+
+| Design        | Distinct source features                                | Level growth                                                    |
+| ------------- | ------------------------------------------------------- | --------------------------------------------------------------- |
+| News kiosk    | Red canopy, open counter and paper racks                | Booth → larger display → enclosed loft → upper room             |
+| Coffee pod    | Curved teal enamel roof, round window, espresso counter | Capsule → canopy → upper nook → domed upper room                |
+| Townhouse     | Narrow red brick, steep gable, planted stoop            | Single story → upper floor → three stories → dormer             |
+| Flower stall  | Coral awning, flowers and glazed greenhouse             | Stall → glazed shop → greenhouse mezzanine → taller greenhouse  |
+| Bike repair   | Sawtooth metal roof, garage door, bike tools            | Workshop → clerestory → upper repair floor → rooftop workshop   |
+| Corner shop   | Left brick tower, striped awning, green window frames   | Low shop → raised tower → second story → clock tower            |
+| Diner         | Rounded enamel and chrome roof, long window, booths     | Low diner → marquee → terrace → rooftop lounge                  |
+| Glass studio  | Slanted copper roof, blue glazing, visible work tables  | Studio → clerestory → glass floor → stepped rooftop             |
+| Bookshop      | Twin blue gables, book windows, recessed green door     | Low shop → loft → second floor → taller dormered gables         |
+| Arcade        | Purple stepped marquee, cyan/amber glowing bays         | Low arcade → raised marquee → play floor → taller stepped roof  |
+| Market hall   | Triple sawtooth roof, ochre brick, three market bays    | Low hall → monitors → trading loft → upper windows              |
+| Garden bistro | Green pergola, planted terrace, open courtyard          | Dining hall → higher pergola → upper room → greenhouse pavilion |
+| Office campus | Offset blue-glass volumes, slanted roofs, breezeway     | Single floor → clerestory → stacked floor → stepped third floor |
+| Food hall     | Three vendor bays, copper roof, colored counters        | One floor → clerestory → mezzanine → dining balcony             |
+| Craft works   | Terracotta workshop, blue sawtooth roof, garage door    | Workshop → roof monitors → workroom floor → chimney             |
+
+Reject a source with a painted backdrop or cloudy alpha halo. The first Bookshop generation had one and was replaced by a transparent edit before normalization. The review sheet should be checked before accepting new sources because it exposed three misnamed files in this refresh.
 
 ## Owner-generated facade format under development
 

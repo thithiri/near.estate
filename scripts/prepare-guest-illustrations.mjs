@@ -8,28 +8,25 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const output = join(root, "apps/web/public/guest-buildings");
 const worldOutput = join(root, "apps/web/public/world");
 const catalogPath = join(root, "apps/web/src/guest-illustrations.json");
-const illustratedCatalog = JSON.parse(
-  await readFile(join(root, "apps/web/src/illustrated-catalog.json"), "utf8"),
-);
 const heightCaps = [70, 100, 130, 160];
 const facadeSideGap = 3;
 const check = process.argv.includes("--check");
 const buildings = [
-  { id: "news-kiosk", units: 1, strip: true },
-  { id: "coffee-pod", units: 1, strip: true },
-  { id: "townhouse", units: 1, type: "homes", variant: 2 },
-  { id: "flower-stall", units: 1, strip: true },
-  { id: "bike-repair", units: 1, strip: true },
-  { id: "corner-shop", units: 2, type: "retail", variant: 1 },
-  { id: "diner", units: 2, type: "restaurant", variant: 1 },
-  { id: "glass-studio", units: 2, type: "office", variant: 1 },
-  { id: "bookshop", units: 2, strip: true },
-  { id: "arcade", units: 2, strip: true },
-  { id: "market-hall", units: 3, type: "retail", variant: 2 },
-  { id: "garden-bistro", units: 3, type: "restaurant", variant: 2 },
-  { id: "office-campus", units: 3, strip: true },
-  { id: "food-hall", units: 3, strip: true },
-  { id: "craft-works", units: 3, strip: true, maxHorizontalScale: 1.35 },
+  { id: "news-kiosk", units: 1 },
+  { id: "coffee-pod", units: 1 },
+  { id: "townhouse", units: 1 },
+  { id: "flower-stall", units: 1 },
+  { id: "bike-repair", units: 1 },
+  { id: "corner-shop", units: 2 },
+  { id: "diner", units: 2 },
+  { id: "glass-studio", units: 2 },
+  { id: "bookshop", units: 2 },
+  { id: "arcade", units: 2 },
+  { id: "market-hall", units: 3 },
+  { id: "garden-bistro", units: 3 },
+  { id: "office-campus", units: 3 },
+  { id: "food-hall", units: 3 },
+  { id: "craft-works", units: 3 },
 ];
 const carBodies = [
   "Hatchback",
@@ -53,37 +50,19 @@ async function save(path, bytes) {
 }
 
 async function sourceForBuilding(building, level) {
-  if (building.strip) {
-    const file = join(
-      root,
-      `art/source/guest-building-strips/${building.id}.png`,
-    );
-    const meta = await sharp(file).metadata();
-    const left = Math.floor(((level - 1) * meta.width) / 4);
-    const right = Math.floor((level * meta.width) / 4);
-    return {
-      input: await sharp(file)
-        .extract({ left, top: 0, width: right - left, height: meta.height })
-        .png()
-        .toBuffer(),
-      source: `guest-building-strips/${building.id}.png#${level}`,
-    };
-  }
-  const entry = illustratedCatalog.facades.find(
-    (facade) =>
-      facade.type === building.type &&
-      facade.variant === building.variant &&
-      facade.level === level,
+  const file = join(
+    root,
+    `art/source/guest-building-strips/${building.id}.png`,
   );
-  if (!entry)
-    throw new Error(
-      `Missing illustrated source for ${building.id} level ${level}`,
-    );
+  const meta = await sharp(file).metadata();
+  const left = Math.floor(((level - 1) * meta.width) / 4);
+  const right = Math.floor((level * meta.width) / 4);
   return {
-    input: await readFile(
-      join(root, "apps/web/public/illustrated", entry.sprite),
-    ),
-    source: `illustrated/${entry.sprite}`,
+    input: await sharp(file)
+      .extract({ left, top: 0, width: right - left, height: meta.height })
+      .png()
+      .toBuffer(),
+    source: `guest-building-strips/${building.id}.png#${level}`,
   };
 }
 
@@ -93,7 +72,7 @@ async function fitTransparent(
   canvasHeight,
   artWidth,
   artHeight,
-  maxHorizontalScale = Number.POSITIVE_INFINITY,
+  minArtHeight = 0,
 ) {
   const trimmed = await sharp(input).ensureAlpha().trim().png().toBuffer();
   const contained = await sharp(trimmed)
@@ -101,13 +80,8 @@ async function fitTransparent(
     .png()
     .toBuffer();
   const containedMeta = await sharp(contained).metadata();
-  // A wide parcel should not turn Craft Works' garage doors and windows into
-  // long horizontal bars. Allow a modest adjustment, then keep side setbacks.
-  const fittedWidth = Math.min(
-    artWidth,
-    Math.round(containedMeta.width * maxHorizontalScale),
-  );
-  const fitted =
+  const fittedWidth = artWidth;
+  const widthFitted =
     fittedWidth === containedMeta.width
       ? contained
       : await sharp(contained)
@@ -118,6 +92,14 @@ async function fitTransparent(
           })
           .png()
           .toBuffer();
+  const widthMeta = await sharp(widthFitted).metadata();
+  const fitted =
+    widthMeta.height < minArtHeight
+      ? await sharp(widthFitted)
+          .resize({ width: widthMeta.width, height: minArtHeight, fit: "fill" })
+          .png()
+          .toBuffer()
+      : widthFitted;
   const meta = await sharp(fitted).metadata();
   const left = Math.floor((canvasWidth - meta.width) / 2);
   const top = canvasHeight - meta.height;
@@ -155,7 +137,7 @@ for (const building of buildings) {
       190 * 4,
       (building.units * 85 - facadeSideGap * 2) * 4,
       heightCaps[level - 1] * 4,
-      building.maxHorizontalScale,
+      building.units === 1 ? 50 * 4 : 0,
     );
     const sprite = `${building.id}-l${level}.png`;
     await save(join(output, sprite), bytes);

@@ -170,7 +170,13 @@ The same sample mark appears on all nine building choice cards, with a compact b
 
 The playable guest city now uses one, two and three curb spaces for matching plot widths. Every street side has six 2-unit, three 1-unit and one 3-unit player plot. Five building silhouettes fit each width; the game-owned cinema, garage and parking towers remain separate civic destinations. The design picker shows only choices that fit the selected plot.
 
-![Fifteen building design choices across three plot widths](images/near-estate-fifteen-building-choices-v1.png)
+![Fifteen newly illustrated building design choices across three plot widths](images/near-estate-fifteen-building-choices-v2.png)
+
+The old box-style choice sheet and preceding sprite set are preserved in the [building art archive](../art/archive/2026-11-12-before-new-building-art). The [current media placement review](images/near-estate-new-media-placement-review-v1.png) shows sample signage and billboard images over the new Diner and Arcade art at levels 3–4; these samples are local previews, not published ads.
+
+![Refreshed game street on desktop](images/near-estate-refreshed-street-desktop-v1.png)
+
+![Refreshed game street on a landscape phone](images/near-estate-refreshed-street-landscape-phone-v1.png)
 
 ![A one-unit townhouse and its single parking space in the playable street](images/near-estate-playable-one-unit-v1.png)
 
@@ -186,7 +192,7 @@ The guest picker also previews a local logo on the actual street sign. This samp
 
 ### Four levels for every variable-width choice
 
-All fifteen code-drawn designs now have levels 1–4. The height limits are 70, 100, 130 and 160 logical pixels, with added floors and each design's roof shape retained as it grows. The sheets compare the starter and tallest forms across all three plot widths.
+All fifteen illustrated designs have levels 1–4. The height limits are 70, 100, 130 and 160 logical pixels, with added floors and each design's roof shape retained as it grows. The older code-drawn level sheets below remain as historical studies; the choice sheet above shows the current game art.
 
 ![Fifteen one-, two- and three-unit designs at level 1](images/near-estate-fifteen-level1-sheet-v1.png)
 
@@ -200,7 +206,7 @@ The [portrait design picker](images/near-estate-level4-picker-portrait-v2.png) k
 
 ### Illustrated variable-width city and controls
 
-The local guest street uses generated and earlier illustrated images for all fifteen building choices and four levels. A navy, cream, amber and teal interface frames the city. Parking rules are painted into vacant bays rather than mounted on curb poles; road-name signs remain at intersections. The original three-car study below is kept as an earlier visual reference.
+The local guest street uses newly generated illustrated images for all fifteen building choices and four levels. A navy, cream, amber and teal interface frames the city. Parking rules are painted into vacant bays rather than mounted on curb poles; road-name signs remain at intersections. The original three-car study below is kept as an earlier visual reference.
 
 ![Three newly generated cars: Hatchback, Sports coupe and Microvan](images/near-estate-generated-car-trio-v1.png)
 

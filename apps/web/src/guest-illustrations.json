@@ -7,12 +7,12 @@
       "level": 1,
       "sprite": "news-kiosk-l1.png",
       "source": "guest-building-strips/news-kiosk.png#1",
-      "sha256": "eae3e82bd7d86b0f39ed5f8d5d30872c181e1369e8da502173ef4f965951f991",
+      "sha256": "e9c9818593877ed2e8911781d149a64a293436093c22c54c4f1f625a41eb5133",
       "alphaBounds": {
         "x": 3,
-        "y": 120,
+        "y": 132.25,
         "width": 79,
-        "height": 70
+        "height": 57.75
       }
     },
     {
@@ -21,12 +21,12 @@
       "level": 2,
       "sprite": "news-kiosk-l2.png",
       "source": "guest-building-strips/news-kiosk.png#2",
-      "sha256": "ca0462a15ba270d469cfd2cb8f71656f65b7fc82671987ca219b0a96f6f8d246",
+      "sha256": "312c48a505fb98d656f953f981b51489abd0611360c3b75b305be9fa86c5685c",
       "alphaBounds": {
         "x": 3,
-        "y": 90,
+        "y": 111.75,
         "width": 79,
-        "height": 100
+        "height": 78.25
       }
     },
     {
@@ -35,12 +35,12 @@
       "level": 3,
       "sprite": "news-kiosk-l3.png",
       "source": "guest-building-strips/news-kiosk.png#3",
-      "sha256": "97ce2bfb401efc047d7dd8b9e5b818f4fe82fcdfcde8a446f7b8978cd89af887",
+      "sha256": "c3dd25d5a3f66f2cae038a9b5208ad188e358e8e444b1f0996d1ef693688545d",
       "alphaBounds": {
         "x": 3,
-        "y": 60,
+        "y": 85.25,
         "width": 79,
-        "height": 130
+        "height": 104.75
       }
     },
     {
@@ -49,12 +49,12 @@
       "level": 4,
       "sprite": "news-kiosk-l4.png",
       "source": "guest-building-strips/news-kiosk.png#4",
-      "sha256": "c9c0f00a1abeb7cf4c34350707646f9a31df9d4db956d38687aed09a0ee4f18e",
+      "sha256": "33a2c6124d856391da1d7d115614f176f4fc688b3b0b7fb9752fae94d94e79fc",
       "alphaBounds": {
         "x": 3,
-        "y": 30,
+        "y": 69.75,
         "width": 79,
-        "height": 160
+        "height": 120.25
       }
     },
     {
@@ -63,12 +63,12 @@
       "level": 1,
       "sprite": "coffee-pod-l1.png",
       "source": "guest-building-strips/coffee-pod.png#1",
-      "sha256": "f73a543d535450f0b7c4aae52a6e02cd46027779725d17fb19863c1b028c5844",
+      "sha256": "2f6c42080e59ed1f50b6b0ebfc3f2795b3e3614df073d8f519d76068cb30fa2c",
       "alphaBounds": {
         "x": 3,
-        "y": 128.5,
+        "y": 133.5,
         "width": 79,
-        "height": 61.5
+        "height": 56.5
       }
     },
     {
@@ -77,12 +77,12 @@
       "level": 2,
       "sprite": "coffee-pod-l2.png",
       "source": "guest-building-strips/coffee-pod.png#2",
-      "sha256": "bd7b0cd2fa0b4175fff0ec5eb27c5e27f1cedb9305366f4cc45b81bd598e2e97",
+      "sha256": "d9caa32881edb00f3c76397e41ae6a98bc68c3f64dc207b5ec2ec667a0441dec",
       "alphaBounds": {
         "x": 3,
-        "y": 97.5,
+        "y": 112.75,
         "width": 79,
-        "height": 92.5
+        "height": 77.25
       }
     },
     {
@@ -91,12 +91,12 @@
       "level": 3,
       "sprite": "coffee-pod-l3.png",
       "source": "guest-building-strips/coffee-pod.png#3",
-      "sha256": "acd7eb0650520d881ce9c5a2c55be96d94b1e066a1d1594b4cbe07efb0529d97",
+      "sha256": "e100238ca2043479367fc9b25a574d336a9ba59b45bc7b0286a7fc729e0037eb",
       "alphaBounds": {
         "x": 3,
-        "y": 77.25,
+        "y": 91.25,
         "width": 79,
-        "height": 112.75
+        "height": 98.75
       }
     },
     {
@@ -105,12 +105,12 @@
       "level": 4,
       "sprite": "coffee-pod-l4.png",
       "source": "guest-building-strips/coffee-pod.png#4",
-      "sha256": "79700dacc7e8e292c3a7ce372ee4f7313de5962a92fa29f614b13d7ed301a541",
+      "sha256": "32a1dcaf40dfc89d7d6573485b5e902a2cb32293988a872af182c401c6467d7e",
       "alphaBounds": {
         "x": 3,
-        "y": 58.5,
+        "y": 65.25,
         "width": 79,
-        "height": 131.5
+        "height": 124.75
       }
     },
     {
@@ -118,13 +118,13 @@
       "units": 1,
       "level": 1,
       "sprite": "townhouse-l1.png",
-      "source": "illustrated/homes-townhouse-l1.png",
-      "sha256": "81313b681e29efbbc17b14b284ff0caffbe787f6c6ed2e6780837bf03988136c",
+      "source": "guest-building-strips/townhouse.png#1",
+      "sha256": "809470b343f7d84b9e9209a0dae133a554b458a7748af6474ee85ba8a1263546",
       "alphaBounds": {
         "x": 3,
-        "y": 120,
+        "y": 125,
         "width": 79,
-        "height": 70
+        "height": 65
       }
     },
     {
@@ -132,13 +132,13 @@
       "units": 1,
       "level": 2,
       "sprite": "townhouse-l2.png",
-      "source": "illustrated/homes-townhouse-l2.png",
-      "sha256": "1951eba93b64c161c70a41af5fee126590ab6ebdbfca25bb3001d9e3f3f08328",
+      "source": "guest-building-strips/townhouse.png#2",
+      "sha256": "1987c7e568991d84a51b05f83920f50a7f5cac9d2c507ada8cedf80a9d3e5289",
       "alphaBounds": {
         "x": 3,
-        "y": 90,
+        "y": 92.5,
         "width": 79,
-        "height": 100
+        "height": 97.5
       }
     },
     {
@@ -146,13 +146,13 @@
       "units": 1,
       "level": 3,
       "sprite": "townhouse-l3.png",
-      "source": "illustrated/homes-townhouse-l3.png",
-      "sha256": "1dc8ed0b708cb1dc4c3ae68e001c7cef5664d846ab32a5564e06c1625a5301ba",
+      "source": "guest-building-strips/townhouse.png#3",
+      "sha256": "7789de7175242ead086eb3e9956b037f7552fd1a9ac655e3bde0cb94ceab5e41",
       "alphaBounds": {
         "x": 3,
-        "y": 60,
+        "y": 61,
         "width": 79,
-        "height": 130
+        "height": 129
       }
     },
     {
@@ -160,13 +160,13 @@
       "units": 1,
       "level": 4,
       "sprite": "townhouse-l4.png",
-      "source": "illustrated/homes-townhouse-l4.png",
-      "sha256": "2f5d3327e80925da5ff73c71525be277ea7289c5794c94b8af0de782744111e0",
+      "source": "guest-building-strips/townhouse.png#4",
+      "sha256": "624a2294d5c27fe2fcb3149dfba793fa10c67a2e2ed5f026117e5c0500fb3606",
       "alphaBounds": {
         "x": 3,
-        "y": 30,
+        "y": 52,
         "width": 79,
-        "height": 160
+        "height": 138
       }
     },
     {
@@ -175,12 +175,12 @@
       "level": 1,
       "sprite": "flower-stall-l1.png",
       "source": "guest-building-strips/flower-stall.png#1",
-      "sha256": "62e9fb94f35832f899cb5f4988283c02e2f51d3f1ed7fd4c55c7518087b4e579",
+      "sha256": "811c0dbbfbe1b512a7e64c9497e2b68ef50833b2f91100ad928470fb49b1c168",
       "alphaBounds": {
         "x": 3,
-        "y": 120,
+        "y": 136.25,
         "width": 79,
-        "height": 70
+        "height": 53.75
       }
     },
     {
@@ -189,12 +189,12 @@
       "level": 2,
       "sprite": "flower-stall-l2.png",
       "source": "guest-building-strips/flower-stall.png#2",
-      "sha256": "8d887dba69e9926c0914d8bd10a19c1edfd42a8652bdedff0df103662dcfac77",
+      "sha256": "a5d48dcf40146e90d9eb79c272d97eb27bd844ae2e2b3119e9398e097fd42cc7",
       "alphaBounds": {
         "x": 3,
-        "y": 90,
+        "y": 107,
         "width": 79,
-        "height": 100
+        "height": 83
       }
     },
     {
@@ -203,12 +203,12 @@
       "level": 3,
       "sprite": "flower-stall-l3.png",
       "source": "guest-building-strips/flower-stall.png#3",
-      "sha256": "1a9b30355e13d2aa6398e47f4eb78cd33be733ce2806d32393ae0a9a962b0e0e",
+      "sha256": "3d3e039b9a215d962f70abc2b7de93373e09ddf30892e376fe48bee1f9c437ec",
       "alphaBounds": {
         "x": 3,
-        "y": 60.75,
+        "y": 77.25,
         "width": 79,
-        "height": 129.25
+        "height": 112.75
       }
     },
     {
@@ -217,12 +217,12 @@
       "level": 4,
       "sprite": "flower-stall-l4.png",
       "source": "guest-building-strips/flower-stall.png#4",
-      "sha256": "3889eb1f20a777646c1adf85d3bcf3a1bb11009aa03ef976c9bf3864b7931dde",
+      "sha256": "e17e27f849675242d7d1314e9035fec601aa4e8d4b6bc63b63f0d5595d861960",
       "alphaBounds": {
         "x": 3,
-        "y": 45.25,
+        "y": 62.5,
         "width": 79,
-        "height": 144.75
+        "height": 127.5
       }
     },
     {
@@ -231,12 +231,12 @@
       "level": 1,
       "sprite": "bike-repair-l1.png",
       "source": "guest-building-strips/bike-repair.png#1",
-      "sha256": "f79104414da1c78ae083a821114bc70ec1fc3317b5a8f789c1d448324eba8aab",
+      "sha256": "b2179b6d4d125954a382116d01fc888e6ac6eccbccc7c8744f93e7da5103edaf",
       "alphaBounds": {
         "x": 3,
-        "y": 136.5,
+        "y": 140,
         "width": 79,
-        "height": 53.5
+        "height": 50
       }
     },
     {
@@ -245,12 +245,12 @@
       "level": 2,
       "sprite": "bike-repair-l2.png",
       "source": "guest-building-strips/bike-repair.png#2",
-      "sha256": "c3051c1dbba84e26633ecd0dd9353ee35beaa7b71c8a78d059a799eec4e5ceef",
+      "sha256": "1754f50d05a0f9e3a77eb41c563dc7dc08639f22166ca9ea7d4293554e489c81",
       "alphaBounds": {
         "x": 3,
-        "y": 113.5,
+        "y": 125.5,
         "width": 79,
-        "height": 76.5
+        "height": 64.5
       }
     },
     {
@@ -259,12 +259,12 @@
       "level": 3,
       "sprite": "bike-repair-l3.png",
       "source": "guest-building-strips/bike-repair.png#3",
-      "sha256": "7ba653dafdd30f9c799935d7128f78f5488a9201872809ebe3f59fb3ea1f700e",
+      "sha256": "86fe0287accc0a8cf70a7476418853f8e174276e5609de6cad54cbb911a8ebf5",
       "alphaBounds": {
         "x": 3,
-        "y": 88,
+        "y": 104.5,
         "width": 79,
-        "height": 102
+        "height": 85.5
       }
     },
     {
@@ -273,12 +273,12 @@
       "level": 4,
       "sprite": "bike-repair-l4.png",
       "source": "guest-building-strips/bike-repair.png#4",
-      "sha256": "339d6143309c06f4358a27b775b7504df5d4773e0321e28dd41a98fc5e85749f",
+      "sha256": "1129eba6742e06779b3f856ab329d4d8715b01b63f3121b76b66c1beb1e1f2d9",
       "alphaBounds": {
         "x": 3,
-        "y": 72.25,
+        "y": 75,
         "width": 79,
-        "height": 117.75
+        "height": 115
       }
     },
     {
@@ -286,8 +286,8 @@
       "units": 2,
       "level": 1,
       "sprite": "corner-shop-l1.png",
-      "source": "illustrated/retail-corner-l1.png",
-      "sha256": "298bbc3f6f38e9c124a61a66edffabcd166b46fc452ce013f884301e8f57b2bf",
+      "source": "guest-building-strips/corner-shop.png#1",
+      "sha256": "b9db16c2509d45733e4dbbd97499b4f0f7f4623a47dbdd77bf7e650a0655a6df",
       "alphaBounds": {
         "x": 3,
         "y": 120,
@@ -300,8 +300,8 @@
       "units": 2,
       "level": 2,
       "sprite": "corner-shop-l2.png",
-      "source": "illustrated/retail-l2.png",
-      "sha256": "24de90cfbc38d2072252b2ab658c887013e1c202a5d4c2ba0ae6c1d21d1a37d5",
+      "source": "guest-building-strips/corner-shop.png#2",
+      "sha256": "16927ffcf250e773156b7354f1eef2008c8e15a89e8b858bad8cfe4dd1b0b532",
       "alphaBounds": {
         "x": 3,
         "y": 90,
@@ -314,8 +314,8 @@
       "units": 2,
       "level": 3,
       "sprite": "corner-shop-l3.png",
-      "source": "illustrated/retail-corner-l3.png",
-      "sha256": "73af324e02d82d5b9fcad30725747f2028f84b64fea496d6393da36a97bc1595",
+      "source": "guest-building-strips/corner-shop.png#3",
+      "sha256": "a81ae0fdc6dc93af6cac1557b13575d888a2e578f8a6ae6791edf48e897cb96f",
       "alphaBounds": {
         "x": 3,
         "y": 60,
@@ -328,8 +328,8 @@
       "units": 2,
       "level": 4,
       "sprite": "corner-shop-l4.png",
-      "source": "illustrated/retail-corner-l4.png",
-      "sha256": "115fd03c191d1205b661d275e5150dda46f2e2aaa1a646251aa62fffb731ee5a",
+      "source": "guest-building-strips/corner-shop.png#4",
+      "sha256": "29be277a2b28f3add1819145998f0d5b874669289e8b61d93f874ecc724e64c0",
       "alphaBounds": {
         "x": 3,
         "y": 30,
@@ -342,8 +342,8 @@
       "units": 2,
       "level": 1,
       "sprite": "diner-l1.png",
-      "source": "illustrated/restaurant-diner-l1.png",
-      "sha256": "beb257c88a18326e463b70dd3aef87da4676246279ef004b11d7fb3e803217fe",
+      "source": "guest-building-strips/diner.png#1",
+      "sha256": "841084594f582cbba993d2088f80c6e65e94de6e1d9506c78434f6bc1ea6208e",
       "alphaBounds": {
         "x": 3,
         "y": 120,
@@ -356,13 +356,13 @@
       "units": 2,
       "level": 2,
       "sprite": "diner-l2.png",
-      "source": "illustrated/restaurant-l2.png",
-      "sha256": "ffcdcacd386a82c494c51f170f39f256d081304943815b4567020d43c705c352",
+      "source": "guest-building-strips/diner.png#2",
+      "sha256": "73a8cd308440f1b215c25ef1172f2b1568dae26dc5e4071818af300ae5850d52",
       "alphaBounds": {
         "x": 3,
-        "y": 114.5,
+        "y": 90,
         "width": 164,
-        "height": 75.5
+        "height": 100
       }
     },
     {
@@ -370,8 +370,8 @@
       "units": 2,
       "level": 3,
       "sprite": "diner-l3.png",
-      "source": "illustrated/restaurant-diner-l3.png",
-      "sha256": "6333090b17a76823bf72e0c7a75a6a2cef3ca6aa053230db435bd77ac1d809c8",
+      "source": "guest-building-strips/diner.png#3",
+      "sha256": "cb91169028607cc9cc6be30970283fff45bbed378ce77034caebb05dd506f4ac",
       "alphaBounds": {
         "x": 3,
         "y": 60,
@@ -384,8 +384,8 @@
       "units": 2,
       "level": 4,
       "sprite": "diner-l4.png",
-      "source": "illustrated/restaurant-diner-l4.png",
-      "sha256": "e1022a049339c5005b79747fc281dfcc6c707bf4c90f1fa119d82bde1c226203",
+      "source": "guest-building-strips/diner.png#4",
+      "sha256": "31b2dab76e1c81c2185d67da97900193ff710cf9c2c8f2935e102a996598a8c3",
       "alphaBounds": {
         "x": 3,
         "y": 30,
@@ -398,8 +398,8 @@
       "units": 2,
       "level": 1,
       "sprite": "glass-studio-l1.png",
-      "source": "illustrated/office-glass-l1.png",
-      "sha256": "9a0b34a5ea67af83448a09d7a7721278e4c6eb3554a4146b7640e0f423ea6e70",
+      "source": "guest-building-strips/glass-studio.png#1",
+      "sha256": "d9ddd27d51ddd625ecff6bed17f9f4199f70bfcc14c186de1e06f51b2f30f41a",
       "alphaBounds": {
         "x": 3,
         "y": 120,
@@ -412,8 +412,8 @@
       "units": 2,
       "level": 2,
       "sprite": "glass-studio-l2.png",
-      "source": "illustrated/office-l2.png",
-      "sha256": "7c5f0e96aff9ec816e72cb33e525e340fe6aa22202ba4346d3529995e33f605b",
+      "source": "guest-building-strips/glass-studio.png#2",
+      "sha256": "7f859fc7bc2baca45e9998f37ec42cfe9a34593dbcf02004601cef64adb122ae",
       "alphaBounds": {
         "x": 3,
         "y": 90,
@@ -426,8 +426,8 @@
       "units": 2,
       "level": 3,
       "sprite": "glass-studio-l3.png",
-      "source": "illustrated/office-glass-l3.png",
-      "sha256": "1bdbf4f2f80b0f93319d93a5b04fd8860a9d68a314b1de69294dd897ab142aa4",
+      "source": "guest-building-strips/glass-studio.png#3",
+      "sha256": "583611ae86683da53ca5d84cb5a7c50f2b5359dbf30f8cee6ac87fade5fbc956",
       "alphaBounds": {
         "x": 3,
         "y": 60,
@@ -440,8 +440,8 @@
       "units": 2,
       "level": 4,
       "sprite": "glass-studio-l4.png",
-      "source": "illustrated/office-glass-l4.png",
-      "sha256": "b6fa3ee620ab7b22ba2ffe1ed83122a299e1b9918c9e2fb61774f9c411bf3f7b",
+      "source": "guest-building-strips/glass-studio.png#4",
+      "sha256": "df766e2c9920ad97387c27454965cc2978ccd85d71e4cf572fc5c871c888aaaf",
       "alphaBounds": {
         "x": 3,
         "y": 30,
@@ -455,7 +455,7 @@
       "level": 1,
       "sprite": "bookshop-l1.png",
       "source": "guest-building-strips/bookshop.png#1",
-      "sha256": "c92847da36261bc6cd74fc427a182fbc912a001f5631104525b01acc956ab795",
+      "sha256": "ab0b660385e8a10912263bdd7a285abb789f3479351bf1bbb47f310dd195c631",
       "alphaBounds": {
         "x": 3,
         "y": 120,
@@ -469,7 +469,7 @@
       "level": 2,
       "sprite": "bookshop-l2.png",
       "source": "guest-building-strips/bookshop.png#2",
-      "sha256": "b382552ad5ea51734f98b2972d790012e3a3478ec6d30cdca880b268f79b5035",
+      "sha256": "9afa8e65578c84de8e118b14ab3720a13dd606076c1f42916c5f3ba737fdc88d",
       "alphaBounds": {
         "x": 3,
         "y": 90,
@@ -483,7 +483,7 @@
       "level": 3,
       "sprite": "bookshop-l3.png",
       "source": "guest-building-strips/bookshop.png#3",
-      "sha256": "061fd1b1f4262dcb6b471734f6b66978a10f386b68950a8e390b671105143c9c",
+      "sha256": "e70bb1457a315eee609e633061440bcca5398d23ddb37ddf6f02f9c95bf825fc",
       "alphaBounds": {
         "x": 3,
         "y": 60,
@@ -497,7 +497,7 @@
       "level": 4,
       "sprite": "bookshop-l4.png",
       "source": "guest-building-strips/bookshop.png#4",
-      "sha256": "618cab65a4435580c312d45d947ac79849978d47c818c217974fce0c0d2f89dc",
+      "sha256": "6402ad8107a6845785f1242db4563d50aa4a2ef1bdddf0e65df1bd166a8abe5e",
       "alphaBounds": {
         "x": 3,
         "y": 30,
@@ -511,7 +511,7 @@
       "level": 1,
       "sprite": "arcade-l1.png",
       "source": "guest-building-strips/arcade.png#1",
-      "sha256": "cbeab2e853a148c7294fa53c71ef1d4a012440eb003b09bc3ac45e6cfb91965f",
+      "sha256": "82830f5c0ca0e12042566efa37a582dc780fd875ac829ebd94f6010d6dc2db99",
       "alphaBounds": {
         "x": 3,
         "y": 120,
@@ -525,7 +525,7 @@
       "level": 2,
       "sprite": "arcade-l2.png",
       "source": "guest-building-strips/arcade.png#2",
-      "sha256": "5824f58a6668ed90013d5b6134eef233fecc105624a004a7b5d60a91edb49d6c",
+      "sha256": "c5f1035f631cc6600ff4ec00d6d2207a9938b43349102259ba7f8846c0dfd844",
       "alphaBounds": {
         "x": 3,
         "y": 90,
@@ -539,7 +539,7 @@
       "level": 3,
       "sprite": "arcade-l3.png",
       "source": "guest-building-strips/arcade.png#3",
-      "sha256": "bc226eec0e6577f4fde0bdabe16c63eedf51559cee5da39e8122b672b8710b3a",
+      "sha256": "d618b2420048663c500b2756da4d70b202cf3e6719a5cc42501ec942b16f86e0",
       "alphaBounds": {
         "x": 3,
         "y": 60,
@@ -553,7 +553,7 @@
       "level": 4,
       "sprite": "arcade-l4.png",
       "source": "guest-building-strips/arcade.png#4",
-      "sha256": "7dd3f34f8f64d9d3a8c44a182b85ccbaa157172a4bde920cbe1bb11d82f4a42a",
+      "sha256": "cb185e73107158ed1d423841f1a0b80a88eb47eed631fc01381fe4b4548386c8",
       "alphaBounds": {
         "x": 3,
         "y": 30,
@@ -566,8 +566,8 @@
       "units": 3,
       "level": 1,
       "sprite": "market-hall-l1.png",
-      "source": "illustrated/retail-market-l1.png",
-      "sha256": "2c3b5a6d4c5da77b890f2101a6ab6d995af4eee8a1ad6ad07cf00e1414b3830d",
+      "source": "guest-building-strips/market-hall.png#1",
+      "sha256": "c41d34c68254e30a126286f527b449bfb210b7a872348c209290f31614bafd92",
       "alphaBounds": {
         "x": 3,
         "y": 120,
@@ -580,8 +580,8 @@
       "units": 3,
       "level": 2,
       "sprite": "market-hall-l2.png",
-      "source": "illustrated/retail-market-l2.png",
-      "sha256": "a1a9c7c8d8dddbcb69512f0144339e860263ce5bd6e9279640bfa4a9f7bbdd4f",
+      "source": "guest-building-strips/market-hall.png#2",
+      "sha256": "feb31590bb82df30d57f580678f24667f02b9558e28025d00982f23c99440aa2",
       "alphaBounds": {
         "x": 3,
         "y": 90,
@@ -594,8 +594,8 @@
       "units": 3,
       "level": 3,
       "sprite": "market-hall-l3.png",
-      "source": "illustrated/retail-market-l3.png",
-      "sha256": "c532efac4af965b9825b25f268cd4032e97d10255e65e65e8b5468dfa9c13bdd",
+      "source": "guest-building-strips/market-hall.png#3",
+      "sha256": "3270470ec8fc3ed3bd3fcd5f15b07f03b5aee4d01588792306b0dfca5d9b7024",
       "alphaBounds": {
         "x": 3,
         "y": 60,
@@ -608,8 +608,8 @@
       "units": 3,
       "level": 4,
       "sprite": "market-hall-l4.png",
-      "source": "illustrated/retail-market-l4.png",
-      "sha256": "f6a5cd3537da2b26f07752b4fc8a2d8393313fbfe7a66d20e40f194a829075a7",
+      "source": "guest-building-strips/market-hall.png#4",
+      "sha256": "67bcbeeed4a7b4be1f2a4dc00eb5e06ec81197d1320c4339340e35d7dfb00d37",
       "alphaBounds": {
         "x": 3,
         "y": 30,
@@ -622,8 +622,8 @@
       "units": 3,
       "level": 1,
       "sprite": "garden-bistro-l1.png",
-      "source": "illustrated/restaurant-bistro-l1.png",
-      "sha256": "e6cec95eb78f5684f124541cb7b07319b607636a3f4d9abdf9be69023a3e6259",
+      "source": "guest-building-strips/garden-bistro.png#1",
+      "sha256": "342d27b1d117990d97922ec835d81fc3bcb5a384ee203e3af631155ce339ee36",
       "alphaBounds": {
         "x": 3,
         "y": 120,
@@ -636,13 +636,13 @@
       "units": 3,
       "level": 2,
       "sprite": "garden-bistro-l2.png",
-      "source": "illustrated/restaurant-bistro-l2.png",
-      "sha256": "c30746932d52a566d68b64da8b91f907d93dd71a42ba2cf56e36641b1a3a8abb",
+      "source": "guest-building-strips/garden-bistro.png#2",
+      "sha256": "d87b4bf3045d319663f0fd547596291b36663a6f47cd7515057f100d9e9501a3",
       "alphaBounds": {
         "x": 3,
-        "y": 90.5,
+        "y": 90,
         "width": 249,
-        "height": 99.5
+        "height": 100
       }
     },
     {
@@ -650,8 +650,8 @@
       "units": 3,
       "level": 3,
       "sprite": "garden-bistro-l3.png",
-      "source": "illustrated/restaurant-bistro-l3.png",
-      "sha256": "c151387887a88b2d73e7c39ed1fd7f0b40cd5c25f235680cdcb4278058a21509",
+      "source": "guest-building-strips/garden-bistro.png#3",
+      "sha256": "3532289b56218808408af42baf9b48e00bd6955711602c6eeafd56399f59fb15",
       "alphaBounds": {
         "x": 3,
         "y": 60,
@@ -664,8 +664,8 @@
       "units": 3,
       "level": 4,
       "sprite": "garden-bistro-l4.png",
-      "source": "illustrated/restaurant-bistro-l4.png",
-      "sha256": "16566ca6beec26da0bdad77d9aa3c15b14a95b28d082bc4243d9bb135a44d609",
+      "source": "guest-building-strips/garden-bistro.png#4",
+      "sha256": "7e0f1cc8fa9c9d5cede96f5ae954c1e6ba1bede287f04b34c20276b82b4306a5",
       "alphaBounds": {
         "x": 3,
         "y": 30,
@@ -679,7 +679,7 @@
       "level": 1,
       "sprite": "office-campus-l1.png",
       "source": "guest-building-strips/office-campus.png#1",
-      "sha256": "42925688ca2169d1615cfd430316e73e9f62c7c7451899de76acc5fc591c44ba",
+      "sha256": "1019a476fa86e3d7de1e66d7d7dab76acc7748f491c2d2508eca9c043be72eaa",
       "alphaBounds": {
         "x": 3,
         "y": 120,
@@ -693,7 +693,7 @@
       "level": 2,
       "sprite": "office-campus-l2.png",
       "source": "guest-building-strips/office-campus.png#2",
-      "sha256": "66c4f5b1465bd41ee4fe03caafab88945be6841d5bbb9e1767b595c74ba752e0",
+      "sha256": "142157f6fd1152c0c6efb789779dc4218264f577c40493831da1ffc1c075d640",
       "alphaBounds": {
         "x": 3,
         "y": 90,
@@ -707,7 +707,7 @@
       "level": 3,
       "sprite": "office-campus-l3.png",
       "source": "guest-building-strips/office-campus.png#3",
-      "sha256": "b8fb8dd1bc3ef1dac039456b381a33f6a1a2ee6b1fdcfedc48c19cdef766e4a7",
+      "sha256": "2b8fea42642d905923cf7c1bd04db7d4d0719fc0aae247179b0f3db3efb7ac7e",
       "alphaBounds": {
         "x": 3,
         "y": 60,
@@ -721,7 +721,7 @@
       "level": 4,
       "sprite": "office-campus-l4.png",
       "source": "guest-building-strips/office-campus.png#4",
-      "sha256": "9bf97f1030d144612ce904672cfec361e01dd4c5804850b5dfde4f5af1143257",
+      "sha256": "c553befb419b840cc1ffc7cbfec8a6e1063cf4c0953a2098f96eece4e9e0a827",
       "alphaBounds": {
         "x": 3,
         "y": 30,
@@ -735,7 +735,7 @@
       "level": 1,
       "sprite": "food-hall-l1.png",
       "source": "guest-building-strips/food-hall.png#1",
-      "sha256": "a41a8aba64f090bed18e293ee8fbcca4e972652b351ee63781f7a56fb3a62438",
+      "sha256": "2827b729f3a4e546b38263ee8b38369f6dc6313424bb9f35fdb31fdca7382860",
       "alphaBounds": {
         "x": 3,
         "y": 120,
@@ -749,7 +749,7 @@
       "level": 2,
       "sprite": "food-hall-l2.png",
       "source": "guest-building-strips/food-hall.png#2",
-      "sha256": "2bb9cca8f961c82fd0eb1ca34526ea21c44917f263979dcc9001e59903567700",
+      "sha256": "d1d8b5274660f412f9380cd99d733026c11bea04f00477f926aa3ea7ee6f31cf",
       "alphaBounds": {
         "x": 3,
         "y": 90,
@@ -763,7 +763,7 @@
       "level": 3,
       "sprite": "food-hall-l3.png",
       "source": "guest-building-strips/food-hall.png#3",
-      "sha256": "a642deb6ba6ec17f777eefcc360b58b008eec59c0c67021ab1829230e075f8b2",
+      "sha256": "1aee9d67cb0d1bb1293a791564ce0b0b97dd12b79e620ef4a06664aa21039e54",
       "alphaBounds": {
         "x": 3,
         "y": 60,
@@ -777,7 +777,7 @@
       "level": 4,
       "sprite": "food-hall-l4.png",
       "source": "guest-building-strips/food-hall.png#4",
-      "sha256": "243187dee77d16029396dc9c1fab319489351747baeb079ebe84d676afa7aa62",
+      "sha256": "b91ff1b5b7ac30eef47e277b96d389d95d8838c80d581d234cfd3488c0ae99c8",
       "alphaBounds": {
         "x": 3,
         "y": 30,
@@ -791,11 +791,11 @@
       "level": 1,
       "sprite": "craft-works-l1.png",
       "source": "guest-building-strips/craft-works.png#1",
-      "sha256": "5a48e494dec78f22b54b05f3e387cd8c19f80dedd41f4044175e267432a0ca96",
+      "sha256": "bdbedb11aa92ecf808dd1b3ef4437d35f58efff2f1c6d6075827d40931d3c401",
       "alphaBounds": {
-        "x": 38.5,
+        "x": 3,
         "y": 120,
-        "width": 177.75,
+        "width": 249,
         "height": 70
       }
     },
@@ -805,11 +805,11 @@
       "level": 2,
       "sprite": "craft-works-l2.png",
       "source": "guest-building-strips/craft-works.png#2",
-      "sha256": "12e58744f59563571ab285f9eee7cb75f794ca65cd6342b0b6a609854aa6ddcb",
+      "sha256": "5b1112f1b193db927dadc0368eb9147f048ccd4f991451da401c986f5c7094c9",
       "alphaBounds": {
-        "x": 25,
+        "x": 3,
         "y": 90,
-        "width": 204.75,
+        "width": 249,
         "height": 100
       }
     },
@@ -819,11 +819,11 @@
       "level": 3,
       "sprite": "craft-works-l3.png",
       "source": "guest-building-strips/craft-works.png#3",
-      "sha256": "0502dca88639cd7e4c6bc19f7bb6a9c1fb488a2baa303278f355589c9e005375",
+      "sha256": "da26fcc8b2428e9182d29ead5b7b60f9721309e505b3f80d567c9020adefe5e7",
       "alphaBounds": {
-        "x": 33,
+        "x": 3,
         "y": 60,
-        "width": 188.75,
+        "width": 249,
         "height": 130
       }
     },
@@ -833,11 +833,11 @@
       "level": 4,
       "sprite": "craft-works-l4.png",
       "source": "guest-building-strips/craft-works.png#4",
-      "sha256": "83c2b8cbbfdc0de0014b800852dfbed4a597fb8bc0848e251243bd3b4a9d78c7",
+      "sha256": "70e96aaed8ada8cc9886dd41fab33f61cab08eb1c0a7428012df6e70a20d8940",
       "alphaBounds": {
-        "x": 25,
+        "x": 3,
         "y": 30,
-        "width": 204.75,
+        "width": 249,
         "height": 160
       }
     }
