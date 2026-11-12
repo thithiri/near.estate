@@ -723,3 +723,7 @@ The Harbor Cinema activity now has a full browser journey as well: pause holds t
 ## 2026-11-13 — Tightened monitor webhook handling
 
 - Monitor startup now rejects a relative, non-regular or group/world-readable bearer-token file. Authenticated webhook requests and API health probes reject redirects. The focused monitor suite passes all 11 cases and the worker type check passes. A real HTTPS receiver and target-VPS alert delivery still need their own drill.
+
+## 2026-11-13 — Added independent chain proof to the public release probe
+
+- The external HTTPS probe now reads the testnet account at finality, checks its code hash against the deployment manifest, then calls `is_paused` at that exact block. It rejects a changed binary, a paused city or a view from another block. The three focused probe tests pass, including these failure cases. The actual public-host run still awaits a target VPS and hostname.

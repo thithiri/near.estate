@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { isIP } from "node:net";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { baseDecode } from "@near-js/utils";
 
 const deployment = JSON.parse(
   readFileSync(new URL("../deployments/testnet.json", import.meta.url), "utf8"),
@@ -30,6 +31,63 @@ async function json(fetcher, origin, path) {
   return response.json();
 }
 
+async function rpcQuery(fetcher, rpcUrl, params) {
+  const response = await fetcher(rpcUrl, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: "estate-public-release",
+      method: "query",
+      params,
+    }),
+    redirect: "error",
+    signal: AbortSignal.timeout(10_000),
+  });
+  requireResponse(response, "Testnet RPC");
+  const envelope = await response.json();
+  if (envelope.error || !envelope.result)
+    throw new Error(
+      `Testnet RPC query failed: ${JSON.stringify(envelope.error ?? envelope)}`,
+    );
+  return envelope.result;
+}
+
+async function verifyLiveContract(fetcher, rpcUrl, contractId) {
+  const account = await rpcQuery(fetcher, rpcUrl, {
+    request_type: "view_account",
+    finality: "final",
+    account_id: contractId,
+  });
+  if (
+    typeof account.code_hash !== "string" ||
+    typeof account.block_hash !== "string" ||
+    !Number.isSafeInteger(account.block_height) ||
+    account.block_height < 1
+  )
+    throw new Error(
+      "Testnet RPC omitted finalized account code or block details",
+    );
+  const codeSha256 = Buffer.from(baseDecode(account.code_hash)).toString("hex");
+  if (codeSha256 !== deployment.wasmSha256)
+    throw new Error("Live contract code differs from the release manifest");
+  const pausedView = await rpcQuery(fetcher, rpcUrl, {
+    request_type: "call_function",
+    block_id: account.block_hash,
+    account_id: contractId,
+    method_name: "is_paused",
+    args_base64: "e30=",
+  });
+  if (
+    pausedView.block_hash !== account.block_hash ||
+    !Array.isArray(pausedView.result)
+  )
+    throw new Error("Testnet RPC pause view did not match the finalized block");
+  const paused = JSON.parse(Buffer.from(pausedView.result).toString("utf8"));
+  if (paused !== false) throw new Error("Live contract is paused");
+  return { codeSha256, finalizedBlockHeight: account.block_height, paused };
+}
+
 function webMeta(html, name) {
   const matches = [
     ...html.matchAll(
@@ -48,6 +106,9 @@ export async function verifyPublicRelease(
     maxIndexerAgeSeconds = 900,
     contractId = deployment.contractId,
     sourceRevision,
+    rpcUrl = process.env.ESTATE_TESTNET_RPC_URL ??
+      "https://test.rpc.fastnear.com",
+    rpcFetcher = fetcher,
   } = {},
 ) {
   const url = new URL(origin);
@@ -72,6 +133,8 @@ export async function verifyPublicRelease(
     throw new Error("The public release probe needs a public hostname");
   if (!Number.isSafeInteger(maxIndexerAgeSeconds) || maxIndexerAgeSeconds < 1)
     throw new Error("Indexer age limit must be a positive integer");
+  if (new URL(rpcUrl).protocol !== "https:")
+    throw new Error("Testnet RPC URL must use HTTPS");
   if (fetcher === fetch && process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0")
     throw new Error("TLS certificate verification is disabled in this process");
   const base = url.origin;
@@ -126,6 +189,7 @@ export async function verifyPublicRelease(
   const ageSeconds = Math.floor((nowMs - economy.indexedThroughAt) / 1_000);
   if (ageSeconds < 0 || ageSeconds > maxIndexerAgeSeconds)
     throw new Error(`Public event indexer is stale (${ageSeconds} seconds)`);
+  const liveContract = await verifyLiveContract(rpcFetcher, rpcUrl, contractId);
   return {
     origin: base,
     contractId: health.contractId,
@@ -137,6 +201,7 @@ export async function verifyPublicRelease(
     indexedThroughHeight: economy.indexedThroughHeight,
     indexerAgeSeconds: ageSeconds,
     imageGenerationEnabled: false,
+    ...liveContract,
     httpsVerifiedByClient: fetcher === fetch,
   };
 }
