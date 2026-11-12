@@ -11,6 +11,7 @@
     "postinstall": "patch-package",
     "dev:guest": "node scripts/dev-local.mjs --guest",
     "dev:city": "node scripts/dev-local.mjs --city",
+    "dev:city:snapshot": "node scripts/snapshot-dev-city.mjs",
     "test:browser": "playwright test",
     "test:browser:local": "ESTATE_BROWSER_LOCAL_URL=${ESTATE_BROWSER_LOCAL_URL:-http://127.0.0.1:5173} playwright test",
     "test:browser:city": "ESTATE_BROWSER_CITY_FIXTURE=1 playwright test tests/browser/variable-live-street.spec.ts tests/browser/sandbox-approved-street.spec.ts",
