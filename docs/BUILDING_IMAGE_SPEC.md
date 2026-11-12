@@ -1,5 +1,7 @@
 # Building image specification · draft 7
 
+The newer [variable-width illustrated asset specification](ART_GENERATION_SPEC_V2.md) covers the fifteen 1/2/3-unit guest designs, new cars, interface theme and curb markings. This document remains the prompt and moderation record for the earlier two-unit illustrated set and current owner-generation profile.
+
 This is the art direction for illustrated player buildings. Ten operator-created level-2 images cover both shapes of all five player building types. Thirty more images complete levels 1, 3 and 4 for both shapes of all five player building types. They demonstrate possible looks in the running guest street; they are not published owner appearances. The existing curated library and on-chain approval flow remain the live path. Future owner generation can reuse this specification after provider, moderation and budget checks are enabled.
 
 ## Game fit

@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>near.estate — street graphics lab</title>
+    <style>
+      :root {
+        font-family: "Trebuchet MS", Arial, sans-serif;
+        color: #24344d;
+        background: #e6eff4;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      header {
+        background: #153a52;
+        color: white;
+        padding: 16px max(18px, calc((100vw - 1180px) / 2));
+        display: flex;
+        align-items: baseline;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      header strong {
+        font-size: 25px;
+        letter-spacing: -0.04em;
+      }
+      header span {
+        color: #b8dbe8;
+        font-size: 13px;
+      }
+      main {
+        max-width: 1216px;
+        margin: 0 auto;
+        padding: 20px 18px 50px;
+      }
+      h1 {
+        font-size: clamp(23px, 3vw, 34px);
+        margin: 0 0 6px;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 0 0 12px;
+      }
+      p {
+        margin: 0;
+        line-height: 1.45;
+      }
+      .intro {
+        margin-bottom: 18px;
+        color: #566a78;
+      }
+      .panel {
+        background: #fff;
+        border: 1px solid #c7d7df;
+        border-radius: 17px;
+        box-shadow: 0 9px 25px #193a4b13;
+        overflow: hidden;
+        margin-bottom: 18px;
+      }
+      .panel-head {
+        padding: 16px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .panel-head p {
+        color: #677c89;
+        font-size: 13px;
+      }
+      select,
+      button,
+      .file-button {
+        font: inherit;
+        border-radius: 9px;
+        min-height: 38px;
+      }
+      select {
+        border: 1px solid #a9c0cb;
+        background: white;
+        padding: 6px 32px 6px 10px;
+      }
+      button,
+      .file-button {
+        cursor: pointer;
+        border: 1px solid #9ab6c2;
+        background: #f5fbfd;
+        color: #153a52;
+        padding: 8px 12px;
+        font-weight: bold;
+      }
+      button:hover,
+      .file-button:hover {
+        background: #e1f4f9;
+      }
+      button:focus-visible,
+      select:focus-visible,
+      .file-button:focus-within {
+        outline: 3px solid #f7b951;
+        outline-offset: 2px;
+      }
+      .controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .street-window {
+        overflow-x: auto;
+        overflow-y: hidden;
+        background: #cbe4ed;
+        border-top: 1px solid #b5d2dc;
+      }
+      #street {
+        display: block;
+        height: 300px;
+        max-width: none;
+      }
+      .legend {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        padding: 11px 18px 14px;
+        font-size: 13px;
+        color: #526a79;
+      }
+      .legend b {
+        color: #153a52;
+      }
+      .selection {
+        padding: 16px 18px;
+        border-top: 1px solid #dce8ee;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .selection p {
+        color: #526a79;
+        font-size: 13px;
+        flex: 1 1 280px;
+      }
+      .file-button input {
+        display: none;
+      }
+      .small {
+        font-size: 12px;
+        color: #6d808a;
+      }
+      .choice-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .choice-column {
+        padding: 15px;
+      }
+      .choice-column h3 {
+        margin: 0 0 4px;
+        font-size: 18px;
+      }
+      .choice-column .size-note {
+        color: #617684;
+        font-size: 12px;
+        margin-bottom: 12px;
+      }
+      .choice-card {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        text-align: left;
+        margin: 8px 0;
+        padding: 8px;
+        background: #f5f9fa;
+        border: 2px solid transparent;
+      }
+      .choice-card[aria-pressed="true"] {
+        border-color: #2d91a8;
+        background: #e7f7f8;
+      }
+      .choice-card canvas {
+        width: 118px;
+        height: 100px;
+        flex: 0 0 118px;
+        background: #cfe8ef;
+        border-radius: 6px;
+      }
+      .choice-card strong {
+        display: block;
+        font-size: 13px;
+      }
+      .choice-card small {
+        display: block;
+        color: #69808d;
+        font-weight: normal;
+        font-size: 11px;
+        line-height: 1.3;
+        margin-top: 3px;
+      }
+      .note {
+        padding: 15px 18px;
+        color: #4d6775;
+        font-size: 13px;
+      }
+      @media (max-width: 850px) {
+        .choice-grid {
+          grid-template-columns: 1fr;
+        }
+        .choice-column {
+          padding-bottom: 5px;
+        }
+        .choice-card {
+          display: inline-flex;
+          vertical-align: top;
+          width: calc(33.333% - 7px);
+          min-height: 119px;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .choice-card canvas {
+          width: 100%;
+          flex-basis: auto;
+        }
+      }
+      @media (max-width: 560px) {
+        .choice-card {
+          width: 100%;
+          min-height: 0;
+          flex-direction: row;
+        }
+        .choice-card canvas {
+          width: 118px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>near.estate</strong
+      ><span>Street graphics lab · local preview · no wallet or upload</span>
+    </header>
+    <main>
+      <h1>A street with room for every building</h1>
+      <p class="intro">
+        One unit of frontage holds one curb space. Try the building shapes and
+        drop in your own logo to see how it sits on the sign.
+      </p>
+      <section class="panel" aria-label="Street preview">
+        <div class="panel-head">
+          <div>
+            <h2>Street preview</h2>
+            <p>
+              Ten plots per side · six 2-unit, three 1-unit, one 3-unit · scroll
+              the street
+            </p>
+          </div>
+          <div class="controls">
+            <select id="level-choice" aria-label="Building level">
+              <option value="1">Level 1 · 70px</option>
+              <option value="2" selected>Level 2 · 100px</option>
+              <option value="3">Level 3 · 130px</option>
+              <option value="4">Level 4 · 160px</option>
+            </select>
+            <select id="street-choice" aria-label="Street">
+              <option value="main">Main Street</option>
+              <option value="market">Market Street</option>
+              <option value="river">River Street</option>
+              <option value="central">Central Avenue</option>
+              <option value="harbor">Harbor Avenue</option></select
+            ><button id="flip-side">North side ↔ South side</button>
+          </div>
+        </div>
+        <div class="street-window">
+          <canvas
+            id="street"
+            width="1682"
+            height="300"
+            aria-label="Street preview with ten variable width plots"
+          ></canvas>
+        </div>
+        <div class="legend">
+          <span><b>1 unit</b> · 1 space</span
+          ><span><b>2 units</b> · 2 spaces</span
+          ><span><b>3 units</b> · 3 spaces</span
+          ><span><b>Green signs</b> · crossings</span>
+        </div>
+        <div class="selection">
+          <div>
+            <strong id="selection-label">Selected plot</strong>
+            <p id="selection-detail"></p>
+          </div>
+          <label class="file-button"
+            >Preview my logo
+            <input
+              id="logo-file"
+              type="file"
+              accept="image/png,image/jpeg,image/webp" /></label
+          ><button id="clear-logo">Clear logo</button
+          ><span id="logo-status" class="small"
+            >Local preview only. Images are not saved.</span
+          >
+        </div>
+      </section>
+      <section
+        class="choice-grid"
+        id="choice-grid"
+        aria-label="Building choices"
+      ></section>
+      <section class="panel note">
+        <strong>How this becomes a game asset:</strong> the building image keeps
+        a blank sign surface. The logo is a separate, square image that the
+        owner uploads and a moderator approves for that building. The street
+        draws it inside the sign. Until approval, it shows the building
+        initials.
+      </section>
+    </main>
+    <script type="module" src="/src/graphics-lab.ts"></script>
+  </body>
+</html>

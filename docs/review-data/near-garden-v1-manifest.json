@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "renderProfileVersion": 1,
+  "buildingType": "Restaurant",
+  "level": 2,
+  "spriteHash": "60b904d935ef05d0b9ab16d183364c64906184b5f0ebfcc52ea314485a31149c",
+  "thumbnailHash": "a105067bb7a67e9a6c30ef976cb16fa14bc1d625a6b9b2386b9c94d24f5dfde1",
+  "alphaBounds": {
+    "x": 6.25,
+    "y": 74.25,
+    "width": 127.5,
+    "height": 84.5
+  },
+  "logoRect": {
+    "x": 93,
+    "y": 91,
+    "width": 20,
+    "height": 20
+  },
+  "billboardRect": {
+    "x": 10,
+    "y": 91,
+    "width": 48,
+    "height": 24
+  }
+}

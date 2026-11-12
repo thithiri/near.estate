@@ -9,6 +9,7 @@ import {
   TOWER_FLOORS,
   TOWER_SPACES_PER_FLOOR,
   ThemeHint,
+  variableDesignHasBillboard,
   type ChainOwnerConfig,
   type NPCSite,
   type ChainPlayerSnapshot,
@@ -18,10 +19,18 @@ import {
   type ChainStreetSide,
 } from "@estate/shared";
 import { ChainReader } from "./chain-reader.js";
+import { curbDirection } from "./city-navigation.js";
 import { garageRecovery } from "./garage-recovery.js";
 import { PRESET_PALETTES } from "./preset-catalog.js";
 import { sessionFullPayout } from "./plot-earnings.js";
 import { buildingMarkup } from "./studio-screen.js";
+import { loadApprovedNeighbourThumbnail } from "./approved-neighbour.js";
+import { adDestinationLink, submitAdForReview } from "./owner-ad-flow.js";
+import { prepareBillboardImage } from "./billboard-preview.js";
+import { choices } from "./frontage-art.js";
+import { guestBuildingUrl } from "./guest-illustration.js";
+import { carSpriteFile } from "./world-sprites.js";
+import type { BuildingLevel } from "./frontage-layout.js";
 import {
   ownerPalettePickerMarkup,
   ownerShapeName,
@@ -148,6 +157,8 @@ export class ChainScreen {
     | null = null;
   private mediaProposal: MediaProposalRecord | null = null;
   private mediaLinkDraft = "";
+  private adLinkDraft = "";
+  private adFillBillboard = true;
   private mockJob: MockGenerationJob | null = null;
   private paidJob: PaidGenerationJob | null = null;
   private paidAvailable: boolean | null = null;
@@ -157,6 +168,9 @@ export class ChainScreen {
   private mockMaterials: MaterialHint[] = [];
   private usePriorArt = true;
   private selectedMockCandidate = 0;
+  private approvedNeighbourThumbnails = new Map<string, string>();
+  private loadingNeighbourThumbnails = new Set<string>();
+  private failedNeighbourThumbnails = new Map<string, number>();
   private keyStatus: GameplayKeyStatus = "none";
   private accountId: string | null = null;
   private selectedCarId: number | null = null;
@@ -249,6 +263,8 @@ export class ChainScreen {
       this.pendingUpload = null;
       this.mediaProposal = null;
       this.mediaLinkDraft = "";
+      this.adLinkDraft = "";
+      this.adFillBillboard = true;
       this.mockJob = null;
       this.paidJob = null;
       this.mockHistory = null;
@@ -513,6 +529,56 @@ export class ChainScreen {
     }
   }
 
+  private requestNeighbourThumbnail(
+    hash: string,
+    buildingType: ChainPlot["plot"]["building"]["building_type"],
+    level: number,
+  ): void {
+    if (
+      this.approvedNeighbourThumbnails.has(hash) ||
+      this.loadingNeighbourThumbnails.has(hash) ||
+      Date.now() < (this.failedNeighbourThumbnails.get(hash) ?? 0)
+    )
+      return;
+    this.loadingNeighbourThumbnails.add(hash);
+    void loadApprovedNeighbourThumbnail(hash, buildingType, level)
+      .then((url) => {
+        this.approvedNeighbourThumbnails.set(hash, url);
+        this.failedNeighbourThumbnails.delete(hash);
+        if (this.visible) this.updateNeighbourThumbnail(hash);
+      })
+      .catch(() => {
+        this.failedNeighbourThumbnails.set(hash, Date.now() + 30_000);
+        if (this.visible) this.updateNeighbourThumbnail(hash);
+      })
+      .finally(() => this.loadingNeighbourThumbnails.delete(hash));
+  }
+
+  private updateNeighbourThumbnail(hash: string): void {
+    const url = this.approvedNeighbourThumbnails.get(hash);
+    this.host
+      .querySelectorAll<HTMLElement>(`[data-approved-neighbour="${hash}"]`)
+      .forEach((card) => {
+        const status = card.querySelector<HTMLElement>(
+          ".owner-neighbour-status",
+        );
+        if (url) {
+          const art = card.querySelector(".studio-building");
+          if (art) {
+            const image = document.createElement("img");
+            image.src = url;
+            image.alt = "Approved neighboring facade";
+            image.width = 140;
+            image.height = 160;
+            art.replaceWith(image);
+          }
+          status?.remove();
+        } else if (status) {
+          status.textContent = "Approved art unavailable · preset shown";
+        }
+      });
+  }
+
   private mockStudioMarkup(selected: ChainPlot, accountId: string): string {
     const plot = selected.plot;
     const building = plot.building;
@@ -559,7 +625,25 @@ export class ChainScreen {
       if (!other)
         return `<div class="owner-neighbour"><span>Street end</span></div>`;
       const look = other.plot.building;
-      return `<div class="owner-neighbour">${buildingMarkup(look.building_type, look.variant, look.level, look.primary_color)}<span>${html(look.name || `Plot ${other.plot.index + 1}`)}</span></div>`;
+      const hash = look.approved_manifest_hash;
+      if (hash)
+        this.requestNeighbourThumbnail(hash, look.building_type, look.level);
+      const thumbnail = hash
+        ? this.approvedNeighbourThumbnails.get(hash)
+        : null;
+      const art = thumbnail
+        ? `<img src="${thumbnail}" alt="Approved neighboring facade" width="140" height="160" />`
+        : buildingMarkup(
+            look.building_type,
+            look.variant,
+            look.level,
+            look.primary_color,
+          );
+      const status =
+        hash && !thumbnail
+          ? `<small class="owner-neighbour-status">${Date.now() < (this.failedNeighbourThumbnails.get(hash) ?? 0) ? "Approved art unavailable · preset shown" : "Loading approved art…"}</small>`
+          : "";
+      return `<div class="owner-neighbour" ${hash ? `data-approved-neighbour="${hash}"` : ""}>${art}<span>${html(look.name || `Plot ${other.plot.index + 1}`)}</span>${status}</div>`;
     };
     return `<div class="owner-mock-studio"><h4>${job?.mode === "paid" ? "Prompt-generated designs" : "Explore three designs"}</h4>
       <p class="muted">${job?.mode === "paid" ? "These private designs use your description. Choose one for review; your current building stays live until approval." : "Curated designs use building art from the game. Your description is saved with the private job but does not change these images."}</p>
@@ -597,22 +681,124 @@ export class ChainScreen {
     </div>`;
   }
 
+  private variableFacadeReviewMarkup(
+    selected: ChainPlot,
+    accountId: string,
+  ): string {
+    const plot = selected.plot;
+    if (!("frontage_units" in plot)) return "";
+    const job =
+      this.mockJob?.plotId === plot.id && this.mockJob.accountId === accountId
+        ? this.mockJob
+        : null;
+    const paidJob = this.paidJob?.plotId === plot.id ? this.paidJob : null;
+    const index = job?.selectedCandidateId
+      ? selectedCandidateIndex(job)
+      : this.selectedMockCandidate;
+    const candidate = job?.candidates[index];
+    const manifest = candidate?.manifest;
+    const current = Boolean(
+      job &&
+        job.promptSpec?.version === 5 &&
+        job.promptSpec.frontageUnits === plot.frontage_units &&
+        job.promptSpec.designChoice === plot.design_choice &&
+        job.promptSpec.buildingType === plot.building.building_type &&
+        job.promptSpec.level === plot.building.level &&
+        job.buildingType === plot.building.building_type &&
+        job.level === plot.building.level &&
+        job.layoutRevision === plot.building.layout_revision &&
+        manifest?.schemaVersion === 2 &&
+        manifest.frontageUnits === plot.frontage_units &&
+        manifest.designChoice === plot.design_choice &&
+        manifest.buildingType === plot.building.building_type &&
+        manifest.level === plot.building.level,
+    );
+    const pending =
+      candidate &&
+      plot.building.pending_appearance?.manifest_hash ===
+        candidate.manifestHash;
+    const decision =
+      candidate &&
+      plot.building.last_appearance_decision?.reference.manifest_hash ===
+        candidate.manifestHash
+        ? plot.building.last_appearance_decision
+        : null;
+    const canSubmit = Boolean(
+      current &&
+        job &&
+        candidate &&
+        (job.status === "ready" || job.status === "selected") &&
+        (job.appearanceRevision === plot.building.appearance_revision ||
+          pending),
+    );
+    const candidateUnits =
+      manifest?.schemaVersion === 2
+        ? manifest.frontageUnits
+        : plot.frontage_units;
+    const candidateDesign =
+      manifest?.schemaVersion === 2
+        ? manifest.designChoice
+        : plot.design_choice;
+    const candidateName =
+      choices.filter((choice) => choice.units === candidateUnits)[
+        candidateDesign
+      ]?.name ?? "Building";
+    const width = candidateUnits * 85;
+    return `<div class="owner-mock-studio owner-variable-review"><h4>Custom facade review</h4>
+      <p class="muted">${this.paidAvailable ? "Describe the surface details for this plot's chosen shape. Your current building stays visible until a moderator approves a generated image." : "New image requests are paused. If a design job already exists for this plot, restore it to review the exact image before submitting. The current building stays visible until a moderator approves the proposal."}</p>
+      ${this.paidAvailable ? `<label>Your idea <textarea id="owner-mock-description" maxlength="800" rows="3" placeholder="Warm market windows and copper trim…">${html(this.mockDescription)}</textarea></label><label><input id="owner-use-prior-art" type="checkbox" ${this.usePriorArt ? "checked" : ""}> Use compatible approved art as a reference when available</label><button id="owner-generate-paid" ${this.busy || !this.mockDescription.trim() ? "disabled" : ""}>Generate custom facade (invite pilot)</button><button id="owner-restore-paid" ${this.busy ? "disabled" : ""}>Restore prompt job</button>` : ""}
+      ${paidJob ? `<div class="owner-paid-progress"><p>Prompt job: ${html(paidJob.status.replaceAll("_", " "))} · ${paidJob.acceptedCount} generated, ${paidJob.reviewedCount} reviewed, ${paidJob.approvedCount} approved · ${paidJob.attemptsStarted} of 4 attempts used.</p>${paidJob.status === "uncertain" ? `<p class="muted">The image provider result needs operator review. No automatic retry will be made.</p>` : ""}<button id="owner-refresh-paid" ${this.busy ? "disabled" : ""}>Refresh prompt job</button></div>` : ""}
+      <button id="owner-restore-mock" ${this.busy ? "disabled" : ""}>Restore existing design job</button>
+      ${job && !current && !decision ? `<p class="chain-parked">This job does not match the plot's current width, design, category or level. It cannot be submitted.</p>` : ""}
+      ${
+        job && (current || decision) && candidate
+          ? `<p>Plot ${plot.index + 1} · ${candidateUnits} unit${candidateUnits === 1 ? "" : "s"} · ${html(candidateName)} · level ${job.level}</p>
+        <div class="owner-variable-candidates" data-count="${job.candidates.length}">${job.candidates.map((entry, candidateIndex) => `<button type="button" data-owner-candidate="${candidateIndex}" aria-pressed="${candidateIndex === index}" ${job.status !== "ready" ? "disabled" : ""}><img src="${html(entry.thumbnailUrl)}" alt="Design ${entry.id}" /><span>Design ${entry.id}</span></button>`).join("")}</div>
+        <div class="owner-variable-review-preview" aria-label="Selected custom facade at game width"><img src="${html(candidate.spriteUrl)}" alt="Selected custom facade" width="${width}" height="190" /></div>
+        ${pending ? `<p class="chain-parked">This exact image is pending moderator review.</p>` : ""}
+        ${decision?.status === "Approved" ? `<p class="chain-parked">${plot.building.approved_manifest_hash === candidate.manifestHash ? "This exact image is approved for the current building." : "This image was approved earlier; the current building may differ."}</p>` : ""}
+        ${decision?.status === "Rejected" ? `<p class="chain-parked">This image was rejected: ${html(decision.reason ?? "No reason supplied")}</p>` : ""}
+        ${decision?.status === "Revoked" ? `<p class="chain-parked">This image was withdrawn: ${html(decision.reason ?? "No reason supplied")}</p>` : ""}
+        ${canSubmit && !decision ? `<button id="owner-submit-mock" ${this.busy ? "disabled" : ""}>${pending ? "Confirm proposal" : job.status === "selected" ? "Submit or check proposal" : "Submit selected image for review"}</button>` : ""}`
+          : ""
+      }
+    </div>`;
+  }
+
   private ownerMediaMarkup(selected: ChainPlot): string {
     const plot = selected.plot;
+    const adAspect = "frontage_units" in plot ? "88 / 20" : "2 / 1";
+    const adCropStyle = ` style="aspect-ratio: ${adAspect}"`;
+    const billboardAvailable =
+      !("frontage_units" in plot) ||
+      (plot.building.level >= 3 &&
+        variableDesignHasBillboard(plot.frontage_units, plot.design_choice));
     const status = (["Logo", "Billboard"] as const)
       .map((kind) => {
         const slot = kind === "Logo" ? plot.logo : plot.billboard;
         const eligible =
           kind === "Logo"
             ? selected.logo_eligible
-            : selected.billboard_eligible;
+            : selected.billboard_eligible && billboardAvailable;
         const active = eligible ? slot.active : null;
         const decision = slot.last_decision;
-        return `<div class="owner-media-status"><strong>${kind}</strong> · ${active ? "Visible on this building" : slot.pending ? "Awaiting review" : slot.active ? "Hidden after building change" : "Showing fallback"}
-          ${active ? `<img class="owner-upload-preview" src="/api/assets/${html(active.content.asset_hash)}" alt="Approved ${kind.toLowerCase()}" />` : ""}
+        const statusText =
+          kind === "Billboard" &&
+          !billboardAvailable &&
+          (slot.active || slot.pending)
+            ? "No billboard surface on this design"
+            : active
+              ? "Visible on this building"
+              : slot.pending
+                ? "Awaiting review"
+                : slot.active
+                  ? "Hidden after building change"
+                  : "Showing fallback";
+        return `<div class="owner-media-status"><strong>${kind}</strong> · ${statusText}
+          ${active ? `<img class="owner-upload-preview ${kind === "Billboard" ? "owner-ad-crop" : ""}"${kind === "Billboard" ? adCropStyle : ""} src="/api/assets/${html(active.content.asset_hash)}" alt="Approved ${kind.toLowerCase()}" />` : ""}
           ${active?.content.link ? `<a href="${html(active.content.link)}" target="_blank" rel="noopener noreferrer">Approved link</a>` : ""}
           ${decision?.status === "Rejected" || decision?.status === "Revoked" ? `<p class="chain-parked">${decision.status}: ${html(decision.reason ?? "No reason supplied")}</p>` : ""}
-          ${slot.active && !eligible && !slot.pending ? `<button type="button" data-owner-reuse-media="${kind}" ${this.busy ? "disabled" : ""}>Reuse approved ${kind.toLowerCase()}</button>` : ""}
+          ${slot.active && !eligible && !slot.pending && (kind !== "Billboard" || billboardAvailable) ? `<button type="button" data-owner-reuse-media="${kind}" ${this.busy ? "disabled" : ""}>Reuse approved ${kind.toLowerCase()}</button>` : ""}
           ${slot.active || slot.pending ? `<button type="button" data-owner-remove-media="${kind}" ${this.busy ? "disabled" : ""}>Remove ${kind.toLowerCase()}</button>` : ""}
         </div>`;
       })
@@ -622,20 +808,28 @@ export class ChainScreen {
     const proposal =
       this.mediaProposal?.plotId === plot.id ? this.mediaProposal : null;
     return `<div class="owner-media"><h4>Logo and billboard</h4>
-      <p class="muted">Upload a PNG, JPEG or WebP image up to 1 MB. It stays private until your wallet proposes it and a moderator approves it.</p>
+      <p class="muted">Upload a PNG, JPEG or WebP image up to 1 MB. Keep billboard text in the centre of a wide image: the game crops it to fit the sign. The image stays private until your wallet proposes it and a moderator approves it.</p>
       ${status}
       <label>Logo <input id="owner-logo-file" type="file" accept="image/png,image/jpeg,image/webp" /></label>
       <button id="owner-upload-logo" ${this.busy ? "disabled" : ""}>Upload logo</button>
       <button id="owner-restore-logo" ${this.busy ? "disabled" : ""}>Restore last logo</button>
-      <label>Billboard <input id="owner-ad-file" type="file" accept="image/png,image/jpeg,image/webp" /></label>
-      <button id="owner-upload-ad" ${this.busy ? "disabled" : ""}>Upload billboard</button>
-      <button id="owner-restore-ad" ${this.busy ? "disabled" : ""}>Restore last billboard</button>
+      ${
+        billboardAvailable
+          ? `<label>Ad image for billboard <input id="owner-ad-file" type="file" accept="image/png,image/jpeg,image/webp" /></label>
+      <label class="owner-ad-fit"><input id="owner-ad-fill" type="checkbox" ${this.adFillBillboard ? "checked" : ""} /> Fill billboard (crop edges)</label>
+      <small class="muted">Uncheck to keep the whole image with empty space around narrow artwork.</small>
+      <img id="owner-ad-local-preview" class="owner-ad-crop"${adCropStyle} alt="Selected ad cropped to the building billboard" hidden />
+      <label>Ad website (optional) <input id="owner-ad-link" type="url" maxlength="256" placeholder="https://brand.example" value="${html(this.adLinkDraft)}" /></label>
+      <button id="owner-upload-ad" ${this.busy ? "disabled" : ""}>Submit ad for review</button>
+      <button id="owner-restore-ad" ${this.busy ? "disabled" : ""}>Restore last billboard</button>`
+          : `<p class="muted">This design has no billboard surface at its current level.</p>`
+      }
       ${
         upload
-          ? `<p class="chain-parked">${upload.kind} image · ${upload.hash.slice(0, 12)}…</p><img class="owner-upload-preview" src="${html(upload.url)}" alt="Uploaded ${upload.kind.toLowerCase()} preview" />
+          ? `<p class="chain-parked">${upload.kind} image · ${upload.hash.slice(0, 12)}…</p><img class="owner-upload-preview ${upload.kind === "Billboard" ? "owner-ad-crop" : ""}"${upload.kind === "Billboard" ? adCropStyle : ""} src="${html(upload.url)}" alt="Uploaded ${upload.kind.toLowerCase()} preview" />
         ${upload.layoutRevision !== plot.building.layout_revision ? `<p class="muted">This upload belongs to an earlier building layout. Use Reuse approved ${upload.kind.toLowerCase()} above, or upload the image again.</p>` : ""}
-        <label>Destination link (optional) <input id="owner-media-link" type="url" maxlength="256" placeholder="https://brand.example" value="${html(this.mediaLinkDraft)}" ${proposal?.status === "selected" ? "disabled" : ""} /></label>
-        ${!proposal || proposal.status !== "selected" ? `<button id="owner-create-media" ${this.busy || upload.layoutRevision !== plot.building.layout_revision ? "disabled" : ""}>Prepare ${upload.kind.toLowerCase()} proposal</button>` : ""}`
+        ${upload.kind === "Logo" ? `<label>Destination link (optional) <input id="owner-media-link" type="url" maxlength="256" placeholder="https://brand.example" value="${html(this.mediaLinkDraft)}" ${proposal?.status === "selected" ? "disabled" : ""} /></label>` : ""}
+        ${!proposal || !["selected", "submitted", "approved"].includes(proposal.status) ? `<button id="owner-create-media" ${this.busy || upload.layoutRevision !== plot.building.layout_revision ? "disabled" : ""}>Prepare ${upload.kind.toLowerCase()} proposal</button>` : ""}`
           : ""
       }
       ${
@@ -694,7 +888,8 @@ export class ChainScreen {
         stats
           ? `<div class="owner-stats-grid"><div><span>Estimated views</span><strong>${stats.totals.impressions}</strong></div><div><span>Average visible time</span><strong>${(stats.totals.averageVisibleMs / 1_000).toFixed(1)} s</strong></div><div><span>Parks</span><strong>${stats.totals.parks}</strong></div><div><span>Tickets</span><strong>${stats.totals.tickets}</strong></div></div>
         <p class="muted">${html(indexLabel)} ${html(exposureLabel)} Views are client-reported estimates, not billing records.</p>
-        <div class="owner-stats-days">${stats.days.map((day) => `<div class="owner-stats-day"><strong>${html(day.day)}</strong><span>${day.impressions} views · ${(day.averageVisibleMs / 1_000).toFixed(1)} s average · ${day.parks} parks · ${day.tickets} tickets</span></div>`).join("")}</div>`
+        <div class="owner-stats-days">${stats.days.map((day) => `<div class="owner-stats-day"><strong>${html(day.day)}</strong><span>${day.impressions} views · ${(day.averageVisibleMs / 1_000).toFixed(1)} s average · ${day.parks} parks · ${day.tickets} tickets</span></div>`).join("")}</div>
+        ${stats.linkedHistory ? `<p class="chain-parked"><strong>Earlier deed activity:</strong> ${stats.linkedHistory.totals.impressions} views, ${stats.linkedHistory.totals.parks} parks and ${stats.linkedHistory.totals.tickets} tickets on ${html(stats.linkedHistory.sourcePlotId)} before the move. These are separate from this plot's totals.</p>` : ""}`
           : ""
       }
     </div>`;
@@ -719,6 +914,13 @@ export class ChainScreen {
       return `<section class="card" id="chain-owned-plots"><h2>My plots</h2><p>Loading owner controls…</p></section>`;
     const plot = selected.plot;
     const building = plot.building;
+    const variablePlot = "frontage_units" in plot ? plot : null;
+    const designChoices = variablePlot
+      ? choices.filter((choice) => choice.units === variablePlot.frontage_units)
+      : [];
+    const streetDesign = variablePlot
+      ? designChoices[variablePlot.design_choice]
+      : null;
     const pending =
       plot.pending_rule && plot.pending_rule.effective_at > this.chainTime;
     const typeCost = BigInt(config.change_building_type_cost);
@@ -738,7 +940,7 @@ export class ChainScreen {
       (kind) => plot[kind].active || plot[kind].pending,
     );
     return `<section class="card" id="chain-owned-plots"><h2>My plots · ${owned.length}</h2>
-      <label>Manage plot <select id="chain-owned-plot">${owned.map((entry) => `<option value="${html(entry.plot.id)}" ${entry.plot.id === plot.id ? "selected" : ""}>${html(entry.plot.road_id)} · ${entry.plot.side} · Plot ${entry.plot.index + 1}${entry.plot.corner ? " (corner)" : ""}</option>`).join("")}</select></label>
+      <label>Manage plot <select id="chain-owned-plot">${owned.map((entry) => `<option value="${html(entry.plot.id)}" ${entry.plot.id === plot.id ? "selected" : ""}>${html(entry.plot.road_id)} · ${curbDirection(entry.plot.road_id, entry.plot.side)} · Plot ${entry.plot.index + 1}${entry.plot.corner ? " (corner)" : ""}</option>`).join("")}</select></label>
       <div class="owner-grid">
         <div class="owner-section"><h3>Parking rules</h3>
           <p>Current: <strong>${html(ruleLabel(selected.effective_rule))}</strong></p>
@@ -751,19 +953,16 @@ export class ChainScreen {
           ${!keyReady ? `<p class="muted">Enable the gameplay key above to change parking rules.</p>` : ""}
         </div>
         <div class="owner-section"><h3>Building</h3>
-          <p>Current: ${html(building.building_type)} · level ${building.level} · ${ownerShapeName(building.building_type, building.variant as 1 | 2)}</p>
-          ${ownerTypePickerMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}
-          ${ownerShapePickerMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}
-          <p class="owner-preview-label"><strong>Preview:</strong> ${draft.buildingType} · level ${building.level} · ${ownerShapeName(draft.buildingType, draft.variant)}</p>
-          <div class="owner-building-preview" aria-label="Selected building preview">${buildingMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}</div>
-          ${changingType ? `<p class="muted">This change keeps the current colour and name (${html(building.name)}). Edit them after the type change confirms.</p>` : `${ownerPalettePickerMarkup(draft.palette)}<label>Name <input id="owner-building-name" maxlength="24" value="${html(draft.name)}" /></label>`}
-          ${changingType ? `<button id="owner-change-type" ${this.busy || BigInt(balance) < typeCost ? "disabled" : ""}>Change to ${draft.buildingType} · ${formatCoins(config.change_building_type_cost)} coins</button><p class="muted">Changing type uses its curated preset and keeps level ${building.level}. Choose colour and name afterward.</p>` : `<button id="owner-save-preset" ${this.busy ? "disabled" : ""}>Use this preset</button>`}
+          <p>Current: ${variablePlot ? `${html(streetDesign?.name ?? "Building")} · level ${building.level} · ${variablePlot.frontage_units} unit${variablePlot.frontage_units === 1 ? "" : "s"}` : `${html(building.building_type)} · level ${building.level} · ${ownerShapeName(building.building_type, building.variant as 1 | 2)}`}</p>
+          ${variablePlot ? `<div class="owner-curated-designs"><h4>Street design · ${variablePlot.frontage_units} unit${variablePlot.frontage_units === 1 ? "" : "s"}</h4><p>Choose one of five shapes for this plot. The current building level sets its height.</p><div class="owner-design-options">${designChoices.map((choice, index) => `<button type="button" data-owner-design="${index}" aria-pressed="${variablePlot.design_choice === index}" ${this.busy || variablePlot.design_choice === index ? "disabled" : ""}><img src="${html(guestBuildingUrl(choice, building.level as BuildingLevel))}" alt="" width="${choice.units * 85}" height="190" /><span>${html(choice.name)}</span></button>`).join("")}</div><p class="muted">A new design replaces the current facade and hides approved media until it is reviewed for the new shape. Your wallet confirms the change.</p></div>` : ""}
+          ${variablePlot ? `<p class="owner-preview-label"><strong>Street preview:</strong> ${html(streetDesign?.name ?? "Building")} · level ${building.level}</p><div class="owner-variable-preview" aria-label="Current street building preview">${streetDesign ? `<img src="${html(guestBuildingUrl(streetDesign, building.level as BuildingLevel))}" alt="${html(streetDesign.name)} at level ${building.level}" width="${streetDesign.units * 85}" height="190" />` : "Art unavailable"}</div><label>Building category <select id="owner-variable-building-type">${BuildingType.options.map((type) => `<option value="${type}" ${draft.buildingType === type ? "selected" : ""}>${type}</option>`).join("")}</select></label><p class="muted">The category is stored with the plot and shapes future custom-art prompts. It does not change this illustrated street design. Changing category costs coins.</p>` : `${ownerTypePickerMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}${ownerShapePickerMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}<p class="owner-preview-label"><strong>Preview:</strong> ${draft.buildingType} · level ${building.level} · ${ownerShapeName(draft.buildingType, draft.variant)}</p><div class="owner-building-preview" aria-label="Selected building preview">${buildingMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}</div>`}
+          ${changingType ? `<p class="muted">This change keeps the current colour and name (${html(building.name)}). Edit them after the type change confirms.</p>` : `${ownerPalettePickerMarkup(draft.palette)}${variablePlot ? `<p class="muted">The curated building artwork has fixed colours; this accent is saved for branding and future custom art.</p>` : ""}<label>Name <input id="owner-building-name" maxlength="24" value="${html(draft.name)}" /></label>`}
+          ${changingType ? `<button id="owner-change-type" ${this.busy || BigInt(balance) < typeCost ? "disabled" : ""}>Change to ${draft.buildingType} · ${formatCoins(config.change_building_type_cost)} coins</button><p class="muted">${variablePlot ? "The street design stays the same." : "Changing type uses its curated preset and keeps the current level."} Choose colour and name afterward.</p>` : `<button id="owner-save-preset" ${this.busy ? "disabled" : ""}>${variablePlot ? "Save name and branding" : "Use this preset"}</button>`}
           ${levelCost === null ? `<p>Maximum level reached.</p>` : `<button id="owner-upgrade-building" ${this.busy || BigInt(balance) < levelCost ? "disabled" : ""}>Upgrade to level ${building.level + 1} · ${formatCoins(config.building_upgrade_costs[building.level - 1]!)} coins</button>`}
           ${levelShortfall ? `<p class="muted">Earn ${formatCoins(levelShortfall)} more coins by parking and collecting before this upgrade is available.</p>` : ""}
           <p class="muted">Using a preset, changing type or upgrading immediately replaces the current facade with a curated design. Any custom facade must be reviewed again.</p>
           ${affectedMedia.length ? `<p class="chain-parked">A building change will hide the current ${affectedMedia.join(" and ")} until a moderator approves it for the new layout. You can reuse an approved image or upload a new one. Pending media proposals will be cancelled.</p>` : ""}
-          ${this.mockStudioMarkup(selected, accountId)}
-          ${this.ownerMediaMarkup(selected)}
+          ${variablePlot ? `${this.variableFacadeReviewMarkup(selected, accountId)}${this.ownerMediaMarkup(selected)}` : `${this.mockStudioMarkup(selected, accountId)}${this.ownerMediaMarkup(selected)}`}
         </div>
       </div>
       ${this.plotStatsMarkup(plot.id)}
@@ -816,7 +1015,7 @@ export class ChainScreen {
       .join("");
     this.host.innerHTML = `<div class="chain-screen">
       <div class="chain-heading"><div><span class="tag">Shared testnet state</span><h1>Live city</h1>
-        <p class="muted">${html(roadId)} · ${side} side. The illustrated Street can switch between guest and testnet play.</p></div>
+        <p class="muted">${html(roadId)} · ${curbDirection(roadId, side)} curb. The illustrated Street can switch between guest and testnet play.</p></div>
         <button id="chain-refresh" ${busy}>Refresh</button></div>
       ${this.message ? `<p class="chain-message" role="status">${html(this.message)}</p>` : ""}
       <section class="card chain-account"><h2>Wallet</h2>
@@ -832,6 +1031,7 @@ export class ChainScreen {
               ? `<p>Choose your free starter car. Registration requires ${this.quote ? html(nearAmount(this.quote)) : "a storage deposit"} from your wallet.</p>
             <label>Body <select id="starter-body">${carOptions}</select></label>
             <label>Colour <select id="starter-color">${colorOptions}</select></label>
+            <img class="chain-car-preview" id="starter-preview" src="${import.meta.env.BASE_URL}world/${carSpriteFile("Hatchback", "Red")}" alt="Red Hatchback starter car preview" width="192" height="96" />
             <button id="chain-register" class="primary" ${busy}>Register and get starter car</button>`
               : `
             <p>${formatCoins(player!.account!.balance)} coins · ${player!.cars.length} car${player!.cars.length === 1 ? "" : "s"}</p>
@@ -848,6 +1048,7 @@ export class ChainScreen {
         registered
           ? `<section class="card"><h2>My cars</h2>
         <label>Driving <select id="chain-car">${player!.cars.map((entry) => `<option value="${entry.id}" ${entry.id === this.selectedCarId ? "selected" : ""}>#${entry.id} ${entry.color} ${entry.body} · tier ${entry.tier} · ${entry.durability}${garageConfig ? `/${garageConfig.max_durability}` : ""} durability</option>`).join("")}</select></label>
+        ${car ? `<img class="chain-car-preview" src="${import.meta.env.BASE_URL}world/${carSpriteFile(car.body, car.color)}" alt="${html(car.color)} ${html(car.body)} selected car" width="192" height="96" />` : ""}
         ${car && !garageConfig ? `<p class="muted">Loading current repair costs…</p>` : ""}
         ${car && garageConfig && fullRepairPoints > 0 && car.parked_session_id === null ? `<button id="chain-repair" ${!keyReady || this.busy || balance < fullRepairCost ? "disabled" : ""}>Repair to full · ${formatCoins(fullRepairCost.toString())} coins</button>` : ""}
         ${car && garageConfig && parkRepairPoints > 0 && parkRepairPoints < fullRepairPoints && car.parked_session_id === null ? `<button id="chain-repair-to-park" ${!keyReady || this.busy || balance < parkRepairCost ? "disabled" : ""}>Repair to park · ${formatCoins(parkRepairCost.toString())} coins</button>` : ""}
@@ -862,12 +1063,13 @@ export class ChainScreen {
         }
         <div class="chain-purchase"><label>New body <select id="chain-buy-body">${carOptions}</select></label>
           <label>Colour <select id="chain-buy-color">${colorOptions}</select></label>
+          <img class="chain-car-preview" id="chain-buy-preview" src="${import.meta.env.BASE_URL}world/${carSpriteFile("Hatchback", "Red")}" alt="Red Hatchback purchase preview" width="192" height="96" />
           <button id="chain-buy-car" ${player!.cars.length >= 3 || this.busy ? "disabled" : ""}>Buy car with coins</button></div>
       </section>`
           : ""
       }
       ${registered && accountId ? this.ownerMarkup(accountId, player!.account!.balance, keyReady) : ""}
-      <section class="card"><h2>${html(roadId)} · ${side} curb</h2>
+      <section class="card"><h2>${html(roadId)} · ${curbDirection(roadId, side)} curb</h2>
         ${
           this.street
             ? `<div class="chain-plots">${this.street.plots
@@ -886,7 +1088,7 @@ export class ChainScreen {
                   );
                   return `<article class="chain-plot"><h3>${html(title)}</h3>
             <p>${html(ruleLabel(plot.effective_rule))} · ${owned ? "Your plot" : plot.plot.owner ? `Owned by ${html(plot.plot.owner)}` : "Available to buy"}</p>
-            <p>${slots.filter((entry) => entry && now < entry.expires_at).length}/2 spaces occupied</p>
+            <p>${slots.filter((entry) => entry && now < entry.expires_at).length}/${slots.length} spaces occupied</p>
             ${registered && !session && car && open >= 0 && !owned ? `<button data-chain-park="${html(plot.plot.id)}" data-slot="${open}" ${!keyReady || this.busy ? "disabled" : ""}>Park car #${car.id} here</button>` : ""}
             ${registered && owned && illegal ? `<button data-chain-ticket="${html(plot.plot.id)}" data-slot="${illegal.slot}" data-session="${illegal.id}" ${!keyReady || this.busy ? "disabled" : ""}>Ticket illegal parker</button>` : ""}
             ${
@@ -946,6 +1148,37 @@ export class ChainScreen {
   private attachEvents(): void {
     const on = (selector: string, handler: (event: Event) => void) =>
       this.host.querySelector(selector)?.addEventListener("click", handler);
+    const bindCarPreview = (
+      bodySelector: string,
+      colorSelector: string,
+      previewSelector: string,
+      description: string,
+    ) => {
+      const body = this.host.querySelector<HTMLSelectElement>(bodySelector);
+      const color = this.host.querySelector<HTMLSelectElement>(colorSelector);
+      const preview =
+        this.host.querySelector<HTMLImageElement>(previewSelector);
+      if (!body || !color || !preview) return;
+      const update = () => {
+        preview.src = `${import.meta.env.BASE_URL}world/${carSpriteFile(body.value, color.value)}`;
+        preview.alt = `${color.value} ${body.value} ${description}`;
+      };
+      body.addEventListener("change", update);
+      color.addEventListener("change", update);
+      update();
+    };
+    bindCarPreview(
+      "#starter-body",
+      "#starter-color",
+      "#starter-preview",
+      "starter car preview",
+    );
+    bindCarPreview(
+      "#chain-buy-body",
+      "#chain-buy-color",
+      "#chain-buy-preview",
+      "purchase preview",
+    );
     on("#chain-refresh", () => {
       this.ownerFetchedAt = 0;
       void this.refresh();
@@ -1040,6 +1273,8 @@ export class ChainScreen {
         this.pendingUpload = null;
         this.mediaProposal = null;
         this.mediaLinkDraft = "";
+        this.adLinkDraft = "";
+        this.adFillBillboard = true;
         this.mockHistory = null;
         this.mockDescription = "";
         this.mockThemeHint = "None";
@@ -1093,6 +1328,15 @@ export class ChainScreen {
             ?.focus();
         }),
       );
+    this.host
+      .querySelector<HTMLSelectElement>("#owner-variable-building-type")
+      ?.addEventListener("change", (event) => {
+        if (!this.ownerDraft) return;
+        this.ownerDraft.buildingType = BuildingType.parse(
+          (event.target as HTMLSelectElement).value,
+        );
+        this.render();
+      });
     this.host
       .querySelectorAll<HTMLButtonElement>("[data-owner-building-variant]")
       .forEach((button) =>
@@ -1205,8 +1449,14 @@ export class ChainScreen {
       const plotId = this.selectedOwnedPlotId;
       const description = this.mockDescription;
       const palette = this.ownerDraft?.palette;
-      const themeHint = this.mockThemeHint;
-      const materialHints = [...this.mockMaterials];
+      const variablePlot = this.plots.find(
+        (entry) => entry.plot.id === plotId,
+      )?.plot;
+      const isVariable = Boolean(
+        variablePlot && "frontage_units" in variablePlot,
+      );
+      const themeHint = isVariable ? "None" : this.mockThemeHint;
+      const materialHints = isVariable ? [] : [...this.mockMaterials];
       const usePriorArt = this.usePriorArt;
       const fresh = Boolean(
         this.paidJob &&
@@ -1322,6 +1572,10 @@ export class ChainScreen {
             this.mockJob?.candidates[Number(button.dataset.ownerCandidate)];
           if (!candidate || !this.ownerDraft) return;
           this.selectedMockCandidate = Number(button.dataset.ownerCandidate);
+          if (candidate.manifest.schemaVersion === 2) {
+            this.render();
+            return;
+          }
           this.ownerDraft.buildingType = BuildingType.parse(
             this.mockJob?.buildingType,
           );
@@ -1375,6 +1629,24 @@ export class ChainScreen {
           return "Curated building preset confirmed on testnet.";
         }),
     );
+    this.host
+      .querySelectorAll<HTMLButtonElement>("[data-owner-design]")
+      .forEach((button) =>
+        button.addEventListener("click", () => {
+          void this.mutate(async () => {
+            const plotId = this.selectedOwnedPlotId;
+            if (!plotId || !this.wallet)
+              throw new Error("Select an owned plot first");
+            await this.wallet.chooseDesign(
+              plotId,
+              Number(button.dataset.ownerDesign),
+            );
+            this.ownerDraft = null;
+            this.ownerFetchedAt = 0;
+            return "Building design confirmed on testnet.";
+          });
+        }),
+      );
     on(
       "#owner-change-type",
       () =>
@@ -1415,6 +1687,36 @@ export class ChainScreen {
           if (!file || !plotId)
             throw new Error("Choose an image and owned plot first");
           if (!this.wallet) throw new Error("Connect a wallet first");
+          if (kind === "Billboard") {
+            const link = adDestinationLink(this.adLinkDraft);
+            const selectedPlot = this.plots.find(
+              (entry) => entry.plot.id === plotId,
+            )?.plot;
+            const aspectRatio =
+              selectedPlot && "frontage_units" in selectedPlot ? 88 / 20 : 2;
+            const prepared = await prepareBillboardImage(
+              file,
+              aspectRatio,
+              this.adFillBillboard ? "cover" : "contain",
+            );
+            const result = await submitAdForReview(
+              this.wallet,
+              plotId,
+              prepared.uploadFile,
+              link,
+              (upload) => {
+                this.pendingUpload = { ...upload, plotId, kind };
+                this.mediaProposal = null;
+              },
+              (proposal) => {
+                this.mediaProposal = proposal;
+              },
+            );
+            this.ownerFetchedAt = 0;
+            return result.status === "submitted"
+              ? "Ad submitted on testnet and awaiting review."
+              : "Wallet action sent. Use Submit or check proposal to confirm it.";
+          }
           const result = await this.wallet.uploadMedia(plotId, kind, file);
           this.pendingUpload = { ...result, plotId, kind };
           this.mediaProposal = null;
@@ -1423,6 +1725,63 @@ export class ChainScreen {
         });
       });
     }
+    const adInput = this.host.querySelector<HTMLInputElement>("#owner-ad-file");
+    let adPreviewRequest = 0;
+    const updateAdPreview = () => {
+      const request = ++adPreviewRequest;
+      const input = adInput;
+      if (!input) return;
+      const file = input.files?.[0];
+      const preview = this.host.querySelector<HTMLImageElement>(
+        "#owner-ad-local-preview",
+      );
+      if (!preview) return;
+      preview.hidden = true;
+      if (!file) return;
+      if (
+        file.size < 1 ||
+        file.size > 1024 * 1024 ||
+        !["image/png", "image/jpeg", "image/webp"].includes(file.type)
+      )
+        return;
+      const selectedPlot = this.plots.find(
+        (entry) => entry.plot.id === this.selectedOwnedPlotId,
+      )?.plot;
+      const aspectRatio =
+        selectedPlot && "frontage_units" in selectedPlot ? 88 / 20 : 2;
+      void prepareBillboardImage(
+        file,
+        aspectRatio,
+        this.adFillBillboard ? "cover" : "contain",
+      )
+        .then(({ previewUrl }) => {
+          if (
+            request !== adPreviewRequest ||
+            !preview.isConnected ||
+            input.files?.[0] !== file
+          )
+            return;
+          preview.src = previewUrl;
+          preview.hidden = false;
+        })
+        .catch(() => {
+          if (
+            request === adPreviewRequest &&
+            preview.isConnected &&
+            input.files?.[0] === file
+          )
+            preview.hidden = true;
+        });
+    };
+    adInput?.addEventListener("change", updateAdPreview);
+    this.host
+      .querySelector<HTMLInputElement>("#owner-ad-fill")
+      ?.addEventListener("change", (event) => {
+        this.adFillBillboard = (
+          event.currentTarget as HTMLInputElement
+        ).checked;
+        updateAdPreview();
+      });
     for (const [kind, buttonId] of [
       ["Logo", "#owner-restore-logo"],
       ["Billboard", "#owner-restore-ad"],
@@ -1449,7 +1808,8 @@ export class ChainScreen {
               }
             : latest;
           this.pendingUpload = upload ? { ...upload, plotId, kind } : null;
-          this.mediaLinkDraft = proposal?.link ?? "";
+          if (kind === "Billboard") this.adLinkDraft = proposal?.link ?? "";
+          else this.mediaLinkDraft = proposal?.link ?? "";
           return proposal
             ? proposal.assetUrl
               ? `Last ${kind.toLowerCase()} proposal restored.`
@@ -1478,7 +1838,9 @@ export class ChainScreen {
             const upload = await this.wallet.reuseApprovedMedia(plotId, kind);
             this.pendingUpload = { ...upload, plotId, kind };
             this.mediaProposal = null;
-            this.mediaLinkDraft = slot.active.content.link ?? "";
+            if (kind === "Billboard")
+              this.adLinkDraft = slot.active.content.link ?? "";
+            else this.mediaLinkDraft = slot.active.content.link ?? "";
             return `${kind} is ready for a new proposal and moderator review.`;
           });
         }),
@@ -1488,11 +1850,19 @@ export class ChainScreen {
       ?.addEventListener("input", (event) => {
         this.mediaLinkDraft = (event.target as HTMLInputElement).value;
       });
+    this.host
+      .querySelector<HTMLInputElement>("#owner-ad-link")
+      ?.addEventListener("input", (event) => {
+        this.adLinkDraft = (event.target as HTMLInputElement).value;
+      });
     on("#owner-create-media", () => {
       const upload = this.pendingUpload;
-      const link = this.mediaLinkDraft.trim() || null;
       void this.mutate(async () => {
         if (!this.wallet || !upload) throw new Error("Upload an image first");
+        const link =
+          upload.kind === "Billboard"
+            ? adDestinationLink(this.adLinkDraft)
+            : this.mediaLinkDraft.trim() || null;
         this.mediaProposal = await this.wallet.createMediaProposal(
           upload,
           upload.plotId,

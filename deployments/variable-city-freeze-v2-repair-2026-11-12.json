@@ -1,0 +1,10 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "codeSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+  "transactionHash": "RFLxVHY37GfqyK9ydoTiPuzzFJjfAtEGVxBbKCpd9Nq",
+  "blockHash": "GK5XSBxHHhr2aHBaCeDvxZMzW6rN4hYxmDesJ7AhfkfC",
+  "pausedAtFinality": true,
+  "plotCount": 100,
+  "npcSiteCount": 7
+}

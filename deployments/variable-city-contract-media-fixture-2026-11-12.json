@@ -1,0 +1,238 @@
+{
+  "scope": "local sandbox get_plot views after a real owner proposal and moderator approval",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "plotId": "plot-main-n-7",
+  "artFixturePath": "tests/fixtures/variable-city-media/fixture.json",
+  "appearanceReference": {
+    "revision": 6,
+    "owner": "dev-20261112093048-50306133320649.test.near",
+    "building_type": "Retail",
+    "level": 2,
+    "manifest_hash": "73fb0b9b7b14ddf3ebf92d8570041754a7d4a25c25c1f56f22eef06861d1cc66"
+  },
+  "logoHash": "5042470a0cdf0acee6f178931e77d4176b88fcaefde668cd7c8f8da143b29076",
+  "pendingPlot": {
+    "plot": {
+      "id": "plot-main-n-7",
+      "road_id": "main",
+      "side": "North",
+      "index": 7,
+      "frontage_units": 3,
+      "design_choice": 0,
+      "corner": false,
+      "owner": "dev-20261112093048-50306133320649.test.near",
+      "rule": {
+        "kind": "Free"
+      },
+      "pending_rule": {
+        "rule": {
+          "kind": "NoParking"
+        },
+        "effective_at": 1794476152
+      },
+      "building": {
+        "building_type": "Retail",
+        "variant": 1,
+        "level": 2,
+        "primary_color": "#EF8270",
+        "name": "Harbor Studio",
+        "approved_manifest_hash": null,
+        "approved_at": null,
+        "last_facade_approved_at": null,
+        "pending_appearance": {
+          "revision": 6,
+          "owner": "dev-20261112093048-50306133320649.test.near",
+          "building_type": "Retail",
+          "level": 2,
+          "manifest_hash": "73fb0b9b7b14ddf3ebf92d8570041754a7d4a25c25c1f56f22eef06861d1cc66"
+        },
+        "last_appearance_decision": null,
+        "facade_exemption_level": 2,
+        "appearance_revision": 6,
+        "layout_revision": 5
+      },
+      "logo": {
+        "revision": 0,
+        "active": null,
+        "pending": null,
+        "last_decision": null,
+        "last_replacement_at": null
+      },
+      "billboard": {
+        "revision": 0,
+        "active": null,
+        "pending": null,
+        "last_decision": null,
+        "last_replacement_at": null
+      },
+      "ticket_cooldown_until": 1794476871,
+      "reserved_storage_bytes": 4096,
+      "used_storage_bytes": 189
+    },
+    "effective_rule": {
+      "kind": "NoParking"
+    },
+    "logo_eligible": false,
+    "billboard_eligible": false
+  },
+  "approvedPlot": {
+    "plot": {
+      "id": "plot-main-n-7",
+      "road_id": "main",
+      "side": "North",
+      "index": 7,
+      "frontage_units": 3,
+      "design_choice": 0,
+      "corner": false,
+      "owner": "dev-20261112093048-50306133320649.test.near",
+      "rule": {
+        "kind": "Free"
+      },
+      "pending_rule": {
+        "rule": {
+          "kind": "NoParking"
+        },
+        "effective_at": 1794476152
+      },
+      "building": {
+        "building_type": "Retail",
+        "variant": 1,
+        "level": 2,
+        "primary_color": "#EF8270",
+        "name": "Harbor Studio",
+        "approved_manifest_hash": "73fb0b9b7b14ddf3ebf92d8570041754a7d4a25c25c1f56f22eef06861d1cc66",
+        "approved_at": 1794476578,
+        "last_facade_approved_at": 1794476578,
+        "pending_appearance": null,
+        "last_appearance_decision": {
+          "reference": {
+            "revision": 6,
+            "owner": "dev-20261112093048-50306133320649.test.near",
+            "building_type": "Retail",
+            "level": 2,
+            "manifest_hash": "73fb0b9b7b14ddf3ebf92d8570041754a7d4a25c25c1f56f22eef06861d1cc66"
+          },
+          "status": "Approved",
+          "decided_at": 1794476578,
+          "reason": null
+        },
+        "facade_exemption_level": 2,
+        "appearance_revision": 6,
+        "layout_revision": 6
+      },
+      "logo": {
+        "revision": 0,
+        "active": null,
+        "pending": null,
+        "last_decision": null,
+        "last_replacement_at": null
+      },
+      "billboard": {
+        "revision": 0,
+        "active": null,
+        "pending": null,
+        "last_decision": null,
+        "last_replacement_at": null
+      },
+      "ticket_cooldown_until": 1794476871,
+      "reserved_storage_bytes": 4096,
+      "used_storage_bytes": 283
+    },
+    "effective_rule": {
+      "kind": "NoParking"
+    },
+    "logo_eligible": false,
+    "billboard_eligible": false
+  },
+  "logoApprovedPlot": {
+    "plot": {
+      "id": "plot-main-n-7",
+      "road_id": "main",
+      "side": "North",
+      "index": 7,
+      "frontage_units": 3,
+      "design_choice": 0,
+      "corner": false,
+      "owner": "dev-20261112093048-50306133320649.test.near",
+      "rule": {
+        "kind": "Free"
+      },
+      "pending_rule": {
+        "rule": {
+          "kind": "NoParking"
+        },
+        "effective_at": 1794476152
+      },
+      "building": {
+        "building_type": "Retail",
+        "variant": 1,
+        "level": 2,
+        "primary_color": "#EF8270",
+        "name": "Harbor Studio",
+        "approved_manifest_hash": "73fb0b9b7b14ddf3ebf92d8570041754a7d4a25c25c1f56f22eef06861d1cc66",
+        "approved_at": 1794476578,
+        "last_facade_approved_at": 1794476578,
+        "pending_appearance": null,
+        "last_appearance_decision": {
+          "reference": {
+            "revision": 6,
+            "owner": "dev-20261112093048-50306133320649.test.near",
+            "building_type": "Retail",
+            "level": 2,
+            "manifest_hash": "73fb0b9b7b14ddf3ebf92d8570041754a7d4a25c25c1f56f22eef06861d1cc66"
+          },
+          "status": "Approved",
+          "decided_at": 1794476578,
+          "reason": null
+        },
+        "facade_exemption_level": 2,
+        "appearance_revision": 6,
+        "layout_revision": 6
+      },
+      "logo": {
+        "revision": 1,
+        "active": {
+          "content": {
+            "asset_hash": "5042470a0cdf0acee6f178931e77d4176b88fcaefde668cd7c8f8da143b29076",
+            "link": "https://near.org"
+          },
+          "approved_layout_revision": 6,
+          "approved_at": 1794476579
+        },
+        "pending": null,
+        "last_decision": {
+          "proposal": {
+            "revision": 1,
+            "owner": "dev-20261112093048-50306133320649.test.near",
+            "building_type": "Retail",
+            "level": 2,
+            "layout_revision": 6,
+            "content": {
+              "asset_hash": "5042470a0cdf0acee6f178931e77d4176b88fcaefde668cd7c8f8da143b29076",
+              "link": "https://near.org"
+            }
+          },
+          "status": "Approved",
+          "decided_at": 1794476579,
+          "reason": null
+        },
+        "last_replacement_at": 1794476579
+      },
+      "billboard": {
+        "revision": 0,
+        "active": null,
+        "pending": null,
+        "last_decision": null,
+        "last_replacement_at": null
+      },
+      "ticket_cooldown_until": 1794476871,
+      "reserved_storage_bytes": 4096,
+      "used_storage_bytes": 560
+    },
+    "effective_rule": {
+      "kind": "NoParking"
+    },
+    "logo_eligible": true,
+    "billboard_eligible": false
+  }
+}

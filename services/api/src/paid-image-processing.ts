@@ -1,4 +1,5 @@
 import { GeneratedArtError, saveGeneratedFacade } from "./generated-art.js";
+import { saveVariableGeneratedFacade } from "./variable-generated-art.js";
 import type { ImageTokenUsage } from "./image-provider.js";
 import {
   PaidGenerationLedger,
@@ -20,12 +21,25 @@ export async function processPaidImageResult(input: {
   if (!job?.snapshot) throw new Error("Paid job has no building snapshot");
   let candidate;
   try {
-    candidate = await saveGeneratedFacade(
-      input.png,
-      job.snapshot.buildingType,
-      job.snapshot.level,
-      input.assetDir,
-    );
+    const prompt = job.snapshot.promptSpec;
+    candidate =
+      prompt.version === 5
+        ? await saveVariableGeneratedFacade(
+            input.png,
+            {
+              frontageUnits: prompt.frontageUnits,
+              designChoice: prompt.designChoice,
+              buildingType: prompt.buildingType,
+              level: prompt.level,
+            },
+            input.assetDir,
+          )
+        : await saveGeneratedFacade(
+            input.png,
+            job.snapshot.buildingType,
+            job.snapshot.level,
+            input.assetDir,
+          );
   } catch (error) {
     return input.ledger.finishAttempt({
       jobId: input.jobId,

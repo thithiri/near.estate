@@ -53,6 +53,43 @@
             </div>
             <div id="street-canvas" aria-label="Side-scrolling street game">
               <div
+                class="street-gamepad"
+                role="group"
+                aria-label="Street controls"
+              >
+                <button
+                  id="cross-side"
+                  data-glyph="↑"
+                  data-short="Cross"
+                  type="button"
+                >
+                  Cross road
+                </button>
+                <button
+                  id="left"
+                  aria-label="Tap or hold to drive left"
+                  type="button"
+                >
+                  <span aria-hidden="true">←</span>
+                </button>
+                <button
+                  id="right"
+                  aria-label="Tap or hold to drive right"
+                  type="button"
+                >
+                  <span aria-hidden="true">→</span>
+                </button>
+                <button
+                  id="action"
+                  class="primary"
+                  data-glyph="P"
+                  data-short="Park"
+                  type="button"
+                >
+                  Park here
+                </button>
+              </div>
+              <div
                 id="guest-building-preview"
                 class="guest-building-preview"
                 hidden
@@ -75,12 +112,7 @@
               </div>
             </div>
             <div class="controlbar">
-              <div class="drive-buttons">
-                <button id="left" aria-label="Drive left">◀</button
-                ><button id="right" aria-label="Drive right">▶</button>
-              </div>
               <span id="durability">🔧 100%</span>
-              <button id="cross-side">Cross to South</button>
               <button id="collect" hidden>Collect parked car</button>
               <label id="tower-floor-wrap" hidden
                 >Floor
@@ -99,7 +131,6 @@
               >
                 Details
               </button>
-              <button id="action" class="primary">Park here</button>
             </div>
           </div>
           <aside id="plot-panel" class="plot-panel">
@@ -119,6 +150,7 @@
             <div id="tower-spaces" hidden></div>
             <button id="panel-action" class="primary">Park here</button>
             <button id="panel-collect" hidden>Collect parked car</button>
+            <button id="panel-design" hidden>Try building designs</button>
             <hr />
             <small>Guest preview — shared state requires a wallet.</small>
           </aside>
@@ -134,9 +166,7 @@
         <button data-screen="My Plots">Plots</button>
         <button data-screen="Menu">Menu</button>
       </nav>
-      <footer id="status" role="status">
-        Use arrows or A/D to drive. Space parks or collects.
-      </footer>
+      <div id="status" role="status" aria-live="polite"></div>
     </div>
     <script src="/zod-csp-config.js"></script>
     <script type="module" src="/src/main.ts"></script>

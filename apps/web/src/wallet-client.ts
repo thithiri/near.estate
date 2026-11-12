@@ -23,6 +23,7 @@ import {
   type MaterialHint,
   type ThemeHint,
   type AssetManifest,
+  type AssetManifestV2,
 } from "@estate/shared";
 import { ChainReader } from "./chain-reader.js";
 import { PRESET_PALETTES } from "./preset-catalog.js";
@@ -107,8 +108,12 @@ export type MockGenerationJob = {
   description: string;
   promptSpec: {
     version: number;
-    themeHint: ThemeHint;
-    materialHints: MaterialHint[];
+    themeHint?: ThemeHint;
+    materialHints?: MaterialHint[];
+    frontageUnits?: 1 | 2 | 3;
+    designChoice?: number;
+    buildingType?: string;
+    level?: number;
   } | null;
   status:
     | "ready"
@@ -131,7 +136,7 @@ export type MockGenerationCandidate = {
   id: 1 | 2 | 3;
   variant: 1 | 2;
   palette: string;
-  manifest: AssetManifest;
+  manifest: AssetManifest | AssetManifestV2;
   manifestHash: string;
   spriteHash: string;
   thumbnailHash: string;
@@ -843,7 +848,11 @@ export class GameWalletClient {
       plot.plot.building.layout_revision !== job.layoutRevision ||
       plot.plot.building.appearance_revision !== selection.expectedRevision ||
       plot.plot.building.building_type !== job.buildingType ||
-      plot.plot.building.level !== job.level
+      plot.plot.building.level !== job.level ||
+      (job.promptSpec?.version === 5 &&
+        (!("frontage_units" in plot.plot) ||
+          plot.plot.frontage_units !== job.promptSpec.frontageUnits ||
+          plot.plot.design_choice !== job.promptSpec.designChoice))
     )
       throw new Error("The building changed; generate new designs");
     await this.ownerCall(
@@ -1006,6 +1015,28 @@ export class GameWalletClient {
       actions: [actionCreators.functionCall(method, args, CALL_GAS, 0n)],
     });
     if (this.accountId !== accountId) throw new Error("Wallet account changed");
+  }
+
+  async chooseDesign(plotId: string, choice: number): Promise<void> {
+    const accountId = this.requiredAccount();
+    const before = await this.ownerPlot(plotId, accountId);
+    if (!("design_choice" in before.plot))
+      throw new Error("This city does not support building designs yet");
+    if (!Number.isInteger(choice) || choice < 0 || choice > 4)
+      throw new Error("Choose one of the five building designs");
+    if (before.plot.design_choice === choice) return;
+    await this.ownerCall(
+      "choose_design",
+      { plot_id: plotId, choice },
+      accountId,
+    );
+    const after = await this.reader.plot(plotId);
+    if (
+      !after ||
+      !("design_choice" in after.plot) ||
+      after.plot.design_choice !== choice
+    )
+      throw new Error("Building design is awaiting chain confirmation");
   }
 
   async choosePreset(

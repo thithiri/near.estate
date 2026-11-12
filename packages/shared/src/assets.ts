@@ -1,5 +1,15 @@
 import { z } from "zod";
 import { BuildingType } from "./world.js";
+import {
+  FRONTAGE_CANVAS_HEIGHT_V2,
+  FRONTAGE_LEVEL_HEIGHTS_V2,
+  FRONTAGE_MIN_VISIBLE_FRACTION_V2,
+  FRONTAGE_SIDE_GAP_V2,
+  FRONTAGE_UNIT_WIDTH_V2,
+  variableFrontageMediaLayout,
+  type BuildingLevelV2,
+  type FrontageUnitsV2,
+} from "./variable-media.js";
 
 export const Hash = z.string().regex(/^[a-f0-9]{64}$/);
 export const HexColor = z.string().regex(/^#[A-Fa-f0-9]{6}$/);
@@ -54,6 +64,58 @@ export const AssetManifest = z.object({
 });
 export type AssetManifest = z.infer<typeof AssetManifest>;
 
+export const AssetManifestV2 = z.object({
+  schemaVersion: z.literal(2),
+  renderProfileVersion: z.literal(2),
+  frontageUnits: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  designChoice: z.number().int().min(0).max(4),
+  buildingType: BuildingType,
+  level: z.number().int().min(1).max(4),
+  spriteHash: Hash,
+  thumbnailHash: Hash,
+  alphaBounds: Rect,
+  logoRect: Rect,
+  billboardRect: Rect.nullable(),
+});
+export type AssetManifestV2 = z.infer<typeof AssetManifestV2>;
+
+export function validateAssetManifestV2(input: unknown): AssetManifestV2 {
+  const manifest = AssetManifestV2.parse(input);
+  const units = manifest.frontageUnits as FrontageUnitsV2;
+  const level = manifest.level as BuildingLevelV2;
+  const width = units * FRONTAGE_UNIT_WIDTH_V2;
+  const bounds = manifest.alphaBounds;
+  if (
+    bounds.x < FRONTAGE_SIDE_GAP_V2 ||
+    bounds.x + bounds.width > width - FRONTAGE_SIDE_GAP_V2 ||
+    bounds.y < FRONTAGE_CANVAS_HEIGHT_V2 - FRONTAGE_LEVEL_HEIGHTS_V2[level] ||
+    bounds.y + bounds.height > FRONTAGE_CANVAS_HEIGHT_V2 ||
+    bounds.y + bounds.height !== FRONTAGE_CANVAS_HEIGHT_V2 ||
+    bounds.width < width * FRONTAGE_MIN_VISIBLE_FRACTION_V2
+  )
+    throw new Error("version-2 facade exceeds its plot or level envelope");
+  const layout = variableFrontageMediaLayout(
+    units,
+    manifest.designChoice,
+    level,
+  );
+  const exact = (
+    actual: z.infer<typeof Rect> | null,
+    expected: z.infer<typeof Rect> | null,
+  ) =>
+    actual === null || expected === null
+      ? actual === expected
+      : actual.x === expected.x &&
+        actual.y === expected.y &&
+        actual.width === expected.width &&
+        actual.height === expected.height;
+  if (!exact(manifest.logoRect, layout.logo))
+    throw new Error("version-2 logo placement differs from the street sign");
+  if (!exact(manifest.billboardRect, layout.billboard))
+    throw new Error("version-2 billboard placement differs from the street");
+  return manifest;
+}
+
 export function validateAssetManifest(input: unknown): AssetManifest {
   const manifest = AssetManifest.parse(input);
   const maxHeight = DEFAULT_RENDER_PROFILE.maxHeightByLevel[manifest.level - 1];
@@ -89,6 +151,18 @@ export function canonicalJson(value: unknown): string {
 export async function manifestHash(manifest: AssetManifest): Promise<string> {
   const bytes = new TextEncoder().encode(
     canonicalJson(validateAssetManifest(manifest)),
+  );
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+}
+
+export async function manifestHashV2(
+  manifest: AssetManifestV2,
+): Promise<string> {
+  const bytes = new TextEncoder().encode(
+    canonicalJson(validateAssetManifestV2(manifest)),
   );
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (byte) =>

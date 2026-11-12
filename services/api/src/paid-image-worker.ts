@@ -97,11 +97,20 @@ export class PaidImageWorker {
         ? job.snapshot.promptSpec.referenceManifestHash
         : job.snapshot.approvedManifestHashAtRequest;
     const referenceHash = job.snapshot.promptSpec.referenceManifestHash;
+    const prompt = job.snapshot.promptSpec;
+    const geometryMatches = current
+      ? prompt.version === 5
+        ? "frontage_units" in current.plot &&
+          current.plot.frontage_units === prompt.frontageUnits &&
+          current.plot.design_choice === prompt.designChoice
+        : !("frontage_units" in current.plot) &&
+          building?.variant === prompt.variant
+      : false;
     return Boolean(
       current?.plot.owner === job.accountId &&
         building?.building_type === job.snapshot.buildingType &&
         building.level === job.snapshot.level &&
-        building.variant === job.snapshot.promptSpec.variant &&
+        geometryMatches &&
         building.layout_revision === job.snapshot.layoutRevision &&
         building.appearance_revision === job.snapshot.appearanceRevision &&
         building.approved_manifest_hash === approvedAtRequest &&

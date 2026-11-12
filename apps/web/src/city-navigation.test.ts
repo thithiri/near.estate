@@ -3,8 +3,10 @@ import test from "node:test";
 import { validateCitySeed } from "@estate/shared";
 import rawSeed from "../../../contracts/estate/seed.json";
 import {
+  cityMapCurbPoint,
   cityMapPoint,
   connectionAtX,
+  curbDirection,
   destination,
   endConnection,
   frontageAtX,
@@ -15,6 +17,24 @@ import {
 } from "./city-navigation.js";
 
 const city = validateCitySeed(rawSeed);
+
+test("map shows the selected curb on the geographic side of each road", () => {
+  const mainCenter = cityMapPoint(city, "main", 100);
+  const mainNorth = cityMapCurbPoint(city, "main", 100, "North");
+  const mainSouth = cityMapCurbPoint(city, "main", 100, "South");
+  assert.deepEqual(mainNorth, { x: mainCenter.x, y: mainCenter.y - 10 });
+  assert.deepEqual(mainSouth, { x: mainCenter.x, y: mainCenter.y + 10 });
+  assert.equal(curbDirection("main", "North"), "North");
+  assert.equal(curbDirection("main", "South"), "South");
+
+  const avenueCenter = cityMapPoint(city, "central", 100);
+  const avenueWest = cityMapCurbPoint(city, "central", 100, "North");
+  const avenueEast = cityMapCurbPoint(city, "central", 100, "South");
+  assert.deepEqual(avenueWest, { x: avenueCenter.x - 10, y: avenueCenter.y });
+  assert.deepEqual(avenueEast, { x: avenueCenter.x + 10, y: avenueCenter.y });
+  assert.equal(curbDirection("central", "North"), "West");
+  assert.equal(curbDirection("central", "South"), "East");
+});
 
 test("intersection creates a real gap and resolves both sides of it", () => {
   const main = city.streets.find((road) => road.id === "main")!;

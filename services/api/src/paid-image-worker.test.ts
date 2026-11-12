@@ -15,6 +15,7 @@ import {
 } from "./paid-image-worker.js";
 import { buildGenerationPrompt } from "./prompt-builder.js";
 import { ApiStore } from "./store.js";
+import { buildVariableGenerationPrompt } from "./variable-prompt-builder.js";
 
 function settings() {
   const value = readImageGenerationSettings({
@@ -151,6 +152,114 @@ test("paid worker produces three private validated candidates within the reserve
     assert.equal(fixture.ledger.day(1).reservedCalls, 0);
   } finally {
     await fixture.cleanup();
+  }
+});
+
+test("local fake provider normalizes three-unit art and keeps its media positions fixed", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "estate-variable-paid-worker-"));
+  const store = new ApiStore(":memory:", join(dir, "assets"));
+  try {
+    const ledger = new PaidGenerationLedger(store.db, settings());
+    const promptSpec = buildVariableGenerationPrompt({
+      frontageUnits: 3,
+      designChoice: 0,
+      buildingType: "Retail",
+      level: 2,
+      palette: "#EF8270",
+      description: "Warm market windows",
+    });
+    const job = ledger.reserve({
+      accountId: "owner.testnet",
+      plotId: "plot-main-n-7",
+      idempotencyKey: "variable-paid-worker-key",
+      snapshot: {
+        buildingType: "Retail",
+        level: 2,
+        layoutRevision: 5,
+        appearanceRevision: 5,
+        promptSpec,
+      },
+      now: 86_401,
+    });
+    let calls = 0;
+    const worker = new PaidImageWorker({
+      ledger,
+      store,
+      chain: fakeChain(async () => ({
+        plot: {
+          owner: "owner.testnet",
+          frontage_units: 3,
+          design_choice: 0,
+          building: {
+            building_type: "Retail",
+            level: 2,
+            variant: 1,
+            layout_revision: 5,
+            appearance_revision: 5,
+            approved_manifest_hash: null,
+          },
+        },
+      })),
+      provider: {
+        async generate(_prompt, _accountId, clientRequestId) {
+          calls++;
+          return {
+            png: await sharp(
+              Buffer.from(
+                `<svg width="1024" height="768" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="300" width="984" height="400" fill="${["#d08065", "#73b0cf", "#a2bb83"][calls - 1]}"/></svg>`,
+              ),
+            )
+              .png()
+              .toBuffer(),
+            clientRequestId,
+            providerRequestId: `local_${calls}`,
+            model: "fake-local-provider",
+          };
+        },
+      },
+      assetDir: store.assetDir,
+      clock: () => 86_402,
+      workerId: "variable_worker",
+    });
+    await worker.tick();
+    assert.equal(calls, 3);
+    assert.equal(ledger.job(job.id)?.status, "complete");
+    const candidates = ledger.candidates(job.id);
+    assert.equal(candidates.length, 3);
+    for (const candidate of candidates) {
+      assert.equal(candidate.manifest.schemaVersion, 2);
+      if (candidate.manifest.schemaVersion !== 2) continue;
+      assert.equal(candidate.manifest.frontageUnits, 3);
+      assert.equal(candidate.manifest.designChoice, 0);
+      assert.equal(candidate.manifest.level, 2);
+    }
+    assert.throws(
+      () =>
+        ledger.reviewCandidate({
+          jobId: job.id,
+          ordinal: 1,
+          decision: "approved",
+          reason: null,
+          now: 86_403,
+          reviewer: "moderator.testnet",
+          logoRectOverride: { x: 10, y: 130, width: 24, height: 24 },
+        }),
+      /fixed/,
+    );
+    assert.equal(
+      ledger.reviewCandidate({
+        jobId: job.id,
+        ordinal: 1,
+        decision: "approved",
+        reason: null,
+        now: 86_403,
+        reviewer: "moderator.testnet",
+      }).reviewStatus,
+      "approved",
+    );
+  } finally {
+    store.close();
+    await rm(dir, { recursive: true, force: true });
   }
 });
 

@@ -30,13 +30,16 @@ export const ParkingRule = z.discriminatedUnion("kind", [
 export type ParkingRule = z.infer<typeof ParkingRule>;
 
 export const PlayerPlot = z.object({
-  id: z.string().regex(/^plot-(main|market|river|central|harbor)-(n|s)-[0-7]$/),
+  id: z
+    .string()
+    .regex(/^plot-(main|market|river|central|harbor)-(n|s)-([0-9])$/),
   roadId: RoadId,
   side: Side,
-  index: z.number().int().min(0).max(7),
+  index: z.number().int().min(0).max(9),
   corner: z.boolean(),
   initialType: BuildingType,
   initialVariant: BuildingVariant,
+  frontageUnits: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
 });
 export type PlayerPlot = z.infer<typeof PlayerPlot>;
 
@@ -71,12 +74,18 @@ export const Street = z.object({
   name: z.string().min(1).max(40),
   length: z.number().int().min(8).max(32),
   connections: z.array(StreetConnection),
+  frontageUnits: z
+    .object({
+      North: z.array(z.union([z.literal(1), z.literal(2), z.literal(3)])),
+      South: z.array(z.union([z.literal(1), z.literal(2), z.literal(3)])),
+    })
+    .optional(),
 });
 
 export const PlayerCurbSpace = z.object({
   kind: z.literal("PlayerCurb"),
   plotId: PlayerPlot.shape.id,
-  slot: z.number().int().min(0).max(1),
+  slot: z.number().int().min(0).max(2),
 });
 export const TowerSpace = z.object({
   kind: z.literal("Tower"),
@@ -89,12 +98,20 @@ export const ParkingSpaceId = z.discriminatedUnion("kind", [
 ]);
 export type ParkingSpaceId = z.infer<typeof ParkingSpaceId>;
 
-export const CitySeed = z.object({
-  version: z.literal(1),
-  streets: z.array(Street).length(5),
-  plots: z.array(PlayerPlot).length(80),
-  npcSites: z.array(NPCSite).length(7),
-});
+export const CitySeed = z.discriminatedUnion("version", [
+  z.object({
+    version: z.literal(1),
+    streets: z.array(Street).length(5),
+    plots: z.array(PlayerPlot).length(80),
+    npcSites: z.array(NPCSite).length(7),
+  }),
+  z.object({
+    version: z.literal(2),
+    streets: z.array(Street).length(5),
+    plots: z.array(PlayerPlot).length(100),
+    npcSites: z.array(NPCSite).length(7),
+  }),
+]);
 export type CitySeed = z.infer<typeof CitySeed>;
 
 export function validateCitySeed(input: unknown): CitySeed {
@@ -105,13 +122,30 @@ export function validateCitySeed(input: unknown): CitySeed {
   const plotIds = new Set<string>();
   const frontages = new Set<string>();
   for (const plot of seed.plots) {
+    if (
+      seed.version === 1 &&
+      (plot.index > 7 ||
+        (plot.frontageUnits !== undefined && plot.frontageUnits !== 2))
+    )
+      throw new Error(`legacy plot frontage is invalid: ${plot.id}`);
     if (plotIds.has(plot.id)) throw new Error(`duplicate plot ${plot.id}`);
     plotIds.add(plot.id);
     const expectedId = `plot-${plot.roadId}-${plot.side === "North" ? "n" : "s"}-${plot.index}`;
     if (plot.id !== expectedId)
       throw new Error(`plot ID does not match position: ${plot.id}`);
-    if (plot.corner !== (plot.index === 0 || plot.index === 7))
+    if (
+      plot.corner !==
+      (plot.index === 0 || plot.index === (seed.version === 1 ? 7 : 9))
+    )
       throw new Error(`corner flag does not match position: ${plot.id}`);
+    if (seed.version === 2) {
+      const road = streetById.get(plot.roadId);
+      if (
+        !road?.frontageUnits ||
+        road.frontageUnits[plot.side][plot.index] !== plot.frontageUnits
+      )
+        throw new Error(`plot frontage does not match street: ${plot.id}`);
+    }
     const key = `${plot.roadId}:${plot.side}:${plot.index}`;
     if (frontages.has(key)) throw new Error(`overlapping frontage ${key}`);
     frontages.add(key);
@@ -122,6 +156,8 @@ export function validateCitySeed(input: unknown): CitySeed {
     siteIds.add(site.id);
     if (site.frontageIndex >= (streetById.get(site.roadId)?.length ?? 0))
       throw new Error(`NPC site outside street: ${site.id}`);
+    if (seed.version === 2 && site.frontageIndex < 10)
+      throw new Error(`NPC site overlaps player frontage: ${site.id}`);
     const key = `${site.roadId}:${site.side}:${site.frontageIndex}`;
     if (frontages.has(key)) throw new Error(`overlapping frontage ${key}`);
     frontages.add(key);
@@ -131,15 +167,52 @@ export function validateCitySeed(input: unknown): CitySeed {
   if (seed.npcSites.filter((site) => site.role === "ParkingTower").length !== 3)
     throw new Error("city needs three parking towers");
   for (const road of seed.streets) {
+    if (seed.version === 1 && road.frontageUnits)
+      throw new Error(`legacy street has variable frontage: ${road.id}`);
+    if (seed.version === 2) {
+      if (road.length !== 14)
+        throw new Error(
+          `variable street must have fourteen frontages: ${road.id}`,
+        );
+      if (
+        !road.frontageUnits ||
+        road.frontageUnits.North.length !== road.length ||
+        road.frontageUnits.South.length !== road.length
+      )
+        throw new Error(`missing variable frontage on ${road.id}`);
+      const sideLength = (side: "North" | "South") =>
+        road.frontageUnits![side].reduce((sum, width) => sum + width, 0);
+      if (sideLength("North") !== sideLength("South"))
+        throw new Error(
+          `opposite road sides have different lengths: ${road.id}`,
+        );
+      for (const side of ["North", "South"] as const) {
+        const widths = road.frontageUnits[side].slice(0, 10);
+        if (
+          [1, 2, 3].some(
+            (units, offset) =>
+              widths.filter((width) => width === units).length !==
+              [3, 6, 1][offset],
+          )
+        )
+          throw new Error(`wrong frontage mix on ${road.id} ${side}`);
+        if (road.frontageUnits[side].slice(10).some((width) => width !== 2))
+          throw new Error(
+            `NPC frontage must remain two units on ${road.id} ${side}`,
+          );
+      }
+    }
     const connectionPositions = new Set<number>();
     const connectionTargets = new Set<string>();
     for (const side of ["North", "South"] as const) {
       if (
         seed.plots.filter(
           (plot) => plot.roadId === road.id && plot.side === side,
-        ).length !== 8
+        ).length !== (seed.version === 1 ? 8 : 10)
       )
-        throw new Error(`${road.id} ${side} needs eight player plots`);
+        throw new Error(
+          `${road.id} ${side} needs ${seed.version === 1 ? 8 : 10} player plots`,
+        );
     }
     for (const connection of road.connections) {
       if (connectionPositions.has(connection.at))
@@ -158,6 +231,16 @@ export function validateCitySeed(input: unknown): CitySeed {
         connection.toAt >= (streetById.get(connection.toRoadId)?.length ?? 0)
       )
         throw new Error(`connection outside street from ${road.id}`);
+      if (seed.version === 2 && connection.kind === "Intersection") {
+        const northWidth = road
+          .frontageUnits!.North.slice(0, connection.at + 1)
+          .reduce((sum, width) => sum + width, 0);
+        const southWidth = road
+          .frontageUnits!.South.slice(0, connection.at + 1)
+          .reduce((sum, width) => sum + width, 0);
+        if (northWidth !== southWidth)
+          throw new Error(`intersection sides misaligned: ${road.id}`);
+      }
       if (
         !streetIds.has(connection.toRoadId) ||
         connection.toRoadId === road.id
@@ -189,5 +272,18 @@ export function validateCitySeed(input: unknown): CitySeed {
         );
     }
   }
+  const reachable = new Set([seed.streets[0]!.id]);
+  const frontier = [seed.streets[0]!.id];
+  for (let index = 0; index < frontier.length; index++) {
+    const road = streetById.get(frontier[index]!);
+    if (!road) throw new Error("connected street is missing");
+    for (const connection of road.connections) {
+      if (reachable.has(connection.toRoadId)) continue;
+      reachable.add(connection.toRoadId);
+      frontier.push(connection.toRoadId);
+    }
+  }
+  if (reachable.size !== seed.streets.length)
+    throw new Error("road graph is disconnected");
   return seed;
 }

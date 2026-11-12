@@ -2,6 +2,7 @@ export * from "./money.js";
 export * from "./config.js";
 export * from "./world.js";
 export * from "./assets.js";
+export * from "./variable-media.js";
 export * from "./events.js";
 export * from "./parking.js";
 export * from "./contract-view.js";

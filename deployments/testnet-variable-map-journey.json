@@ -1,0 +1,15 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "releaseRecord": "deployments/variable-city-release-db33845c80179c1a.json",
+  "seedVersion": 2,
+  "roads": 5,
+  "streetSides": 10,
+  "plots": 100,
+  "curbSpaces": 180,
+  "civicSites": 7,
+  "mapPoints": 100,
+  "intersectionSignViews": 24,
+  "endExitViews": 8,
+  "verifiedAt": "2026-11-12T09:48:04.675Z"
+}

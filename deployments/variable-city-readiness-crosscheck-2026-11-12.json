@@ -1,0 +1,229 @@
+{
+  "capturedAt": "2026-11-12T07:11:49.712Z",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "finalBlock": {
+    "hash": "8nqYB9CaT7GVYthrp3Wqms9wEL34jHuc3MQ5BdRaUMx8",
+    "height": 277330213
+  },
+  "codeHash": "GF6ZnMi3QhDfU2p7hjry3yAvSPWEuq7rNi2TguXxkBJ",
+  "codeSha256": "03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19",
+  "stateSha256": "036249aa91634c3605427df4d20b696003a9d3a7dd15e135d0d6ae571b45e424",
+  "stateEntryCount": 181,
+  "storageUsageBytes": 896460,
+  "configVersion": 1,
+  "paused": false,
+  "plotCount": 80,
+  "npcSiteCount": 7,
+  "ownedPlots": [
+    {
+      "id": "plot-main-n-2",
+      "road_id": "main",
+      "side": "North",
+      "index": 2,
+      "corner": false,
+      "owner": "dev-20261110121829-19069405494728.testnet",
+      "rule": {
+        "kind": "Free"
+      },
+      "pending_rule": {
+        "rule": {
+          "kind": "Meter",
+          "ratePerHour": "1000000"
+        },
+        "effective_at": 1794368157
+      },
+      "building": {
+        "building_type": "Restaurant",
+        "variant": 2,
+        "level": 2,
+        "primary_color": "#73D9A6",
+        "name": "Near Garden",
+        "approved_manifest_hash": "31645fe6ccac1fea2281fb868e8626b2808af3b63467defa47cc39dddff1edcb",
+        "approved_at": 1794378091,
+        "last_facade_approved_at": 1794378091,
+        "pending_appearance": null,
+        "last_appearance_decision": {
+          "reference": {
+            "revision": 5,
+            "owner": "dev-20261110121829-19069405494728.testnet",
+            "building_type": "Restaurant",
+            "level": 2,
+            "manifest_hash": "31645fe6ccac1fea2281fb868e8626b2808af3b63467defa47cc39dddff1edcb"
+          },
+          "status": "Approved",
+          "decided_at": 1794378091,
+          "reason": null
+        },
+        "facade_exemption_level": null,
+        "appearance_revision": 5,
+        "layout_revision": 5
+      },
+      "logo": {
+        "revision": 3,
+        "active": {
+          "content": {
+            "asset_hash": "a7ceb962124bd4f3c1b6db35e8f47f6e5cfc0c6bd9e0596b613750084cbc4ef8",
+            "link": "https://near.org"
+          },
+          "approved_layout_revision": 5,
+          "approved_at": 1794378135
+        },
+        "pending": null,
+        "last_decision": {
+          "proposal": {
+            "revision": 3,
+            "owner": "dev-20261110121829-19069405494728.testnet",
+            "building_type": "Restaurant",
+            "level": 2,
+            "layout_revision": 5,
+            "content": {
+              "asset_hash": "a7ceb962124bd4f3c1b6db35e8f47f6e5cfc0c6bd9e0596b613750084cbc4ef8",
+              "link": "https://near.org"
+            }
+          },
+          "status": "Approved",
+          "decided_at": 1794378135,
+          "reason": null
+        },
+        "last_replacement_at": 1794368059
+      },
+      "billboard": {
+        "revision": 3,
+        "active": {
+          "content": {
+            "asset_hash": "1b11c8acecb84f03bb9590c5a31c72fdb62d58aca3ce6a5d3c1247d2ad192898",
+            "link": "https://near.org"
+          },
+          "approved_layout_revision": 5,
+          "approved_at": 1794378176
+        },
+        "pending": null,
+        "last_decision": {
+          "proposal": {
+            "revision": 3,
+            "owner": "dev-20261110121829-19069405494728.testnet",
+            "building_type": "Restaurant",
+            "level": 2,
+            "layout_revision": 5,
+            "content": {
+              "asset_hash": "1b11c8acecb84f03bb9590c5a31c72fdb62d58aca3ce6a5d3c1247d2ad192898",
+              "link": "https://near.org"
+            }
+          },
+          "status": "Approved",
+          "decided_at": 1794378176,
+          "reason": null
+        },
+        "last_replacement_at": 1794368352
+      },
+      "ticket_cooldown_until": 0,
+      "reserved_storage_bytes": 4096,
+      "used_storage_bytes": 842
+    },
+    {
+      "id": "plot-market-n-1",
+      "road_id": "market",
+      "side": "North",
+      "index": 1,
+      "corner": false,
+      "owner": "dev-20261110121829-19069405494728.testnet",
+      "rule": {
+        "kind": "NoParking"
+      },
+      "pending_rule": {
+        "rule": {
+          "kind": "Free"
+        },
+        "effective_at": 1794383681
+      },
+      "building": {
+        "building_type": "Restaurant",
+        "variant": 2,
+        "level": 1,
+        "primary_color": "#F6C85F",
+        "name": "Plot 2",
+        "approved_manifest_hash": null,
+        "approved_at": null,
+        "last_facade_approved_at": null,
+        "pending_appearance": null,
+        "last_appearance_decision": null,
+        "facade_exemption_level": null,
+        "appearance_revision": 1,
+        "layout_revision": 1
+      },
+      "logo": {
+        "revision": 0,
+        "active": null,
+        "pending": null,
+        "last_decision": null,
+        "last_replacement_at": null
+      },
+      "billboard": {
+        "revision": 0,
+        "active": null,
+        "pending": null,
+        "last_decision": null,
+        "last_replacement_at": null
+      },
+      "ticket_cooldown_until": 1794383675,
+      "reserved_storage_bytes": 4096,
+      "used_storage_bytes": 54
+    }
+  ],
+  "ownerAccounts": [
+    {
+      "account_id": "dev-20261110121829-19069405494728.testnet",
+      "account": {
+        "balance": "51511110",
+        "car_ids": [
+          3
+        ],
+        "starter_car_id": 3,
+        "active_session_id": null,
+        "last_emergency_repair_at": null,
+        "burger_decal": false,
+        "reserved_storage_bytes": 4096,
+        "used_storage_bytes": 240
+      },
+      "cars": [
+        {
+          "id": 3,
+          "owner": "dev-20261110121829-19069405494728.testnet",
+          "body": "Hatchback",
+          "color": "Green",
+          "tier": 1,
+          "durability": 86,
+          "parked_session_id": null
+        }
+      ]
+    }
+  ],
+  "curbSessions": [],
+  "towerSessions": [],
+  "proposedMoves": [
+    {
+      "from": "plot-main-n-2",
+      "to": "plot-main-n-3",
+      "currentOwner": "dev-20261110121829-19069405494728.testnet",
+      "destinationCurrentOwner": null
+    },
+    {
+      "from": "plot-market-n-1",
+      "to": "plot-market-n-2",
+      "currentOwner": "dev-20261110121829-19069405494728.testnet",
+      "destinationCurrentOwner": null
+    }
+  ],
+  "unmappedOwnedPlots": [],
+  "gates": {
+    "pausedForMigration": false,
+    "allSpacesEmpty": true,
+    "proposedMovesCoverOwners": true
+  },
+  "limitations": [
+    "This is a read-only pinned-block inventory, not a purchase/parking freeze.",
+    "The contract account map cannot enumerate registered drivers without a plot.",
+    "API event cursor, media bytes and database backup are separate checks.",
+    "Proposed deed moves require owner and junction review before deployment."
+  ]
+}

@@ -1,5 +1,5 @@
 import "pixi.js/unsafe-eval";
-import { Application, Container, Graphics, Text } from "pixi.js";
+import { Application, Container, Graphics, Rectangle, Text } from "pixi.js";
 import {
   CarBody,
   CarColor,
@@ -10,19 +10,25 @@ import {
   formatCoins,
   grossEarnings,
   manifestHash,
+  manifestHashV2,
   validateAssetManifest,
+  validateAssetManifestV2,
   validateCitySeed,
   type AssetManifest,
+  type AssetManifestV2,
   type NPCSite,
   type ChainStreetSide,
 } from "@estate/shared";
 import rawSeed from "../../../contracts/estate/seed.json";
+import rawGuestSeed from "../../../contracts/estate/seed-v2.json";
 import {
-  cityMapPoint,
+  cityMapCurbPoint,
   connectionAtX,
+  curbDirection,
   destination,
   endConnection,
   frontageAtX,
+  frontageWidth,
   frontageX,
   FRONTAGE_PITCH,
   INTERSECTION_GAP,
@@ -32,6 +38,14 @@ import {
   type RoadConnection,
 } from "./city-navigation.js";
 import { MockGame, type MockSession } from "./mock-game.js";
+import { choices, paintBuilding } from "./frontage-art.js";
+import {
+  choiceForGuestPlot,
+  createGuestFrontage,
+  type GuestFrontage,
+} from "./guest-frontage.js";
+import { mountGuestDesignPicker } from "./guest-design-picker.js";
+import type { BuildingLevel } from "./frontage-layout.js";
 import { visibleMediaHash, visibleMediaLink } from "./media-view.js";
 import { plotEarningPreview, towerEarningPreview } from "./plot-earnings.js";
 import { streetSceneKey } from "./street-scene-key.js";
@@ -59,7 +73,9 @@ import {
 } from "./world-sprites.js";
 import "./style.css";
 
-const city = validateCitySeed(rawSeed);
+const chainCity = validateCitySeed(rawSeed);
+const guestCity = validateCitySeed(rawGuestSeed);
+let city = guestCity;
 const game = new MockGame(city);
 if (
   import.meta.env.DEV &&
@@ -68,7 +84,7 @@ if (
   const visitor = game.sessions.get(`c:${game.ownedPlotId}:0`);
   if (!visitor) throw new Error("Full-curb preview needs its visitor session");
   for (const plot of city.plots) {
-    for (const space of [0, 1]) {
+    for (let space = 0; space < game.curbCapacity(plot.id); space++) {
       game.sessions.set(`c:${plot.id}:${space}`, {
         ...visitor,
         id: `full-curbs-${plot.id}-${space}`,
@@ -113,6 +129,7 @@ modeButton.hidden = !contractId;
 let chainScreen: ChainScreen | null = null;
 let liveStreet: LiveStreet | null = null;
 let liveMode = false;
+let liveCityVersion: 1 | 2 = 1;
 let chainOwnerFocus = false;
 let readerPromise: Promise<ChainReader> | null = null;
 let walletPromise: Promise<GameWalletClient> | null = null;
@@ -126,7 +143,23 @@ type Selection =
 let selection: Selection = { kind: "Plot", id: "plot-main-n-0" };
 let carX = 85;
 let selectedTowerFloor = 0;
-let moving = 0;
+let moving: -1 | 0 | 1 = 0;
+let driveDirection: -1 | 1 = 1;
+let curbFeedbackTimer: number | null = null;
+let curbCrossing: {
+  elapsedMs: number;
+  destination: "North" | "South";
+  swapped: boolean;
+} | null = null;
+const CURB_CROSSING_MS = 560;
+const drivePointers = new Map<
+  number,
+  { direction: -1 | 1; pressedAt: number }
+>();
+const driveKeys = new Map<string, -1 | 1>();
+const DRIVE_SPEED = 100;
+const driveLaneY = (direction: -1 | 1): number => (direction < 0 ? 252 : 273);
+const TAP_DRIVE_DISTANCE = 18;
 let currentScreen = "Street";
 let garageFeedback: { message: string; error: boolean } | null = null;
 const portraitDriving = window.matchMedia(
@@ -160,10 +193,16 @@ let unmountPractice: (() => void) | null = null;
 let carSprite: Container;
 let backdrop: Container;
 let world: Container;
+let variableFacades: Array<{
+  plotId: string;
+  x: number;
+  width: number;
+  group: GuestFrontage;
+}> = [];
 let renderedLiveSceneKey: string | null = null;
 const facadeTextures = new PresetTextureCache();
 const impressionReporter = new ImpressionReporter();
-const approvedManifests = new Map<string, AssetManifest>();
+const approvedManifests = new Map<string, AssetManifest | AssetManifestV2>();
 const loadingManifests = new Set<string>();
 const plotPriceCache = new Map<string, { text: string; fetchedAt: number }>();
 const loadingPlotPrices = new Set<string>();
@@ -209,14 +248,22 @@ function requestPlotPrice(plotId: string): void {
     });
 }
 
-function requestApprovedManifest(hash: string): void {
+function requestApprovedManifest(hash: string, version: 1 | 2): void {
   if (approvedManifests.has(hash) || loadingManifests.has(hash)) return;
   loadingManifests.add(hash);
   void fetch(`/api/manifests/${hash}`)
     .then(async (response) => {
       if (!response.ok) return;
-      const manifest = validateAssetManifest(await response.json());
-      if ((await manifestHash(manifest)) !== hash)
+      const value: unknown = await response.json();
+      const manifest =
+        version === 2
+          ? validateAssetManifestV2(value)
+          : validateAssetManifest(value);
+      const digest =
+        manifest.schemaVersion === 2
+          ? await manifestHashV2(manifest)
+          : await manifestHash(manifest);
+      if (digest !== hash)
         throw new Error("Approved facade manifest hash mismatch");
       approvedManifests.set(hash, manifest);
       if (liveMode && currentScreen === "Street") drawWorld();
@@ -228,6 +275,20 @@ function requestApprovedManifest(hash: string): void {
 }
 const ownedPlot = game.plot(game.ownedPlotId);
 let guestBuildingPreview: GuestBuildingPreview | null = null;
+const guestDesigns = new Map<string, string>();
+const guestLogos = new Map<string, ImageBitmap>();
+const guestAds = new Map<string, ImageBitmap>();
+const guestLevels = new Map<string, BuildingLevel>();
+let designTargetId = game.ownedPlotId;
+function guestLevelForPlot(plot: typeof ownedPlot): BuildingLevel {
+  const selected = guestLevels.get(plot.id);
+  if (selected) return selected;
+  if (plot.id === game.ownedPlotId) return 1;
+  const streetOrder = ["main", "market", "river", "central", "harbor"].indexOf(
+    plot.roadId,
+  );
+  return (((plot.index + streetOrder) % 4) + 1) as BuildingLevel;
+}
 function updateGuestBuildingBanner(): void {
   guestBuildingBanner.hidden = liveMode || guestBuildingPreview === null;
   if (!guestBuildingPreview) return;
@@ -247,7 +308,7 @@ const studio = new MockStudio(
     moveToRoad(
       road.id,
       ownedPlot.side,
-      frontageX(road, ownedPlot.index) + FRONTAGE_PITCH / 2,
+      frontageCenter(road, ownedPlot.index, ownedPlot.side),
     );
     showScreen("Street");
     updateGuestBuildingBanner();
@@ -256,9 +317,9 @@ const studio = new MockStudio(
 let statsInitialPlotId: string | undefined;
 const statsScreen = new AdvertiserStatsScreen(
   otherScreen,
-  city.plots.map((plot) => ({
+  chainCity.plots.map((plot) => ({
     id: plot.id,
-    label: `${city.streets.find((street) => street.id === plot.roadId)?.name ?? plot.roadId} · ${plot.side} · Plot ${plot.index + 1} · ${plot.initialType}`,
+    label: `${chainCity.streets.find((street) => street.id === plot.roadId)?.name ?? plot.roadId} · ${curbDirection(plot.roadId, plot.side)} · Plot ${plot.index + 1} · ${plot.initialType}`,
   })),
   Boolean(contractId),
   () => showScreen("Map"),
@@ -275,11 +336,38 @@ function currentRoad(): Road {
   return road;
 }
 
+function frontageCenter(
+  road: Road,
+  index: number,
+  frontageSide: "North" | "South",
+): number {
+  return (
+    frontageX(road, index, frontageSide) +
+    frontageWidth(road, index, frontageSide) / 2
+  );
+}
+
+if (import.meta.env.DEV) {
+  const previewId = new URLSearchParams(window.location.search).get(
+    "preview-plot",
+  );
+  const preview = guestCity.plots.find((plot) => plot.id === previewId);
+  if (preview) {
+    roadId = preview.roadId;
+    side = preview.side;
+    const road = guestCity.streets.find(
+      (entry) => entry.id === preview.roadId,
+    )!;
+    carX = frontageCenter(road, preview.index, preview.side);
+    selection = { kind: "Plot", id: preview.id };
+  }
+}
+
 function selectionAtCar(): Selection {
   const road = currentRoad();
   const crossing = connectionAtX(road, carX);
   if (crossing) return { kind: "Connection", connection: crossing };
-  const index = frontageAtX(road, carX);
+  const index = frontageAtX(road, carX, side);
   const plot = city.plots.find(
     (entry) =>
       entry.roadId === roadId && entry.side === side && entry.index === index,
@@ -313,6 +401,79 @@ function activeCarIsParked(): boolean {
     : Boolean(game.activeCarSession());
 }
 
+function canCrossWithCar(): boolean {
+  return (
+    !activeCarIsParked() && (!liveMode || Boolean(liveStreet?.selectedCar))
+  );
+}
+
+function oppositeSide(): "North" | "South" {
+  return side === "North" ? "South" : "North";
+}
+
+function updateCrossSideControl(): void {
+  const next = oppositeSide();
+  const nextDirection = curbDirection(currentRoad().id, next).toLowerCase();
+  const crossingWithCar = canCrossWithCar();
+  for (const id of ["left", "right"])
+    document.querySelector<HTMLButtonElement>(`#${id}`)!.disabled =
+      !crossingWithCar;
+  crossSideButton.textContent = crossingWithCar
+    ? "Cross road"
+    : "View other curb";
+  crossSideButton.dataset.glyph = crossingWithCar ? "↑" : "↕";
+  crossSideButton.dataset.short = crossingWithCar ? "Cross" : "View";
+  crossSideButton.setAttribute(
+    "aria-label",
+    canCrossWithCar()
+      ? `Cross ${currentRoad().name} to the ${nextDirection} curb`
+      : `View the ${nextDirection} curb of ${currentRoad().name}`,
+  );
+}
+
+function updateGamepadAction(mode: string): void {
+  let glyph = "·";
+  let short = "Wait";
+  if (mode.startsWith("Park")) [glyph, short] = ["P", "Park"];
+  else if (mode === "Collect") [glyph, short] = ["C", "Collect"];
+  else if (mode === "Settle expired") [glyph, short] = ["C", "Settle"];
+  else if (mode === "Ticket") [glyph, short] = ["T", "Ticket"];
+  else if (mode === "Visit") [glyph, short] = ["★", "Visit"];
+  else if (mode.startsWith("Turn onto")) [glyph, short] = ["↱", "Turn"];
+  else if (mode === "Set up wallet") [glyph, short] = ["◉", "Wallet"];
+  else if (mode === "Repair car") [glyph, short] = ["⚙", "Repair"];
+  else if (mode === "Drive closer") [glyph, short] = ["P", "Near"];
+  else if (mode.includes("full")) [glyph, short] = ["P", "Full"];
+  else if (mode === "Car already earning") [glyph, short] = ["P", "Busy"];
+  else if (mode === "Your curb") [glyph, short] = ["P", "Owned"];
+  actionButton.dataset.glyph = glyph;
+  actionButton.dataset.short = short;
+  actionButton.title = mode;
+  actionButton.setAttribute("aria-label", mode);
+}
+
+function updateDriveInput(): void {
+  if (
+    currentScreen !== "Street" ||
+    portraitDriving.matches ||
+    curbCrossing !== null ||
+    activeCarIsParked()
+  ) {
+    moving = 0;
+    return;
+  }
+  const pointer = [...drivePointers.values()].at(-1);
+  const key = [...driveKeys.values()].at(-1);
+  moving = pointer?.direction ?? key ?? 0;
+  if (moving) driveDirection = moving;
+}
+
+function resetDriveInput(): void {
+  drivePointers.clear();
+  driveKeys.clear();
+  moving = 0;
+}
+
 function openPlotPanel(): void {
   plotPanel.classList.remove("closed");
   if (compactStreet.matches && !portraitDriving.matches) {
@@ -333,6 +494,8 @@ function moveToRoad(
   nextSide: "North" | "South",
   x: number,
 ): void {
+  curbCrossing = null;
+  crossSideButton.disabled = false;
   roadId = nextRoadId;
   side = nextSide;
   carX = x;
@@ -349,13 +512,63 @@ function followConnection(connection: RoadConnection): void {
   status.textContent = `Now on ${currentRoad().name}.`;
 }
 
-function crossStreet(): void {
-  side = side === "North" ? "South" : "North";
+function showCurb(destination: "North" | "South"): void {
+  side = destination;
   selection = selectionAtCar();
   drawWorld();
   updatePanel();
   if (liveMode) void liveStreet?.refresh();
-  status.textContent = `Viewing the ${side.toLowerCase()} side of ${currentRoad().name}.`;
+}
+
+function announceCurb(crossingWithCar: boolean): void {
+  const direction = curbDirection(currentRoad().id, side).toLowerCase();
+  const message = crossingWithCar
+    ? `Now on the ${direction} curb · directly across`
+    : `Viewing the ${direction} curb${activeCarIsParked() ? " · car still parked" : ""}`;
+  status.classList.add("curb-feedback");
+  status.classList.toggle("viewing-curb", !crossingWithCar);
+  status.textContent = message;
+  if (curbFeedbackTimer !== null) window.clearTimeout(curbFeedbackTimer);
+  curbFeedbackTimer = window.setTimeout(() => {
+    if (status.textContent === message) status.textContent = "";
+    status.classList.remove("curb-feedback", "viewing-curb");
+    curbFeedbackTimer = null;
+  }, 2_000);
+}
+
+function completeCurbCrossing(): void {
+  const crossing = curbCrossing;
+  if (!crossing) return;
+  curbCrossing = null;
+  if (!crossing.swapped) showCurb(crossing.destination);
+  crossSideButton.disabled = false;
+  carSprite.y = driveLaneY(driveDirection);
+  carSprite.alpha = 1;
+  announceCurb(true);
+}
+
+function crossStreet(): void {
+  if (curbCrossing) return;
+  const crossingWithCar = canCrossWithCar();
+  const destination = oppositeSide();
+  resetDriveInput();
+  if (
+    crossingWithCar &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    if (curbFeedbackTimer !== null) {
+      window.clearTimeout(curbFeedbackTimer);
+      curbFeedbackTimer = null;
+    }
+    curbCrossing = { elapsedMs: 0, destination, swapped: false };
+    crossSideButton.disabled = true;
+    status.classList.add("curb-feedback");
+    status.classList.remove("viewing-curb");
+    status.textContent = `Crossing to the ${curbDirection(currentRoad().id, destination).toLowerCase()} curb…`;
+    return;
+  }
+  showCurb(destination);
+  announceCurb(crossingWithCar);
 }
 
 function parkedLocation(
@@ -376,7 +589,7 @@ function parkedLocation(
   return {
     roadId: frontage.roadId,
     side: frontage.side,
-    x: frontageX(road, index) + FRONTAGE_PITCH / 2,
+    x: frontageCenter(road, index, frontage.side),
   };
 }
 
@@ -395,8 +608,8 @@ function label(text: string, size = 12, color = "#14213d"): Text {
   return new Text({
     text,
     style: {
-      fontFamily: "Arial, sans-serif",
-      fontWeight: "bold",
+      fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
+      fontWeight: "700",
       fontSize: size,
       fill: color,
       align: "center",
@@ -438,24 +651,41 @@ function intersectionSign(road: Road, connection: RoadConnection): Container {
     connection.toRoadId;
   const group = new Container();
   const graphic = new Graphics()
-    .rect(start, 170, INTERSECTION_GAP, 120)
-    .fill(0x647486)
-    .rect(start, 170, INTERSECTION_GAP, 20)
-    .fill(0x8a9aa7)
-    .rect(start, 190, INTERSECTION_GAP, 16)
-    .fill(0xe7d7c7)
-    .rect(center - 2, 172, 4, 19)
-    .fill(0x14213d)
-    .roundRect(center - 58, 151, 116, 23, 5)
-    .fill(0xffca24)
-    .stroke({ color: 0x14213d, width: 2 });
-  for (let stripe = 0; stripe < 3; stripe++) {
-    graphic.rect(start + 8 + stripe * 23, 250, 12, 30).fill(0xfff8e9);
+    .rect(start, 170, INTERSECTION_GAP, 36)
+    .fill(0xc5d4c6)
+    .rect(start, 206, INTERSECTION_GAP, 84)
+    .fill(0x536475)
+    .rect(start, 290, INTERSECTION_GAP, 10)
+    .fill(0x487c5d)
+    .rect(start + 2, 192, 16, 12)
+    .fill(0xe2ca78)
+    .rect(start + INTERSECTION_GAP - 18, 192, 16, 12)
+    .fill(0xe2ca78)
+    .rect(center - 2, 193, 4, 14)
+    .fill(0x596a6a)
+    .rect(center - 3, 204, 6, 4)
+    .fill(0x344d57)
+    .roundRect(start + 2, 174, INTERSECTION_GAP - 4, 20, 3)
+    .fill(0x176a58)
+    .stroke({ color: 0xf4f8eb, width: 2 })
+    .roundRect(start + 5, 177, INTERSECTION_GAP - 10, 14, 1)
+    .stroke({ color: 0xcce9d8, width: 1 });
+  for (let stripe = 0; stripe < 5; stripe++) {
+    graphic.rect(start + 6 + stripe * 14, 252, 8, 33).fill(0xfff7df);
   }
-  const signText = label(`↗ ${destinationName}`, 9);
+  graphic
+    .rect(start + 3, 246, INTERSECTION_GAP - 6, 2)
+    .fill(0xfff7df)
+    .rect(start + 3, 287, INTERSECTION_GAP - 6, 2)
+    .fill(0xfff7df);
+  const shortName = destinationName
+    .replace(/ Street$/i, " St")
+    .replace(/ Avenue$/i, " Ave");
+  const signText = label(`↗ ${shortName.toUpperCase()}`, 7, "#ffffff");
   signText.anchor.set(0.5);
-  signText.position.set(center, 163);
+  signText.position.set(center, 184);
   group.addChild(graphic, signText);
+  group.hitArea = new Rectangle(start, 170, INTERSECTION_GAP, 37);
   group.eventMode = "static";
   group.cursor = "pointer";
   group.on("pointertap", () =>
@@ -472,13 +702,22 @@ function endSign(road: Road, connection: RoadConnection): Container {
     connection.toRoadId;
   const group = new Container();
   const board = new Graphics()
-    .roundRect(x, 160, 106, 25, 5)
-    .fill(0xffca24)
-    .stroke({ color: 0x14213d, width: 2 });
-  const text = label(`${left ? "←" : "→"} ${destinationName}`, 9);
+    .rect(x + 51, 206, 4, 11)
+    .fill(0x596a6a)
+    .roundRect(x, 190, 106, 17, 3)
+    .fill(0x176a58)
+    .stroke({ color: 0xf4f8eb, width: 2 })
+    .roundRect(x + 4, 193, 98, 11, 1)
+    .stroke({ color: 0xcce9d8, width: 1 });
+  const text = label(
+    `${left ? "←" : "→"} ${destinationName.toUpperCase()}`,
+    8,
+    "#ffffff",
+  );
   text.anchor.set(0.5);
-  text.position.set(x + 53, 172);
+  text.position.set(x + 53, 199);
   group.addChild(board, text);
+  group.hitArea = new Rectangle(x, 190, 106, 28);
   group.eventMode = "static";
   group.cursor = "pointer";
   group.on("pointertap", () =>
@@ -527,18 +766,30 @@ function liveSceneKey(): string {
 
 function drawWorld(): void {
   facadeTextures.setViews([]);
+  variableFacades = [];
   world.removeChildren().forEach((child) => child.destroy({ children: true }));
   const road = currentRoad();
   drawBackdrop(road);
   const width = roadWidth(road);
   const base = new Graphics();
   base.rect(0, 170, width, 20).fill(0xa8d9a1);
-  base.rect(0, 190, width, 16).fill(0xf6e3d6);
-  base.rect(0, 206, width, 40).fill(0x7d8998);
-  base.rect(0, 246, width, 44).fill(0x5c6878);
-  base.rect(0, 290, width, 10).fill(0x499b6d);
+  base.rect(0, 190, width, 16).fill(0xe9dfcf);
+  base.rect(0, 203, width, 3).fill(0xc0b6a8);
+  base.rect(0, 206, width, 40).fill(0x718292);
+  base.rect(0, 206, width, 3).fill(0xe9d8b7);
+  base.rect(0, 244, width, 2).fill(0xc8d2d2);
+  base.rect(0, 246, width, 44).fill(0x526475);
+  base.rect(0, 290, width, 10).fill(0x487c5d);
+  for (let x = 0; x < width; x += 34) {
+    base.moveTo(x, 191).lineTo(x, 202).stroke({ color: 0xcac1b3, width: 1 });
+  }
+  for (let x = 0; x < width; x += 170) {
+    base.roundRect(x + 75, 198, 19, 5, 1).fill(0x6d7b7f);
+    for (let slit = 0; slit < 3; slit++)
+      base.rect(x + 78 + slit * 5, 199, 2, 3).fill(0xa7b3ae);
+  }
   for (let x = 0; x < width; x += 62)
-    base.rect(x + 8, 268, 30, 3).fill(0xfff8e9);
+    base.roundRect(x + 8, 267, 30, 3, 1).fill(0xfff7df);
   world.addChild(base);
   for (const connection of road.connections) {
     if (connection.kind === "Intersection") {
@@ -559,17 +810,34 @@ function drawWorld(): void {
       (!liveMode ||
         chainSide?.plots.some((entry) => entry.plot.plot.id === plot.id)),
   );
+  const deedEdges = new Set<number>();
+  for (const plot of plots) {
+    const x = frontageX(road, plot.index, side);
+    deedEdges.add(x);
+    deedEdges.add(x + frontageWidth(road, plot.index, side));
+  }
+  const deedSeams = new Graphics();
+  deedSeams.eventMode = "none";
+  for (const edge of deedEdges) {
+    deedSeams
+      .moveTo(edge, 190)
+      .lineTo(edge, 205)
+      .stroke({ color: 0x9b8e7d, width: 1.5 })
+      .roundRect(edge - 2, 204, 4, 3, 1)
+      .fill(0x607470);
+  }
+  world.addChild(deedSeams);
   for (const plot of plots) {
     const chainEntry = chainSide?.plots.find(
       (entry) => entry.plot.plot.id === plot.id,
     );
     const building = chainEntry?.plot.plot.building;
     const approvedHash = building?.approved_manifest_hash;
-    if (approvedHash) requestApprovedManifest(approvedHash);
+    if (approvedHash) requestApprovedManifest(approvedHash, liveCityVersion);
     const approvedManifest = approvedHash
       ? approvedManifests.get(approvedHash)
       : undefined;
-    const x = frontageX(road, plot.index);
+    const x = frontageX(road, plot.index, side);
     const guestOwned = !liveMode && plot.id === game.ownedPlotId;
     const guestLook = guestOwned ? guestBuildingPreview : null;
     const renderedPlot = guestLook
@@ -594,63 +862,177 @@ function drawWorld(): void {
             guestLook?.level ?? 1,
           )
         : illustratedPreviewForPlot(plot);
-    const facade = createPresetFacade(
-      renderedPlot,
-      x,
-      building
-        ? {
-            level: building.level,
-            palette: building.primary_color,
-            name: building.name,
-            approvedManifest:
-              approvedManifest?.buildingType === building.building_type &&
-              approvedManifest.level === building.level
-                ? approvedManifest
-                : undefined,
-            logoAssetHash: chainEntry
-              ? visibleMediaHash(
-                  chainEntry.plot.plot.logo,
-                  chainEntry.plot.logo_eligible,
-                  building.layout_revision,
-                )
-              : undefined,
-            billboardAssetHash: chainEntry
-              ? visibleMediaHash(
-                  chainEntry.plot.plot.billboard,
-                  chainEntry.plot.billboard_eligible,
-                  building.layout_revision,
-                )
-              : undefined,
-          }
-        : guestOwned
-          ? { level: guestLook?.level ?? 1, palette: "#F6C85F" }
-          : undefined,
-      illustratedPreview,
-    );
-    if (!liveMode && plot.id === "plot-main-n-2") {
-      const previewLevel = (plot.index % 4) + 1;
-      const rect =
-        illustratedPreview?.billboardRect ??
-        facadePreset(plot.initialType, plot.initialVariant, previewLevel)
-          .billboardRect;
-      if (rect) facade.group.addChild(guestBurgerBillboard(rect));
-    }
-    facade.group.eventMode = "static";
-    facade.group.cursor = "pointer";
-    facade.group.on("pointertap", () => {
+    const openThisPlot = () => {
       selection = { kind: "Plot", id: plot.id };
       openPlotPanel();
       updatePanel();
-    });
-    world.addChild(facade.group);
-    facades.push(facade);
+    };
+    if ((!liveMode && !guestLook) || (liveMode && liveCityVersion === 2)) {
+      const chainPlot = chainEntry?.plot.plot;
+      const choice = liveMode
+        ? choices.filter((item) => item.units === plot.frontageUnits)[
+            chainPlot && "design_choice" in chainPlot
+              ? chainPlot.design_choice
+              : -1
+          ]
+        : choiceForGuestPlot(plot, guestDesigns.get(plot.id));
+      if (!choice) throw new Error(`No building design fits ${plot.id}`);
+      const customFacadeHash =
+        liveMode &&
+        approvedManifest?.schemaVersion === 2 &&
+        chainPlot &&
+        "design_choice" in chainPlot &&
+        approvedManifest.frontageUnits === chainPlot.frontage_units &&
+        approvedManifest.designChoice === chainPlot.design_choice &&
+        approvedManifest.buildingType === building?.building_type &&
+        approvedManifest.level === building.level
+          ? approvedManifest.spriteHash
+          : undefined;
+      const sprite = createGuestFrontage(
+        choice,
+        x,
+        liveMode ? (building?.level as BuildingLevel) : guestLevelForPlot(plot),
+        liveMode ? null : guestLogos.get(plot.id),
+        liveMode ? building?.name : undefined,
+        liveMode && chainEntry && building
+          ? {
+              logoHash: visibleMediaHash(
+                chainEntry.plot.plot.logo,
+                chainEntry.plot.logo_eligible,
+                building.layout_revision,
+              ),
+              billboardHash: visibleMediaHash(
+                chainEntry.plot.plot.billboard,
+                chainEntry.plot.billboard_eligible,
+                building.layout_revision,
+              ),
+            }
+          : undefined,
+        customFacadeHash,
+        liveMode ? null : (guestAds.get(plot.id) ?? null),
+      );
+      sprite.eventMode = "static";
+      sprite.cursor = "pointer";
+      sprite.on("pointertap", openThisPlot);
+      world.addChild(sprite);
+      if (liveMode)
+        variableFacades.push({
+          plotId: plot.id,
+          x,
+          width: choice.units * 85,
+          group: sprite,
+        });
+    } else {
+      const facade = createPresetFacade(
+        renderedPlot,
+        x,
+        building
+          ? {
+              level: building.level,
+              palette: building.primary_color,
+              name: building.name,
+              approvedManifest:
+                approvedManifest?.schemaVersion === 1 &&
+                approvedManifest.buildingType === building.building_type &&
+                approvedManifest.level === building.level
+                  ? approvedManifest
+                  : undefined,
+              logoAssetHash: chainEntry
+                ? visibleMediaHash(
+                    chainEntry.plot.plot.logo,
+                    chainEntry.plot.logo_eligible,
+                    building.layout_revision,
+                  )
+                : undefined,
+              billboardAssetHash: chainEntry
+                ? visibleMediaHash(
+                    chainEntry.plot.plot.billboard,
+                    chainEntry.plot.billboard_eligible,
+                    building.layout_revision,
+                  )
+                : undefined,
+            }
+          : guestOwned
+            ? { level: guestLook?.level ?? 1, palette: "#F6C85F" }
+            : undefined,
+        illustratedPreview,
+      );
+      if (!liveMode && plot.id === "plot-main-n-2") {
+        const previewLevel = (plot.index % 4) + 1;
+        const rect =
+          illustratedPreview?.billboardRect ??
+          facadePreset(plot.initialType, plot.initialVariant, previewLevel)
+            .billboardRect;
+        if (rect) facade.group.addChild(guestBurgerBillboard(rect));
+      }
+      facade.group.eventMode = "static";
+      facade.group.cursor = "pointer";
+      facade.group.on("pointertap", openThisPlot);
+      world.addChild(facade.group);
+      facades.push(facade);
+    }
     const stalls = new Graphics();
-    for (let slot = 0 as 0 | 1; slot < 2; slot = (slot + 1) as 0 | 1) {
-      const sx = x + 18 + slot * 70;
-      stalls.rect(sx, 210, 64, 30).stroke({ color: 0xffffff, width: 2 });
-      const parked = liveMode
+    const stallLabels: Text[] = [];
+    const stallHitTargets: Graphics[] = [];
+    const parkedSprites: Container[] = [];
+    const capacity = liveMode
+      ? (chainEntry?.slots.length ?? 0)
+      : game.curbCapacity(plot.id);
+    const ruleKind = liveMode
+      ? (chainEntry?.plot.effective_rule.kind ?? "Free")
+      : (game.rules.get(plot.id) ?? "Free");
+    const stallMark =
+      ruleKind === "NoParking"
+        ? "NO P"
+        : ruleKind === "Meter"
+          ? "METER"
+          : ruleKind === "ColorOnly"
+            ? "COLOR"
+            : "FREE";
+    const stallMarkColor =
+      ruleKind === "NoParking"
+        ? 0xa9474b
+        : ruleKind === "Meter"
+          ? 0x9b7230
+          : ruleKind === "ColorOnly"
+            ? 0x65588d
+            : 0x266d70;
+    for (let slot = 0; slot < capacity; slot++) {
+      const sx = x + 10 + slot * 85;
+      stalls
+        .moveTo(sx, 211)
+        .lineTo(sx, 241)
+        .lineTo(sx + 64, 241)
+        .lineTo(sx + 64, 211)
+        .stroke({ color: 0xf6f5e7, width: 2 });
+      stalls.rect(sx + 10, 213, 44, 3).fill(0x596e7d);
+      const currentSession = liveMode
         ? chainEntry?.slots[slot]
         : game.sessions.get(`c:${plot.id}:${slot}`);
+      const parked =
+        currentSession &&
+        ("expires_at" in currentSession
+          ? Math.floor(Date.now() / 1000) < currentSession.expires_at
+          : game.nowSeconds() < currentSession.expiresAt)
+          ? currentSession
+          : null;
+      if (!parked) {
+        stalls
+          .roundRect(sx + 7, 213, 50, 11, 2)
+          .fill(stallMarkColor)
+          .rect(sx + 24, 228, 16, 2)
+          .fill(0xd1e3dc);
+        if (ruleKind === "NoParking")
+          for (let stripe = 0; stripe < 3; stripe++)
+            stalls
+              .moveTo(sx + 15 + stripe * 15, 235)
+              .lineTo(sx + 22 + stripe * 15, 228)
+              .stroke({ color: 0xe7b0a5, width: 2 });
+        const text = label(stallMark, 7, "#ffffff");
+        text.anchor.set(0.5);
+        text.position.set(sx + 32, 218.5);
+        stallLabels.push(text);
+      }
       if (parked) {
         const isCurrent = liveMode
           ? parked.driver === liveStreet?.accountId
@@ -664,69 +1046,56 @@ function drawWorld(): void {
                   )
                 : null))
             : game.cars.find((car) => car.id === parked.carId);
-        if (
-          "expires_at" in parked &&
-          Math.floor(Date.now() / 1000) >= parked.expires_at
-        )
-          continue;
-        world.addChild(
-          createCarSprite(
-            sx + 32,
-            229,
-            parkedCar?.body ?? "Sedan",
-            parkedCar?.color ?? "Blue",
-            isCurrent &&
-              (liveMode
-                ? Boolean(liveStreet?.player?.account?.burger_decal)
-                : game.burgerDecal),
-          ),
+        const parkedSprite = createCarSprite(
+          sx + 32,
+          224,
+          parkedCar?.body ?? (liveMode ? "Sedan" : "SportsCoupe"),
+          parkedCar?.color ?? "Blue",
+          isCurrent &&
+            (liveMode
+              ? Boolean(liveStreet?.player?.account?.burger_decal)
+              : game.burgerDecal),
         );
+        parkedSprite.eventMode = "none";
+        parkedSprites.push(parkedSprite);
       }
+      const stallHit = new Graphics()
+        .rect(sx, 200, 64, 49)
+        .fill({ color: 0xffffff, alpha: 0.001 });
+      stallHit.eventMode = "static";
+      stallHit.cursor = "pointer";
+      stallHit.on("pointertap", () => {
+        selection = { kind: "Plot", id: plot.id };
+        updatePanel();
+        if (
+          parked ||
+          (liveMode
+            ? Boolean(
+                liveStreet?.accountId &&
+                  chainEntry?.plot.plot.owner === liveStreet.accountId,
+              )
+            : plot.id === game.ownedPlotId)
+        ) {
+          openPlotPanel();
+          return;
+        }
+        action(slot);
+      });
+      stallHitTargets.push(stallHit);
     }
-    stalls.eventMode = "static";
-    stalls.cursor = "pointer";
-    stalls.on("pointertap", () => {
-      selection = { kind: "Plot", id: plot.id };
-      openPlotPanel();
-      updatePanel();
-    });
-    world.addChild(stalls);
-    const rule = label(
-      liveMode
-        ? chainEntry?.plot.effective_rule.kind === "NoParking"
-          ? "NO P"
-          : chainEntry?.plot.effective_rule.kind === "Meter"
-            ? "METER"
-            : chainEntry?.plot.effective_rule.kind === "ColorOnly"
-              ? "COLOR"
-              : "FREE"
-        : game.rules.get(plot.id) === "NoParking"
-          ? "NO P"
-          : "FREE",
-      9,
-      "#ffffff",
+    stalls.eventMode = "none";
+    world.addChild(
+      stalls,
+      ...stallLabels,
+      ...parkedSprites,
+      ...stallHitTargets,
     );
-    rule.anchor.set(0.5);
-    rule.position.set(x + 85, 199);
-    const sign = new Graphics()
-      .roundRect(x + 64, 188, 42, 20, 8)
-      .fill(
-        (
-          liveMode
-            ? chainEntry?.plot.effective_rule.kind === "NoParking"
-            : game.rules.get(plot.id) === "NoParking"
-        )
-          ? 0xe35c61
-          : 0x28ba86,
-      )
-      .stroke({ color: 0x14213d, width: 1 });
-    world.addChild(sign, rule);
   }
   facadeTextures.setViews(facades);
   for (const site of city.npcSites.filter(
     (entry) => entry.roadId === roadId && entry.side === side,
   )) {
-    const x = frontageX(road, site.frontageIndex);
+    const x = frontageX(road, site.frontageIndex, side);
     const frontage = createNpcFacade(site.name, site.role, x);
     frontage.eventMode = "static";
     frontage.cursor = "pointer";
@@ -755,7 +1124,7 @@ function drawWorld(): void {
         world.addChild(
           createCarSprite(
             x + 85,
-            229,
+            224,
             parkedCar.body,
             parkedCar.color,
             liveMode
@@ -770,23 +1139,24 @@ function drawWorld(): void {
   }
   carSprite = createCarSprite(
     carX,
-    273,
+    driveLaneY(driveDirection),
     liveMode ? (liveStreet?.selectedCar?.body ?? "Hatchback") : game.car.body,
     liveMode ? (liveStreet?.selectedCar?.color ?? "Red") : game.car.color,
     liveMode
       ? Boolean(liveStreet?.player?.account?.burger_decal)
       : game.burgerDecal,
   );
+  carSprite.scale.x = driveDirection;
   carSprite.visible = liveMode
     ? Boolean(liveStreet?.selectedCar) && !activeCarIsParked()
     : !game.activeCarSession();
   world.addChild(carSprite);
   document.querySelector<HTMLElement>("#street-name")!.textContent = road.name;
   document.querySelector<HTMLElement>("#mobile-street-name")!.textContent =
-    road.name;
+    `${road.name} · ${curbDirection(road.id, side)} curb`;
   document.querySelector<HTMLElement>("#street-side")!.textContent =
-    `${side} side`;
-  crossSideButton.textContent = `Cross to ${side === "North" ? "South" : "North"}`;
+    `${curbDirection(road.id, side)} curb`;
+  updateCrossSideControl();
   renderedLiveSceneKey = liveMode ? liveSceneKey() : null;
 }
 
@@ -907,6 +1277,7 @@ function renderPlotLinks(logo?: string, billboard?: string): void {
 }
 
 function updatePanel(): void {
+  updateCrossSideControl();
   if (liveMode) {
     updateLivePanel();
     return;
@@ -936,7 +1307,7 @@ function updatePanel(): void {
     const next = city.streets.find(
       (entry) => entry.id === target.connection.toRoadId,
     );
-    title = `Cross street · ${next?.name ?? target.connection.toRoadId}`;
+    title = `Turn onto ${next?.name ?? target.connection.toRoadId}`;
     rule = "Turn at this intersection";
     mode = `Turn onto ${next?.name ?? "street"}`;
     enabled = true;
@@ -982,8 +1353,7 @@ function updatePanel(): void {
         };
       const nearby =
         Math.abs(
-          carX -
-            (frontageX(currentRoad(), site.frontageIndex) + FRONTAGE_PITCH / 2),
+          carX - frontageCenter(currentRoad(), site.frontageIndex, side),
         ) <= 100;
       if (!nearby) mode = "Drive closer";
       else if (site.role !== "ParkingTower") mode = "Visit";
@@ -998,7 +1368,8 @@ function updatePanel(): void {
     }
   } else if (target.kind === "Plot") {
     const plot = game.plot(target.id);
-    title = `${!liveMode && plot.id === game.ownedPlotId && guestBuildingPreview ? guestBuildingPreview.type : plot.initialType} · Plot ${plot.index + 1}`;
+    const guestChoice = choiceForGuestPlot(plot, guestDesigns.get(plot.id));
+    title = `${plot.id === game.ownedPlotId && guestBuildingPreview ? guestBuildingPreview.type : guestChoice.name} · Plot ${plot.index + 1} · ${game.curbCapacity(plot.id)} ${game.curbCapacity(plot.id) === 1 ? "unit" : "units"} · Level ${guestLevelForPlot(plot)}`;
     rule =
       game.rules.get(plot.id) === "NoParking"
         ? "No parking · owner can ticket"
@@ -1024,11 +1395,9 @@ function updatePanel(): void {
             ).toString(),
           )} + storage`;
     const curbOpen = game.curbAvailability(plot.id);
-    spaces = `${curbOpen} of 2 spaces free`;
+    spaces = `${curbOpen} of ${game.curbCapacity(plot.id)} ${game.curbCapacity(plot.id) === 1 ? "space" : "spaces"} free`;
     const nearby =
-      Math.abs(
-        carX - (frontageX(currentRoad(), plot.index) + FRONTAGE_PITCH / 2),
-      ) <= 100;
+      Math.abs(carX - frontageCenter(currentRoad(), plot.index, side)) <= 100;
     const ticketable =
       plot.id === game.ownedPlotId &&
       [...game.sessions.values()].some(
@@ -1056,6 +1425,8 @@ function updatePanel(): void {
   ownerPriceLine.textContent = ownerPrice;
   ownerPriceLine.hidden = !ownerPrice;
   document.querySelector<HTMLElement>("#plot-spaces")!.textContent = spaces;
+  document.querySelector<HTMLButtonElement>("#panel-design")!.hidden =
+    target.kind !== "Plot";
   renderTowerPanel(towerPanel);
   document.querySelector<HTMLElement>("#balance")!.textContent = formatCoins(
     game.balance.toString(),
@@ -1066,9 +1437,18 @@ function updatePanel(): void {
     `${game.car.body} · Tier ${game.car.tier}`;
   document.querySelector<HTMLElement>("#mobile-car-chip")!.textContent =
     `🚗 ${game.car.body}`;
-  actionButton.textContent = mode;
+  const controllerCollect = Boolean(activeSession) && !enabled;
+  const controllerMode =
+    controllerCollect && activeSession
+      ? game.nowSeconds() >= activeSession.expiresAt
+        ? "Settle expired"
+        : "Collect"
+      : mode;
+  actionButton.textContent = controllerMode;
+  actionButton.dataset.command = controllerCollect ? "collect" : "context";
+  updateGamepadAction(controllerMode);
   panelAction.textContent = mode;
-  actionButton.disabled = !enabled;
+  actionButton.disabled = controllerCollect ? false : !enabled;
   panelAction.disabled = !enabled;
   collectButton.hidden = !activeSession;
   panelCollect.hidden = !activeSession;
@@ -1085,6 +1465,7 @@ function updatePanel(): void {
 }
 
 function updateLivePanel(): void {
+  document.querySelector<HTMLButtonElement>("#panel-design")!.hidden = true;
   const live = liveStreet;
   const car = live?.selectedCar;
   const session = live?.activeSession;
@@ -1127,7 +1508,7 @@ function updateLivePanel(): void {
     const next = city.streets.find(
       (entry) => entry.id === target.connection.toRoadId,
     );
-    title = `Cross street · ${next?.name ?? target.connection.toRoadId}`;
+    title = `Turn onto ${next?.name ?? target.connection.toRoadId}`;
     rule = "Turn at this intersection";
     mode = `Turn onto ${next?.name ?? "street"}`;
     enabled = true;
@@ -1171,8 +1552,7 @@ function updateLivePanel(): void {
       }
       const nearby =
         Math.abs(
-          carX -
-            (frontageX(currentRoad(), site.frontageIndex) + FRONTAGE_PITCH / 2),
+          carX - frontageCenter(currentRoad(), site.frontageIndex, side),
         ) <= 100;
       mode = nearby
         ? site.role === "ParkingTower"
@@ -1238,7 +1618,7 @@ function updateLivePanel(): void {
       const open = entry.slots.findIndex(
         (slot) => !slot || now >= slot.expires_at,
       );
-      spaces = `${entry.slots.filter((slot) => !slot || now >= slot.expires_at).length} of 2 spaces free`;
+      spaces = `${entry.slots.filter((slot) => !slot || now >= slot.expires_at).length} of ${entry.slots.length} spaces free`;
       renderPlotLinks(
         visibleMediaLink(
           plot.logo,
@@ -1255,9 +1635,7 @@ function updateLivePanel(): void {
         (slot) => slot && !slot.legal && now < slot.expires_at,
       );
       const nearby =
-        Math.abs(
-          carX - (frontageX(currentRoad(), plot.index) + FRONTAGE_PITCH / 2),
-        ) <= 100;
+        Math.abs(carX - frontageCenter(currentRoad(), plot.index, side)) <= 100;
       if (!nearby) mode = "Drive closer";
       else if (!registered || !keyReady) mode = "Set up wallet";
       else if (
@@ -1299,9 +1677,20 @@ function updateLivePanel(): void {
   document.querySelector<HTMLElement>("#mobile-car-chip")!.textContent = car
     ? `🚗 ${car.body}`
     : "🚗 No car";
-  actionButton.textContent = mode;
+  const controllerCollect = Boolean(session) && !enabled;
+  const controllerMode =
+    controllerCollect && session
+      ? now >= session.expires_at
+        ? "Settle expired"
+        : "Collect"
+      : mode;
+  actionButton.textContent = controllerMode;
+  actionButton.dataset.command = controllerCollect ? "collect" : "context";
+  updateGamepadAction(controllerMode);
   panelAction.textContent = mode;
-  actionButton.disabled = !enabled;
+  actionButton.disabled = controllerCollect
+    ? !keyReady || Boolean(live?.busy)
+    : !enabled;
   panelAction.disabled = !enabled;
   collectButton.hidden = !session;
   panelCollect.hidden = !session;
@@ -1365,13 +1754,21 @@ async function collectLiveCar(): Promise<void> {
   }
 }
 
-function action(): void {
+function action(requestedSlot?: number): void {
   if (liveMode) {
-    void liveAction();
+    void liveAction(requestedSlot);
+    return;
+  }
+  if (actionButton.dataset.command === "collect") {
+    if (requestedSlot === undefined) collectParkedCar();
+    else status.textContent = "Collect your parked car before parking again.";
     return;
   }
   if (actionButton.disabled) {
-    status.textContent = "Drive beside a parking space or intersection first.";
+    status.textContent =
+      actionButton.textContent === "Drive closer"
+        ? "Drive closer to that parking space first."
+        : (actionButton.textContent ?? "Parking unavailable");
     return;
   }
   try {
@@ -1384,7 +1781,7 @@ function action(): void {
       const site = city.npcSites.find((entry) => entry.id === target.id);
       if (site?.role === "ParkingTower") {
         const session = game.parkTower(site.id, selectedTowerFloor);
-        message = `Parked on floor ${selectedTowerFloor + 1}, space ${(session.space % TOWER_SPACES_PER_FLOOR) + 1}. Return to collect earnings.`;
+        message = `Parked on floor ${selectedTowerFloor + 1}, space ${(session.space % TOWER_SPACES_PER_FLOOR) + 1}. Use C to collect earnings.`;
       } else {
         if (!site) return;
         activeSiteId = site.id;
@@ -1395,14 +1792,15 @@ function action(): void {
     } else if (
       target.kind === "Plot" &&
       target.id === game.ownedPlotId &&
+      requestedSlot === undefined &&
       [...game.sessions.values()].some(
         (entry) => entry.locationId === target.id && !entry.legal,
       )
     )
       message = `Ticketed visitor for ${formatCoins(game.ticket(target.id).toString())} coins`;
     else if (target.kind === "Plot") {
-      const session = game.park(target.id);
-      message = `Parked in space ${session.space + 1}. Return to collect earnings.`;
+      const session = game.park(target.id, requestedSlot);
+      message = `Parked in space ${session.space + 1}. Use C to collect earnings.`;
     } else {
       return;
     }
@@ -1415,8 +1813,20 @@ function action(): void {
   }
 }
 
-async function liveAction(): Promise<void> {
-  if (actionButton.disabled) return;
+async function liveAction(requestedSlot?: number): Promise<void> {
+  if (actionButton.dataset.command === "collect") {
+    if (requestedSlot === undefined) collectParkedCar();
+    else status.textContent = "Collect your parked car before parking again.";
+    return;
+  }
+  if (actionButton.disabled) {
+    if (requestedSlot !== undefined)
+      status.textContent =
+        actionButton.textContent === "Drive closer"
+          ? "Drive closer to that parking space first."
+          : (actionButton.textContent ?? "Parking unavailable");
+    return;
+  }
   const live = liveStreet;
   const target = selection;
   if (target.kind === "Connection") {
@@ -1455,7 +1865,7 @@ async function liveAction(): Promise<void> {
         site_id: target.id,
         space,
       });
-      status.textContent = `Parked on floor ${Math.floor(space / TOWER_SPACES_PER_FLOOR) + 1}, space ${(space % TOWER_SPACES_PER_FLOOR) + 1} on testnet.`;
+      status.textContent = `Parked on floor ${Math.floor(space / TOWER_SPACES_PER_FLOOR) + 1}, space ${(space % TOWER_SPACES_PER_FLOOR) + 1} on testnet. Use C to collect earnings.`;
     } else if (target.kind === "Plot") {
       const entry = livePlot(target.id);
       if (!entry) throw new Error("Plot state is still loading");
@@ -1464,6 +1874,7 @@ async function liveAction(): Promise<void> {
         (slot) => slot && !slot.legal && now < slot.expires_at,
       );
       if (
+        requestedSlot === undefined &&
         entry.plot.plot.owner === live.accountId &&
         illegal &&
         now >= entry.plot.plot.ticket_cooldown_until
@@ -1475,16 +1886,24 @@ async function liveAction(): Promise<void> {
         });
         status.textContent = "Illegal parker ticketed on testnet.";
       } else {
-        const slot = entry.slots.findIndex(
-          (occupied) => !occupied || now >= occupied.expires_at,
-        );
-        if (slot < 0) throw new Error("Both curb spaces are occupied");
+        const slot =
+          requestedSlot ??
+          entry.slots.findIndex(
+            (occupied) => !occupied || now >= occupied.expires_at,
+          );
+        if (slot < 0) throw new Error("All curb spaces are occupied");
+        if (
+          !Number.isInteger(slot) ||
+          slot >= entry.slots.length ||
+          (entry.slots[slot] && now < entry.slots[slot].expires_at)
+        )
+          throw new Error("This parking space is occupied");
         await live.call("park", {
           car_id: live.selectedCar.id,
           plot_id: target.id,
           slot,
         });
-        status.textContent = `Parked in curb space ${slot + 1} on testnet.`;
+        status.textContent = `Parked in curb space ${slot + 1} on testnet. Use C to collect earnings.`;
       }
     }
   } catch (error) {
@@ -1504,41 +1923,130 @@ function cityMapMarkup(): string {
       : null
     : (game.activeCarSession() ?? null);
   const parkedActiveCar = Boolean(parkedCarLocation);
+  const hasActiveCar = !liveMode || Boolean(liveStreet?.selectedCar);
   const marker = parkedCarLocation
     ? parkedLocation(parkedCarLocation)
     : { roadId, side, x: carX };
   const markerRoad = city.streets.find((entry) => entry.id === marker.roadId)!;
-  const markerPoint = cityMapPoint(city, marker.roadId, marker.x);
-  return `<h1>City map</h1>
-    <p class="muted">${parkedActiveCar ? `Active car parked on ${markerRoad.name}, ${marker.side.toLowerCase()} side. Viewing ${currentRoad().name}.` : liveMode ? `Shared testnet city · Viewing ${currentRoad().name}, ${side.toLowerCase()} side.${activeSession ? " Another car is earning while you explore." : ""}` : `Five connected roads · ${game.car.body} is on ${currentRoad().name}, ${side.toLowerCase()} side.${activeSession ? " Another car is earning while you drive." : ""}`}</p>
-    <svg class="city-map" viewBox="0 0 500 300" role="img" aria-label="Five-road city map showing your current position">
-      <title>near.estate city streets</title>
-      <path class="map-road" d="M50 65H450 M50 150H450 M50 235H450 M180 40V260 M320 40V260 M50 65Q20 65 20 108Q20 150 50 150 M450 150Q480 150 480 193Q480 235 450 235" />
-      <text x="55" y="54">Main Street</text><text x="55" y="139">Market Street</text><text x="55" y="224">River Street</text>
-      <text x="180" y="30" text-anchor="middle">Central Ave</text><text x="320" y="30" text-anchor="middle">Harbor Ave</text>
-      <circle class="map-position-ring" cx="${markerPoint.x}" cy="${markerPoint.y}" r="12" />
-      <circle class="map-position" cx="${markerPoint.x}" cy="${markerPoint.y}" r="6" />
-    </svg>
-    <div class="road-list" aria-label="Choose a street">${city.streets
-      .map(
-        (street) =>
-          `<button data-road="${street.id}" ${street.id === marker.roadId ? 'aria-current="location"' : ""}>${street.name}${street.id === marker.roadId ? (parkedActiveCar ? " · car parked" : " · here") : street.id === roadId ? " · viewing" : ""}</button>`,
-      )
-      .join("")}</div>
-    <p><button id="cross-street">Cross to the ${side === "North" ? "South" : "North"} side</button></p>
-    <h2>Game-owned parking towers</h2>
-    <div class="road-list">${city.npcSites
-      .filter((site) => site.role === "ParkingTower")
-      .map(
-        (site) =>
-          `<button data-tower="${site.id}">${site.name}${liveMode ? " · view tower" : ` · ${game.towerAvailability(site.id)}/${site.capacity} open`}</button>`,
-      )
-      .join("")}</div>
-    <h2>Other city stops</h2><div class="road-list">${city.npcSites
-      .filter((site) => site.role !== "ParkingTower")
-      .map((site) => `<button data-site="${site.id}">${site.name}</button>`)
-      .join("")}</div>
-    <h2>City data</h2><div class="road-list"><button id="map-stats">Browse advertiser stats</button></div>`;
+  const markerPoint = cityMapCurbPoint(
+    city,
+    marker.roadId,
+    marker.x,
+    marker.side,
+  );
+  const mapText = (value: string): string =>
+    value
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  const markerLabel = parkedActiveCar
+    ? "PARKED"
+    : hasActiveCar
+      ? "YOU"
+      : "VIEW";
+  const markerLabelWidth = parkedActiveCar ? 62 : hasActiveCar ? 38 : 42;
+  const markerLabelX =
+    markerPoint.x + markerLabelWidth + 18 > 490
+      ? markerPoint.x - markerLabelWidth - 18
+      : markerPoint.x + 18;
+  const markerLabelY =
+    markerPoint.y < 76 ? markerPoint.y + 13 : markerPoint.y - 30;
+  const roadLabel = (id: string, name: string, y: number): string => {
+    const onLeft = marker.roadId === id && markerPoint.x < 205;
+    return `<text class="map-road-label" x="${onLeft ? 250 : 57}" y="${y - 17}" text-anchor="${onLeft ? "middle" : "start"}">${mapText(name)}</text>`;
+  };
+  const avenueLabel = (id: string, name: string, x: number): string =>
+    `<text class="map-road-label" x="${x}" y="${marker.roadId === id && markerPoint.y < 78 ? 284 : 27}" text-anchor="middle">${mapText(name)}</text>`;
+  const siteMapPoint = (site: NPCSite): { x: number; y: number } => {
+    const road = city.streets.find((entry) => entry.id === site.roadId)!;
+    return cityMapCurbPoint(
+      city,
+      site.roadId,
+      frontageCenter(road, site.frontageIndex, site.side),
+      site.side,
+    );
+  };
+  const towerPins = city.npcSites
+    .filter((site) => site.role === "ParkingTower")
+    .map((site) => {
+      const point = siteMapPoint(site);
+      return `<g class="map-tower-pin" data-map-tower="${site.id}" role="button" tabindex="0" aria-label="Go to ${mapText(site.name)}" transform="translate(${point.x} ${point.y})"><circle r="12"/><text y="4" text-anchor="middle">P</text></g>`;
+    })
+    .join("");
+  const activityPinLabels: Record<string, string> = {
+    RepairGarage: "G",
+    Cinema: "▶",
+    BurgerStop: "B",
+    PracticeCourse: "⚑",
+  };
+  const activityPins = city.npcSites
+    .filter((site) => site.role !== "ParkingTower")
+    .map((site) => {
+      const point = siteMapPoint(site);
+      return `<g class="map-site-pin" data-map-site="${site.id}" role="button" tabindex="0" aria-label="Visit ${mapText(site.name)}" transform="translate(${point.x} ${point.y})"><title>${mapText(site.name)}</title><circle r="10"/><text y="3.5" text-anchor="middle">${activityPinLabels[site.role]}</text></g>`;
+    })
+    .join("");
+  const roadCards = city.streets
+    .map((street, index) => {
+      const isHere = street.id === marker.roadId;
+      const isViewing = street.id === roadId && !isHere;
+      return `<button class="map-route" data-road="${street.id}" ${isHere ? 'aria-current="location"' : ""}><span class="map-route-number">${String(index + 1).padStart(2, "0")}</span><span class="map-route-copy"><strong>${mapText(street.name)}</strong><small>${isHere ? (parkedActiveCar ? "Car parked here" : hasActiveCar ? "You are here" : "Viewing this street") : isViewing ? "Viewing this street" : parkedActiveCar || !hasActiveCar ? "View street" : "Travel here"}</small></span><span class="map-route-arrow" aria-hidden="true">↗</span></button>`;
+    })
+    .join("");
+  const towerCards = city.npcSites
+    .filter((site) => site.role === "ParkingTower")
+    .map(
+      (site) =>
+        `<button class="map-place" data-tower="${site.id}"><span class="map-place-icon tower-icon" aria-hidden="true">P</span><span><strong>${mapText(site.name)}</strong><small>${liveMode ? "View available spaces" : `${game.towerAvailability(site.id)} of ${site.capacity} spaces open`}</small></span><span class="map-place-arrow" aria-hidden="true">↗</span></button>`,
+    )
+    .join("");
+  const siteDetails: Record<string, { icon: string; hint: string }> = {
+    RepairGarage: { icon: "⚙", hint: "Repair and upgrades" },
+    Cinema: { icon: "▶", hint: "Watch a short" },
+    BurgerStop: { icon: "🍔", hint: "Take a free break" },
+    PracticeCourse: { icon: "⚑", hint: "Race your best time" },
+  };
+  const activityCards = city.npcSites
+    .filter((site) => site.role !== "ParkingTower")
+    .map((site) => {
+      const detail = siteDetails[site.role]!;
+      return `<button class="map-place" data-site="${site.id}"><span class="map-place-icon" aria-hidden="true">${detail.icon}</span><span><strong>${mapText(site.name)}</strong><small>${detail.hint}</small></span><span class="map-place-arrow" aria-hidden="true">↗</span></button>`;
+    })
+    .join("");
+  return `<div class="city-map-screen">
+    <div class="map-heading"><div><span class="map-eyebrow">PARKING CITY · CITY GUIDE</span><h1>City map</h1><p>${liveMode ? "Shared testnet city" : "Five connected roads"} · ${parkedActiveCar ? "Car parked" : hasActiveCar ? "Driving" : "Viewing"} on ${mapText(markerRoad.name)}, ${curbDirection(marker.roadId, marker.side).toLowerCase()} curb.</p></div><span class="map-heading-badge">${parkedActiveCar ? "PARKED" : hasActiveCar ? "YOU ARE HERE" : "CURRENT VIEW"}</span></div>
+    <div class="map-primary">
+      <section class="map-board" aria-label="City street diagram"><div class="map-board-head"><strong>Explore the streets</strong><span>Tap a road to explore <span aria-hidden="true">↗</span></span></div>
+        <svg class="city-map" viewBox="0 0 500 300" role="group" aria-label="Five connected roads, parking towers and your car position">
+          <title>near.estate city streets</title>
+          <rect class="map-ground" width="500" height="300" />
+          <path class="map-green" d="M62 90H156V127H62Z M206 90H296V127H206Z M347 90H437V127H347Z M62 174H156V211H62Z M206 174H296V211H206Z M347 174H437V211H347Z" />
+          <path class="map-road-edge" d="M50 65H450 M50 150H450 M50 235H450 M180 40V260 M320 40V260 M50 65Q20 65 20 108Q20 150 50 150 M450 150Q480 150 480 193Q480 235 450 235" />
+          <path class="map-road" d="M50 65H450 M50 150H450 M50 235H450 M180 40V260 M320 40V260 M50 65Q20 65 20 108Q20 150 50 150 M450 150Q480 150 480 193Q480 235 450 235" />
+          <path class="map-road-line" d="M50 65H450 M50 150H450 M50 235H450 M180 40V260 M320 40V260" />
+          <rect class="map-road-hit" data-map-road="main" x="50" y="50" width="400" height="30" role="button" tabindex="0" aria-label="Travel to Main Street" />
+          <rect class="map-road-hit" data-map-road="market" x="50" y="135" width="400" height="30" role="button" tabindex="0" aria-label="Travel to Market Street" />
+          <rect class="map-road-hit" data-map-road="river" x="50" y="220" width="400" height="30" role="button" tabindex="0" aria-label="Travel to River Street" />
+          <rect class="map-road-hit" data-map-road="central" x="165" y="40" width="30" height="220" role="button" tabindex="0" aria-label="Travel to Central Avenue" />
+          <rect class="map-road-hit" data-map-road="harbor" x="305" y="40" width="30" height="220" role="button" tabindex="0" aria-label="Travel to Harbor Avenue" />
+          ${roadLabel("main", "Main Street", 65)}${roadLabel("market", "Market Street", 150)}${roadLabel("river", "River Street", 235)}
+          ${avenueLabel("central", "Central Ave", 180)}${avenueLabel("harbor", "Harbor Ave", 320)}
+          ${towerPins}${activityPins}
+          <circle class="map-position-ring" cx="${markerPoint.x}" cy="${markerPoint.y}" r="12" />
+          <circle class="map-position" cx="${markerPoint.x}" cy="${markerPoint.y}" r="6" />
+          <rect class="map-position-tag" x="${markerLabelX}" y="${markerLabelY}" width="${markerLabelWidth}" height="18" rx="9" />
+          <text class="map-position-label" x="${markerLabelX + markerLabelWidth / 2}" y="${markerLabelY + 12}" text-anchor="middle">${markerLabel}</text>
+        </svg>
+        <div class="map-legend"><span><i class="map-legend-dot"></i> Your car</span><span><i class="map-legend-tower">P</i> Parking tower</span><span><i class="map-legend-site">✦</i> City stop</span><span class="map-compass">N ↑</span></div>
+      </section>
+      <section class="map-route-panel"><h2>Choose a street</h2><p>Tap a street to jump into its curb view.</p><div class="map-route-list">${roadCards}</div><button class="map-cross" id="cross-street">${canCrossWithCar() ? "Cross road to" : "View"} the ${curbDirection(roadId, oppositeSide()).toLowerCase()} curb <span aria-hidden="true">↗</span></button></section>
+    </div>
+    <section class="map-section"><div class="map-section-heading"><h2>Parking towers</h2><span>Game owned · 32 spaces each</span></div><div class="map-place-grid">${towerCards}</div></section>
+    <section class="map-section"><div class="map-section-heading"><h2>Places to visit</h2><span>Free activities around town</span></div><div class="map-place-grid">${activityCards}</div></section>
+    <div class="map-footer"><span>For plot owners and advertisers</span><button id="map-stats">View advertiser stats <span aria-hidden="true">↗</span></button></div>
+  </div>`;
 }
 
 function destinationMarkup(site: NPCSite): string {
@@ -1642,13 +2150,14 @@ function myPlotsMarkup(): string {
   return `<h1>My plots</h1><div class="card-grid">
     <article class="card"><h2>Plot ${ownedPlot.index + 1} · Main Street</h2>
       <p><span class="tag">Guest sample</span></p>
-      <p>${ownedPlot.initialType} · Level 1 · Shape ${ownedPlot.initialVariant}</p>
+      <p>${choiceForGuestPlot(ownedPlot, guestDesigns.get(ownedPlot.id)).name} · ${game.curbCapacity(ownedPlot.id)} ${game.curbCapacity(ownedPlot.id) === 1 ? "unit" : "units"} · Level ${guestLevelForPlot(ownedPlot)}</p>
       <p>Rule: ${game.rules.get(ownedPlot.id) === "NoParking" ? "No parking" : "Free"}</p>
       <p class="muted">${visitor ? "An illegal visitor is parked here for the ticket demo." : "No illegal visitors are currently parked."}</p>
       <button id="visit-owned">Visit plot</button>
     </article>
     <article class="card"><h2>Build your place</h2>
-      <p>Explore five building types, two shapes, four levels and four colours beside real neighbours.</p>
+      <p>Choose from five silhouettes that fit this plot, or explore the illustrated building studio.</p>
+      <button id="open-street-designs" class="primary">Choose street design</button>
       <button id="open-studio" class="primary">Open building studio</button>
       <button id="open-stats">Advertiser stats</button>
     </article>
@@ -1676,6 +2185,7 @@ function menuMarkup(): string {
 }
 
 function showScreen(screen: string): void {
+  completeCurbCrossing();
   const navigationScreen = screen;
   if (currentScreen === "Cars" && screen !== "Cars") garageFeedback = null;
   if (currentScreen === "Street" && screen !== "Street")
@@ -1695,7 +2205,7 @@ function showScreen(screen: string): void {
   if (currentScreen === "Stats" && screen !== "Stats") statsScreen.unmount();
   if (currentScreen === "Testnet" && screen !== "Testnet") chainScreen?.hide();
   if (currentScreen === "Street" && screen !== "Street") liveStreet?.stop();
-  if (screen !== "Street" || portraitDriving.matches) moving = 0;
+  if (screen !== "Street" || portraitDriving.matches) resetDriveInput();
   currentScreen = screen;
   status.hidden = screen !== "Street" || portraitDriving.matches;
   streetScreen.hidden = screen !== "Street";
@@ -1742,6 +2252,43 @@ function showScreen(screen: string): void {
   }
   if (screen === "Map") {
     otherScreen.innerHTML = cityMapMarkup();
+    const goToRoad = (id: string | undefined) => {
+      const road = city.streets.find((entry) => entry.id === id);
+      if (!road) return;
+      moveToRoad(road.id, side, frontageCenter(road, 0, side));
+      showScreen("Street");
+    };
+    const goToTower = (id: string | undefined) => {
+      const site = city.npcSites.find((entry) => entry.id === id);
+      if (!site) return;
+      const road = city.streets.find((entry) => entry.id === site.roadId)!;
+      moveToRoad(
+        site.roadId,
+        site.side,
+        frontageCenter(road, site.frontageIndex, site.side),
+      );
+      showScreen("Street");
+    };
+    const goToSite = (id: string | undefined) => {
+      const site = city.npcSites.find((entry) => entry.id === id);
+      if (!site) return;
+      const road = city.streets.find((entry) => entry.id === site.roadId)!;
+      moveToRoad(
+        site.roadId,
+        site.side,
+        frontageCenter(road, site.frontageIndex, site.side),
+      );
+      activeSiteId = site.id;
+      showScreen("Destination");
+    };
+    const bindMapHotspot = (element: SVGElement, action: () => void) => {
+      element.addEventListener("click", action);
+      element.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        action();
+      });
+    };
     otherScreen
       .querySelector<HTMLButtonElement>("#map-stats")!
       .addEventListener("click", () =>
@@ -1750,14 +2297,12 @@ function showScreen(screen: string): void {
     otherScreen
       .querySelectorAll<HTMLButtonElement>("[data-road]")
       .forEach((button) =>
-        button.addEventListener("click", () => {
-          const road = city.streets.find(
-            (entry) => entry.id === button.dataset.road,
-          );
-          if (!road) return;
-          moveToRoad(road.id, side, frontageX(road, 0) + FRONTAGE_PITCH / 2);
-          showScreen("Street");
-        }),
+        button.addEventListener("click", () => goToRoad(button.dataset.road)),
+      );
+    otherScreen
+      .querySelectorAll<SVGElement>("[data-map-road]")
+      .forEach((hotspot) =>
+        bindMapHotspot(hotspot, () => goToRoad(hotspot.dataset.mapRoad)),
       );
     otherScreen
       .querySelector<HTMLButtonElement>("#cross-street")!
@@ -1768,37 +2313,22 @@ function showScreen(screen: string): void {
     otherScreen
       .querySelectorAll<HTMLButtonElement>("[data-tower]")
       .forEach((button) =>
-        button.addEventListener("click", () => {
-          const site = city.npcSites.find(
-            (entry) => entry.id === button.dataset.tower,
-          );
-          if (!site) return;
-          const road = city.streets.find((entry) => entry.id === site.roadId)!;
-          moveToRoad(
-            site.roadId,
-            site.side,
-            frontageX(road, site.frontageIndex) + FRONTAGE_PITCH / 2,
-          );
-          showScreen("Street");
-        }),
+        button.addEventListener("click", () => goToTower(button.dataset.tower)),
+      );
+    otherScreen
+      .querySelectorAll<SVGElement>("[data-map-tower]")
+      .forEach((hotspot) =>
+        bindMapHotspot(hotspot, () => goToTower(hotspot.dataset.mapTower)),
       );
     otherScreen
       .querySelectorAll<HTMLButtonElement>("[data-site]")
       .forEach((button) =>
-        button.addEventListener("click", () => {
-          const site = city.npcSites.find(
-            (entry) => entry.id === button.dataset.site,
-          );
-          if (!site) return;
-          const road = city.streets.find((entry) => entry.id === site.roadId)!;
-          moveToRoad(
-            site.roadId,
-            site.side,
-            frontageX(road, site.frontageIndex) + FRONTAGE_PITCH / 2,
-          );
-          activeSiteId = site.id;
-          showScreen("Destination");
-        }),
+        button.addEventListener("click", () => goToSite(button.dataset.site)),
+      );
+    otherScreen
+      .querySelectorAll<SVGElement>("[data-map-site]")
+      .forEach((hotspot) =>
+        bindMapHotspot(hotspot, () => goToSite(hotspot.dataset.mapSite)),
       );
   } else if (screen === "Cars") {
     otherScreen.innerHTML = carsMarkup();
@@ -1906,9 +2436,15 @@ function showScreen(screen: string): void {
         moveToRoad(
           road.id,
           ownedPlot.side,
-          frontageX(road, ownedPlot.index) + FRONTAGE_PITCH / 2,
+          frontageCenter(road, ownedPlot.index, ownedPlot.side),
         );
         showScreen("Street");
+      });
+    otherScreen
+      .querySelector<HTMLButtonElement>("#open-street-designs")!
+      .addEventListener("click", () => {
+        designTargetId = ownedPlot.id;
+        showScreen("Designs");
       });
     otherScreen
       .querySelector<HTMLButtonElement>("#open-studio")!
@@ -1916,6 +2452,41 @@ function showScreen(screen: string): void {
     otherScreen
       .querySelector<HTMLButtonElement>("#open-stats")!
       .addEventListener("click", () => openStats(ownedPlot.id));
+  } else if (screen === "Designs") {
+    const target = game.plot(designTargetId);
+    mountGuestDesignPicker(
+      otherScreen,
+      target,
+      choiceForGuestPlot(target, guestDesigns.get(target.id)).id,
+      guestLevelForPlot(target),
+      guestLogos.get(target.id) ?? null,
+      (nextLogo) => {
+        guestLogos.get(target.id)?.close();
+        if (nextLogo) guestLogos.set(target.id, nextLogo);
+        else guestLogos.delete(target.id);
+      },
+      guestAds.get(target.id) ?? null,
+      (nextAd) => {
+        guestAds.get(target.id)?.close();
+        if (nextAd) guestAds.set(target.id, nextAd);
+        else guestAds.delete(target.id);
+      },
+      (choiceId, level) => {
+        choiceForGuestPlot(target, choiceId);
+        guestDesigns.set(target.id, choiceId);
+        guestLevels.set(target.id, level);
+        if (target.id === game.ownedPlotId) guestBuildingPreview = null;
+        const road = city.streets.find((entry) => entry.id === target.roadId)!;
+        moveToRoad(
+          target.roadId,
+          target.side,
+          frontageCenter(road, target.index, target.side),
+        );
+        selection = { kind: "Plot", id: target.id };
+        showScreen("Street");
+      },
+      () => showScreen("Street"),
+    );
   } else if (screen === "Studio") {
     studio.mount(otherScreen);
   } else if (screen === "Stats") {
@@ -2033,7 +2604,7 @@ async function openChainScreen(focusOwned = false): Promise<void> {
         otherScreen,
         reader,
         () => ({ roadId: currentRoad().id, side }),
-        city.npcSites,
+        chainCity.npcSites,
         getWalletClient,
       );
     }
@@ -2048,17 +2619,42 @@ async function openChainScreen(focusOwned = false): Promise<void> {
 async function openLiveStreet(): Promise<void> {
   if (!liveMode || !contractId) return;
   try {
+    const reader = await getReader();
+    const version = await reader.cityVersion();
+    if (!liveMode) return;
+    if (version !== liveCityVersion) {
+      liveStreet?.stop();
+      liveStreet = null;
+      liveCityVersion = version;
+    }
+    const nextCity = version === 2 ? guestCity : chainCity;
+    if (city !== nextCity) {
+      const previousIndex = frontageAtX(currentRoad(), carX, side) ?? 0;
+      city = nextCity;
+      carX = frontageCenter(
+        currentRoad(),
+        Math.min(previousIndex, currentRoad().length - 1),
+        side,
+      );
+      selection = selectionAtCar();
+      statsScreen.setPlots(
+        city.plots.map((plot) => ({
+          id: plot.id,
+          label: `${city.streets.find((street) => street.id === plot.roadId)?.name ?? plot.roadId} · ${curbDirection(plot.roadId, plot.side)} · Plot ${plot.index + 1} · ${plot.initialType}`,
+        })),
+      );
+      drawWorld();
+      updatePanel();
+    }
     if (!liveStreet) {
-      const [reader, { LiveStreet }] = await Promise.all([
-        getReader(),
-        import("./live-street.js"),
-      ]);
+      const { LiveStreet } = await import("./live-street.js");
       if (!liveMode) return;
       liveStreet = new LiveStreet(
         reader,
         getWalletClient,
         () => ({ roadId: currentRoad().id, side }),
         city.npcSites,
+        city,
         () => {
           if (liveMode && currentScreen === "Street") {
             if (liveSceneKey() !== renderedLiveSceneKey) drawWorld();
@@ -2075,9 +2671,18 @@ async function openLiveStreet(): Promise<void> {
 }
 
 function toggleStreetMode(): void {
+  completeCurbCrossing();
   if (!contractId) return;
   impressionReporter.pause();
+  const previousIndex = frontageAtX(currentRoad(), carX, side) ?? 0;
   liveMode = !liveMode;
+  city = liveMode ? (liveCityVersion === 2 ? guestCity : chainCity) : guestCity;
+  carX = frontageCenter(
+    currentRoad(),
+    Math.min(previousIndex, currentRoad().length - 1),
+    side,
+  );
+  selection = selectionAtCar();
   updateGuestBuildingBanner();
   if (!liveMode) liveStreet?.stop();
   modeButton.textContent = liveMode ? "Guest mode" : "Testnet street";
@@ -2096,7 +2701,7 @@ const app = new Application();
 await app.init({
   resizeTo: canvasHost,
   background: "#91dbf7",
-  antialias: true,
+  antialias: false,
   resolution: Math.min(devicePixelRatio || 1, 2),
 });
 canvasHost.appendChild(app.canvas);
@@ -2110,31 +2715,55 @@ world = new Container();
 app.stage.addChild(backdrop, world);
 drawWorld();
 updatePanel();
-app.ticker.add((ticker) => {
-  if (currentScreen !== "Street" || portraitDriving.matches) return;
-  const dt = Math.min(ticker.deltaMS / 1000, 0.05);
-  if (moving) {
-    if (activeCarIsParked()) {
-      moving = 0;
+function moveCarBy(distance: number): void {
+  if (curbCrossing) return;
+  if (activeCarIsParked()) {
+    moving = 0;
+    return;
+  }
+  driveDirection = distance < 0 ? -1 : 1;
+  carSprite.y = driveLaneY(driveDirection);
+  carSprite.scale.x = driveDirection;
+  const road = currentRoad();
+  const width = roadWidth(road);
+  const nextX = carX + distance;
+  if (nextX < 25 || nextX > width - 25) {
+    const exit = endConnection(road, driveDirection);
+    if (exit) {
+      followConnection(exit);
       return;
     }
-    const road = currentRoad();
-    const width = roadWidth(road);
-    const nextX = carX + moving * 100 * dt;
-    if (nextX < 25 || nextX > width - 25) {
-      const exit = endConnection(road, moving < 0 ? -1 : 1);
-      if (exit) {
-        followConnection(exit);
-        return;
-      }
+  }
+  carX = Math.min(width - 25, Math.max(25, nextX));
+  carSprite.x = carX;
+  const nextSelection = selectionAtCar();
+  if (selectionKey(selection) !== selectionKey(nextSelection)) {
+    selection = nextSelection;
+    updatePanel();
+  }
+}
+app.ticker.add((ticker) => {
+  if (currentScreen !== "Street" || portraitDriving.matches) return;
+  if (curbCrossing) {
+    const crossing = curbCrossing;
+    crossing.elapsedMs = Math.min(
+      CURB_CROSSING_MS,
+      crossing.elapsedMs + Math.min(ticker.deltaMS, 50),
+    );
+    const progress = crossing.elapsedMs / CURB_CROSSING_MS;
+    if (progress >= 0.5 && !crossing.swapped) {
+      crossing.swapped = true;
+      showCurb(crossing.destination);
     }
-    carX = Math.min(width - 25, Math.max(25, nextX));
-    carSprite.x = carX;
-    const nextSelection = selectionAtCar();
-    if (selectionKey(selection) !== selectionKey(nextSelection)) {
-      selection = nextSelection;
-      updatePanel();
-    }
+    const lift = Math.sin(Math.PI * progress);
+    const laneY = driveLaneY(driveDirection);
+    carSprite.y = laneY + (224 - laneY) * lift;
+    carSprite.alpha = 1 - 0.28 * lift;
+    if (progress === 1) completeCurbCrossing();
+  }
+  const dt = Math.min(ticker.deltaMS / 1000, 0.05);
+  if (moving) {
+    moveCarBy(moving * DRIVE_SPEED * dt);
   }
   const scale = Math.max(0.5, canvasHost.clientHeight / 300);
   backdrop.scale.set(scale);
@@ -2156,13 +2785,27 @@ app.ticker.add((ticker) => {
     liveStreet?.street?.road_id === roadId &&
     liveStreet.street.side === side
   )
-    impressionReporter.observe(
-      facadeTextures.visibleAdSurfaces(
+    impressionReporter.observe([
+      ...facadeTextures.visibleAdSurfaces(
         cameraLeft,
         visibleWidth,
         canvasHost.clientHeight / scale,
       ),
-    );
+      ...variableFacades.flatMap((facade) => {
+        if (
+          facade.group.destroyed ||
+          facade.x < cameraLeft ||
+          facade.x + facade.width > cameraLeft + visibleWidth
+        )
+          return [];
+        const visible = [...facade.group.mediaViews]
+          .reverse()
+          .find((entry) => entry.sprite.visible && !entry.sprite.destroyed);
+        return visible
+          ? [{ plotId: facade.plotId, surface: visible.kind }]
+          : [];
+      }),
+    ]);
   else impressionReporter.pause();
 });
 
@@ -2174,11 +2817,15 @@ window.setInterval(() => {
   if (currentScreen === "Street" && !liveMode) updatePanel();
 }, 15_000);
 window.addEventListener("pagehide", () => {
+  resetDriveInput();
   impressionReporter.pause();
   void impressionReporter.flush();
 });
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) impressionReporter.pause();
+  if (document.hidden) {
+    resetDriveInput();
+    impressionReporter.pause();
+  }
 });
 
 document
@@ -2188,7 +2835,8 @@ document
   );
 portraitDriving.addEventListener("change", () => {
   if (portraitDriving.matches) {
-    moving = 0;
+    completeCurbCrossing();
+    resetDriveInput();
     impressionReporter.pause();
     plotPanel.classList.remove("mobile-open");
     contextDetailsButton.setAttribute("aria-expanded", "false");
@@ -2208,8 +2856,15 @@ document
     drawWorld();
     updatePanel();
   });
-actionButton.addEventListener("click", action);
-panelAction.addEventListener("click", action);
+document
+  .querySelector<HTMLButtonElement>("#panel-design")!
+  .addEventListener("click", () => {
+    if (liveMode || selection.kind !== "Plot") return;
+    designTargetId = selection.id;
+    showScreen("Designs");
+  });
+actionButton.addEventListener("click", () => action());
+panelAction.addEventListener("click", () => action());
 towerFloorSelect.addEventListener("change", () => {
   selectedTowerFloor = Number(towerFloorSelect.value);
   updatePanel();
@@ -2236,22 +2891,50 @@ for (const [id, direction] of [
 ] as const) {
   const button = document.querySelector<HTMLButtonElement>(`#${id}`)!;
   button.addEventListener("pointerdown", (event) => {
+    if (
+      currentScreen !== "Street" ||
+      portraitDriving.matches ||
+      activeCarIsParked()
+    )
+      return;
     event.preventDefault();
     button.setPointerCapture(event.pointerId);
     closePlotPanelForDriving();
-    moving = direction;
+    drivePointers.set(event.pointerId, {
+      direction,
+      pressedAt: performance.now(),
+    });
+    updateDriveInput();
   });
   button.addEventListener("contextmenu", (event) => event.preventDefault());
-  button.addEventListener("pointerup", () => {
-    moving = 0;
-  });
-  button.addEventListener("pointercancel", () => {
-    moving = 0;
-  });
-  button.addEventListener("lostpointercapture", () => {
-    moving = 0;
-  });
+  const release = (event: PointerEvent, tap: boolean) => {
+    const press = drivePointers.get(event.pointerId);
+    if (!press) return;
+    drivePointers.delete(event.pointerId);
+    updateDriveInput();
+    if (
+      tap &&
+      performance.now() - press.pressedAt < 180 &&
+      drivePointers.size === 0 &&
+      driveKeys.size === 0
+    )
+      moveCarBy(press.direction * TAP_DRIVE_DISTANCE);
+  };
+  button.addEventListener("pointerup", (event) => release(event, true));
+  button.addEventListener("pointercancel", (event) => release(event, false));
+  button.addEventListener("lostpointercapture", (event) =>
+    release(event, false),
+  );
+  window.addEventListener("pointerup", (event) => release(event, true));
+  window.addEventListener("pointercancel", (event) => release(event, false));
 }
+const releaseFinishedTouches = (event: TouchEvent) => {
+  if (event.touches.length > 0 || drivePointers.size === 0) return;
+  drivePointers.clear();
+  updateDriveInput();
+};
+document.addEventListener("touchend", releaseFinishedTouches);
+document.addEventListener("touchcancel", releaseFinishedTouches);
 window.addEventListener("keydown", (event) => {
   if (currentScreen !== "Street" || portraitDriving.matches) return;
   if (
@@ -2260,16 +2943,21 @@ window.addEventListener("keydown", (event) => {
     event.target instanceof HTMLSelectElement
   )
     return;
+  const key = event.key.startsWith("Arrow")
+    ? event.key
+    : event.key.toLowerCase();
   if (!activeCarIsParked()) {
-    if (event.key === "ArrowLeft" || event.key.toLowerCase() === "a") {
-      if (event.key === "ArrowLeft") event.preventDefault();
+    const direction =
+      key === "ArrowLeft" || key === "a"
+        ? -1
+        : key === "ArrowRight" || key === "d"
+          ? 1
+          : 0;
+    if (direction) {
+      if (event.key.startsWith("Arrow")) event.preventDefault();
       closePlotPanelForDriving();
-      moving = -1;
-    }
-    if (event.key === "ArrowRight" || event.key.toLowerCase() === "d") {
-      if (event.key === "ArrowRight") event.preventDefault();
-      closePlotPanelForDriving();
-      moving = 1;
+      if (!driveKeys.has(key)) driveKeys.set(key, direction);
+      updateDriveInput();
     }
   }
   if (event.code === "Space") {
@@ -2278,6 +2966,8 @@ window.addEventListener("keydown", (event) => {
   }
 });
 window.addEventListener("keyup", (event) => {
-  if (["ArrowLeft", "ArrowRight", "a", "d", "A", "D"].includes(event.key))
-    moving = 0;
+  const key = event.key.startsWith("Arrow")
+    ? event.key
+    : event.key.toLowerCase();
+  if (driveKeys.delete(key)) updateDriveInput();
 });

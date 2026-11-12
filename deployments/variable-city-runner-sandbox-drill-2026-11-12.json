@@ -1,0 +1,38 @@
+{
+  "scope": "testnet state imported into isolated sandbox; no live mutation",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "liveStateSha256": "036249aa91634c3605427df4d20b696003a9d3a7dd15e135d0d6ae571b45e424",
+  "pausedStateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+  "convertedStateSha256": "4f8ba2ab0de916572a80e300bfc6b7ff4bc61e1d2e3cfa8998381dad531c6a75",
+  "runtimeWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+  "reverseWasmSha256": "5d63aacbff4a3b0ecf92fa5c4731dde63e428b4923ac996176561886923d5043",
+  "forwardDeployTransactionHash": "DXYDJaU8bA9eWA8TX6BMj5GqDPFMDXBg4PPWKM7mCYLB",
+  "forwardMigrationTransactionHash": "BRs4hw6iKfN6xfNJ9ZmrkHa9YCbPG9gEqXtyWXJ4Sz9M",
+  "unpauseTransactionHash": "9PnaUuZvMM3eq4CPpREpkxLZtnbLnyLmxvexftY7ejGb",
+  "repauseTransactionHash": "5kesGneZ9cSbFAYpw3xSc2PaC5BJxT138WaXB6wKsFcB",
+  "pauseOnlyTransitionVerified": true,
+  "forwardRecovery": {
+    "beforeWasmSha256": "03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19",
+    "afterWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+    "reverseWasmSha256": "5d63aacbff4a3b0ecf92fa5c4731dde63e428b4923ac996176561886923d5043",
+    "beforeStateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+    "convertedStateSha256": "4f8ba2ab0de916572a80e300bfc6b7ff4bc61e1d2e3cfa8998381dad531c6a75",
+    "status": "rolled_back",
+    "migrationTransactionHash": "BRs4hw6iKfN6xfNJ9ZmrkHa9YCbPG9gEqXtyWXJ4Sz9M",
+    "reverseDeployTransactionHash": "5eyTA2MvyDxhMRLNkT1qiZNh1LG7hQHqosNBd2gU7ink",
+    "reverseTransactionHash": "ELJUBLnFUGjq4oXhmBAkXozeWsD1eYdANjQS47xEG6LN",
+    "oldCodeRestoreTransactionHash": "85SKkwKZzANRmEFmU7CSMYE1QCzuNz5ZrMRLDF547F5w"
+  },
+  "codeOnlyDeployTransactionHash": "2quws3PVfW1A8ehLeMsRhwpZnC3aPwD2UKeQmXPJTfyv",
+  "codeOnlyRecovery": {
+    "beforeWasmSha256": "03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19",
+    "afterWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+    "reverseWasmSha256": "5d63aacbff4a3b0ecf92fa5c4731dde63e428b4923ac996176561886923d5043",
+    "beforeStateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+    "convertedStateSha256": "4f8ba2ab0de916572a80e300bfc6b7ff4bc61e1d2e3cfa8998381dad531c6a75",
+    "status": "rolled_back",
+    "oldCodeRestoreTransactionHash": "2JFnZi3p7kxH9y1ngdZPC3iwNeZ4kch9i7Q75kD4xXoo"
+  },
+  "exactReverseVerified": true,
+  "codeOnlyRecoveryVerified": true
+}

@@ -1,5 +1,7 @@
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { validateCitySeed } from "@estate/shared";
 import { serve } from "@hono/node-server";
 import { createApiApp } from "./app.js";
 import { NearChainGateway } from "./chain.js";
@@ -13,11 +15,26 @@ import { OpenAiImageProvider } from "./image-provider.js";
 import { PaidGenerationLedger } from "./paid-generation-ledger.js";
 import { PaidImageWorker } from "./paid-image-worker.js";
 import { AssetRetentionWorker } from "./asset-retention.js";
+import { verifyActiveCityCutover } from "./deed-history.js";
 
 const port = Number(process.env.PORT ?? "3000");
 if (!Number.isSafeInteger(port) || port < 1 || port > 65535)
   throw new Error("Invalid PORT");
 const appOrigin = process.env.APP_ORIGIN ?? "http://localhost:8080";
+const impressionIntakeEnabled = process.env.IMPRESSION_INTAKE_ENABLED ?? "true";
+if (impressionIntakeEnabled !== "true" && impressionIntakeEnabled !== "false")
+  throw new Error("IMPRESSION_INTAKE_ENABLED must be true or false");
+const impressionAcceptAfterMs = Number(
+  process.env.IMPRESSION_ACCEPT_AFTER_MS ?? "0",
+);
+const deedCutoverAtMs = Number(process.env.CITY_DEED_CUTOVER_AT_MS ?? "0");
+if (
+  !Number.isSafeInteger(impressionAcceptAfterMs) ||
+  impressionAcceptAfterMs < 0
+)
+  throw new Error(
+    "IMPRESSION_ACCEPT_AFTER_MS must be a nonnegative millisecond timestamp",
+  );
 const imageGenerationSettings = readImageGenerationSettings(process.env);
 const dataDir = process.env.API_DATA_DIR ?? join(process.cwd(), "data");
 const store = new ApiStore(
@@ -28,6 +45,43 @@ const contractId = process.env.ESTATE_CONTRACT_ID?.trim();
 const chain = contractId
   ? new NearChainGateway(contractId, process.env.NEAR_RPC_URL)
   : null;
+const cityVersion = chain ? await chain.cityVersion() : 1;
+const citySeed = validateCitySeed(
+  JSON.parse(
+    readFileSync(
+      fileURLToPath(
+        new URL(
+          `../../../contracts/estate/seed${cityVersion === 2 ? "-v2" : ""}.json`,
+          import.meta.url,
+        ),
+      ),
+      "utf8",
+    ),
+  ),
+);
+if (citySeed.version !== cityVersion)
+  throw new Error("City seed version does not match the contract");
+if (cityVersion === 2) {
+  const moveMap: unknown = JSON.parse(
+    readFileSync(
+      fileURLToPath(
+        new URL(
+          "../../../contracts/estate/migration-v1-to-v2-draft.json",
+          import.meta.url,
+        ),
+      ),
+      "utf8",
+    ),
+  );
+  verifyActiveCityCutover(
+    store.db,
+    contractId!,
+    moveMap,
+    deedCutoverAtMs,
+    impressionAcceptAfterMs,
+    impressionIntakeEnabled === "true",
+  );
+}
 if (imageGenerationSettings.enabled && !chain)
   throw new Error("Paid image generation requires ESTATE_CONTRACT_ID");
 const paidLedger = imageGenerationSettings.enabled
@@ -82,6 +136,8 @@ requirePaidModeration(
 const app = createApiApp({
   store,
   chain,
+  citySeed,
+  cityVersionReader: chain ? () => chain.cityVersion() : undefined,
   appOrigin,
   moderator,
   adminCredentials:
@@ -89,6 +145,10 @@ const app = createApiApp({
       ? { user: adminUser, password: adminPassword }
       : null,
   paidLedger,
+  impressionIntake: {
+    enabled: impressionIntakeEnabled === "true",
+    acceptAfterMs: impressionAcceptAfterMs,
+  },
 });
 const paidWorker =
   paidLedger && paidProvider && chain

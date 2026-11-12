@@ -91,6 +91,11 @@ const report = {
   sourceRevision: execFileSync("git", ["rev-parse", "HEAD"], {
     encoding: "utf8",
   }).trim(),
+  workingTreeDirty: Boolean(
+    execFileSync("git", ["status", "--porcelain"], {
+      encoding: "utf8",
+    }).trim(),
+  ),
   scene: "guest Main Street, North side, ArrowRight held for eight seconds",
   browser: `Headless Chromium ${browserVersion} on ${process.platform}`,
   renderer,

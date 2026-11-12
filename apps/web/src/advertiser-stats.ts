@@ -29,7 +29,7 @@ export class AdvertiserStatsScreen {
 
   constructor(
     private readonly host: HTMLElement,
-    private readonly plots: StatsPlot[],
+    private plots: StatsPlot[],
     private readonly liveAvailable: boolean,
     private readonly onBack: () => void,
     private readonly fetcher: typeof fetch = (input, init) =>
@@ -37,6 +37,14 @@ export class AdvertiserStatsScreen {
   ) {
     if (!plots.length) throw new Error("Advertiser stats need city plots");
     this.selectedPlotId = plots[0]!.id;
+  }
+
+  setPlots(plots: StatsPlot[]): void {
+    if (!plots.length) throw new Error("Advertiser stats need city plots");
+    this.plots = plots;
+    if (!plots.some((plot) => plot.id === this.selectedPlotId))
+      this.selectedPlotId = plots[0]!.id;
+    this.render();
   }
 
   mount(plotId?: string): void {
@@ -111,7 +119,8 @@ export class AdvertiserStatsScreen {
         <div class="owner-stats-days">${stats.days.map((day) => `<div class="owner-stats-day"><strong>${html(day.day)}</strong><span>${day.impressions} views · ${(day.averageVisibleMs / 1_000).toFixed(1)} s average · ${day.parks} parks · ${day.tickets} tickets</span></div>`).join("")}</div>
       </section>`
           : ""
-      }`;
+      }
+      ${stats?.linkedHistory ? `<section class="card"><h2>Earlier deed activity</h2><p>Before this owner moved from ${html(stats.linkedHistory.sourcePlotId)} on ${new Date(stats.linkedHistory.cutoverAtMs).toLocaleDateString()}, that location recorded ${stats.linkedHistory.totals.impressions} estimated views, ${stats.linkedHistory.totals.parks} parks and ${stats.linkedHistory.totals.tickets} tickets in this seven-day window. These counts are shown separately from the current plot.</p></section>` : ""}`;
     this.host
       .querySelector<HTMLButtonElement>("#stats-back")!
       .addEventListener("click", this.onBack);

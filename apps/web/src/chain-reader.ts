@@ -4,9 +4,13 @@ import {
   ChainOwnerConfig,
   ChainPlayerSnapshot,
   ChainPlot,
+  ChainPlotV1,
+  ChainPlotV2,
   ChainPlotPurchaseBreakdown,
   ChainSession,
   ChainStreetSide,
+  ChainStreetSideV1,
+  ChainStreetSideV2,
   ChainStreetEconomyConfig,
   CoinString,
   TOWER_FLOORS,
@@ -320,6 +324,31 @@ export class ChainReader {
     return (await this.viewAt(method, args, schema)).value;
   }
 
+  private async cityVersionAt(
+    blockId?: string,
+  ): Promise<{ version: 1 | 2; blockHash?: string }> {
+    try {
+      const result = await this.viewAt(
+        "city_version",
+        {},
+        z.union([z.literal(1), z.literal(2)]),
+        blockId,
+      );
+      return { version: result.value, blockHash: result.blockHash };
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("MethodResolveError(MethodNotFound)")
+      )
+        return { version: 1, blockHash: blockId };
+      throw error;
+    }
+  }
+
+  async cityVersion(): Promise<1 | 2> {
+    return (await this.cityVersionAt()).version;
+  }
+
   registrationQuote(): Promise<string> {
     return this.view("registration_quote", {}, YoctoNearString);
   }
@@ -368,6 +397,7 @@ export class ChainReader {
       z.number().int().min(0).max(65_535),
     );
     const plots: PlotView[] = [];
+    const { version } = await this.cityVersionAt(blockHash);
     for (let fromIndex = 0; fromIndex < count; fromIndex += 50) {
       const page = await this.viewAt(
         "get_plots",
@@ -379,7 +409,11 @@ export class ChainReader {
         throw new Error(
           "The plot list changed while loading; refresh the view",
         );
-      plots.push(...page.value);
+      plots.push(
+        ...(version === 2
+          ? z.array(ChainPlotV2).parse(page.value)
+          : z.array(ChainPlotV1).parse(page.value)),
+      );
     }
     if (new Set(plots.map((plot) => plot.plot.id)).size !== count)
       throw new Error("The plot list contains duplicate IDs");
@@ -445,7 +479,9 @@ export class ChainReader {
     return this.view("get_plot", { plot_id: plotId }, ChainPlot.nullable());
   }
 
-  curbSession(plotId: string, slot: 0 | 1): Promise<SessionView | null> {
+  curbSession(plotId: string, slot: number): Promise<SessionView | null> {
+    if (!Number.isInteger(slot) || slot < 0 || slot > 2)
+      return Promise.reject(new Error("Invalid curb slot"));
     return this.view(
       "get_space_session",
       { plot_id: plotId, slot },
@@ -579,21 +615,34 @@ export class ChainReader {
     roadId: StreetSideView["road_id"],
     side: StreetSideView["side"],
   ): Promise<StreetSideView> {
-    const street = await this.view(
+    const { version, blockHash } = await this.cityVersionAt();
+    const result = await this.viewAt(
       "get_street_side",
       { road_id: roadId, side },
       ChainStreetSide,
+      blockHash,
     );
+    const street =
+      version === 2
+        ? ChainStreetSideV2.parse(result.value)
+        : ChainStreetSideV1.parse(result.value);
     if (
       street.road_id !== roadId ||
       street.side !== side ||
-      street.plots.length !== 8
+      street.plots.length !== (version === 2 ? 10 : 8)
     )
       throw new Error("The requested street side is not fully seeded");
     for (const [index, entry] of street.plots.entries()) {
       const expectedId = `plot-${roadId}-${side === "North" ? "n" : "s"}-${index}`;
       if (entry.plot.plot.id !== expectedId)
         throw new Error("Street plot order changed");
+      if (
+        version === 2 &&
+        (entry.slots.length !==
+          (entry.plot.plot as { frontage_units: number }).frontage_units ||
+          entry.car_appearances?.length !== entry.slots.length)
+      )
+        throw new Error("Street plot width does not match its curb spaces");
       for (const [slot, session] of entry.slots.entries()) {
         if (
           session &&

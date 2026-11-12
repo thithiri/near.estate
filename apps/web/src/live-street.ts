@@ -3,9 +3,11 @@ import type {
   ChainSession,
   ChainStreetSide,
   ChainStreetEconomyConfig,
+  CitySeed,
   NPCSite,
 } from "@estate/shared";
 import { ChainReader } from "./chain-reader.js";
+import { validateLiveGeometry } from "./live-geometry.js";
 import type {
   GameWalletClient,
   GameplayKeyStatus,
@@ -47,6 +49,7 @@ export class LiveStreet {
     private readonly getWallet: () => Promise<GameWalletClient>,
     private readonly getRoadSide: () => RoadSide,
     private readonly sites: NPCSite[],
+    private readonly city: CitySeed,
     private readonly onChange: () => void,
   ) {}
 
@@ -163,6 +166,7 @@ export class LiveStreet {
         wallet.accountId !== accountId
       )
         return;
+      validateLiveGeometry(this.city, street);
       this.wallet = wallet;
       this.accountId = accountId;
       this.street = street;

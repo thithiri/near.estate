@@ -2,15 +2,23 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
+  canonicalJson,
   validateAssetManifest,
+  validateAssetManifestV2,
   type AssetManifest,
   type ChainPlot,
+  type ChainPlotV2,
 } from "@estate/shared";
 import sharp from "sharp";
 import { renderMockCandidate } from "./mock-art.js";
+import { composeVariableFacadePreview } from "./variable-art.js";
 import type { ApiStore, MediaProposalRecord } from "./store.js";
 
 export class ModerationPreviewError extends Error {}
+
+function isVariablePlot(plot: ChainPlot): plot is ChainPlotV2 {
+  return "frontage_units" in plot.plot;
+}
 
 type Overlay = { hash: string; link: string | null };
 
@@ -54,7 +62,7 @@ export async function composeFacadePreview(input: {
     const height = Math.round(rect.height);
     overlays.push({
       input: await sharp(png)
-        .resize(width, height, { fit: "fill" })
+        .resize(width, height, { fit: kind === "billboard" ? "cover" : "fill" })
         .png()
         .toBuffer(),
       left: Math.round(rect.x),
@@ -81,12 +89,64 @@ export async function mediaReviewPreview(
     building.layout_revision !== proposal.layoutRevision
   )
     throw new ModerationPreviewError("Plot changed since media proposal");
+  if (isVariablePlot(plot)) {
+    const approvedHash = building.approved_manifest_hash;
+    const approved = approvedHash ? store.publicManifest(approvedHash) : null;
+    let approvedFacade: Parameters<
+      typeof composeVariableFacadePreview
+    >[0]["approvedFacade"] = null;
+    if (approvedHash && approved?.schemaVersion === 2) {
+      const manifest = validateAssetManifestV2(approved);
+      if (
+        createHash("sha256").update(canonicalJson(manifest)).digest("hex") !==
+        approvedHash
+      )
+        throw new ModerationPreviewError(
+          "Approved facade manifest hash mismatch",
+        );
+      approvedFacade = {
+        manifest,
+        sprite: await storedPng(store, manifest.spriteHash),
+      };
+    } else if (approvedHash && !approved) {
+      throw new ModerationPreviewError("Approved facade is unavailable");
+    }
+    const activeLogo =
+      plot.logo_eligible && plot.plot.logo.active
+        ? {
+            hash: plot.plot.logo.active.content.asset_hash,
+            link: plot.plot.logo.active.content.link,
+          }
+        : null;
+    const activeBillboard =
+      plot.billboard_eligible && plot.plot.billboard.active
+        ? {
+            hash: plot.plot.billboard.active.content.asset_hash,
+            link: plot.plot.billboard.active.content.link,
+          }
+        : null;
+    const proposed = { hash: proposal.assetHash, link: proposal.link };
+    const logo = proposal.kind === "Logo" ? proposed : activeLogo;
+    const billboard =
+      proposal.kind === "Billboard" ? proposed : activeBillboard;
+    return {
+      png: await composeVariableFacadePreview({
+        plot,
+        logo: logo ? await storedPng(store, logo.hash) : null,
+        billboard: billboard ? await storedPng(store, billboard.hash) : null,
+        approvedFacade,
+      }),
+      logo,
+      billboard,
+      facadeManifestHash: approvedFacade ? approvedHash : null,
+    };
+  }
   let manifest: AssetManifest;
   let thumbnail: Buffer;
   const facadeManifestHash = building.approved_manifest_hash;
   if (facadeManifestHash) {
     const approved = store.publicManifest(facadeManifestHash);
-    if (!approved)
+    if (!approved || approved.schemaVersion !== 1)
       throw new ModerationPreviewError("Approved facade is unavailable");
     manifest = approved;
     thumbnail = await storedPng(store, approved.thumbnailHash);

@@ -3,13 +3,15 @@ import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { KeyPair } from "@near-js/crypto";
 import { serializeNep413 } from "@near-wallet-selector/core";
 import type { ChainAppearanceReference, ChainMediaSlot } from "@estate/shared";
+import { variableFrontageMediaLayout } from "@estate/shared";
 import sharp from "sharp";
-import { createApiApp } from "./app.js";
+import { checkedFacadeCandidate, createApiApp } from "./app.js";
 import { sweepPrivateAssets } from "./asset-retention.js";
 import { saveImmutablePng } from "./asset-storage.js";
 import type { ChainGateway } from "./chain.js";
@@ -20,6 +22,8 @@ import { PaidGenerationLedger } from "./paid-generation-ledger.js";
 import { processPaidImageResult } from "./paid-image-processing.js";
 import type { ModeratorGateway } from "./moderator.js";
 import { ApiStore } from "./store.js";
+import { normalizeVariableGeneratedFacade } from "./variable-generated-art.js";
+import { buildVariableGenerationPrompt } from "./variable-prompt-builder.js";
 
 const ORIGIN = "http://localhost:8080";
 const ACCOUNT = "owner.testnet";
@@ -32,7 +36,291 @@ const emptyMediaSlot = {
   last_replacement_at: null,
 };
 
-async function setup(paid = false) {
+test("version-2 candidate stays bound to the prompt width and design", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "estate-variable-job-"));
+  const databasePath = join(dir, "estate.sqlite");
+  let store = new ApiStore(databasePath, join(dir, "assets"));
+  try {
+    const source = await readFile(
+      fileURLToPath(
+        new URL(
+          "../../../apps/web/public/guest-buildings/diner-l2.png",
+          import.meta.url,
+        ),
+      ),
+    );
+    const art = await normalizeVariableGeneratedFacade(source, {
+      frontageUnits: 2,
+      designChoice: 1,
+      buildingType: "Cafe",
+      level: 2,
+    });
+    await Promise.all([
+      saveImmutablePng(store.assetDir, art.spriteHash, art.sprite),
+      saveImmutablePng(store.assetDir, art.thumbnailHash, art.thumbnail),
+    ]);
+    const promptSpec = buildVariableGenerationPrompt({
+      frontageUnits: 2,
+      designChoice: 1,
+      buildingType: "Cafe",
+      level: 2,
+      palette: "#EF8270",
+      description: "A bright diner",
+    });
+    const job = store.createGeneration({
+      accountId: ACCOUNT,
+      plotId: PLOT,
+      buildingType: "Cafe",
+      level: 2,
+      layoutRevision: 4,
+      appearanceRevision: 5,
+      description: "A bright diner",
+      promptSpec,
+      candidates: [
+        {
+          id: 1,
+          variant: 1,
+          palette: "#EF8270",
+          manifest: art.manifest,
+          manifestHash: art.manifestHash,
+          spriteHash: art.spriteHash,
+          thumbnailHash: art.thumbnailHash,
+        },
+      ],
+      createdAt: 1_000,
+    });
+    assert.deepEqual(
+      await checkedFacadeCandidate(store, job, job.candidates[0]!),
+      art.thumbnail,
+    );
+    await assert.rejects(
+      checkedFacadeCandidate(
+        store,
+        {
+          ...job,
+          promptSpec: { ...promptSpec, designChoice: 2 },
+        },
+        job.candidates[0]!,
+      ),
+      /prompt snapshot/,
+    );
+    store.close();
+    store = new ApiStore(databasePath, join(dir, "assets"));
+    const restored = store.generation(job.id);
+    assert.ok(restored);
+    assert.equal(restored.promptSpec?.version, 5);
+    assert.deepEqual(
+      await checkedFacadeCandidate(store, restored, restored.candidates[0]!),
+      art.thumbnail,
+    );
+  } finally {
+    store.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("version-2 selection and moderator approval keep the exact design", async () => {
+  const context = await setup();
+  try {
+    context.setVariableDesign(2, 1);
+    context.setBuildingLevel(2);
+    const { verified } = await context.signIn();
+    const cookie = verified.headers.get("set-cookie")!.split(";")[0]!;
+    const source = await readFile(
+      fileURLToPath(
+        new URL(
+          "../../../apps/web/public/guest-buildings/diner-l2.png",
+          import.meta.url,
+        ),
+      ),
+    );
+    const art = await normalizeVariableGeneratedFacade(source, {
+      frontageUnits: 2,
+      designChoice: 1,
+      buildingType: "Retail",
+      level: 2,
+    });
+    await Promise.all([
+      saveImmutablePng(context.store.assetDir, art.spriteHash, art.sprite),
+      saveImmutablePng(
+        context.store.assetDir,
+        art.thumbnailHash,
+        art.thumbnail,
+      ),
+    ]);
+    const job = context.store.createGeneration({
+      accountId: ACCOUNT,
+      plotId: PLOT,
+      buildingType: "Retail",
+      level: 2,
+      layoutRevision: 1,
+      appearanceRevision: 1,
+      description: "A bright diner",
+      promptSpec: buildVariableGenerationPrompt({
+        frontageUnits: 2,
+        designChoice: 1,
+        buildingType: "Retail",
+        level: 2,
+        palette: "#EF8270",
+        description: "A bright diner",
+      }),
+      candidates: [
+        {
+          id: 1,
+          variant: 1,
+          palette: "#EF8270",
+          manifest: art.manifest,
+          manifestHash: art.manifestHash,
+          spriteHash: art.spriteHash,
+          thumbnailHash: art.thumbnailHash,
+        },
+      ],
+      createdAt: 1_000,
+    });
+    context.setVariableDesign(2, 2);
+    const wrongDesign = await context.postJson(
+      `/generations/${job.id}/select`,
+      { candidateId: 1 },
+      cookie,
+    );
+    assert.equal(wrongDesign.status, 409);
+    context.setVariableDesign(2, 1);
+    const selected = await context.postJson(
+      `/generations/${job.id}/select`,
+      { candidateId: 1 },
+      cookie,
+    );
+    assert.equal(selected.status, 200);
+    assert.equal((await selected.json()).manifestHash, art.manifestHash);
+    context.setAppearanceRevision(2);
+    context.setPendingAppearance({
+      revision: 2,
+      owner: ACCOUNT,
+      building_type: "Retail",
+      level: 2,
+      manifest_hash: art.manifestHash,
+    });
+    const reconciled = await context.app.request(
+      `/generations/${job.id}/reconcile`,
+      { method: "POST", headers: { origin: ORIGIN, cookie } },
+    );
+    assert.equal(reconciled.status, 200);
+    assert.equal((await reconciled.json()).status, "submitted");
+    const reviewPath = `/moderation/generations/${job.id}/approve`;
+    const reviewHeaders = {
+      origin: ORIGIN,
+      authorization: `Basic ${Buffer.from("reviewer:test-only-password").toString("base64")}`,
+    };
+    const reviewPage = await context.app.request("/moderation", {
+      headers: reviewHeaders,
+    });
+    assert.equal(reviewPage.status, 200);
+    const reviewHtml = await reviewPage.text();
+    assert.match(reviewHtml, /width="170" height="190"/);
+    assert.match(reviewHtml, /2 unit frontage · design 2/);
+    context.setVariableDesign(2, 2);
+    assert.equal(
+      (
+        await context.app.request(reviewPath, {
+          method: "POST",
+          headers: reviewHeaders,
+        })
+      ).status,
+      409,
+    );
+    context.setVariableDesign(2, 1);
+    const approved = await context.app.request(reviewPath, {
+      method: "POST",
+      headers: reviewHeaders,
+    });
+    assert.equal(approved.status, 303);
+    assert.equal(context.store.generation(job.id)?.status, "approved");
+    const published = await context.app.request(
+      `/manifests/${art.manifestHash}`,
+    );
+    assert.equal(published.status, 200);
+    assert.equal((await published.json()).schemaVersion, 2);
+  } finally {
+    await context.close();
+  }
+});
+
+test("API stops serving a stale city after the contract version changes", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "estate-city-guard-"));
+  const store = new ApiStore(":memory:", join(dir, "assets"));
+  let now = 1_000;
+  let version: 1 | 2 = 1;
+  let reads = 0;
+  try {
+    const app = createApiApp({
+      store,
+      chain: null,
+      appOrigin: ORIGIN,
+      clock: () => now,
+      cityVersionReader: async () => {
+        reads++;
+        return version;
+      },
+    });
+    const current = await app.request("/city");
+    assert.equal(current.status, 200);
+    assert.equal(current.headers.get("cache-control"), "no-store");
+    assert.equal(reads, 1);
+    now += 29;
+    assert.equal((await app.request("/city")).status, 200);
+    assert.equal(reads, 1);
+    version = 2;
+    now += 1;
+    const changed = await app.request("/city");
+    assert.equal(changed.status, 503);
+    assert.equal((await changed.json()).code, "CITY_VERSION_CHANGED");
+    assert.equal(
+      (
+        await app.request("/impressions/session", {
+          method: "POST",
+          headers: { origin: ORIGIN },
+        })
+      ).status,
+      503,
+    );
+    version = 1;
+    assert.equal((await app.request("/health")).status, 503);
+    assert.equal(reads, 2);
+  } finally {
+    store.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("API retries a failed city version check", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "estate-city-guard-"));
+  const store = new ApiStore(":memory:", join(dir, "assets"));
+  let unavailable = true;
+  try {
+    const app = createApiApp({
+      store,
+      chain: null,
+      appOrigin: ORIGIN,
+      cityVersionReader: async () => {
+        if (unavailable) throw new Error("RPC unavailable");
+        return 1;
+      },
+    });
+    const failed = await app.request("/city");
+    assert.equal(failed.status, 503);
+    assert.equal((await failed.json()).code, "CITY_VERSION_UNAVAILABLE");
+    unavailable = false;
+    assert.equal((await app.request("/city")).status, 200);
+  } finally {
+    store.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+async function setup(
+  paid = false,
+  impressionIntake?: { enabled: boolean; acceptAfterMs: number },
+) {
   const dir = await mkdtemp(join(tmpdir(), "estate-api-"));
   const store = new ApiStore(":memory:", join(dir, "assets"));
   const paidSettings = paid
@@ -58,6 +346,7 @@ async function setup(paid = false) {
   let plotOwner: string | null = ACCOUNT;
   let layoutRevision = 1;
   let buildingLevel = 1;
+  let variableDesign: { units: 1 | 2 | 3; choice: number } | null = null;
   let appearanceRevision = 1;
   let pendingAppearance: ChainAppearanceReference | null = null;
   let approvedManifestHash: string | null = null;
@@ -69,6 +358,8 @@ async function setup(paid = false) {
   } | null = null;
   let logoSlot: ChainMediaSlot = structuredClone(emptyMediaSlot);
   let billboardSlot: ChainMediaSlot = structuredClone(emptyMediaSlot);
+  let logoEligible = false;
+  let billboardEligible = false;
   let plotReadCount = 0;
   let flipLayoutOnSecondRead = false;
   let neighborEnabled = false;
@@ -90,6 +381,12 @@ async function setup(paid = false) {
           road_id: "main",
           side: "North",
           index: isNeighbor ? 1 : 0,
+          ...(variableDesign && !isNeighbor
+            ? {
+                frontage_units: variableDesign.units,
+                design_choice: variableDesign.choice,
+              }
+            : {}),
           corner: !isNeighbor,
           owner: isNeighbor ? null : plotOwner,
           rule: { kind: "Free" },
@@ -116,8 +413,8 @@ async function setup(paid = false) {
           used_storage_bytes: 0,
         },
         effective_rule: { kind: "Free" },
-        logo_eligible: false,
-        billboard_eligible: false,
+        logo_eligible: logoEligible,
+        billboard_eligible: billboardEligible,
       };
     },
   };
@@ -250,6 +547,7 @@ async function setup(paid = false) {
     clock: () => now,
     moderator,
     paidLedger,
+    impressionIntake,
     adminCredentials: { user: "reviewer", password: "test-only-password" },
   });
   const pair = KeyPair.fromRandom("ed25519");
@@ -319,6 +617,9 @@ async function setup(paid = false) {
     setBuildingLevel(value: number) {
       buildingLevel = value;
     },
+    setVariableDesign(units: 1 | 2 | 3, choice: number) {
+      variableDesign = { units, choice };
+    },
     setAppearanceRevision(value: number) {
       appearanceRevision = value;
     },
@@ -328,6 +629,10 @@ async function setup(paid = false) {
     setMediaSlot(kind: "Logo" | "Billboard", value: ChainMediaSlot) {
       if (kind === "Logo") logoSlot = value;
       else billboardSlot = value;
+    },
+    setMediaEligibility(kind: "Logo" | "Billboard", eligible: boolean) {
+      if (kind === "Logo") logoEligible = eligible;
+      else billboardEligible = eligible;
     },
     setNeighborEnabled(value: boolean) {
       neighborEnabled = value;
@@ -342,6 +647,233 @@ async function setup(paid = false) {
     },
   };
 }
+
+test("migration pause stops impression sessions and batch writes", async () => {
+  const context = await setup(false, { enabled: false, acceptAfterMs: 0 });
+  try {
+    const session = await context.app.request("/impressions/session", {
+      method: "POST",
+      headers: { origin: ORIGIN },
+    });
+    assert.equal(session.status, 503);
+    assert.equal((await session.json()).code, "IMPRESSION_INTAKE_PAUSED");
+    const batch = await context.postJson("/impressions", { events: [] });
+    assert.equal(batch.status, 503);
+    assert.equal((await batch.json()).code, "IMPRESSION_INTAKE_PAUSED");
+    assert.equal(
+      (
+        context.store.db
+          .prepare("SELECT COUNT(*) AS count FROM impression_sessions")
+          .get() as { count: number }
+      ).count,
+      0,
+    );
+  } finally {
+    await context.close();
+  }
+});
+
+test("impression cutover rejects old views and accepts new ones", async () => {
+  const context = await setup(false, {
+    enabled: true,
+    acceptAfterMs: 999_500,
+  });
+  try {
+    context.setMediaEligibility("Logo", true);
+    const session = await context.app.request("/impressions/session", {
+      method: "POST",
+      headers: { origin: ORIGIN },
+    });
+    assert.equal(session.status, 200);
+    const cookie = session.headers.get("set-cookie")?.split(";")[0];
+    assert(cookie);
+    const old = await context.postJson(
+      "/impressions",
+      {
+        events: [
+          {
+            eventId: "11111111-1111-4111-8111-111111111111",
+            plotId: PLOT,
+            surface: "Logo",
+            observedAt: 1_000_000,
+            msVisible: 1_200,
+          },
+        ],
+      },
+      cookie,
+    );
+    assert.equal(old.status, 409);
+    assert.deepEqual(await old.json(), {
+      code: "IMPRESSION_BEFORE_CUTOVER",
+      message: "Discard views from before the city reopened",
+      acceptAfterMs: 999_500,
+    });
+    context.setNow(1_001);
+    const current = await context.postJson(
+      "/impressions",
+      {
+        events: [
+          {
+            eventId: "22222222-2222-4222-8222-222222222222",
+            plotId: PLOT,
+            surface: "Logo",
+            observedAt: 1_001_000,
+            msVisible: 1_200,
+          },
+        ],
+      },
+      cookie,
+    );
+    assert.equal(current.status, 200);
+    assert.equal(
+      (
+        context.store.db
+          .prepare("SELECT COUNT(*) AS count FROM impression_events")
+          .get() as { count: number }
+      ).count,
+      1,
+    );
+  } finally {
+    await context.close();
+  }
+});
+
+test("published version-2 manifest and full-size sprite are readable", async () => {
+  const context = await setup();
+  try {
+    const building = await sharp({
+      create: {
+        width: 656,
+        height: 640,
+        channels: 4,
+        background: "#ae6350",
+      },
+    })
+      .png()
+      .toBuffer();
+    const source = await sharp({
+      create: {
+        width: 680,
+        height: 760,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      },
+    })
+      .composite([{ input: building, left: 12, top: 120 }])
+      .png()
+      .toBuffer();
+    const candidate = await normalizeVariableGeneratedFacade(source, {
+      frontageUnits: 2,
+      designChoice: 1,
+      buildingType: "Retail",
+      level: 4,
+    });
+    await Promise.all([
+      saveImmutablePng(
+        context.store.assetDir,
+        candidate.spriteHash,
+        candidate.sprite,
+      ),
+      saveImmutablePng(
+        context.store.assetDir,
+        candidate.thumbnailHash,
+        candidate.thumbnail,
+      ),
+    ]);
+    const job = context.store.createGeneration({
+      accountId: ACCOUNT,
+      plotId: PLOT,
+      buildingType: "Retail",
+      level: 4,
+      layoutRevision: 1,
+      appearanceRevision: 1,
+      description: "Local variable facade fixture",
+      candidates: [
+        {
+          id: 1,
+          variant: 1,
+          palette: "#F6C85F",
+          manifest: candidate.manifest,
+          manifestHash: candidate.manifestHash,
+          spriteHash: candidate.spriteHash,
+          thumbnailHash: candidate.thumbnailHash,
+        },
+      ],
+      createdAt: 1_000,
+    });
+    assert(context.store.selectGeneration(job.id, ACCOUNT, 1));
+    context.store.markGenerationSubmitted(job.id, 2);
+    context.store.markGenerationDecided(job.id, "approved", 1_001, null);
+    const manifestResponse = await context.app.request(
+      `/manifests/${candidate.manifestHash}`,
+    );
+    assert.equal(manifestResponse.status, 200);
+    assert.deepEqual(await manifestResponse.json(), candidate.manifest);
+    const assetResponse = await context.app.request(
+      `/assets/${candidate.spriteHash}`,
+    );
+    assert.equal(assetResponse.status, 200);
+    assert.deepEqual(
+      Buffer.from(await assetResponse.arrayBuffer()),
+      candidate.sprite,
+    );
+  } finally {
+    await context.close();
+  }
+});
+
+test("variable-width paid request reserves its fixed-shape prompt while legacy preview stays closed", async () => {
+  const context = await setup(true);
+  try {
+    const signedIn = await context.signIn();
+    assert.equal(signedIn.verified.status, 200);
+    const cookie = signedIn.verified.headers.get("set-cookie")?.split(";")[0];
+    assert(cookie);
+    context.setVariableDesign(2, 1);
+    const request = {
+      plotId: PLOT,
+      description: "A small roof garden",
+      palette: "#F6C85F",
+    };
+    const legacy = await context.postJson("/generations", request, cookie);
+    assert.equal(legacy.status, 409);
+    assert.equal((await legacy.json()).code, "UNSUPPORTED_CITY_VERSION");
+    const paid = await context.app.request("/paid-generations", {
+      method: "POST",
+      headers: {
+        origin: ORIGIN,
+        "content-type": "application/json",
+        cookie,
+        "idempotency-key": "variable-city-test-001",
+      },
+      body: JSON.stringify(request),
+    });
+    assert.equal(paid.status, 202);
+    const queued = await paid.json();
+    assert.equal(queued.status, "queued");
+    const snapshot = context.paidLedger?.job(queued.id)?.snapshot;
+    assert.equal(snapshot?.promptSpec.version, 5);
+    if (snapshot?.promptSpec.version === 5) {
+      assert.equal(snapshot.promptSpec.frontageUnits, 2);
+      assert.equal(snapshot.promptSpec.designChoice, 1);
+      assert.equal(snapshot.promptSpec.description, request.description);
+    }
+    const replay = await context.app.request("/paid-generations", {
+      method: "POST",
+      headers: {
+        origin: ORIGIN,
+        "content-type": "application/json",
+        cookie,
+        "idempotency-key": "variable-city-test-001",
+      },
+      body: JSON.stringify(request),
+    });
+    assert.equal(replay.status, 202);
+    assert.equal((await replay.json()).id, queued.id);
+  } finally {
+    await context.close();
+  }
+});
 
 test("an owner can reuse only their intact approved image after a layout change", async () => {
   const context = await setup();
@@ -758,6 +1290,200 @@ test("upload checks ownership, normalizes image, and keeps pending asset private
         })
       ).status,
       400,
+    );
+  } finally {
+    await context.close();
+  }
+});
+
+test("variable-width uploads offer billboards only on illustrated sign surfaces", async () => {
+  const context = await setup();
+  try {
+    context.setVariableDesign(3, 2);
+    context.setBuildingLevel(4);
+    const { verified } = await context.signIn();
+    assert.equal(verified.status, 200);
+    const cookie = verified.headers.get("set-cookie")!.split(";")[0]!;
+    const png = await sharp({
+      create: {
+        width: 24,
+        height: 12,
+        channels: 4,
+        background: "#2d79d2",
+      },
+    })
+      .png()
+      .toBuffer();
+    const send = (path: string) => {
+      const form = new FormData();
+      form.set("plot_id", PLOT);
+      form.set("file", new File([png], "media.png", { type: "image/png" }));
+      return context.app.request(path, {
+        method: "POST",
+        headers: { origin: ORIGIN, cookie },
+        body: form,
+      });
+    };
+    const unsupported = await send("/ads");
+    assert.equal(unsupported.status, 409);
+    assert.equal((await unsupported.json()).code, "NO_MEDIA_SURFACE");
+    assert.equal((await send("/logos")).status, 200);
+    context.setVariableDesign(2, 4);
+    assert.equal((await send("/ads")).status, 200);
+  } finally {
+    await context.close();
+  }
+});
+
+test("version-2 owner media reaches the exact illustrated moderator preview", async () => {
+  const context = await setup();
+  try {
+    context.setVariableDesign(2, 1);
+    context.setBuildingLevel(3);
+    const { verified } = await context.signIn();
+    assert.equal(verified.status, 200);
+    const cookie = verified.headers.get("set-cookie")!.split(";")[0]!;
+    const admin = `Basic ${Buffer.from("reviewer:test-only-password").toString("base64")}`;
+    async function propose(
+      kind: "Logo" | "Billboard",
+      color: string,
+      link: string,
+    ) {
+      const png = await sharp({
+        create: {
+          width: kind === "Logo" ? 24 : 48,
+          height: 24,
+          channels: 4,
+          background: color,
+        },
+      })
+        .png()
+        .toBuffer();
+      const form = new FormData();
+      form.set("plot_id", PLOT);
+      form.set("file", new File([png], `${kind}.png`, { type: "image/png" }));
+      const uploaded = await context.app.request(
+        kind === "Logo" ? "/logos" : "/ads",
+        { method: "POST", headers: { origin: ORIGIN, cookie }, body: form },
+      );
+      assert.equal(uploaded.status, 200);
+      const upload = (await uploaded.json()) as {
+        uploadId: string;
+        hash: string;
+      };
+      const created = await context.postJson(
+        "/media/proposals",
+        { uploadId: upload.uploadId, link },
+        cookie,
+      );
+      assert.equal(created.status, 201);
+      const proposal = (await created.json()) as { id: string };
+      context.setMediaSlot(kind, {
+        ...emptyMediaSlot,
+        revision: 1,
+        pending: {
+          revision: 1,
+          owner: ACCOUNT,
+          building_type: "Retail",
+          level: 3,
+          layout_revision: 1,
+          content: { asset_hash: upload.hash, link },
+        },
+      });
+      assert.equal(
+        (
+          await context.postJson(
+            `/media/proposals/${proposal.id}/reconcile`,
+            {},
+            cookie,
+          )
+        ).status,
+        200,
+      );
+      return { proposal, upload };
+    }
+    async function reviewImage(): Promise<Buffer> {
+      const page = await context.app.request("/moderation", {
+        headers: { authorization: admin },
+      });
+      assert.equal(page.status, 200);
+      const html = await page.text();
+      const match = html.match(
+        /Facade with approved media after this decision<\/p><img src="data:image\/png;base64,([^"]+)"/,
+      );
+      assert(match, "moderator sees the exact combined facade");
+      return Buffer.from(match[1]!, "base64");
+    }
+    async function rgbAt(image: Buffer, x: number, y: number) {
+      const { data, info } = await sharp(image)
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      const offset =
+        (Math.floor(y) * info.width + Math.floor(x)) * info.channels;
+      return [...data.subarray(offset, offset + 3)];
+    }
+    const layout = variableFrontageMediaLayout(2, 1, 3);
+    const logo = await propose("Logo", "#ee3010", "https://brand.example/logo");
+    const logoPreview = await reviewImage();
+    assert.equal((await sharp(logoPreview).metadata()).width, 170);
+    assert.deepEqual(
+      await rgbAt(
+        logoPreview,
+        layout.logo.x + layout.logo.width / 2,
+        layout.logo.y + layout.logo.height / 2,
+      ),
+      [238, 48, 16],
+    );
+    assert.equal(
+      (
+        await context.app.request(
+          `/moderation/media/${logo.proposal.id}/approve`,
+          { method: "POST", headers: { origin: ORIGIN, authorization: admin } },
+        )
+      ).status,
+      303,
+    );
+    assert.equal(
+      context.store.mediaProposal(logo.proposal.id)?.status,
+      "approved",
+    );
+    context.setMediaEligibility("Logo", true);
+    const billboard = await propose(
+      "Billboard",
+      "#1234ef",
+      "https://brand.example/billboard",
+    );
+    const combined = await reviewImage();
+    assert.deepEqual(
+      await rgbAt(
+        combined,
+        layout.logo.x + layout.logo.width / 2,
+        layout.logo.y + layout.logo.height / 2,
+      ),
+      [238, 48, 16],
+    );
+    assert(layout.billboard);
+    assert.deepEqual(
+      await rgbAt(
+        combined,
+        layout.billboard.x + layout.billboard.width / 2,
+        layout.billboard.y + layout.billboard.height / 2,
+      ),
+      [18, 52, 239],
+    );
+    assert.equal(
+      (
+        await context.app.request(
+          `/moderation/media/${billboard.proposal.id}/approve`,
+          { method: "POST", headers: { origin: ORIGIN, authorization: admin } },
+        )
+      ).status,
+      303,
+    );
+    assert.equal(
+      context.store.mediaProposal(billboard.proposal.id)?.status,
+      "approved",
     );
   } finally {
     await context.close();
@@ -2075,6 +2801,179 @@ test("a completed paid candidate enters the exact owner and moderator review flo
           headers: { cookie },
         })
       ).status,
+      200,
+    );
+  } finally {
+    await context.close();
+  }
+});
+
+test("variable paid art reaches fixed-layout moderation and owner review locally", async () => {
+  const context = await setup(true);
+  try {
+    context.setVariableDesign(3, 0);
+    context.setBuildingLevel(2);
+    const { verified } = await context.signIn();
+    const cookie = verified.headers.get("set-cookie")!.split(";")[0]!;
+    const queued = await context.app.request("/paid-generations", {
+      method: "POST",
+      headers: {
+        origin: ORIGIN,
+        cookie,
+        "content-type": "application/json",
+        "idempotency-key": "variable-review-local-001",
+      },
+      body: JSON.stringify({
+        plotId: PLOT,
+        description: "Warm market windows",
+        palette: "#EF8270",
+      }),
+    });
+    assert.equal(queued.status, 202);
+    const queuedJob = await queued.json();
+    const ledger = context.paidLedger!;
+    ledger.claim("variable-review-worker", 1_000);
+    const attempt = ledger.beginAttempt(
+      queuedJob.id,
+      "variable-review-worker",
+      1_000,
+    );
+    const png = await sharp(
+      Buffer.from(
+        '<svg width="1024" height="768" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="300" width="984" height="400" fill="#d08065"/></svg>',
+      ),
+    )
+      .png()
+      .toBuffer();
+    await processPaidImageResult({
+      ledger,
+      jobId: queuedJob.id,
+      workerId: "variable-review-worker",
+      clientRequestId: attempt.clientRequestId,
+      providerRequestId: "fake_variable_review",
+      png,
+      assetDir: context.store.assetDir,
+      now: 1_000,
+    });
+    for (let index = 0; index < 3; index++) {
+      const rejected = ledger.beginAttempt(
+        queuedJob.id,
+        "variable-review-worker",
+        1_001 + index,
+      );
+      ledger.finishAttempt({
+        jobId: queuedJob.id,
+        workerId: "variable-review-worker",
+        clientRequestId: rejected.clientRequestId,
+        outcome: "rejected",
+        now: 1_001 + index,
+      });
+    }
+    assert.equal(ledger.job(queuedJob.id)?.status, "complete");
+    const candidate = ledger.candidates(queuedJob.id)[0]!;
+    assert.equal(candidate.manifest.schemaVersion, 2);
+    const admin = `Basic ${Buffer.from("reviewer:test-only-password").toString("base64")}`;
+    const review = await context.app.request("/moderation", {
+      headers: { authorization: admin },
+    });
+    assert.equal(review.status, 200);
+    const html = await review.text();
+    assert.match(html, /width="255" height="190"/);
+    assert.match(html, /fixed outlines match the selected street design/);
+    assert.doesNotMatch(html, /Preview adjusted placement/);
+    const base = `/moderation/paid-generations/${queuedJob.id}/candidates/1`;
+    assert.equal(
+      (
+        await context.app.request(`${base}/preview?logo_x=10&logo_y=10`, {
+          headers: { authorization: admin },
+        })
+      ).status,
+      409,
+    );
+    assert.equal(
+      (
+        await context.app.request(`${base}/approve`, {
+          method: "POST",
+          headers: {
+            origin: ORIGIN,
+            authorization: admin,
+            "content-type": "application/x-www-form-urlencoded",
+          },
+          body: "content_ok=on&style_ok=on&placement_ok=on&logo_x=10&logo_y=10",
+        })
+      ).status,
+      409,
+    );
+    assert.equal(
+      (
+        await context.app.request(`${base}/approve`, {
+          method: "POST",
+          headers: {
+            origin: ORIGIN,
+            authorization: admin,
+            "content-type": "application/x-www-form-urlencoded",
+          },
+          body: "content_ok=on&style_ok=on&placement_ok=on",
+        })
+      ).status,
+      303,
+    );
+    const reviewed = await context.app.request(
+      `/paid-generations/${queuedJob.id}`,
+      { headers: { cookie } },
+    );
+    assert.equal((await reviewed.json()).designJobId, queuedJob.id);
+    const ownerJob = await context.app.request(`/generations/${queuedJob.id}`, {
+      headers: { cookie },
+    });
+    assert.equal(ownerJob.status, 200);
+    const design = await ownerJob.json();
+    assert.equal(design.candidates[0].manifest.schemaVersion, 2);
+    assert.equal(design.candidates[0].manifest.frontageUnits, 3);
+    assert.equal(design.candidates[0].manifest.designChoice, 0);
+    const selected = await context.postJson(
+      `/generations/${design.id}/select`,
+      { candidateId: 1 },
+      cookie,
+    );
+    assert.equal(selected.status, 200);
+    assert.equal((await selected.json()).manifestHash, candidate.manifestHash);
+    context.setAppearanceRevision(2);
+    context.setPendingAppearance({
+      revision: 2,
+      owner: ACCOUNT,
+      building_type: "Retail",
+      level: 2,
+      manifest_hash: candidate.manifestHash,
+    });
+    const reconciled = await context.postJson(
+      `/generations/${design.id}/reconcile`,
+      {},
+      cookie,
+    );
+    assert.equal(reconciled.status, 200);
+    assert.equal((await reconciled.json()).status, "submitted");
+    const exactReview = await context.app.request("/moderation", {
+      headers: { authorization: admin },
+    });
+    assert.match(await exactReview.text(), /3 unit frontage · design 1/);
+    assert.equal(
+      (
+        await context.app.request(
+          `/moderation/generations/${design.id}/approve`,
+          { method: "POST", headers: { origin: ORIGIN, authorization: admin } },
+        )
+      ).status,
+      303,
+    );
+    assert.equal(context.store.generation(design.id)?.status, "approved");
+    assert.equal(
+      (await context.app.request(`/manifests/${candidate.manifestHash}`))
+        .status,
+      200,
+    );
+    assert.equal(
+      (await context.app.request(`/assets/${candidate.spriteHash}`)).status,
       200,
     );
   } finally {

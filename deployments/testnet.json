@@ -3,9 +3,9 @@
   "contractId": "dev-20261110121817-59798568433631.testnet",
   "moderatorId": "dev-20261110121820-76563125621460.testnet",
   "inspectorId": "dev-20261110121823-64776049168223.testnet",
-  "wasmSha256": "03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19",
-  "configVersion": 1,
-  "citySeedVersion": 1,
-  "plotCount": 80,
+  "wasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+  "configVersion": 2,
+  "citySeedVersion": 2,
+  "plotCount": 100,
   "npcSiteCount": 7
 }

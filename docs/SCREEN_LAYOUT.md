@@ -9,9 +9,36 @@ center and a contextual plot panel on the right. The game does not lock device
 orientation; portrait street view shows a short rotate prompt with links to the
 portrait-friendly screens.
 
-This matches the current MVP's landscape street view and portrait rotate prompt.
-It is a layout decision for the next UI pass, not a claim that every screen below
-has been implemented to this specification.
+The current guest street uses this landscape layout and portrait rotate prompt.
+Its lower-right street controller groups Cross above Left, Park and Right. A
+tap on an arrow nudges the car; holding drives continuously. The Park button
+changes to **C · Collect** after parking, or to Ticket, Visit or Turn when those
+actions are available. Left and Right dim while the active car is parked. The car
+uses the upper road lane when travelling left and the lower lane when travelling
+right. Keyboard arrows and A/D remain available on desktop.
+
+The street camera shows the buildings and parking on one curb at a time. The
+header names that curb. **Cross road** keeps the same position along the street, moves
+the car toward the far curb during a short transition, then shows the opposite
+buildings and confirms the destination. A different plot number may be directly
+across when the plots have different widths. Reduced-motion preference skips the
+movement. If the selected car is
+parked or unavailable, the action says **View other curb** and leaves the car
+where it is. Junction signs say **Turn onto** the connected road. Main, Market
+and River use north/south labels; the vertical Central and Harbor avenues use
+west/east labels. The map dot sits on the selected side of each road, with a
+north arrow for orientation. The scene keeps screen-left and screen-right
+controls consistent across both curb views. The camera still shows only one
+side at a time, so crossing is a brief visual transition rather than a fully
+continuous street view.
+
+The map screen places the road diagram beside street cards on desktop and
+stacks them on portrait phones. Its marker says You, Parked or View according
+to the selected car state. Road lines, tower pins and city-stop pins can be tapped, with named
+cards for the same destinations. Towers and free activities have separate
+cards below the map. A 320 CSS px width has no horizontal overflow.
+In landscape phone Safari, the map and its route panel keep clear of the
+device's left and right cutouts using safe-area padding.
 
 The portrait prompt now offers a direct **Open city map** action as well as Cars
 and My Plots. The five-destination bottom navigation is implemented in portrait.
@@ -27,15 +54,18 @@ to 667 px and heights down to 320 px without clipping essential controls.
 
 1. Top strip (40–48 px): street and side, active car, coin balance, compact Map
    and Menu buttons. Do not show a full navigation row during driving.
-2. Street viewport: fill the remaining height above the control strip. Keep the
+2. Street viewport: fill the remaining height. Keep the
    car near the horizontal center while the street scrolls. Show approximately
    3–4 facades at once at the reference width; signs and spaces must remain
    tappable. Center the nearest legal/illegal parking target.
-3. Bottom controls (64–72 px plus safe area): left/right under the left thumb,
-   one large context action under the right thumb. The action changes between
-   Park, Collect, Ticket, Enter, or Cross street. Put car durability and tower
-   floor choice in the top strip or a compact action sheet, never between the
-   thumb controls.
+3. Controller: use a two-row pad in the lower-right road area. Cross is the
+   upper button; Left, the context action and Right sit below it. The main
+   action shows **P** for parking, **C** for collection, **T** for ticketing and
+   a matching symbol for turning or visiting. Each button has a 48 px touch target. Tap an arrow for
+   a small nudge, hold to keep driving, and stop on release or cancellation.
+   Keep the pad translucent and below junction signs; the car and most curb
+   spaces remain visible. Put Collect, durability, tower floor and Details in
+   the small top strip. Tapping a marked parking space still parks directly.
 4. Tapping a plot opens a short bottom sheet with its current rule, owner,
    purchase price if unowned, projected new-park cap payout, availability and
    one primary action. The payout shows meter deductions and illegal ticket risk.
@@ -74,8 +104,10 @@ Reference content width: 1280 px; support 1024 px wide laptop windows. Keep a
 top navigation bar. Use a flexible central street canvas and a 280–320 px plot
 panel only when a plot is selected. Keep the viewport aspect near 16:9 to 21:9;
 letterbox the game world rather than stretching buildings. Keyboard A/D or arrow
-keys drive, Space takes the context action, and clicking a building or stall
-selects it. The bottom strip shows the active controls and current car status.
+keys drive, Space takes the context action, and tapping an empty curb stall
+parks in that exact space when the car is nearby. An occupied stall opens its
+plot details. Current car status stays in the header; action feedback appears
+over the scene rather than in a permanent instruction row.
 
 At widths below about 1100 px, change the plot panel to an overlay/drawer so
 the street remains wide enough to read. The Map, Cars, My Plots, and advertiser

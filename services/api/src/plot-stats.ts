@@ -71,6 +71,73 @@ function readPlotStatsUnwrapped(
   totals.averageVisibleMs = totals.impressions
     ? Math.round(totals.dwellMs / totals.impressions)
     : 0;
+  const link = exists(db, "deed_history_links")
+    ? (db
+        .prepare(
+          "SELECT source_plot_id, cutover_height, cutover_at_ms FROM deed_history_links WHERE target_plot_id = ?",
+        )
+        .get(plotId) as
+        | {
+            source_plot_id: string;
+            cutover_height: number;
+            cutover_at_ms: number;
+          }
+        | undefined)
+    : undefined;
+  let linkedHistory: PlotStats["linkedHistory"];
+  if (link) {
+    const priorRows = db
+      .prepare(
+        "SELECT day, impressions, dwell_ms, parks, tickets FROM deed_history_days WHERE source_plot_id = ? AND day BETWEEN ? AND ?",
+      )
+      .all(link.source_plot_id, startDay, endDay) as Array<{
+      day: string;
+      impressions: number;
+      dwell_ms: number;
+      parks: number;
+      tickets: number;
+    }>;
+    const priorByDay = new Map(priorRows.map((row) => [row.day, row]));
+    const priorDays: PlotStats["days"] = days.map(({ day }) => {
+      const row = priorByDay.get(day);
+      const impressions = row?.impressions ?? 0;
+      const dwellMs = row?.dwell_ms ?? 0;
+      return {
+        day,
+        impressions,
+        dwellMs,
+        averageVisibleMs: impressions ? Math.round(dwellMs / impressions) : 0,
+        parks: row?.parks ?? 0,
+        tickets: row?.tickets ?? 0,
+      };
+    });
+    const priorTotals = priorDays.reduce(
+      (sum, day) => ({
+        impressions: sum.impressions + day.impressions,
+        dwellMs: sum.dwellMs + day.dwellMs,
+        averageVisibleMs: 0,
+        parks: sum.parks + day.parks,
+        tickets: sum.tickets + day.tickets,
+      }),
+      {
+        impressions: 0,
+        dwellMs: 0,
+        averageVisibleMs: 0,
+        parks: 0,
+        tickets: 0,
+      },
+    );
+    priorTotals.averageVisibleMs = priorTotals.impressions
+      ? Math.round(priorTotals.dwellMs / priorTotals.impressions)
+      : 0;
+    linkedHistory = {
+      sourcePlotId: link.source_plot_id,
+      cutoverHeight: link.cutover_height,
+      cutoverAtMs: link.cutover_at_ms,
+      days: priorDays,
+      totals: priorTotals,
+    };
+  }
   const impression = db
     .prepare(
       "SELECT MAX(received_at_ms) AS received FROM impression_events WHERE plot_id = ?",
@@ -93,6 +160,7 @@ function readPlotStatsUnwrapped(
     plotId,
     days,
     totals,
+    ...(linkedHistory ? { linkedHistory } : {}),
     freshness: {
       impressionReceivedAt: impression.received,
       indexedThroughHeight: cursor?.last_timestamp_ns

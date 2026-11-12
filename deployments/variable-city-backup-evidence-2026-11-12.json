@@ -1,0 +1,14 @@
+{
+  "finalBlockHash": "8e8HovXJZ1AorcjBLhSwdhwtkW5dsJ2hP9S1FtjBNVUu",
+  "indexerCursorHeight": 277344340,
+  "sqliteSha256": "e116ab4641d35778852cd84f9eb331edd99115967d2995b11617195708dd095f",
+  "assetsSha256": "4a10137eea0ae6d66e52fc724a1fa626d3c71c36d797bcd6afe9e3a89dfbc808",
+  "backupManifestSha256": "38386c8c2b054185cbbb9c454cab7ed2e0045a9adca42a100217a6e4fd6be36e",
+  "verifiedRestore": true,
+  "chainMediaAssetsVerified": true,
+  "carriedLogoAndBillboardCount": 2,
+  "carriedFacadeCount": 1,
+  "deedWorkflowsVerified": true,
+  "deedWorkflowMoveCount": 2,
+  "deedWorkflowSourceRows": 20
+}

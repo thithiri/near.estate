@@ -3,11 +3,14 @@ import type { DatabaseSync } from "node:sqlite";
 import {
   canonicalJson,
   validateAssetManifest,
+  validateAssetManifestV2,
   type AssetManifest,
+  type AssetManifestV2,
 } from "@estate/shared";
 import type { ImageGenerationSettings } from "./image-generation-settings.js";
 import type { ImageTokenUsage } from "./image-provider.js";
 import type { GenerationPromptSpec } from "./prompt-builder.js";
+import type { buildVariableGenerationPrompt } from "./variable-prompt-builder.js";
 
 type EnabledSettings = Extract<ImageGenerationSettings, { enabled: true }>;
 export type PaidJobStatus =
@@ -40,21 +43,25 @@ export type PaidJob = {
   createdAt: number;
 };
 
-export type PaidGenerationSnapshot = {
+type PaidGenerationSnapshotBase = {
   buildingType: GenerationPromptSpec["buildingType"];
   level: GenerationPromptSpec["level"];
   layoutRevision: number;
   appearanceRevision: number | null;
   approvedManifestHashAtRequest?: string | null;
   usePriorArt?: boolean;
-  promptSpec: GenerationPromptSpec;
+};
+export type PaidGenerationSnapshot = PaidGenerationSnapshotBase & {
+  promptSpec:
+    | GenerationPromptSpec
+    | ReturnType<typeof buildVariableGenerationPrompt>;
 };
 
 export type PaidCandidate = {
   jobId: string;
   attemptId: string;
   ordinal: number;
-  manifest: AssetManifest;
+  manifest: AssetManifest | AssetManifestV2;
   manifestHash: string;
   spriteHash: string;
   thumbnailHash: string;
@@ -201,7 +208,7 @@ function candidateFromRow(row: CandidateRow): PaidCandidate {
     jobId: row.job_id,
     attemptId: row.attempt_id,
     ordinal: row.ordinal,
-    manifest: JSON.parse(row.manifest_json) as AssetManifest,
+    manifest: JSON.parse(row.manifest_json) as AssetManifest | AssetManifestV2,
     manifestHash: row.manifest_hash,
     spriteHash: row.sprite_hash,
     thumbnailHash: row.thumbnail_hash,
@@ -211,6 +218,17 @@ function candidateFromRow(row: CandidateRow): PaidCandidate {
     reviewedBy: row.reviewed_by,
     createdAt: row.created_at,
   };
+}
+
+function checkedManifest(value: unknown): AssetManifest | AssetManifestV2 {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "schemaVersion" in value &&
+    value.schemaVersion === 2
+  )
+    return validateAssetManifestV2(value);
+  return validateAssetManifest(value);
 }
 
 export class PaidGenerationLedger {
@@ -482,9 +500,7 @@ export class PaidGenerationLedger {
         )
         .get(input.jobId, input.ordinal) as CandidateRow | undefined;
       if (!row) throw new Error("Candidate is not awaiting review");
-      const originalManifest = validateAssetManifest(
-        JSON.parse(row.manifest_json),
-      );
+      const originalManifest = checkedManifest(JSON.parse(row.manifest_json));
       if (
         originalManifest.spriteHash !== row.sprite_hash ||
         originalManifest.thumbnailHash !== row.thumbnail_hash ||
@@ -495,6 +511,13 @@ export class PaidGenerationLedger {
         throw new Error("Candidate manifest fingerprint is invalid");
       if (input.suppressBillboard && !originalManifest.billboardRect)
         throw new Error("Candidate has no billboard to remove");
+      if (
+        originalManifest.schemaVersion === 2 &&
+        (input.suppressBillboard ||
+          input.logoRectOverride ||
+          input.billboardRectOverride)
+      )
+        throw new Error("Variable facade media positions are fixed");
       if (input.suppressBillboard && input.billboardRectOverride)
         throw new Error("Cannot move and remove the same billboard");
       const proposedLogo = input.logoRectOverride;
@@ -519,13 +542,16 @@ export class PaidGenerationLedger {
           !Number.isInteger(proposedBillboard.y))
       )
         throw new Error("Invalid candidate billboard adjustment");
-      const manifest = validateAssetManifest({
-        ...originalManifest,
-        logoRect: proposedLogo ?? originalManifest.logoRect,
-        billboardRect: input.suppressBillboard
-          ? null
-          : (proposedBillboard ?? originalManifest.billboardRect),
-      });
+      const manifest =
+        originalManifest.schemaVersion === 2
+          ? originalManifest
+          : validateAssetManifest({
+              ...originalManifest,
+              logoRect: proposedLogo ?? originalManifest.logoRect,
+              billboardRect: input.suppressBillboard
+                ? null
+                : (proposedBillboard ?? originalManifest.billboardRect),
+            });
       if (
         manifest.logoRect &&
         manifest.billboardRect &&
@@ -802,7 +828,7 @@ export class PaidGenerationLedger {
     if (input.outcome !== "accepted" && input.candidate)
       throw new Error("Only accepted attempts may attach candidates");
     if (input.candidate) {
-      const manifest = validateAssetManifest(input.candidate.manifest);
+      const manifest = checkedManifest(input.candidate.manifest);
       if (
         input.candidate.spriteHash !== manifest.spriteHash ||
         input.candidate.thumbnailHash !== manifest.thumbnailHash ||
@@ -846,11 +872,18 @@ export class PaidGenerationLedger {
       }
       if (job.status !== "leased" || job.leaseOwner !== input.workerId)
         throw new Error("Job lease is unavailable");
+      const spec = job.snapshot?.promptSpec;
+      const candidateManifest = input.candidate?.manifest;
       if (
-        input.candidate &&
-        (job.snapshot?.buildingType !== input.candidate.manifest.buildingType ||
-          job.snapshot.level !== input.candidate.manifest.level ||
-          job.acceptedCount >= 3)
+        candidateManifest &&
+        (job.snapshot?.buildingType !== candidateManifest.buildingType ||
+          job.snapshot.level !== candidateManifest.level ||
+          job.acceptedCount >= 3 ||
+          (spec?.version === 5
+            ? candidateManifest.schemaVersion !== 2 ||
+              candidateManifest.frontageUnits !== spec.frontageUnits ||
+              candidateManifest.designChoice !== spec.designChoice
+            : candidateManifest.schemaVersion !== 1))
       )
         throw new Error("Candidate does not match the paid building snapshot");
       if (input.candidate)

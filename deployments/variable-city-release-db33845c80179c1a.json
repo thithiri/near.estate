@@ -1,0 +1,43 @@
+{
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "preflightFile": "deployments/variable-city-preflight-ready-2026-11-12.json",
+  "preflightSha256": "b0058e9d57797a5a02deaad79d6446dc1501e277fdc7127f2f3e6060b7676fbd",
+  "beforeWasmSha256": "8132e2ab092bdfa0ddb368f894edb5782b95a049cad094d4b2410d007b4fab0c",
+  "afterWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+  "reverseWasmSha256": "5d63aacbff4a3b0ecf92fa5c4731dde63e428b4923ac996176561886923d5043",
+  "beforeStateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+  "convertedStateSha256": "4f8ba2ab0de916572a80e300bfc6b7ff4bc61e1d2e3cfa8998381dad531c6a75",
+  "frozenBlock": {
+    "hash": "8e8HovXJZ1AorcjBLhSwdhwtkW5dsJ2hP9S1FtjBNVUu",
+    "height": 277344338
+  },
+  "status": "active",
+  "deployTransactionHash": "8F6UK6tpvoecgaGes6WsAMX4c9qA3g8jqG2rWYEV6L8y",
+  "migrationTransactionHash": "8xw4NskVEV5oFqYj5JDQBMVqEiQzRqvMz2SqPaezG8Y6",
+  "cutoverAtMs": 1794475988000,
+  "serviceDbPath": "~/.config/near-estate/testnet-2026-11-10/shared-media/estate.sqlite",
+  "serviceVerification": {
+    "applied": false,
+    "verified": true,
+    "sourceReadOnly": true,
+    "contractId": "dev-20261110121817-59798568433631.testnet",
+    "cutoverHeight": 277344338,
+    "cutoverAtMs": 1794475988000,
+    "cursorHeight": 277344340,
+    "links": 2,
+    "days": 2,
+    "workflowRowsVerified": 20,
+    "moves": [
+      {
+        "from": "plot-main-n-2",
+        "to": "plot-main-n-3"
+      },
+      {
+        "from": "plot-market-n-1",
+        "to": "plot-market-n-2"
+      }
+    ]
+  },
+  "resumeTransactionHash": "7EgnS7VUm7meVJKCy1RnQDFYAkhBVM4qqyT1WuW9CBPL",
+  "reopenedAtMs": 1794476187289
+}

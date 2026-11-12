@@ -9,6 +9,7 @@ import {
   GAMEPLAY_METHODS,
   GameWalletClient,
   type GameplayKeyStatus,
+  type MockGenerationJob,
 } from "./wallet-client.js";
 
 test("Meteor wallet browser module and its SDK import cleanly", async () => {
@@ -43,6 +44,214 @@ test("Meteor SDK popup dependencies support its actual call shapes", async () =>
     "connectionUid=abc-123&pageUri=https%253A%252F%252Fgame.example%252Fstreet%253Fplot%253D1%2526side%253Dnorth&source=website_post_message",
   );
   assert.match(nanoid.nanoid(), /^[A-Za-z0-9_-]{21}$/);
+});
+
+test("variable-width design choice uses the owner wallet and confirms chain state", async () => {
+  let chosen = 0;
+  let signed = 0;
+  const client = Object.assign(Object.create(GameWalletClient.prototype), {
+    reader: {
+      contractId: "estate.testnet",
+      plot: async () => ({
+        plot: {
+          owner: "owner.testnet",
+          frontage_units: 3,
+          design_choice: chosen,
+        },
+      }),
+    },
+    selector: {
+      store: {
+        getState: () => ({
+          contract: { contractId: "estate.testnet" },
+          accounts: [{ accountId: "owner.testnet", active: true }],
+        }),
+      },
+      wallet: async () => ({
+        signAndSendTransaction: async () => {
+          signed++;
+          chosen = 4;
+        },
+      }),
+    },
+  }) as GameWalletClient;
+  await assert.rejects(
+    client.chooseDesign("plot-main-n-9", 5),
+    /five building/,
+  );
+  assert.equal(signed, 0);
+  await client.chooseDesign("plot-main-n-9", 4);
+  assert.equal(signed, 1);
+  assert.equal(chosen, 4);
+});
+
+test("a restored version-2 design job cannot propose after the plot design changes", async () => {
+  const originalFetch = globalThis.fetch;
+  let ownerCalls = 0;
+  const job = {
+    id: "job-v2",
+    accountId: "owner.testnet",
+    plotId: "plot-main-n-0",
+    buildingType: "Cafe",
+    level: 2,
+    layoutRevision: 7,
+    appearanceRevision: 3,
+    description: "Copper trim",
+    promptSpec: {
+      version: 5,
+      frontageUnits: 1,
+      designChoice: 0,
+      buildingType: "Cafe",
+      level: 2,
+    },
+    status: "ready",
+    selectedCandidateId: null,
+    proposalRevision: null,
+    decidedAt: null,
+    decisionReason: null,
+    mode: "curated_mock",
+    candidates: [
+      {
+        id: 1,
+        variant: 1,
+        palette: "#F6C85F",
+        manifest: {
+          schemaVersion: 2,
+          frontageUnits: 1,
+          designChoice: 0,
+        },
+        manifestHash: "a".repeat(64),
+      },
+    ],
+  } as MockGenerationJob;
+  const client = Object.assign(Object.create(GameWalletClient.prototype), {
+    requiredAccount: () => "owner.testnet",
+    artworkSession: async () => {},
+    ownerPlot: async () => ({
+      plot: {
+        frontage_units: 1,
+        design_choice: 1,
+        building: {
+          layout_revision: 7,
+          appearance_revision: 3,
+          building_type: "Cafe",
+          level: 2,
+        },
+      },
+    }),
+    ownerCall: async () => {
+      ownerCalls++;
+    },
+  }) as GameWalletClient;
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        jobId: job.id,
+        candidateId: 1,
+        plotId: job.plotId,
+        expectedRevision: 3,
+        manifestHash: "a".repeat(64),
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  try {
+    await assert.rejects(
+      client.submitMockGeneration(job, 1),
+      /building changed/,
+    );
+    assert.equal(ownerCalls, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("a reviewed version-2 image submits only its selected manifest through the owner wallet", async () => {
+  const originalFetch = globalThis.fetch;
+  const manifestHash = "b".repeat(64);
+  const job = {
+    id: "reviewed-v2-image",
+    accountId: "owner.testnet",
+    plotId: "plot-main-n-7",
+    buildingType: "Retail",
+    level: 2,
+    layoutRevision: 5,
+    appearanceRevision: 6,
+    description: "Warm market windows",
+    promptSpec: {
+      version: 5,
+      frontageUnits: 3,
+      designChoice: 0,
+      buildingType: "Retail",
+      level: 2,
+    },
+    status: "ready",
+    selectedCandidateId: null,
+    proposalRevision: null,
+    decidedAt: null,
+    decisionReason: null,
+    mode: "paid",
+    candidates: [{ id: 1, manifestHash }],
+  } as MockGenerationJob;
+  const ownerCalls: Array<{
+    method: string;
+    args: unknown;
+    accountId: string;
+  }> = [];
+  const client = Object.assign(Object.create(GameWalletClient.prototype), {
+    requiredAccount: () => "owner.testnet",
+    artworkSession: async () => {},
+    ownerPlot: async () => ({
+      plot: {
+        owner: "owner.testnet",
+        frontage_units: 3,
+        design_choice: 0,
+        building: {
+          layout_revision: 5,
+          appearance_revision: 6,
+          building_type: "Retail",
+          level: 2,
+        },
+      },
+    }),
+    ownerCall: async (method: string, args: unknown, accountId: string) => {
+      ownerCalls.push({ method, args, accountId });
+    },
+    reconcileMockGeneration: async () => ({
+      ...job,
+      status: "submitted",
+      proposalRevision: 7,
+    }),
+  }) as GameWalletClient;
+  globalThis.fetch = async (input) => {
+    assert.equal(input, `/api/generations/${job.id}/select`);
+    return new Response(
+      JSON.stringify({
+        jobId: job.id,
+        candidateId: 1,
+        plotId: job.plotId,
+        expectedRevision: 6,
+        manifestHash,
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  };
+  try {
+    const result = await client.submitMockGeneration(job, 1);
+    assert.equal(result.status, "submitted");
+    assert.deepEqual(ownerCalls, [
+      {
+        method: "propose_appearance",
+        args: {
+          plot_id: "plot-main-n-7",
+          expected_revision: 6,
+          manifest_hash: manifestHash,
+        },
+        accountId: "owner.testnet",
+      },
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("uncertain gameplay submission retries only its original signed transaction", async () => {

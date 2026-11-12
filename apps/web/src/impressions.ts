@@ -115,6 +115,13 @@ export class ImpressionReporter {
     }
   }
 
+  private discardPausedViews(): void {
+    this.recorder.observe(Date.now(), []);
+    this.queue = [];
+    this.sessionReady = false;
+    this.persist();
+  }
+
   private async ensureSession(): Promise<boolean> {
     if (this.sessionReady) return true;
     const response = await fetch("/api/impressions/session", {
@@ -122,6 +129,13 @@ export class ImpressionReporter {
       credentials: "same-origin",
       cache: "no-store",
     });
+    if (response.status === 503) {
+      const reason = (await response.json().catch(() => null)) as {
+        code?: string;
+      } | null;
+      if (reason?.code === "IMPRESSION_INTAKE_PAUSED")
+        this.discardPausedViews();
+    }
     this.sessionReady = response.ok;
     return this.sessionReady;
   }
@@ -151,6 +165,32 @@ export class ImpressionReporter {
         });
         if (response.status === 401) {
           this.sessionReady = false;
+          return;
+        }
+        if (response.status === 503) {
+          const reason = (await response.json().catch(() => null)) as {
+            code?: string;
+          } | null;
+          if (reason?.code === "IMPRESSION_INTAKE_PAUSED")
+            this.discardPausedViews();
+          return;
+        }
+        if (response.status === 409) {
+          const reason = (await response.json().catch(() => null)) as {
+            code?: string;
+            acceptAfterMs?: number;
+          } | null;
+          if (
+            reason?.code === "IMPRESSION_BEFORE_CUTOVER" &&
+            Number.isSafeInteger(reason.acceptAfterMs)
+          ) {
+            this.queue = this.queue.filter(
+              (event) =>
+                event.observedAt - event.msVisible >= reason.acceptAfterMs!,
+            );
+            this.persist();
+            continue;
+          }
           return;
         }
         if (response.status === 403) {

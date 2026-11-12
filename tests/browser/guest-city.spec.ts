@@ -1,5 +1,31 @@
 import { expect, test } from "@playwright/test";
 
+test("gamepad changes from park to collect for the active car", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator("#action")).toHaveAttribute("data-glyph", "P");
+  await page.locator("#action").click();
+  await expect(page.locator("#action")).toHaveText("Collect");
+  await expect(page.locator("#action")).toHaveAttribute("data-glyph", "C");
+  await expect(page.locator("#left")).toBeDisabled();
+  await expect(page.locator("#right")).toBeDisabled();
+  const canvas = await page.locator("#street-canvas canvas").boundingBox();
+  expect(canvas).not.toBeNull();
+  const scale = Math.max(0.5, canvas!.height / 300);
+  await page.mouse.click(canvas!.x + 127 * scale, canvas!.y + 224 * scale);
+  await expect(page.locator("#status")).toContainText(
+    "Collect your parked car before parking again.",
+  );
+  await expect(page.locator("#action")).toHaveText("Collect");
+  await page.locator("#action").click();
+  await expect(page.locator("#collect")).toBeHidden();
+  await expect(page.locator("#action")).toHaveText("Park here");
+  await expect(page.locator("#action")).toHaveAttribute("data-glyph", "P");
+  await expect(page.locator("#left")).toBeEnabled();
+  await expect(page.locator("#right")).toBeEnabled();
+});
+
 test("guest can park, collect, repair and ticket", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#action")).toHaveText("Park here");
@@ -27,6 +53,7 @@ test("guest can park, collect, repair and ticket", async ({ page }) => {
   await page.locator('[data-menu-go="My Plots"]').click();
   await page.locator("#visit-owned").click();
   await expect(page.locator("#action")).toHaveText("Ticket");
+  await expect(page.locator("#action")).toHaveAttribute("data-glyph", "T");
   await page.locator("#action").click();
   await expect(page.locator("#status")).toContainText("Ticketed visitor");
   await expect(page.locator("#action")).toHaveText("Your curb");

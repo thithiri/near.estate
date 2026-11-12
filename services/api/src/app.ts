@@ -19,6 +19,11 @@ import {
   ThemeHint,
   validateCitySeed,
   validateAssetManifest,
+  validateAssetManifestV2,
+  variableDesignHasBillboard,
+  ChainPlotV2,
+  type ChainPlot,
+  type CitySeed,
 } from "@estate/shared";
 import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -30,7 +35,9 @@ import type { ChainGateway } from "./chain.js";
 import { saveImmutablePng } from "./asset-storage.js";
 import { validateCandidateMediaPlacement } from "./generated-art.js";
 import { renderMockCandidate } from "./mock-art.js";
+import { composeVariableFacadePreview } from "./variable-art.js";
 import { buildGenerationPrompt } from "./prompt-builder.js";
+import { buildVariableGenerationPrompt } from "./variable-prompt-builder.js";
 import {
   PaidGenerationLedger,
   PaidJobLimitError,
@@ -41,6 +48,7 @@ import { mediaReviewPreview } from "./moderation-preview.js";
 import { ImpressionError, ImpressionLedger } from "./impression-ledger.js";
 import { readPlotStats } from "./plot-stats.js";
 import { readEconomyStats } from "./economy-stats.js";
+import { normalizedImage } from "./image-upload.js";
 import {
   ApiStore,
   type GenerationJob,
@@ -51,14 +59,14 @@ import {
 const cityPath = fileURLToPath(
   new URL("../../../contracts/estate/seed.json", import.meta.url),
 );
-const city = validateCitySeed(JSON.parse(readFileSync(cityPath, "utf8")));
+const legacyCity = validateCitySeed(JSON.parse(readFileSync(cityPath, "utf8")));
 const ACCOUNT_ID = z
   .string()
   .max(64)
   .regex(/^[a-z0-9]+(?:[._-][a-z0-9]+)*\.testnet$/);
 const PLOT_ID = z
   .string()
-  .regex(/^plot-(main|market|river|central|harbor)-(n|s)-[0-7]$/);
+  .regex(/^plot-(main|market|river|central|harbor)-(n|s)-[0-9]$/);
 const HASH = z.string().regex(/^[0-9a-f]{64}$/);
 const MAX_ONCHAIN_MODERATION_REASON_BYTES = 240;
 const validOnChainReason = (reason: string): boolean =>
@@ -92,6 +100,22 @@ const MediaProposalRequest = z.object({
 });
 const MediaKind = z.enum(["Logo", "Billboard"]);
 
+function mediaKindAvailable(
+  plot: ChainPlot,
+  kind: "Logo" | "Billboard",
+): boolean {
+  if (kind === "Logo") return true;
+  const frontage = plot.plot;
+  return (
+    !("frontage_units" in frontage) ||
+    (frontage.building.level >= 3 &&
+      variableDesignHasBillboard(
+        frontage.frontage_units,
+        frontage.design_choice,
+      ))
+  );
+}
+
 const CHALLENGE_TTL = 5 * 60;
 const CHALLENGE_WINDOW_SECONDS = 5 * 60;
 const MAX_CHALLENGES_PER_WINDOW = 300;
@@ -99,8 +123,6 @@ const IMPRESSION_SESSION_WINDOW_SECONDS = 5 * 60;
 const MAX_IMPRESSION_SESSIONS_PER_WINDOW = 600;
 const SESSION_TTL = 12 * 60 * 60;
 const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
-const MAX_IMAGE_BYTES = 1024 * 1024;
-const MAX_INPUT_PIXELS = 4_000_000;
 const UPLOAD_WINDOW_SECONDS = 24 * 60 * 60;
 const MAX_UPLOADS_PER_PLOT = 12;
 const MAX_UPLOADS_PER_ACCOUNT = 48;
@@ -116,18 +138,36 @@ export type ApiOptions = {
   moderator?: ModeratorGateway | null;
   adminCredentials?: { user: string; password: string } | null;
   paidLedger?: PaidGenerationLedger | null;
+  citySeed?: CitySeed;
+  cityVersionReader?: () => Promise<1 | 2>;
+  impressionIntake?: { enabled: boolean; acceptAfterMs: number };
 };
 
 function hash(value: string | Buffer): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-async function checkedFacadeCandidate(
+export async function checkedFacadeCandidate(
   store: ApiStore,
   job: GenerationJob,
   candidate: MockCandidate,
 ): Promise<Buffer> {
-  const manifest = validateAssetManifest(candidate.manifest);
+  const manifest =
+    candidate.manifest.schemaVersion === 2
+      ? validateAssetManifestV2(candidate.manifest)
+      : validateAssetManifest(candidate.manifest);
+  if (manifest.schemaVersion === 2) {
+    const spec = job.promptSpec;
+    if (
+      !spec ||
+      spec.version !== 5 ||
+      spec.frontageUnits !== manifest.frontageUnits ||
+      spec.designChoice !== manifest.designChoice ||
+      spec.buildingType !== manifest.buildingType ||
+      spec.level !== manifest.level
+    )
+      throw new Error("Variable facade differs from its prompt snapshot");
+  }
   if (
     manifest.buildingType !== job.buildingType ||
     manifest.level !== job.level ||
@@ -146,6 +186,23 @@ async function checkedFacadeCandidate(
   )
     throw new Error("Selected facade image hash does not match");
   return thumbnail;
+}
+
+function facadeCandidateFitsPlot(
+  job: GenerationJob,
+  candidate: MockCandidate,
+  plot: ChainPlot,
+): boolean {
+  const manifest = candidate.manifest;
+  if (manifest.schemaVersion === 1) return !("frontage_units" in plot.plot);
+  return (
+    "frontage_units" in plot.plot &&
+    job.promptSpec?.version === 5 &&
+    manifest.frontageUnits === plot.plot.frontage_units &&
+    manifest.designChoice === plot.plot.design_choice &&
+    manifest.buildingType === plot.plot.building.building_type &&
+    manifest.level === plot.plot.building.level
+  );
 }
 
 function escapeHtml(value: string): string {
@@ -288,7 +345,8 @@ function promotePaidJob(
     .filter((candidate) => candidate.reviewStatus === "approved")
     .map((candidate) => ({
       id: candidate.ordinal as MockCandidate["id"],
-      variant: snapshot.promptSpec.variant,
+      variant:
+        snapshot.promptSpec.version === 5 ? 1 : snapshot.promptSpec.variant,
       palette: snapshot.promptSpec.palette,
       manifest: candidate.manifest,
       manifestHash: candidate.manifestHash,
@@ -404,49 +462,6 @@ function replyError(
   return Response.json({ code, message }, { status });
 }
 
-async function normalizedImage(
-  file: File,
-  kind: "Logo" | "Billboard",
-): Promise<Buffer> {
-  if (file.size < 1 || file.size > MAX_IMAGE_BYTES)
-    throw new Error("Image must be between 1 byte and 1 MB");
-  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type))
-    throw new Error("Use a PNG, JPEG or WebP image");
-  const input = Buffer.from(await file.arrayBuffer());
-  const metadata = await sharp(input, {
-    limitInputPixels: MAX_INPUT_PIXELS,
-    failOn: "error",
-  }).metadata();
-  if (
-    !metadata.width ||
-    !metadata.height ||
-    metadata.width > 4096 ||
-    metadata.height > 4096 ||
-    metadata.width * metadata.height > MAX_INPUT_PIXELS ||
-    (metadata.pages ?? 1) !== 1 ||
-    !["png", "jpeg", "webp"].includes(metadata.format ?? "")
-  )
-    throw new Error("Image dimensions or format are not supported");
-  const width = kind === "Logo" ? 256 : 512;
-  const height = kind === "Logo" ? 256 : 256;
-  const output = await sharp(input, {
-    limitInputPixels: MAX_INPUT_PIXELS,
-    failOn: "error",
-  })
-    .rotate()
-    .resize(width, height, {
-      fit: "contain",
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    })
-    .ensureAlpha()
-    .toColourspace("srgb")
-    .png({ compressionLevel: 9 })
-    .toBuffer();
-  if (output.length > MAX_IMAGE_BYTES)
-    throw new Error("Processed image is too large");
-  return output;
-}
-
 export function createApiApp({
   store,
   chain,
@@ -455,13 +470,78 @@ export function createApiApp({
   moderator = null,
   adminCredentials = null,
   paidLedger = null,
+  citySeed = legacyCity,
+  cityVersionReader,
+  impressionIntake = { enabled: true, acceptAfterMs: 0 },
 }: ApiOptions): Hono {
+  if (
+    !Number.isSafeInteger(impressionIntake.acceptAfterMs) ||
+    impressionIntake.acceptAfterMs < 0
+  )
+    throw new Error("Invalid impression cutover timestamp");
+  const city = citySeed;
   const origin = new URL(appOrigin).origin;
   const recipient = new URL(appOrigin).host;
   const callbackUrl = `${origin}/`;
   const secure = origin.startsWith("https://");
   const app = new Hono();
   const impressionLedger = new ImpressionLedger(store.db);
+  let lastVersionCheck = Number.NEGATIVE_INFINITY;
+  let versionCheckInFlight: Promise<
+    "current" | "changed" | "unavailable"
+  > | null = null;
+  let versionChanged = false;
+
+  app.use("*", async (c, next) => {
+    if (!cityVersionReader) return next();
+    if (versionChanged) {
+      c.header("Cache-Control", "no-store");
+      return c.json(
+        {
+          code: "CITY_VERSION_CHANGED",
+          message: "City updated; restart the API",
+        },
+        503,
+      );
+    }
+    if (clock() - lastVersionCheck >= 30) {
+      versionCheckInFlight ??= cityVersionReader()
+        .then((version): "current" | "changed" => {
+          if (version !== city.version) {
+            versionChanged = true;
+            return "changed";
+          }
+          lastVersionCheck = clock();
+          return "current";
+        })
+        .catch((): "unavailable" => "unavailable")
+        .finally(() => {
+          versionCheckInFlight = null;
+        });
+      const outcome = await versionCheckInFlight;
+      if (outcome === "changed") {
+        c.header("Cache-Control", "no-store");
+        return c.json(
+          {
+            code: "CITY_VERSION_CHANGED",
+            message: "City updated; restart the API",
+          },
+          503,
+        );
+      }
+      if (outcome === "unavailable") {
+        c.header("Cache-Control", "no-store");
+        return c.json(
+          {
+            code: "CITY_VERSION_UNAVAILABLE",
+            message: "Could not verify the city version",
+          },
+          503,
+        );
+      }
+    }
+    return next();
+  });
 
   const currentAccount = (header: string | undefined): string | null => {
     const token = cookieValue(header, "estate_session");
@@ -698,7 +778,10 @@ export function createApiApp({
     c.json({ status: "ok", service: "api", schemaVersion: 1 }),
   );
   app.get("/config", (c) => c.json(DEFAULT_CONFIG));
-  app.get("/city", (c) => c.json(city));
+  app.get("/city", (c) => {
+    c.header("Cache-Control", "no-store");
+    return c.json(city);
+  });
 
   app.get("/stats/economy", (c) => {
     c.header("Cache-Control", "no-store");
@@ -714,6 +797,16 @@ export function createApiApp({
   });
 
   app.post("/impressions/session", (c) => {
+    if (!impressionIntake.enabled) {
+      c.header("Cache-Control", "no-store");
+      return c.json(
+        {
+          code: "IMPRESSION_INTAKE_PAUSED",
+          message: "Ad counting is temporarily paused",
+        },
+        503,
+      );
+    }
     const now = clock();
     const prior = cookieValue(c.req.header("cookie"), "estate_impression");
     const priorExpiry =
@@ -754,6 +847,16 @@ export function createApiApp({
       onError: () => replyError("TOO_LARGE", "Batch is too large", 413),
     }),
     async (c) => {
+      if (!impressionIntake.enabled) {
+        c.header("Cache-Control", "no-store");
+        return c.json(
+          {
+            code: "IMPRESSION_INTAKE_PAUSED",
+            message: "Ad counting is temporarily paused",
+          },
+          503,
+        );
+      }
       const token = cookieValue(c.req.header("cookie"), "estate_impression");
       if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token))
         return c.json(
@@ -776,6 +879,20 @@ export function createApiApp({
         return c.json(
           { code: "INVALID_BATCH", message: "Invalid impression batch" },
           400,
+        );
+      if (
+        parsed.data.events.some(
+          (event) =>
+            event.observedAt - event.msVisible < impressionIntake.acceptAfterMs,
+        )
+      )
+        return c.json(
+          {
+            code: "IMPRESSION_BEFORE_CUTOVER",
+            message: "Discard views from before the city reopened",
+            acceptAfterMs: impressionIntake.acceptAfterMs,
+          },
+          409,
         );
       try {
         const newSurfaces = impressionLedger.newPlotSurfaces(
@@ -1067,6 +1184,15 @@ export function createApiApp({
           { code: "NOT_OWNER", message: "This wallet does not own the plot" },
           403,
         );
+      if ("frontage_units" in plot.plot)
+        return c.json(
+          {
+            code: "UNSUPPORTED_CITY_VERSION",
+            message:
+              "Custom generation for variable plots is not available yet",
+          },
+          409,
+        );
       const building = plot.plot.building;
       const variant = building.variant as 1 | 2;
       let promptSpec;
@@ -1249,15 +1375,17 @@ export function createApiApp({
       if (previous) {
         const prior = previous.snapshot?.promptSpec;
         const sameHints =
-          prior?.materialHints.join(",") ===
-          MaterialHint.options
-            .filter((hint) => materialHints.includes(hint))
-            .join(",");
+          prior?.version === 5
+            ? themeHint === "None" && materialHints.length === 0
+            : prior?.materialHints.join(",") ===
+              MaterialHint.options
+                .filter((hint) => materialHints.includes(hint))
+                .join(",");
         if (
           previous.plotId !== plotId ||
           prior?.description !== description ||
           prior.palette !== palette ||
-          prior.themeHint !== themeHint ||
+          (prior.version === 5 ? "None" : prior.themeHint) !== themeHint ||
           (previous.snapshot?.usePriorArt ?? true) !== usePriorArt ||
           !sameHints
         )
@@ -1288,6 +1416,16 @@ export function createApiApp({
           { code: "NOT_OWNER", message: "This wallet does not own the plot" },
           403,
         );
+      const variablePlot =
+        "frontage_units" in initial.plot ? initial.plot : null;
+      if (variablePlot && (themeHint !== "None" || materialHints.length > 0))
+        return c.json(
+          {
+            code: "INVALID_REQUEST",
+            message: "Variable buildings use their selected street shape",
+          },
+          400,
+        );
       const building = initial.plot.building;
       const currentReference =
         usePriorArt && building.approved_manifest_hash
@@ -1299,7 +1437,12 @@ export function createApiApp({
               building.approved_manifest_hash,
             )
           : null;
-      if (usePriorArt && building.approved_manifest_hash && !currentReference)
+      if (
+        !variablePlot &&
+        usePriorArt &&
+        building.approved_manifest_hash &&
+        !currentReference
+      )
         return c.json(
           {
             code: "ART_UNAVAILABLE",
@@ -1307,36 +1450,76 @@ export function createApiApp({
           },
           503,
         );
+      const compatibleCurrentReference =
+        variablePlot && currentReference
+          ? currentReference.manifest.schemaVersion === 2 &&
+            currentReference.manifest.frontageUnits ===
+              variablePlot.frontage_units &&
+            currentReference.manifest.designChoice ===
+              variablePlot.design_choice
+            ? currentReference
+            : null
+          : currentReference;
       const priorReference =
-        usePriorArt && !currentReference && building.level > 1
-          ? store.approvedReference(
-              accountId,
-              plotId,
-              building.building_type,
-              building.level - 1,
-            )
+        usePriorArt && !compatibleCurrentReference && building.level > 1
+          ? variablePlot
+            ? (store
+                .generationHistory(accountId, plotId, 20)
+                .filter((job) => job.status === "approved")
+                .flatMap((job) =>
+                  job.candidates.filter(
+                    (candidate) => candidate.id === job.selectedCandidateId,
+                  ),
+                )
+                .find(
+                  (candidate) =>
+                    candidate.manifest.schemaVersion === 2 &&
+                    candidate.manifest.frontageUnits ===
+                      variablePlot.frontage_units &&
+                    candidate.manifest.designChoice ===
+                      variablePlot.design_choice &&
+                    candidate.manifest.buildingType ===
+                      building.building_type &&
+                    candidate.manifest.level < building.level,
+                ) ?? null)
+            : store.approvedReference(
+                accountId,
+                plotId,
+                building.building_type,
+                building.level - 1,
+              )
           : null;
       const revokedHash =
         building.last_appearance_decision?.status === "Revoked"
           ? building.last_appearance_decision.reference.manifest_hash
           : null;
       const referenceManifestHash =
-        currentReference?.manifestHash ??
+        compatibleCurrentReference?.manifestHash ??
         (priorReference?.manifestHash === revokedHash
           ? null
           : (priorReference?.manifestHash ?? null));
       let promptSpec;
       try {
-        promptSpec = buildGenerationPrompt({
-          buildingType: building.building_type,
-          level: building.level,
-          variant: building.variant as 1 | 2,
-          palette,
-          description,
-          themeHint,
-          materialHints,
-          referenceManifestHash,
-        });
+        promptSpec = variablePlot
+          ? buildVariableGenerationPrompt({
+              frontageUnits: variablePlot.frontage_units,
+              designChoice: variablePlot.design_choice,
+              buildingType: building.building_type,
+              level: building.level,
+              palette,
+              description,
+              referenceManifestHash,
+            })
+          : buildGenerationPrompt({
+              buildingType: building.building_type,
+              level: building.level,
+              variant: building.variant as 1 | 2,
+              palette,
+              description,
+              themeHint,
+              materialHints,
+              referenceManifestHash,
+            });
       } catch {
         return c.json(
           { code: "INVALID_REQUEST", message: "Choose valid design hints" },
@@ -1356,11 +1539,20 @@ export function createApiApp({
         );
       }
       const currentBuilding = current?.plot.building;
+      const currentVariable = current ? ChainPlotV2.safeParse(current) : null;
+      const currentVariablePlot = currentVariable?.success
+        ? currentVariable.data.plot
+        : null;
       if (
         current?.plot.owner !== accountId ||
         currentBuilding?.building_type !== building.building_type ||
         currentBuilding.level !== building.level ||
-        currentBuilding.variant !== building.variant ||
+        (variablePlot
+          ? !currentVariablePlot ||
+            currentVariablePlot.frontage_units !==
+              variablePlot.frontage_units ||
+            currentVariablePlot.design_choice !== variablePlot.design_choice
+          : currentBuilding.variant !== building.variant) ||
         currentBuilding.layout_revision !== building.layout_revision ||
         currentBuilding.appearance_revision !== building.appearance_revision ||
         currentBuilding.approved_manifest_hash !==
@@ -1624,7 +1816,8 @@ export function createApiApp({
         plot.plot.building.building_type !== job.buildingType ||
         plot.plot.building.level !== job.level ||
         plot.plot.building.layout_revision !== job.layoutRevision ||
-        plot.plot.building.appearance_revision !== job.appearanceRevision
+        plot.plot.building.appearance_revision !== job.appearanceRevision ||
+        !facadeCandidateFitsPlot(job, candidate, plot)
       )
         return c.json(
           {
@@ -1701,6 +1894,14 @@ export function createApiApp({
         503,
       );
     }
+    if (plot && !facadeCandidateFitsPlot(job, candidate, plot))
+      return c.json(
+        {
+          code: "PLOT_CHANGED",
+          message: "The building design changed after this job",
+        },
+        409,
+      );
     const pending = plot?.plot.building.pending_appearance;
     if (
       plot?.plot.owner !== accountId ||
@@ -1740,9 +1941,14 @@ export function createApiApp({
     }
     if (!manifest)
       return c.json({ code: "NOT_FOUND", message: "Manifest not found" }, 404);
-    let validatedManifest: ReturnType<typeof validateAssetManifest>;
+    let validatedManifest:
+      | ReturnType<typeof validateAssetManifest>
+      | ReturnType<typeof validateAssetManifestV2>;
     try {
-      validatedManifest = validateAssetManifest(manifest);
+      validatedManifest =
+        manifest.schemaVersion === 2
+          ? validateAssetManifestV2(manifest)
+          : validateAssetManifest(manifest);
       if (hash(canonicalJson(validatedManifest)) !== manifestHash.data)
         throw new Error("Manifest hash mismatch");
     } catch {
@@ -1854,9 +2060,26 @@ export function createApiApp({
       );
       if (!candidate) continue;
       let selectedImage = "";
+      let selectedWidth = 140;
+      let selectedHeight = 160;
       try {
         const bytes = await checkedFacadeCandidate(store, job, candidate);
-        selectedImage = `data:image/png;base64,${bytes.toString("base64")}`;
+        if (candidate.manifest.schemaVersion === 2) {
+          const plot = await chain?.plot(job.plotId);
+          if (!plot || !facadeCandidateFitsPlot(job, candidate, plot))
+            throw new Error("Variable facade plot changed");
+          const sprite = await readFile(
+            join(store.assetDir, `${candidate.spriteHash}.png`),
+          );
+          const preview = await composeVariableFacadePreview({
+            plot: ChainPlotV2.parse(plot),
+            approvedFacade: { manifest: candidate.manifest, sprite },
+          });
+          selectedImage = `data:image/png;base64,${preview.toString("base64")}`;
+          selectedWidth = candidate.manifest.frontageUnits * 85;
+          selectedHeight = 190;
+        } else
+          selectedImage = `data:image/png;base64,${bytes.toString("base64")}`;
       } catch {
         cards.push(`<section class="review"><h2>${escapeHtml(job.plotId)} · selected facade unavailable</h2>
           <p>The selected image files or manifest are missing or changed. Restore the exact stored assets before approval.</p>
@@ -1864,11 +2087,14 @@ export function createApiApp({
         </section>`);
         continue;
       }
-      const neighbors = await neighbourCards(job.plotId, neighbourCache);
+      const neighbors =
+        candidate.manifest.schemaVersion === 2
+          ? null
+          : await neighbourCards(job.plotId, neighbourCache);
       cards.push(`<section class="review"><h2>${escapeHtml(job.plotId)} · ${escapeHtml(job.buildingType)} level ${job.level}</h2>
         <p>Owner: ${escapeHtml(job.accountId)} · revision ${job.proposalRevision}</p>
         <p>Prompt: ${escapeHtml(job.description)}</p>
-        <div class="street">${neighbors[0]}<div class="chosen"><img src="${selectedImage}" alt="Selected facade" width="140" height="160"><span>Selected design ${candidate.id}</span></div>${neighbors[1]}</div>
+        <div class="street">${neighbors?.[0] ?? ""}<div class="chosen"><img src="${selectedImage}" alt="Selected facade" width="${selectedWidth}" height="${selectedHeight}"><span>Selected design ${candidate.id}${candidate.manifest.schemaVersion === 2 ? ` · ${candidate.manifest.frontageUnits} unit frontage · design ${candidate.manifest.designChoice + 1}` : ""}</span></div>${neighbors?.[1] ?? ""}</div>
         <p>Approving this facade advances the building layout. Any current logo or billboard stays hidden until separately reapproved for the new layout.</p>
         <p>Manifest: <code>${candidate.manifestHash}</code></p>
         <form method="post" action="/api/moderation/generations/${job.id}/approve"><button>Approve exact design</button></form>
@@ -1982,22 +2208,28 @@ export function createApiApp({
           : "";
       const neighbors = await neighbourCards(job.plotId, neighbourCache);
       const spriteData = `data:image/png;base64,${sprite.toString("base64")}`;
+      const variable = candidate.manifest.schemaVersion === 2;
+      const gameWidth =
+        candidate.manifest.schemaVersion === 2
+          ? candidate.manifest.frontageUnits * 85
+          : 140;
+      const gameHeight = variable ? 190 : 160;
       paidCandidateCards.push(`<section class="review"><h2>${escapeHtml(job.plotId)} · generated candidate ${candidate.ordinal}</h2>
         <p>Owner: ${escapeHtml(job.accountId)} · ${escapeHtml(job.snapshot.buildingType)} level ${job.snapshot.level}</p>
         <p>Owner description: ${escapeHtml(job.snapshot.promptSpec.description)}</p>
-        <p>Game-size street comparison</p><div class="street">${neighbors[0]}<div class="chosen"><img src="${spriteData}" alt="Generated candidate at game size" width="140" height="160"><span>Candidate ${candidate.ordinal}</span></div>${neighbors[1]}</div>
-        <div class="candidate-art"><img src="${spriteData}" alt="Full generated facade with placement outlines" width="280" height="320">${outline("Logo", candidate.manifest.logoRect)}${outline("Billboard", candidate.manifest.billboardRect)}</div>
-        <p>These outlines mark the proposed media rectangles. Moving a logo or billboard, or removing a billboard, creates a new manifest hash before the owner can choose this image. The image is still private to this review page.</p>
+        <p>Game-size street comparison</p><div class="street">${neighbors[0]}<div class="chosen"><img src="${spriteData}" alt="Generated candidate at game size" width="${gameWidth}" height="${gameHeight}"><span>Candidate ${candidate.ordinal}</span></div>${neighbors[1]}</div>
+        <div class="candidate-art" style="width:${gameWidth * 2}px;height:${gameHeight * 2}px"><img src="${spriteData}" alt="Full generated facade with placement outlines" width="${gameWidth * 2}" height="${gameHeight * 2}">${outline("Logo", candidate.manifest.logoRect)}${outline("Billboard", candidate.manifest.billboardRect)}</div>
+        <p>${variable ? "These fixed outlines match the selected street design and level." : "These outlines mark the proposed media rectangles. Moving a logo or billboard, or removing a billboard, creates a new manifest hash before the owner can choose this image."} The image is still private to this review page.</p>
         <p>Manifest: <code>${candidate.manifestHash}</code></p>
         <form method="post" action="/api/moderation/paid-generations/${encodeURIComponent(job.id)}/candidates/${candidate.ordinal}/approve">
           <label><input type="checkbox" name="content_ok" required> Content is suitable for the city</label>
           <label><input type="checkbox" name="style_ok" required> Style and perspective match the game</label>
-          ${candidate.manifest.billboardRect ? '<label><input type="checkbox" name="suppress_billboard"> Remove the proposed billboard area from this candidate</label>' : ""}
+          ${!variable && candidate.manifest.billboardRect ? '<label><input type="checkbox" name="suppress_billboard"> Remove the proposed billboard area from this candidate</label>' : ""}
           <label><input type="checkbox" name="placement_ok" required> Remaining media spaces are usable</label>
           <button>Approve candidate for owner</button>
         </form>
         ${
-          candidate.manifest.logoRect
+          !variable && candidate.manifest.logoRect
             ? `<form method="get" action="/api/moderation/paid-generations/${encodeURIComponent(job.id)}/candidates/${candidate.ordinal}/preview">
           <label>Logo X <input type="number" name="logo_x" min="0" max="140" step="1" value="${candidate.manifest.logoRect.x}" required></label>
           <label>Logo Y <input type="number" name="logo_y" min="0" max="160" step="1" value="${candidate.manifest.logoRect.y}" required></label>
@@ -2067,6 +2299,14 @@ export function createApiApp({
         return c.json(
           { code: "NOT_FOUND", message: "Candidate is not awaiting review" },
           404,
+        );
+      if (candidate.manifest.schemaVersion === 2)
+        return c.json(
+          {
+            code: "FIXED_PLACEMENT",
+            message: "This facade uses the street's fixed sign positions",
+          },
+          409,
         );
       const suppressBillboard = c.req.query("suppress_billboard") === "on";
       const logoRect = {
@@ -2257,6 +2497,19 @@ export function createApiApp({
               y: Number(rawBillboardY),
             }
           : undefined;
+      if (
+        candidate.manifest.schemaVersion === 2 &&
+        (hasLogoAdjustment ||
+          hasBillboardAdjustment ||
+          form?.suppress_billboard === "on")
+      )
+        return c.json(
+          {
+            code: "FIXED_PLACEMENT",
+            message: "This facade uses the street's fixed sign positions",
+          },
+          409,
+        );
       if (decision === "approve") {
         if (
           form?.content_ok !== "on" ||
@@ -2293,17 +2546,18 @@ export function createApiApp({
           );
         }
         try {
-          const proposedManifest = await validateCandidateMediaPlacement(
-            sprite,
-            {
-              ...candidate.manifest,
-              logoRect: logoRectOverride ?? candidate.manifest.logoRect,
-              billboardRect:
-                form?.suppress_billboard === "on"
-                  ? null
-                  : (billboardRectOverride ?? candidate.manifest.billboardRect),
-            },
-          );
+          const proposedManifest =
+            candidate.manifest.schemaVersion === 2
+              ? validateAssetManifestV2(candidate.manifest)
+              : await validateCandidateMediaPlacement(sprite, {
+                  ...candidate.manifest,
+                  logoRect: logoRectOverride ?? candidate.manifest.logoRect,
+                  billboardRect:
+                    form?.suppress_billboard === "on"
+                      ? null
+                      : (billboardRectOverride ??
+                        candidate.manifest.billboardRect),
+                });
           if (
             (hasLogoAdjustment || hasBillboardAdjustment) &&
             form?.preview_manifest_hash !==
@@ -2441,8 +2695,15 @@ export function createApiApp({
           const candidate = job.candidates.find(
             (entry) => entry.id === job.selectedCandidateId,
           );
+          if (!candidate || !facadeCandidateFitsPlot(job, candidate, plot))
+            return c.json(
+              {
+                code: "PLOT_CHANGED",
+                message: "The building design changed after this job",
+              },
+              409,
+            );
           try {
-            if (!candidate) throw new Error("Selected facade is missing");
             await checkedFacadeCandidate(store, job, candidate);
           } catch {
             return c.json(
@@ -2649,6 +2910,15 @@ export function createApiApp({
         { code: "NOT_OWNER", message: "This wallet does not own the plot" },
         403,
       );
+    if (!mediaKindAvailable(plot, kind))
+      return c.json(
+        {
+          code: "NO_MEDIA_SURFACE",
+          message:
+            "This building has no billboard surface at its current level",
+        },
+        409,
+      );
     const uploadStartedAt = clock();
     if (
       !store.reserveUploadAttempt(
@@ -2789,6 +3059,15 @@ export function createApiApp({
         return c.json(
           { code: "NOT_OWNER", message: "This wallet does not own the plot" },
           403,
+        );
+      if (!mediaKindAvailable(plot, kind))
+        return c.json(
+          {
+            code: "NO_MEDIA_SURFACE",
+            message:
+              "This building has no billboard surface at its current level",
+          },
+          409,
         );
       const slot = kind === "Logo" ? plot.plot.logo : plot.plot.billboard;
       const approved = slot.active;
@@ -2955,6 +3234,15 @@ export function createApiApp({
           {
             code: "PLOT_CHANGED",
             message: "The building changed; upload again",
+          },
+          409,
+        );
+      if (!mediaKindAvailable(plot, upload.kind))
+        return c.json(
+          {
+            code: "NO_MEDIA_SURFACE",
+            message:
+              "This building has no billboard surface at its current level",
           },
           409,
         );

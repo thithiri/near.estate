@@ -1,0 +1,16 @@
+{
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "beforeCodeSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+  "repairWasmSha256": "6cf06516df3c3b9832a9edfd1c7c195d363329c043d604c94a7f646a955e75eb",
+  "beforeStateSha256": "4f8ba2ab0de916572a80e300bfc6b7ff4bc61e1d2e3cfa8998381dad531c6a75",
+  "afterStateSha256": "f5febd929710cb233a4d05908cbeb4e9ab5a908c064d59e9be3d1bc2c7d1c2a6",
+  "sitesMoved": 7,
+  "sandboxExactStorageVerified": true,
+  "sandboxRuntimeRestored": true,
+  "status": "active",
+  "repairDeployTransactionHash": "n3ycB3WsVpCzJy3kAQgpkhKs9K1vzMkRmLkNQUv5cxs",
+  "repairTransactionHash": "2bigdJUvscoTFDMkJPEUjHc8mGbi9PjXLHiiBjkcmk2p",
+  "runtimeRestoreTransactionHash": "24mdUcCc1M3tgY6LCcwNA5UJWkFnesxVC3WLn282cfvk",
+  "resumeTransactionHash": "AkHZEU7ydtM8Lc1fTmK7ECeibwR3fgtpTMhvSc494rwC",
+  "reopenedAtMs": 1794476867512
+}

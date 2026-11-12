@@ -1,0 +1,856 @@
+{
+  "capturedAt": "2026-11-12T09:13:06.241Z",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "finalBlock": {
+    "hash": "3hkHgGwkbDGNnVQ9psCq9uMhsFuECJ99MECCUcQex3FF",
+    "height": 277342748
+  },
+  "codeHash": "GF6ZnMi3QhDfU2p7hjry3yAvSPWEuq7rNi2TguXxkBJ",
+  "codeSha256": "03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19",
+  "stateSha256": "036249aa91634c3605427df4d20b696003a9d3a7dd15e135d0d6ae571b45e424",
+  "stateEntryCount": 181,
+  "storageUsageBytes": 896460,
+  "configVersion": 1,
+  "paused": false,
+  "plotCount": 80,
+  "npcSiteCount": 7,
+  "plotGeometry": [
+    {
+      "id": "plot-central-n-0",
+      "roadId": "central",
+      "side": "North",
+      "index": 0,
+      "corner": true
+    },
+    {
+      "id": "plot-central-n-1",
+      "roadId": "central",
+      "side": "North",
+      "index": 1,
+      "corner": false
+    },
+    {
+      "id": "plot-central-n-2",
+      "roadId": "central",
+      "side": "North",
+      "index": 2,
+      "corner": false
+    },
+    {
+      "id": "plot-central-n-3",
+      "roadId": "central",
+      "side": "North",
+      "index": 3,
+      "corner": false
+    },
+    {
+      "id": "plot-central-n-4",
+      "roadId": "central",
+      "side": "North",
+      "index": 4,
+      "corner": false
+    },
+    {
+      "id": "plot-central-n-5",
+      "roadId": "central",
+      "side": "North",
+      "index": 5,
+      "corner": false
+    },
+    {
+      "id": "plot-central-n-6",
+      "roadId": "central",
+      "side": "North",
+      "index": 6,
+      "corner": false
+    },
+    {
+      "id": "plot-central-n-7",
+      "roadId": "central",
+      "side": "North",
+      "index": 7,
+      "corner": true
+    },
+    {
+      "id": "plot-central-s-0",
+      "roadId": "central",
+      "side": "South",
+      "index": 0,
+      "corner": true
+    },
+    {
+      "id": "plot-central-s-1",
+      "roadId": "central",
+      "side": "South",
+      "index": 1,
+      "corner": false
+    },
+    {
+      "id": "plot-central-s-2",
+      "roadId": "central",
+      "side": "South",
+      "index": 2,
+      "corner": false
+    },
+    {
+      "id": "plot-central-s-3",
+      "roadId": "central",
+      "side": "South",
+      "index": 3,
+      "corner": false
+    },
+    {
+      "id": "plot-central-s-4",
+      "roadId": "central",
+      "side": "South",
+      "index": 4,
+      "corner": false
+    },
+    {
+      "id": "plot-central-s-5",
+      "roadId": "central",
+      "side": "South",
+      "index": 5,
+      "corner": false
+    },
+    {
+      "id": "plot-central-s-6",
+      "roadId": "central",
+      "side": "South",
+      "index": 6,
+      "corner": false
+    },
+    {
+      "id": "plot-central-s-7",
+      "roadId": "central",
+      "side": "South",
+      "index": 7,
+      "corner": true
+    },
+    {
+      "id": "plot-harbor-n-0",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 0,
+      "corner": true
+    },
+    {
+      "id": "plot-harbor-n-1",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 1,
+      "corner": false
+    },
+    {
+      "id": "plot-harbor-n-2",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 2,
+      "corner": false
+    },
+    {
+      "id": "plot-harbor-n-3",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 3,
+      "corner": false
+    },
+    {
+      "id": "plot-harbor-n-4",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 4,
+      "corner": false
+    },
+    {
+      "id": "plot-harbor-n-5",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 5,
+      "corner": false
+    },
+    {
+      "id": "plot-harbor-n-6",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 6,
+      "corner": false
+    },
+    {
+      "id": "plot-harbor-n-7",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 7,
+      "corner": true
+    },
+    {
+      "id": "plot-harbor-s-0",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 0,
+      "corner": true
+    },
+    {
+      "id": "plot-harbor-s-1",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 1,
+      "corner": false
+    },
+    {
+      "id": "plot-harbor-s-2",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 2,
+      "corner": false
+    },
+    {
+      "id": "plot-harbor-s-3",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 3,
+      "corner": false
+    },
+    {
+      "id": "plot-harbor-s-4",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 4,
+      "corner": false
+    },
+    {
+      "id": "plot-harbor-s-5",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 5,
+      "corner": false
+    },
+    {
+      "id": "plot-harbor-s-6",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 6,
+      "corner": false
+    },
+    {
+      "id": "plot-harbor-s-7",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 7,
+      "corner": true
+    },
+    {
+      "id": "plot-main-n-0",
+      "roadId": "main",
+      "side": "North",
+      "index": 0,
+      "corner": true
+    },
+    {
+      "id": "plot-main-n-1",
+      "roadId": "main",
+      "side": "North",
+      "index": 1,
+      "corner": false
+    },
+    {
+      "id": "plot-main-n-2",
+      "roadId": "main",
+      "side": "North",
+      "index": 2,
+      "corner": false
+    },
+    {
+      "id": "plot-main-n-3",
+      "roadId": "main",
+      "side": "North",
+      "index": 3,
+      "corner": false
+    },
+    {
+      "id": "plot-main-n-4",
+      "roadId": "main",
+      "side": "North",
+      "index": 4,
+      "corner": false
+    },
+    {
+      "id": "plot-main-n-5",
+      "roadId": "main",
+      "side": "North",
+      "index": 5,
+      "corner": false
+    },
+    {
+      "id": "plot-main-n-6",
+      "roadId": "main",
+      "side": "North",
+      "index": 6,
+      "corner": false
+    },
+    {
+      "id": "plot-main-n-7",
+      "roadId": "main",
+      "side": "North",
+      "index": 7,
+      "corner": true
+    },
+    {
+      "id": "plot-main-s-0",
+      "roadId": "main",
+      "side": "South",
+      "index": 0,
+      "corner": true
+    },
+    {
+      "id": "plot-main-s-1",
+      "roadId": "main",
+      "side": "South",
+      "index": 1,
+      "corner": false
+    },
+    {
+      "id": "plot-main-s-2",
+      "roadId": "main",
+      "side": "South",
+      "index": 2,
+      "corner": false
+    },
+    {
+      "id": "plot-main-s-3",
+      "roadId": "main",
+      "side": "South",
+      "index": 3,
+      "corner": false
+    },
+    {
+      "id": "plot-main-s-4",
+      "roadId": "main",
+      "side": "South",
+      "index": 4,
+      "corner": false
+    },
+    {
+      "id": "plot-main-s-5",
+      "roadId": "main",
+      "side": "South",
+      "index": 5,
+      "corner": false
+    },
+    {
+      "id": "plot-main-s-6",
+      "roadId": "main",
+      "side": "South",
+      "index": 6,
+      "corner": false
+    },
+    {
+      "id": "plot-main-s-7",
+      "roadId": "main",
+      "side": "South",
+      "index": 7,
+      "corner": true
+    },
+    {
+      "id": "plot-market-n-0",
+      "roadId": "market",
+      "side": "North",
+      "index": 0,
+      "corner": true
+    },
+    {
+      "id": "plot-market-n-1",
+      "roadId": "market",
+      "side": "North",
+      "index": 1,
+      "corner": false
+    },
+    {
+      "id": "plot-market-n-2",
+      "roadId": "market",
+      "side": "North",
+      "index": 2,
+      "corner": false
+    },
+    {
+      "id": "plot-market-n-3",
+      "roadId": "market",
+      "side": "North",
+      "index": 3,
+      "corner": false
+    },
+    {
+      "id": "plot-market-n-4",
+      "roadId": "market",
+      "side": "North",
+      "index": 4,
+      "corner": false
+    },
+    {
+      "id": "plot-market-n-5",
+      "roadId": "market",
+      "side": "North",
+      "index": 5,
+      "corner": false
+    },
+    {
+      "id": "plot-market-n-6",
+      "roadId": "market",
+      "side": "North",
+      "index": 6,
+      "corner": false
+    },
+    {
+      "id": "plot-market-n-7",
+      "roadId": "market",
+      "side": "North",
+      "index": 7,
+      "corner": true
+    },
+    {
+      "id": "plot-market-s-0",
+      "roadId": "market",
+      "side": "South",
+      "index": 0,
+      "corner": true
+    },
+    {
+      "id": "plot-market-s-1",
+      "roadId": "market",
+      "side": "South",
+      "index": 1,
+      "corner": false
+    },
+    {
+      "id": "plot-market-s-2",
+      "roadId": "market",
+      "side": "South",
+      "index": 2,
+      "corner": false
+    },
+    {
+      "id": "plot-market-s-3",
+      "roadId": "market",
+      "side": "South",
+      "index": 3,
+      "corner": false
+    },
+    {
+      "id": "plot-market-s-4",
+      "roadId": "market",
+      "side": "South",
+      "index": 4,
+      "corner": false
+    },
+    {
+      "id": "plot-market-s-5",
+      "roadId": "market",
+      "side": "South",
+      "index": 5,
+      "corner": false
+    },
+    {
+      "id": "plot-market-s-6",
+      "roadId": "market",
+      "side": "South",
+      "index": 6,
+      "corner": false
+    },
+    {
+      "id": "plot-market-s-7",
+      "roadId": "market",
+      "side": "South",
+      "index": 7,
+      "corner": true
+    },
+    {
+      "id": "plot-river-n-0",
+      "roadId": "river",
+      "side": "North",
+      "index": 0,
+      "corner": true
+    },
+    {
+      "id": "plot-river-n-1",
+      "roadId": "river",
+      "side": "North",
+      "index": 1,
+      "corner": false
+    },
+    {
+      "id": "plot-river-n-2",
+      "roadId": "river",
+      "side": "North",
+      "index": 2,
+      "corner": false
+    },
+    {
+      "id": "plot-river-n-3",
+      "roadId": "river",
+      "side": "North",
+      "index": 3,
+      "corner": false
+    },
+    {
+      "id": "plot-river-n-4",
+      "roadId": "river",
+      "side": "North",
+      "index": 4,
+      "corner": false
+    },
+    {
+      "id": "plot-river-n-5",
+      "roadId": "river",
+      "side": "North",
+      "index": 5,
+      "corner": false
+    },
+    {
+      "id": "plot-river-n-6",
+      "roadId": "river",
+      "side": "North",
+      "index": 6,
+      "corner": false
+    },
+    {
+      "id": "plot-river-n-7",
+      "roadId": "river",
+      "side": "North",
+      "index": 7,
+      "corner": true
+    },
+    {
+      "id": "plot-river-s-0",
+      "roadId": "river",
+      "side": "South",
+      "index": 0,
+      "corner": true
+    },
+    {
+      "id": "plot-river-s-1",
+      "roadId": "river",
+      "side": "South",
+      "index": 1,
+      "corner": false
+    },
+    {
+      "id": "plot-river-s-2",
+      "roadId": "river",
+      "side": "South",
+      "index": 2,
+      "corner": false
+    },
+    {
+      "id": "plot-river-s-3",
+      "roadId": "river",
+      "side": "South",
+      "index": 3,
+      "corner": false
+    },
+    {
+      "id": "plot-river-s-4",
+      "roadId": "river",
+      "side": "South",
+      "index": 4,
+      "corner": false
+    },
+    {
+      "id": "plot-river-s-5",
+      "roadId": "river",
+      "side": "South",
+      "index": 5,
+      "corner": false
+    },
+    {
+      "id": "plot-river-s-6",
+      "roadId": "river",
+      "side": "South",
+      "index": 6,
+      "corner": false
+    },
+    {
+      "id": "plot-river-s-7",
+      "roadId": "river",
+      "side": "South",
+      "index": 7,
+      "corner": true
+    }
+  ],
+  "npcSiteGeometry": [
+    {
+      "id": "npc-central-course",
+      "roadId": "central",
+      "side": "South",
+      "frontageIndex": 9,
+      "role": "PracticeCourse",
+      "name": "Practice Course",
+      "capacity": 0
+    },
+    {
+      "id": "npc-central-garage",
+      "roadId": "central",
+      "side": "North",
+      "frontageIndex": 8,
+      "role": "RepairGarage",
+      "name": "City Garage",
+      "capacity": 0
+    },
+    {
+      "id": "npc-harbor-cinema",
+      "roadId": "harbor",
+      "side": "North",
+      "frontageIndex": 8,
+      "role": "Cinema",
+      "name": "Harbor Cinema",
+      "capacity": 0
+    },
+    {
+      "id": "npc-main-tower",
+      "roadId": "main",
+      "side": "North",
+      "frontageIndex": 8,
+      "role": "ParkingTower",
+      "name": "Main Parking Tower",
+      "capacity": 32
+    },
+    {
+      "id": "npc-market-burgers",
+      "roadId": "market",
+      "side": "North",
+      "frontageIndex": 9,
+      "role": "BurgerStop",
+      "name": "Near & Far Burgers",
+      "capacity": 0
+    },
+    {
+      "id": "npc-market-tower",
+      "roadId": "market",
+      "side": "South",
+      "frontageIndex": 8,
+      "role": "ParkingTower",
+      "name": "Market Parking Tower",
+      "capacity": 32
+    },
+    {
+      "id": "npc-river-tower",
+      "roadId": "river",
+      "side": "North",
+      "frontageIndex": 8,
+      "role": "ParkingTower",
+      "name": "River Parking Tower",
+      "capacity": 32
+    }
+  ],
+  "ownedPlots": [
+    {
+      "id": "plot-main-n-2",
+      "road_id": "main",
+      "side": "North",
+      "index": 2,
+      "corner": false,
+      "owner": "dev-20261110121829-19069405494728.testnet",
+      "rule": {
+        "kind": "Free"
+      },
+      "pending_rule": {
+        "rule": {
+          "kind": "Meter",
+          "ratePerHour": "1000000"
+        },
+        "effective_at": 1794368157
+      },
+      "building": {
+        "building_type": "Restaurant",
+        "variant": 2,
+        "level": 2,
+        "primary_color": "#73D9A6",
+        "name": "Near Garden",
+        "approved_manifest_hash": "31645fe6ccac1fea2281fb868e8626b2808af3b63467defa47cc39dddff1edcb",
+        "approved_at": 1794378091,
+        "last_facade_approved_at": 1794378091,
+        "pending_appearance": null,
+        "last_appearance_decision": {
+          "reference": {
+            "revision": 5,
+            "owner": "dev-20261110121829-19069405494728.testnet",
+            "building_type": "Restaurant",
+            "level": 2,
+            "manifest_hash": "31645fe6ccac1fea2281fb868e8626b2808af3b63467defa47cc39dddff1edcb"
+          },
+          "status": "Approved",
+          "decided_at": 1794378091,
+          "reason": null
+        },
+        "facade_exemption_level": null,
+        "appearance_revision": 5,
+        "layout_revision": 5
+      },
+      "logo": {
+        "revision": 3,
+        "active": {
+          "content": {
+            "asset_hash": "a7ceb962124bd4f3c1b6db35e8f47f6e5cfc0c6bd9e0596b613750084cbc4ef8",
+            "link": "https://near.org"
+          },
+          "approved_layout_revision": 5,
+          "approved_at": 1794378135
+        },
+        "pending": null,
+        "last_decision": {
+          "proposal": {
+            "revision": 3,
+            "owner": "dev-20261110121829-19069405494728.testnet",
+            "building_type": "Restaurant",
+            "level": 2,
+            "layout_revision": 5,
+            "content": {
+              "asset_hash": "a7ceb962124bd4f3c1b6db35e8f47f6e5cfc0c6bd9e0596b613750084cbc4ef8",
+              "link": "https://near.org"
+            }
+          },
+          "status": "Approved",
+          "decided_at": 1794378135,
+          "reason": null
+        },
+        "last_replacement_at": 1794368059
+      },
+      "billboard": {
+        "revision": 3,
+        "active": {
+          "content": {
+            "asset_hash": "1b11c8acecb84f03bb9590c5a31c72fdb62d58aca3ce6a5d3c1247d2ad192898",
+            "link": "https://near.org"
+          },
+          "approved_layout_revision": 5,
+          "approved_at": 1794378176
+        },
+        "pending": null,
+        "last_decision": {
+          "proposal": {
+            "revision": 3,
+            "owner": "dev-20261110121829-19069405494728.testnet",
+            "building_type": "Restaurant",
+            "level": 2,
+            "layout_revision": 5,
+            "content": {
+              "asset_hash": "1b11c8acecb84f03bb9590c5a31c72fdb62d58aca3ce6a5d3c1247d2ad192898",
+              "link": "https://near.org"
+            }
+          },
+          "status": "Approved",
+          "decided_at": 1794378176,
+          "reason": null
+        },
+        "last_replacement_at": 1794368352
+      },
+      "ticket_cooldown_until": 0,
+      "reserved_storage_bytes": 4096,
+      "used_storage_bytes": 842
+    },
+    {
+      "id": "plot-market-n-1",
+      "road_id": "market",
+      "side": "North",
+      "index": 1,
+      "corner": false,
+      "owner": "dev-20261110121829-19069405494728.testnet",
+      "rule": {
+        "kind": "NoParking"
+      },
+      "pending_rule": {
+        "rule": {
+          "kind": "Free"
+        },
+        "effective_at": 1794383681
+      },
+      "building": {
+        "building_type": "Restaurant",
+        "variant": 2,
+        "level": 1,
+        "primary_color": "#F6C85F",
+        "name": "Plot 2",
+        "approved_manifest_hash": null,
+        "approved_at": null,
+        "last_facade_approved_at": null,
+        "pending_appearance": null,
+        "last_appearance_decision": null,
+        "facade_exemption_level": null,
+        "appearance_revision": 1,
+        "layout_revision": 1
+      },
+      "logo": {
+        "revision": 0,
+        "active": null,
+        "pending": null,
+        "last_decision": null,
+        "last_replacement_at": null
+      },
+      "billboard": {
+        "revision": 0,
+        "active": null,
+        "pending": null,
+        "last_decision": null,
+        "last_replacement_at": null
+      },
+      "ticket_cooldown_until": 1794383675,
+      "reserved_storage_bytes": 4096,
+      "used_storage_bytes": 54
+    }
+  ],
+  "ownerAccounts": [
+    {
+      "account_id": "dev-20261110121829-19069405494728.testnet",
+      "account": {
+        "balance": "51511110",
+        "car_ids": [
+          3
+        ],
+        "starter_car_id": 3,
+        "active_session_id": null,
+        "last_emergency_repair_at": null,
+        "burger_decal": false,
+        "reserved_storage_bytes": 4096,
+        "used_storage_bytes": 240
+      },
+      "cars": [
+        {
+          "id": 3,
+          "owner": "dev-20261110121829-19069405494728.testnet",
+          "body": "Hatchback",
+          "color": "Green",
+          "tier": 1,
+          "durability": 86,
+          "parked_session_id": null
+        }
+      ]
+    }
+  ],
+  "curbSessions": [],
+  "towerSessions": [],
+  "proposedMoves": [
+    {
+      "from": "plot-main-n-2",
+      "to": "plot-main-n-3",
+      "currentOwner": "dev-20261110121829-19069405494728.testnet",
+      "destinationCurrentOwner": null
+    },
+    {
+      "from": "plot-market-n-1",
+      "to": "plot-market-n-2",
+      "currentOwner": "dev-20261110121829-19069405494728.testnet",
+      "destinationCurrentOwner": null
+    }
+  ],
+  "unmappedOwnedPlots": [],
+  "gates": {
+    "pausedForMigration": false,
+    "allSpacesEmpty": true,
+    "proposedMovesCoverOwners": true
+  },
+  "limitations": [
+    "This is a read-only pinned-block inventory, not a purchase/parking freeze.",
+    "The contract account map cannot enumerate registered drivers without a plot.",
+    "API event cursor, media bytes and database backup are separate checks.",
+    "Proposed deed moves require owner and junction review before deployment."
+  ]
+}

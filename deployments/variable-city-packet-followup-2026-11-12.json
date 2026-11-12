@@ -1,0 +1,23 @@
+{
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "reportSha256": "cae675da434d9e21fc18c5e7c13398cad657e44af8d98ab2d75f065f9ec1134b",
+  "inventoryBlock": 277342748,
+  "paused": false,
+  "migrationReady": false,
+  "remainingGates": [
+    "install the tested pause-guard contract code",
+    "freeze the live contract and repeat inventory",
+    "review deed moves with the current owner and at the street junctions",
+    "review legacy facade and media visibility on the destination designs",
+    "capture the API cursor and verified data backup",
+    "rehearse version-2 conversion and rollback from the final frozen state"
+  ],
+  "releaseWasmSha256": null,
+  "live": {
+    "contractId": "dev-20261110121817-59798568433631.testnet",
+    "blockHeight": 277343371,
+    "stateSha256": "036249aa91634c3605427df4d20b696003a9d3a7dd15e135d0d6ae571b45e424",
+    "codeSha256": "03e7a685d64f2a5798589840cbd901b98d751bdb741c9ba1f0d12efeef126e19",
+    "paused": false
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "releaseWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+  "rehearsal": {
+    "scope": "live testnet state imported into an isolated local sandbox; no live mutation",
+    "contractId": "dev-20261110121817-59798568433631.testnet",
+    "liveCodeSha256": "8132e2ab092bdfa0ddb368f894edb5782b95a049cad094d4b2410d007b4fab0c",
+    "migrationWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+    "runtimeWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+    "reverseWasmSha256": "5d63aacbff4a3b0ecf92fa5c4731dde63e428b4923ac996176561886923d5043",
+    "liveStateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+    "pausedSandboxStateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+    "convertedSandboxStateSha256": "4f8ba2ab0de916572a80e300bfc6b7ff4bc61e1d2e3cfa8998381dad531c6a75",
+    "reversedSandboxStateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+    "runtimeActionSandboxStateSha256": "34e651d2f19d0b0dd00c7985c3f56055d25413a0e3ffac354e61554ccbf8b214",
+    "sourcePlotHash": "cff2ec956e7094642c8b4206b91a017208581c0a6eb0b9704ed6f6b489dc3faa",
+    "targetSeedHash": "8903238d2d25c8431ef581dcef8ad6995f15175085441519732a92079c5ee813",
+    "oldPlots": 80,
+    "newPlots": 100,
+    "newCurbSpaces": 180,
+    "civicSites": 7,
+    "ownedDeeds": 2,
+    "moves": [
+      {
+        "from": "plot-main-n-2",
+        "to": "plot-main-n-3"
+      },
+      {
+        "from": "plot-market-n-1",
+        "to": "plot-market-n-2"
+      }
+    ],
+    "oldConfigVersion": 1,
+    "newConfigVersion": 2,
+    "storageBytesBefore": 896647,
+    "storageBytesAfter": 940469,
+    "plotStorageByFrontage": [
+      {
+        "units": 3,
+        "plotId": "plot-main-n-7",
+        "usedBytes": 47
+      },
+      {
+        "units": 1,
+        "plotId": "plot-main-n-1",
+        "usedBytes": 47
+      },
+      {
+        "units": 2,
+        "plotId": "plot-main-n-4",
+        "usedBytes": 47
+      }
+    ],
+    "gasBurnt": "66264968955723",
+    "reverseGasBurnt": "48762236167893",
+    "outsiderRejected": true,
+    "wrongHashRejected": true,
+    "duplicateRejected": true,
+    "legacyMapBytesPreserved": true,
+    "runtimeReadViewsVerified": true,
+    "runtimeRegistrationVerified": true,
+    "runtimeGameplayKeyMethodsVerified": true,
+    "runtimeRestrictedParkingVerified": true,
+    "runtimeForbiddenPurchaseDenied": true,
+    "runtimeGameplayKeyRevoked": true,
+    "runtimeThreeUnitPurchaseVerified": true,
+    "runtimeRuleDelayVerified": true,
+    "runtimeParkTimeLegalityVerified": true,
+    "runtimeVariableSlotParkingVerified": true,
+    "runtimeCarriedBillboardHiddenVerified": true,
+    "runtimeCarriedLogosEligibleVerified": true,
+    "runtimeCarriedLogoCount": 1,
+    "runtimeCollectVerified": true,
+    "runtimeThreeUnitTicketVerified": true,
+    "runtimeInspectorRoleDenied": true,
+    "runtimeInspectorTreasuryVerified": true,
+    "runtimeTicketCooldownVerified": true,
+    "runtimeTowerParkingVerified": true,
+    "runtimeTowerViewsVerified": true,
+    "runtimeGarageActionsVerified": true,
+    "runtimeOwnerBuildingActionsVerified": true,
+    "runtimeFiveDesignChoicesVerified": true,
+    "runtimeAppearanceApprovalVerified": true,
+    "runtimeLogoApprovalVerified": true,
+    "runtimeDesignMediaInvalidationVerified": true,
+    "runtimeModerationDecisionsVerified": true,
+    "exactStorageRollback": true,
+    "oldCodeRestored": true
+  }
+}

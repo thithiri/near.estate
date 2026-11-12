@@ -8,17 +8,26 @@ import {
   Texture,
 } from "pixi.js";
 import rawCatalog from "./world-sprites.json";
+import guestCatalog from "./guest-illustrations.json";
 
 const cars = new Map(
   rawCatalog.cars.map((entry) => [`${entry.body}:${entry.color}`, entry]),
 );
 const sites = new Map(rawCatalog.sites.map((entry) => [entry.role, entry]));
+const illustratedCars = new Map(
+  guestCatalog.cars.map((entry) => [
+    `${entry.body}:${entry.color}`,
+    entry.sprite,
+  ]),
+);
 
 function assetUrl(filename: string): string {
   return `${import.meta.env.BASE_URL}world/${filename}`;
 }
 
 export function carSpriteFile(body: string, color: string): string {
+  const illustrated = illustratedCars.get(`${body}:${color}`);
+  if (illustrated) return illustrated;
   const car = cars.get(`${body}:${color}`);
   if (!car) throw new Error(`Missing car sprite: ${body} ${color}`);
   return car.sprite;

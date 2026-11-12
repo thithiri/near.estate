@@ -16,6 +16,9 @@ const ContentHash = z.string().regex(/^[0-9a-f]{64}$/);
 const PlotId = z
   .string()
   .regex(/^plot-(main|market|river|central|harbor)-(n|s)-[0-7]$/);
+const PlotIdV2 = z
+  .string()
+  .regex(/^plot-(main|market|river|central|harbor)-(n|s)-[0-9]$/);
 
 export const ChainAppearanceReference = z.object({
   revision: ChainId,
@@ -125,7 +128,7 @@ export const ChainSession = z.object({
 });
 export type ChainSession = z.infer<typeof ChainSession>;
 
-export const ChainPlot = z.object({
+export const ChainPlotV1 = z.object({
   plot: z.object({
     id: PlotId,
     road_id: RoadId,
@@ -162,15 +165,25 @@ export const ChainPlot = z.object({
   logo_eligible: z.boolean(),
   billboard_eligible: z.boolean(),
 });
+export const ChainPlotV2 = ChainPlotV1.extend({
+  plot: ChainPlotV1.shape.plot.extend({
+    id: PlotIdV2,
+    index: z.number().int().min(0).max(9),
+    frontage_units: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    design_choice: z.number().int().min(0).max(4),
+  }),
+});
+export type ChainPlotV2 = z.infer<typeof ChainPlotV2>;
+export const ChainPlot = z.union([ChainPlotV2, ChainPlotV1]);
 export type ChainPlot = z.infer<typeof ChainPlot>;
 
-export const ChainStreetSide = z.object({
+export const ChainStreetSideV1 = z.object({
   road_id: RoadId,
   side: Side,
   plots: z
     .array(
       z.object({
-        plot: ChainPlot,
+        plot: ChainPlotV1,
         slots: z.tuple([ChainSession.nullable(), ChainSession.nullable()]),
         car_appearances: z
           .tuple([
@@ -182,6 +195,23 @@ export const ChainStreetSide = z.object({
     )
     .max(8),
 });
+export const ChainStreetSideV2 = z.object({
+  road_id: RoadId,
+  side: Side,
+  plots: z
+    .array(
+      z.object({
+        plot: ChainPlotV2,
+        slots: z.array(ChainSession.nullable()).min(1).max(3),
+        car_appearances: z
+          .array(ChainParkedCarAppearance.nullable())
+          .min(1)
+          .max(3),
+      }),
+    )
+    .max(10),
+});
+export const ChainStreetSide = z.union([ChainStreetSideV2, ChainStreetSideV1]);
 export type ChainStreetSide = z.infer<typeof ChainStreetSide>;
 
 export const ChainPlayerSnapshot = z.object({

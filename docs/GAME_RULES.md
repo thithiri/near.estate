@@ -23,7 +23,7 @@ The authoritative V1 rules are in [V1_SPEC](V1_SPEC.md#parking-economy-and-rules
 | Burger decal                  |                                       30 coins |
 | Logo / facade cooldowns       |                                    72 h / 24 h |
 
-Parking terms are snapshotted when a session starts. Later config, rule, or plot ownership changes cannot rewrite an existing payout. Expired sessions remain settleable while new economic actions are paused.
+Parking terms are snapshotted when a session starts. Later config, rule, or plot ownership changes cannot rewrite an existing payout. Expired sessions remain settleable while new game changes are paused. The local contract now also freezes plot seeding, owner media removal, moderator decisions and config updates during a pause; this tighter behavior has not been deployed to testnet.
 
 Emergency repair is free once per rolling 24 hours only when every owned car lacks the durability to park and the player cannot afford the least expensive repair that would make one parkable. It restores the starter car to the current parking durability cost (two points by default).
 

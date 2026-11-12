@@ -47,7 +47,7 @@ The VPS deployment uses [the production Compose override](infra/compose.prod.yam
 
 Phone driving uses landscape; menus and the building studio also work in portrait. Desktop has a wide scene and a dismissible plot panel. The [phone](docs/images/near-estate-phone-layout-v1.png) and [computer](docs/images/near-estate-computer-layout-v1.png) sheets are references, not screenshots of the app.
 
-See the [current game visuals](docs/VISUALS.md) for street and building studio captures, plus the illustrated building draft sheet. The [building image specification](docs/BUILDING_IMAGE_SPEC.md) records the prompt and size rules. The five illustrated images are guest-only demonstrations; live owner publication still uses the approval flow.
+See the [current game visuals](docs/VISUALS.md) for street and building studio captures, plus the illustrated building draft sheet. The [building image specification](docs/BUILDING_IMAGE_SPEC.md) records the prompt and size rules. The [building ad guide](docs/ADS.md) explains image upload, preview, billboard placement and approval. Guest image previews stay local; live owner publication uses the approval flow.
 
 ## Status
 

@@ -662,9 +662,15 @@ test("loads one street side and rejects misplaced occupancy", async () => {
     slots: [null, null],
   }));
   const street = { road_id: "main", side: "North", plots };
-  const reader = new ChainReader("estate-game.testnet", undefined, (async () =>
-    result(street)) as typeof fetch);
+  const reader = new ChainReader("estate-game.testnet", undefined, (async (
+    _url,
+    init,
+  ) =>
+    JSON.parse(String(init?.body)).params.method_name === "city_version"
+      ? missingMethod()
+      : result(street)) as typeof fetch);
   // The deployed pre-upgrade contract omits car appearances; its street still loads.
+  assert.equal(await reader.cityVersion(), 1);
   assert.equal((await reader.streetSide("main", "North")).plots.length, 8);
 
   const occupied: any = structuredClone(street);
@@ -699,7 +705,10 @@ test("loads one street side and rejects misplaced occupancy", async () => {
   const occupiedReader = new ChainReader(
     "estate-game.testnet",
     undefined,
-    (async () => result(occupied)) as typeof fetch,
+    (async (_url, init) =>
+      JSON.parse(String(init?.body)).params.method_name === "city_version"
+        ? missingMethod()
+        : result(occupied)) as typeof fetch,
   );
   assert.deepEqual(
     (await occupiedReader.streetSide("main", "North")).plots[0]
@@ -722,6 +731,84 @@ test("loads one street side and rejects misplaced occupancy", async () => {
     reader.streetSide("main", "North"),
     /plot order changed/,
   );
+});
+
+test("version-2 street keeps ten plots and variable curb widths", async () => {
+  const widths = [2, 2, 1, 2, 1, 2, 2, 1, 2, 3] as const;
+  const street = {
+    road_id: "main",
+    side: "North",
+    plots: widths.map((width, index) => ({
+      plot: {
+        plot: {
+          id: `plot-main-n-${index}`,
+          road_id: "main",
+          side: "North",
+          index,
+          frontage_units: width,
+          design_choice: index % 5,
+          corner: index === 0 || index === 9,
+          owner: null,
+          rule: { kind: "Free" },
+          pending_rule: null,
+          building: {
+            building_type: "Retail",
+            variant: 1,
+            level: 1,
+            primary_color: "#F6C85F",
+            name: `Plot ${index + 1}`,
+            approved_manifest_hash: null,
+            approved_at: null,
+            last_facade_approved_at: null,
+            pending_appearance: null,
+            last_appearance_decision: null,
+            facade_exemption_level: null,
+            appearance_revision: 1,
+            layout_revision: 1,
+          },
+          logo: emptyMediaSlot,
+          billboard: emptyMediaSlot,
+          ticket_cooldown_until: 0,
+          reserved_storage_bytes: 4096,
+          used_storage_bytes: 0,
+        },
+        effective_rule: { kind: "Free" },
+        logo_eligible: false,
+        billboard_eligible: false,
+      },
+      slots: Array(width).fill(null),
+      car_appearances: Array(width).fill(null),
+    })),
+  };
+  const reader = new ChainReader("estate-game.testnet", undefined, (async (
+    _url,
+    init,
+  ) => {
+    const params = JSON.parse(String(init?.body)).params;
+    if (params.method_name === "city_version") return result(2);
+    if (params.method_name === "get_street_side") {
+      assert.equal(params.block_id, "test-final-block");
+      return result(street);
+    }
+    if (params.method_name === "plot_count") return result(10);
+    if (params.method_name === "get_plots") {
+      assert.equal(params.block_id, "test-final-block");
+      return result(street.plots.map((entry) => entry.plot));
+    }
+    throw new Error(`Unexpected ${params.method_name}`);
+  }) as typeof fetch);
+  assert.equal(await reader.cityVersion(), 2);
+  const side = await reader.streetSide("main", "North");
+  assert.equal(side.plots.length, 10);
+  assert.equal(side.plots[9]?.slots.length, 3);
+  const plots = await reader.plots();
+  assert.equal(plots.length, 10);
+  assert.equal(
+    "frontage_units" in plots[9]!.plot && plots[9]!.plot.frontage_units,
+    3,
+  );
+  street.plots[9]!.slots.pop();
+  await assert.rejects(reader.streetSide("main", "North"), /plot width/);
 });
 
 test("loads paged owner data at one finalized block and validates purchase amounts", async () => {
@@ -779,6 +866,7 @@ test("loads paged owner data at one finalized block and validates purchase amoun
       Buffer.from(params.args_base64, "base64").toString("utf8"),
     );
     if (method === "plot_count") return result(51);
+    if (method === "city_version") return missingMethod();
     if (method === "get_plots") {
       assert.equal(params.block_id, "test-final-block");
       return result(plots.slice(args.from_index, args.from_index + args.limit));

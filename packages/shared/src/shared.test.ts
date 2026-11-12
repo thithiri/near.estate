@@ -145,6 +145,43 @@ test("seed has all player plots and civic capacity without overlap", () => {
     frontageIndex: 8,
   };
   assert.throws(() => validateCitySeed(overlapping));
+  const disconnected = structuredClone(seed);
+  disconnected.streets.find((street) => street.id === "central")!.connections =
+    [];
+  for (const street of disconnected.streets)
+    street.connections = street.connections.filter(
+      (connection) => connection.toRoadId !== "central",
+    );
+  assert.throws(
+    () => validateCitySeed(disconnected),
+    /road graph is disconnected/,
+  );
+});
+
+test("variable city keeps opposite junctions aligned", () => {
+  const path = fileURLToPath(
+    new URL("../../../contracts/estate/seed-v2.json", import.meta.url),
+  );
+  const seed = validateCitySeed(JSON.parse(readFileSync(path, "utf8")));
+  assert.equal(seed.version, 2);
+  const shifted = structuredClone(seed);
+  const main = shifted.streets.find((street) => street.id === "main")!;
+  const widths = main.frontageUnits!.South;
+  [widths[0], widths[4]] = [widths[4]!, widths[0]!];
+  for (const index of [0, 4]) {
+    const plot = shifted.plots.find(
+      (entry) =>
+        entry.roadId === "main" &&
+        entry.side === "South" &&
+        entry.index === index,
+    );
+    assert(plot);
+    plot.frontageUnits = widths[index];
+  }
+  assert.throws(
+    () => validateCitySeed(shifted),
+    /intersection sides misaligned/,
+  );
 });
 
 test("manifest validator enforces level envelopes and stable canonical order", () => {

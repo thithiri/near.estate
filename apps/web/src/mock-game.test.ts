@@ -27,6 +27,16 @@ test("mock parking caps earnings and frees the slot once", () => {
   assert.throws(() => game.collect());
 });
 
+test("parking a chosen curb space uses that exact space", () => {
+  const game = new MockGame(city, () => 10_000);
+  const session = game.park("plot-main-n-0", 1);
+  assert.equal(session.space, 1);
+  assert.equal(game.openSlot("plot-main-n-0"), 0);
+  assert.throws(() => game.park("plot-main-n-0", 2), /Collect/);
+  game.collect();
+  assert.throws(() => game.park("plot-main-n-0", 2), /Invalid curb space/);
+});
+
 test("mock expiry retains capped payout and allows reuse", () => {
   const clock = new MockClock(10_000);
   const game = new MockGame(city, () => clock.nowSeconds());

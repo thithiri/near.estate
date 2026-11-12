@@ -6,6 +6,11 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+# Expose persisted model types to the one-time migration WASM without exporting
+# the live contract's entry points from the migration binary.
+migration-types = []
+
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(near)"] }
 

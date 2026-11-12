@@ -1,0 +1,50 @@
+{
+  "scope": "testnet state imported into isolated sandbox; no live mutation",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "liveStateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+  "pausedStateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+  "convertedStateSha256": "4f8ba2ab0de916572a80e300bfc6b7ff4bc61e1d2e3cfa8998381dad531c6a75",
+  "runtimeWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+  "reverseWasmSha256": "5d63aacbff4a3b0ecf92fa5c4731dde63e428b4923ac996176561886923d5043",
+  "forwardDeployTransactionHash": "8uLpb9asCvAqaHsWB2orspDHLp4JcyyauqrGfFJuGAKJ",
+  "forwardMigrationTransactionHash": "J6x6qLAE4EtBBA4e3tcwFmJLfqHHsEcA7xePsJMVBwnf",
+  "unpauseTransactionHash": "3TN4iRCLxqhyivkniGRrWHHZ32NvYBs3sGBNFaHNw3kY",
+  "repauseTransactionHash": "9Tj17rNRfKT3fQ8eqe4w8LEB62owkY6C5FPPUH1sjNMz",
+  "pauseOnlyTransitionVerified": true,
+  "forwardRecovery": {
+    "beforeWasmSha256": "8132e2ab092bdfa0ddb368f894edb5782b95a049cad094d4b2410d007b4fab0c",
+    "afterWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+    "reverseWasmSha256": "5d63aacbff4a3b0ecf92fa5c4731dde63e428b4923ac996176561886923d5043",
+    "beforeStateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+    "convertedStateSha256": "4f8ba2ab0de916572a80e300bfc6b7ff4bc61e1d2e3cfa8998381dad531c6a75",
+    "status": "rolled_back",
+    "migrationTransactionHash": "J6x6qLAE4EtBBA4e3tcwFmJLfqHHsEcA7xePsJMVBwnf",
+    "reverseDeployTransactionHash": "CrWkouiVPNv26swuj2QY1gfWKjbyZR4BQxj13djMQiu5",
+    "reverseTransactionHash": "Hyq4qvaF9ChM6BmJta3m4SQyREHPCYXFaDAsG91uCTXL",
+    "oldCodeRestoreTransactionHash": "2sWETcM1YRha7BdAkbTCvUeh3PUifEjXfZSezgh7g514"
+  },
+  "interruptedReverseDeployTransactionHash": "uQPwTDu4BdGPzaRrbBRRxV3nnVMdLESnLHBWHM8oCrU",
+  "interruptedReverseRecovery": {
+    "beforeWasmSha256": "8132e2ab092bdfa0ddb368f894edb5782b95a049cad094d4b2410d007b4fab0c",
+    "afterWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+    "reverseWasmSha256": "5d63aacbff4a3b0ecf92fa5c4731dde63e428b4923ac996176561886923d5043",
+    "beforeStateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+    "convertedStateSha256": "4f8ba2ab0de916572a80e300bfc6b7ff4bc61e1d2e3cfa8998381dad531c6a75",
+    "migrationTransactionHash": "J6x6qLAE4EtBBA4e3tcwFmJLfqHHsEcA7xePsJMVBwnf",
+    "status": "chain_rolled_back_service_pending",
+    "oldCodeRestoreTransactionHash": "7oaYC9pWb5qHfTFwddZ2acnZQifkrJZH453WcTwA6KMZ"
+  },
+  "interruptedReverseRecovered": true,
+  "codeOnlyDeployTransactionHash": "6gNqPJ8xusBEdkVkkSSwuYigtFwt7mgPiMhgASTLqSoX",
+  "codeOnlyRecovery": {
+    "beforeWasmSha256": "8132e2ab092bdfa0ddb368f894edb5782b95a049cad094d4b2410d007b4fab0c",
+    "afterWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+    "reverseWasmSha256": "5d63aacbff4a3b0ecf92fa5c4731dde63e428b4923ac996176561886923d5043",
+    "beforeStateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+    "convertedStateSha256": "4f8ba2ab0de916572a80e300bfc6b7ff4bc61e1d2e3cfa8998381dad531c6a75",
+    "status": "rolled_back",
+    "oldCodeRestoreTransactionHash": "7eHtKV5sSYxaW1yubXEyN45KdMFwNSyjHACfMXiPHpoG"
+  },
+  "exactReverseVerified": true,
+  "codeOnlyRecoveryVerified": true
+}

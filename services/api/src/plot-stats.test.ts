@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
-import { PlotStats } from "@estate/shared";
+import { PlotStats, validateCitySeed } from "@estate/shared";
 import { createApiApp } from "./app.js";
 import { readEconomyStats } from "./economy-stats.js";
 import { ImpressionLedger } from "./impression-ledger.js";
@@ -92,6 +93,44 @@ test("plot statistics combine persisted ad and chain totals with freshness", asy
     assert.equal(stats.freshness.impressionReceivedAt, now * 1_000);
     assert.equal(
       (await app.request("http://localhost:8080/stats/plots/invalid")).status,
+      404,
+    );
+  } finally {
+    store.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("version-2 API city and stats include the tenth plot", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "estate-v2-stats-"));
+  const store = new ApiStore(":memory:", join(dir, "assets"));
+  try {
+    const seed = validateCitySeed(
+      JSON.parse(
+        readFileSync(
+          fileURLToPath(
+            new URL("../../../contracts/estate/seed-v2.json", import.meta.url),
+          ),
+          "utf8",
+        ),
+      ),
+    );
+    const app = createApiApp({
+      store,
+      chain: null,
+      appOrigin: "http://localhost:8080",
+      citySeed: seed,
+    });
+    const cityResponse = await app.request("http://localhost:8080/city");
+    assert.equal((await cityResponse.json()).version, 2);
+    const statsResponse = await app.request(
+      "http://localhost:8080/stats/plots/plot-main-n-9",
+    );
+    assert.equal(statsResponse.status, 200);
+    assert.equal((await statsResponse.json()).plotId, "plot-main-n-9");
+    assert.equal(
+      (await app.request("http://localhost:8080/stats/plots/plot-main-n-10"))
+        .status,
       404,
     );
   } finally {

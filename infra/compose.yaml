@@ -11,6 +11,9 @@ services:
       ESTATE_CONTRACT_ID: ${VITE_ESTATE_CONTRACT_ID:-}
       NEAR_RPC_URL: ${NEAR_RPC_URL:-https://test.rpc.fastnear.com}
       API_DATA_DIR: /data
+      IMPRESSION_INTAKE_ENABLED: ${IMPRESSION_INTAKE_ENABLED:-true}
+      IMPRESSION_ACCEPT_AFTER_MS: ${IMPRESSION_ACCEPT_AFTER_MS:-0}
+      CITY_DEED_CUTOVER_AT_MS: ${CITY_DEED_CUTOVER_AT_MS:-0}
     volumes:
       - api_data:/data
     healthcheck:

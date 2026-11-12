@@ -1,4 +1,5 @@
 import { ChainPlot, type ChainPlot as PlotView } from "@estate/shared";
+import { z } from "zod";
 
 export interface ChainGateway {
   hasAccessKey(accountId: string, publicKey: string): Promise<boolean>;
@@ -35,6 +36,34 @@ export class NearChainGateway implements ChainGateway {
     if (typeof body !== "object" || body === null)
       throw new Error("NEAR RPC returned an invalid response");
     return body as Record<string, unknown>;
+  }
+
+  async cityVersion(): Promise<1 | 2> {
+    const body = await this.query({
+      request_type: "call_function",
+      account_id: this.contractId,
+      method_name: "city_version",
+      args_base64: Buffer.from("{}").toString("base64"),
+    });
+    if (body.error)
+      throw new Error(
+        `NEAR RPC rejected city version: ${JSON.stringify(body.error)}`,
+      );
+    const result = z
+      .object({
+        result: z.array(z.number().int().min(0).max(255)).optional(),
+        error: z.string().optional(),
+      })
+      .parse(body.result);
+    if (result.error) {
+      if (result.error.includes("MethodResolveError(MethodNotFound)")) return 1;
+      throw new Error(`NEAR RPC rejected city version: ${result.error}`);
+    }
+    if (!result.result) throw new Error("NEAR RPC omitted the city version");
+    const value: unknown = JSON.parse(
+      Buffer.from(result.result).toString("utf8"),
+    );
+    return z.union([z.literal(1), z.literal(2)]).parse(value);
   }
 
   async hasAccessKey(accountId: string, publicKey: string): Promise<boolean> {

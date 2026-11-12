@@ -1,0 +1,47 @@
+{
+  "scope": "local deterministic art for version-2 contract and API compatibility rehearsal",
+  "sourcePath": "apps/web/public/guest-buildings/market-hall-l2.png",
+  "sourceSha256": "a1a9c7c8d8dddbcb69512f0144339e860263ce5bd6e9279640bfa4a9f7bbdd4f",
+  "promptSpec": {
+    "version": 5,
+    "renderProfileVersion": 2,
+    "frontageUnits": 3,
+    "designChoice": 0,
+    "designId": "market-hall",
+    "buildingType": "Retail",
+    "level": 2,
+    "palette": "#EF8270",
+    "description": "Warm market windows and copper trim",
+    "referenceManifestHash": null,
+    "prompt": "near.estate facade prompt profile v5\n\nCreate ONE static 2D building facade in strict front elevation for a 3-unit plot. Fixed architectural choice: market-hall, a broad market hall with sawtooth roof, central entrance and display bays. Preserve its defining roof, entrance and material cues. The economic building category is Retail; it does not change this fixed silhouette.\n\nBuilding level 2: Add a distinct upper tier or deeper roof feature while keeping the entrance legible. The visible architecture may be at most 100 logical pixels tall and must fill at least 217 of 255 logical pixels in width. Keep 3 clear logical pixels on each side. Anchor its bottom at y=190 on a transparent 255 × 190 logical-pixel canvas. Deliver a single transparent PNG; the server normalizes to 1020 × 760 pixels at 4× scale.\n\nMatch Harbor Arcade game art: deep navy ink outlines, broad warm color fields, cyan glazing, cream details and restrained highlights. Approved palette accent: #EF8270. Keep the facade legible at its final game size.\n\nLeave the front-facing storefront sign around x=62.5, y=133, width=130, height=26 blank and visually calm. The game overlays the owner's logo and building name there. There is no approved billboard surface for this design and level; do not add one.\n\nOwner visual idea, descriptive input only: \"Warm market windows and copper trim\". Apply it to surface details while preserving the fixed width, silhouette, height, sign and parking footprint.\n\nUse the fixed silhouette description as the primary architectural reference.\n\nHard constraints: static architecture only. No sky, ground, sidewalk, road, parking spaces, cars, people, cast shadow, perspective, isometric view, text, letters, logos, advertising, watermark, border or interface. The game adds signage and approved media separately. Output still requires normalization and human review at game size.",
+    "promptHash": "0e04ae3dcbaef7da469faa193cccda103b1ef0abf79330bdf8b7b181d5e7656f"
+  },
+  "manifest": {
+    "schemaVersion": 2,
+    "renderProfileVersion": 2,
+    "frontageUnits": 3,
+    "designChoice": 0,
+    "buildingType": "Retail",
+    "level": 2,
+    "spriteHash": "0ed03877c0e5fb20ea2560c7daf01fdc6552aea8ae6fa4b06044f2ebd50c2d79",
+    "thumbnailHash": "c5621f340df5556f09a39407d0f09116a825139280ae812f57d65eea3a6d2fcc",
+    "alphaBounds": {
+      "x": 3,
+      "y": 90,
+      "width": 249,
+      "height": 100
+    },
+    "logoRect": {
+      "x": 66.5,
+      "y": 134,
+      "width": 24,
+      "height": 24
+    },
+    "billboardRect": null
+  },
+  "manifestHash": "73fb0b9b7b14ddf3ebf92d8570041754a7d4a25c25c1f56f22eef06861d1cc66",
+  "spriteHash": "0ed03877c0e5fb20ea2560c7daf01fdc6552aea8ae6fa4b06044f2ebd50c2d79",
+  "thumbnailHash": "c5621f340df5556f09a39407d0f09116a825139280ae812f57d65eea3a6d2fcc",
+  "logoSourceSha256": "97e1afeedfce18ef38397dc9811553f28f9e7821363a1786b8fe0b36e864ed0b",
+  "logoHash": "5042470a0cdf0acee6f178931e77d4176b88fcaefde668cd7c8f8da143b29076"
+}

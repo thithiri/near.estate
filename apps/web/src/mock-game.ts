@@ -154,15 +154,23 @@ export class MockGame {
     );
   }
 
-  openSlot(plotId: string): 0 | 1 | undefined {
-    if (this.curbSpaceOpen(plotId, 0)) return 0;
-    if (this.curbSpaceOpen(plotId, 1)) return 1;
-    return undefined;
+  curbCapacity(plotId: string): number {
+    return this.plot(plotId).frontageUnits ?? 2;
+  }
+
+  openSlot(plotId: string): number | undefined {
+    return Array.from(
+      { length: this.curbCapacity(plotId) },
+      (_, space) => space,
+    ).find((space) => this.curbSpaceOpen(plotId, space));
   }
 
   curbAvailability(plotId: string): number {
     this.plot(plotId);
-    return [0, 1].filter((space) => this.curbSpaceOpen(plotId, space)).length;
+    return Array.from(
+      { length: this.curbCapacity(plotId) },
+      (_, space) => space,
+    ).filter((space) => this.curbSpaceOpen(plotId, space)).length;
   }
 
   private curbSpaceOpen(plotId: string, space: number): boolean {
@@ -207,7 +215,7 @@ export class MockGame {
     });
   }
 
-  park(plotId: string): MockSession {
+  park(plotId: string, requestedSlot?: number): MockSession {
     this.settleExpired();
     this.plot(plotId);
     if (this.playerSession()) throw new Error("Collect your parked car first");
@@ -215,8 +223,16 @@ export class MockGame {
       throw new Error("Your own curb cannot earn coins");
     if (this.car.durability < DEFAULT_CONFIG.parkDurabilityCost)
       throw new Error("Repair the car before parking");
-    const slot = this.openSlot(plotId);
-    if (slot === undefined) throw new Error("Both spaces are occupied");
+    const slot = requestedSlot ?? this.openSlot(plotId);
+    if (slot === undefined) throw new Error("All spaces are occupied");
+    if (
+      !Number.isInteger(slot) ||
+      slot < 0 ||
+      slot >= this.curbCapacity(plotId)
+    )
+      throw new Error("Invalid curb space");
+    if (!this.curbSpaceOpen(plotId, slot))
+      throw new Error("This parking space is occupied");
     const startedAt = this.nowSeconds();
     const legal = this.rules.get(plotId) !== "NoParking";
     const session: MockSession = {

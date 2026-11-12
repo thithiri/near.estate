@@ -1,0 +1,37 @@
+{
+  "capturedAt": "2026-11-11T22:41:16.173Z",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "inventoryFile": "deployments/variable-city-readiness-2026-11-12.json",
+  "inventorySha256": "7f0a2333fd9ec287f8bdbefe3a611aa15bb9f9942522047b3e879620000c8407",
+  "sourceSeedSha256": "3edc6404eb84d34128b6dcdea1a63b70954d79423b78626fa7a4dc27a4b4e69b",
+  "targetSeedSha256": "394f3fd65673290cea40d01a8fd00180507fb64877c2fad8132ff45c96dfdb16",
+  "movePlanSha256": "1e277b1dcc5a24f5f5db13d69d8d5b270afff8ac1c181c21f7dbc530f7900743",
+  "finalBlock": {
+    "hash": "9EXAS9u8bLkLKAkjEwSm41Q1Dvi41Pd93ZaSECHWy4F",
+    "height": 277276564
+  },
+  "sourcePlots": 80,
+  "targetPlots": 100,
+  "targetCurbSpaces": 180,
+  "civicSites": 7,
+  "moves": [
+    {
+      "from": "plot-main-n-2",
+      "to": "plot-main-n-3",
+      "owner": "dev-20261110121829-19069405494728.testnet"
+    },
+    {
+      "from": "plot-market-n-1",
+      "to": "plot-market-n-2",
+      "owner": "dev-20261110121829-19069405494728.testnet"
+    }
+  ],
+  "paused": false,
+  "migrationReady": false,
+  "remainingGates": [
+    "freeze the live contract and repeat inventory",
+    "review deed moves with the current owner and at the street junctions",
+    "capture the API cursor and verified data backup",
+    "complete version-2 contract migration and sandbox rehearsal"
+  ]
+}

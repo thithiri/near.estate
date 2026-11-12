@@ -17,7 +17,9 @@ import {
   encodeTransaction,
 } from "@near-js/transactions";
 import { baseDecode, baseEncode } from "@near-js/utils";
+import { z } from "zod";
 import { ChainReader } from "../apps/web/src/chain-reader.js";
+import { readActiveVersion2Release } from "./testnet-v2-release-context.js";
 
 const mode = process.argv[2];
 if (
@@ -28,12 +30,47 @@ if (
 )
   throw new Error("Pass --plan, --apply, --restore or --verify");
 const root = resolve(import.meta.dirname, "..");
-const plotId = "plot-market-n-1";
-const meteredPlotId = "plot-main-n-2";
 const deployment = JSON.parse(
   readFileSync(resolve(root, "deployments/testnet.json"), "utf8"),
-) as { network: string; contractId: string };
+) as {
+  network: string;
+  contractId: string;
+  wasmSha256: string;
+  citySeedVersion: number;
+};
 assert.equal(deployment.network, "testnet");
+const reader = new ChainReader(deployment.contractId);
+const cityVersion = await reader.cityVersion();
+let plotId = "plot-market-n-1";
+let meteredPlotId = "plot-main-n-2";
+let releaseRecord: string | null = null;
+if (cityVersion === 2) {
+  const candidate = process.argv[3];
+  if (!candidate)
+    throw new Error("Pass an absolute active version-2 release-record path");
+  const release = readActiveVersion2Release(root, candidate, deployment);
+  releaseRecord = release.path;
+  const ticketMove = release.moves.find(
+    (move) => move.from === "plot-market-n-1",
+  );
+  const meterMove = release.moves.find((move) => move.from === "plot-main-n-2");
+  assert(
+    ticketMove && meterMove,
+    "Both original owner deeds need reviewed destinations",
+  );
+  assert.notEqual(
+    ticketMove.to,
+    meterMove.to,
+    "Owner deeds share a destination",
+  );
+  plotId = ticketMove.to;
+  meteredPlotId = meterMove.to;
+  assert.equal(
+    await reader.view("is_paused", {}, z.boolean()),
+    false,
+    "Version-2 city remains paused",
+  );
+}
 
 function credentialFrom(name: "OWNER" | "DRIVER") {
   const path = process.env[`ESTATE_${name}_KEY_FILE`];
@@ -59,10 +96,11 @@ function credentialFrom(name: "OWNER" | "DRIVER") {
 const owner = credentialFrom("OWNER");
 const driver = credentialFrom("DRIVER");
 assert.notEqual(owner.account_id, driver.account_id);
-const reader = new ChainReader(deployment.contractId);
 const journalPath = resolve(
   dirname(owner.path),
-  "two-account-ticket-journal.json",
+  cityVersion === 2
+    ? "two-account-ticket-v2-journal.json"
+    : "two-account-ticket-journal.json",
 );
 type Pending = {
   accountId: string;
@@ -73,6 +111,8 @@ type Pending = {
 type RecordedTransaction = { accountId: string; method: string; hash: string };
 type Journal = {
   contractId: string;
+  cityVersion?: 1 | 2;
+  releaseRecord?: string | null;
   plotId: string;
   ownerId: string;
   driverId: string;
@@ -84,6 +124,8 @@ type Journal = {
 };
 const freshJournal: Journal = {
   contractId: deployment.contractId,
+  cityVersion,
+  releaseRecord,
   plotId,
   ownerId: owner.account_id,
   driverId: driver.account_id,
@@ -102,6 +144,14 @@ for (const field of ["contractId", "plotId", "ownerId", "driverId"] as const)
     freshJournal[field],
     `Journal ${field} mismatch`,
   );
+if (cityVersion === 2) {
+  assert.equal(journal.cityVersion, 2, "Journal city version mismatch");
+  assert.equal(
+    journal.releaseRecord,
+    releaseRecord,
+    "Journal release mismatch",
+  );
+}
 
 function saveJournal() {
   const temporary = `${journalPath}.tmp`;
@@ -186,6 +236,10 @@ async function main() {
     assert(journal.completed, "Ticket journey has not completed");
     assert.equal(before.plot.owner, owner.account_id);
     assert.equal(before.effective_rule.kind, "Free");
+    if (cityVersion === 2) {
+      assert("frontage_units" in before.plot);
+      assert.equal(before.plot.frontage_units, 2);
+    }
     const driverAfter = await reader.player(driver.account_id);
     assert.equal(driverAfter.active_session, null);
     for (const entry of journal.transactions)
@@ -196,7 +250,9 @@ async function main() {
       );
     const evidencePath = resolve(
       root,
-      "deployments/testnet-two-account-ticket-journey.json",
+      cityVersion === 2
+        ? "deployments/testnet-two-account-ticket-v2-journey.json"
+        : "deployments/testnet-two-account-ticket-journey.json",
     );
     const evidence = JSON.parse(readFileSync(evidencePath, "utf8")) as Record<
       string,
@@ -241,18 +297,54 @@ async function main() {
   const metered = await reader.plot(meteredPlotId);
   assert.equal(metered?.plot.owner, owner.account_id);
   assert.equal(metered.effective_rule.kind, "Meter");
+  if (cityVersion === 2) {
+    assert("frontage_units" in before.plot);
+    assert("frontage_units" in metered.plot);
+    assert.equal(before.plot.frontage_units, 2);
+    assert.equal(metered.plot.frontage_units, 2);
+  }
+  if (
+    cityVersion === 2 &&
+    journal.transactions.length === 0 &&
+    journal.sessionId === null
+  ) {
+    assert.equal(
+      before.plot.owner,
+      owner.account_id,
+      "Moved ticket deed is not owned by the expected account",
+    );
+    assert.equal(
+      before.effective_rule.kind,
+      "Free",
+      "Ticket deed must start with its migrated Free rule",
+    );
+    assert.equal(
+      before.plot.pending_rule,
+      null,
+      "Moved ticket deed has a pending rule change",
+    );
+  }
+  const parkDurabilityCost = (
+    await reader.view(
+      "get_config",
+      {},
+      z.object({ park_durability_cost: z.number().int().positive() }),
+    )
+  ).park_durability_cost;
   const ownerPlayer = await reader.player(owner.account_id);
   const driverPlayer = await reader.player(driver.account_id);
   assert(
     ownerPlayer.account && driverPlayer.account,
     "Both players must register",
   );
-  assert(driverPlayer.cars.some((car) => car.durability >= 2));
+  assert(driverPlayer.cars.some((car) => car.durability >= parkDurabilityCost));
   if (mode === "--plan") {
     console.log(
       JSON.stringify(
         {
           contractId: deployment.contractId,
+          cityVersion,
+          releaseRecord,
           plotId,
           ownerId: owner.account_id,
           driverId: driver.account_id,
@@ -277,6 +369,11 @@ async function main() {
     return;
   }
   if (!before.plot.owner) {
+    assert.equal(
+      cityVersion,
+      1,
+      "Version-2 deed move is missing; refusing a new purchase",
+    );
     const quote = await reader.plotPurchaseQuote(plotId);
     await submit(owner, "buy_plot", { plot_id: plotId }, BigInt(quote));
   }
@@ -313,14 +410,17 @@ async function main() {
         "Existing driver session was not created by this journey",
       );
     } else {
-      const street = await reader.streetSide("market", "North");
+      const street = await reader.streetSide(plot.plot.road_id, plot.plot.side);
       const target = street.plots.find(
         (entry) => entry.plot.plot.id === plotId,
       );
       assert(target, "Dedicated plot is missing from the street");
+      if (cityVersion === 2) assert.equal(target.slots.length, 2);
       const slot = target.slots.findIndex((entry) => entry === null);
       assert(slot >= 0, "Dedicated plot has no open curb");
-      const car = player.cars.find((entry) => entry.durability >= 2);
+      const car = player.cars.find(
+        (entry) => entry.durability >= parkDurabilityCost,
+      );
       assert(car, "Driver needs a parkable car");
       await submit(driver, "park", { car_id: car.id, plot_id: plotId, slot });
       player = await reader.player(driver.account_id);
@@ -372,6 +472,8 @@ async function main() {
   const evidence = {
     network: "testnet",
     contractId: deployment.contractId,
+    cityVersion,
+    releaseRecord,
     ownerId: owner.account_id,
     driverId: driver.account_id,
     plotId,
@@ -383,7 +485,12 @@ async function main() {
     transactions: journal.transactions,
   };
   writeFileSync(
-    resolve(root, "deployments/testnet-two-account-ticket-journey.json"),
+    resolve(
+      root,
+      cityVersion === 2
+        ? "deployments/testnet-two-account-ticket-v2-journey.json"
+        : "deployments/testnet-two-account-ticket-journey.json",
+    ),
     `${JSON.stringify(evidence, null, 2)}\n`,
   );
   console.log(JSON.stringify(evidence, null, 2));

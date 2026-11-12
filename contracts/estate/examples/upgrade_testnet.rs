@@ -389,6 +389,66 @@ async fn rehearse(
     );
     verify_street_car_appearances(&sandbox, id).await?;
     verify_tower_floor_batch(&sandbox, id).await?;
+    let pause = copy
+        .as_account()
+        .call(id, "set_paused")
+        .args_json(json!({"paused": true}))
+        .transact()
+        .await?;
+    ensure!(pause.is_success(), "candidate pause failed: {pause:?}");
+    let paused_state = sandbox.view_state(id).await?;
+    let forbidden_seed = copy
+        .as_account()
+        .call(id, "seed_plot")
+        .args_json(json!({
+            "seed": {
+                "road_id": "main", "side": "North", "index": 8,
+                "building_type": "Retail", "variant": 1
+            }
+        }))
+        .transact()
+        .await?;
+    ensure!(
+        !forbidden_seed.is_success()
+            && format!("{forbidden_seed:?}").contains("new game changes are paused"),
+        "candidate pause did not block admin plot seeding: {forbidden_seed:?}"
+    );
+    let mut next_config: Value = sandbox.view(id, "get_config").await?.json()?;
+    next_config["version"] = json!(
+        next_config["version"]
+            .as_u64()
+            .context("candidate config version missing")?
+            + 1
+    );
+    let forbidden_config = copy
+        .as_account()
+        .call(id, "update_config")
+        .args_json(json!({"config": next_config}))
+        .transact()
+        .await?;
+    ensure!(
+        !forbidden_config.is_success()
+            && format!("{forbidden_config:?}").contains("new game changes are paused"),
+        "candidate pause did not block admin config update: {forbidden_config:?}"
+    );
+    ensure!(
+        sandbox.view_state(id).await? == paused_state,
+        "rejected candidate admin changes altered storage"
+    );
+    let unpause = copy
+        .as_account()
+        .call(id, "set_paused")
+        .args_json(json!({"paused": false}))
+        .transact()
+        .await?;
+    ensure!(
+        unpause.is_success(),
+        "candidate unpause failed: {unpause:?}"
+    );
+    ensure!(
+        state_hash(&sandbox.view_state(id).await?) == state_hash_before,
+        "candidate pause cycle changed contract state"
+    );
     let rollback = copy.as_account().deploy(old_wasm).await?;
     ensure!(
         rollback.is_success(),
@@ -413,7 +473,7 @@ async fn rehearse(
     );
     counts_and_roles(&sandbox, id, manifest).await?;
     println!(
-        "Sandbox upgrade and rollback preserved every contract state key and passed old and new views."
+        "Sandbox upgrade and rollback preserved every contract state key, passed old and new views, and verified pause guards for admin seeding and config changes."
     );
     Ok(())
 }

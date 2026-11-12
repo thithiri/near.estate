@@ -1,0 +1,54 @@
+{
+  "capturedAt": "2026-11-12T07:16:04.468Z",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "inventoryFile": "deployments/variable-city-readiness-current-2026-11-12.json",
+  "inventorySha256": "6217701ca63e9d67a9f5d98c18a3ee27730a4ec016a0284d45abdfddf37bd96b",
+  "sourceSeedSha256": "3edc6404eb84d34128b6dcdea1a63b70954d79423b78626fa7a4dc27a4b4e69b",
+  "targetSeedSha256": "394f3fd65673290cea40d01a8fd00180507fb64877c2fad8132ff45c96dfdb16",
+  "movePlanSha256": "1e277b1dcc5a24f5f5db13d69d8d5b270afff8ac1c181c21f7dbc530f7900743",
+  "releaseEvidenceFile": null,
+  "releaseEvidenceSha256": null,
+  "backupEvidence": null,
+  "finalBlock": {
+    "hash": "ETdSCiTheGuBXTgRYUGEZYhxUXJhu7wdHcjaAgMka8R",
+    "height": 277330671
+  },
+  "sourcePlots": 80,
+  "targetPlots": 100,
+  "targetCurbSpaces": 180,
+  "civicSites": 7,
+  "moves": [
+    {
+      "from": "plot-main-n-2",
+      "to": "plot-main-n-3",
+      "owner": "dev-20261110121829-19069405494728.testnet"
+    },
+    {
+      "from": "plot-market-n-1",
+      "to": "plot-market-n-2",
+      "owner": "dev-20261110121829-19069405494728.testnet"
+    }
+  ],
+  "mediaCarryover": [
+    {
+      "from": "plot-main-n-2",
+      "to": "plot-main-n-3",
+      "approvedFacadeHash": "31645fe6ccac1fea2281fb868e8626b2808af3b63467defa47cc39dddff1edcb",
+      "pendingFacadeHash": null,
+      "activeLogoHash": "a7ceb962124bd4f3c1b6db35e8f47f6e5cfc0c6bd9e0596b613750084cbc4ef8",
+      "pendingLogoHash": null,
+      "activeBillboardHash": "1b11c8acecb84f03bb9590c5a31c72fdb62d58aca3ce6a5d3c1247d2ad192898",
+      "pendingBillboardHash": null
+    }
+  ],
+  "paused": false,
+  "migrationReady": false,
+  "remainingGates": [
+    "install the tested pause-guard contract code",
+    "freeze the live contract and repeat inventory",
+    "review deed moves with the current owner and at the street junctions",
+    "review legacy facade and media visibility on the destination designs",
+    "capture the API cursor and verified data backup",
+    "rehearse version-2 conversion and rollback from the final frozen state"
+  ]
+}

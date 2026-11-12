@@ -111,7 +111,7 @@ The 24-hour timer applies to publishing custom facades. Preset and preset-palett
 
 Each plot has a 170px pitch. A facade fits within a centered 140px-wide envelope, leaving 15px on each side. All visible pixels, projections and rooftop attachments stay inside that envelope and the level's height cap. The source sprite is a transparent 560 × 640px PNG, corresponding to a 140 × 160 logical canvas; shorter buildings are padded above. Its bottom-center anchor is (70,160), positioned at (plot origin + 85,190) in the 300px reference scene.
 
-The street keeps the established sidewalk at y190–206, curb lane at y206–246 and driving lane at y246–290. Car sprites fit within 64 × 32 logical pixels. Ads, logos and sign text are separate rendered elements. V1 permits one owner logo/name surface and one optional billboard surface. Validated axis-aligned placement rectangles remain inside the level envelope; a billboard should be at least 48 × 24 logical pixels to be useful at gameplay scale.
+The street keeps the established sidewalk at y190–206, curb lane at y206–246 and driving lane at y246–290. Car sprites fit within 64 × 32 logical pixels. Ads, logos and sign text are separate rendered elements. V1 permits one owner logo/name surface and one optional billboard surface. Validated axis-aligned placement rectangles remain inside the level envelope. The version-2 two-unit Diner and Arcade billboard uses an 88 × 20 logical-pixel image area, matched to the illustrated sign; review any future ad surface at game scale before enabling upload.
 
 The facade is static raster art in strict front elevation. It contains no street, cars, functional buttons, active code, or authoritative gameplay geometry. Generated decorative lettering or advertisements are rejected: the renderer adds approved text and ad artwork separately.
 
@@ -177,14 +177,14 @@ Current browser captures: [compact landscape street](mobile-landscape.jpg), [por
 
 | Surface | Layout |
 | --- | --- |
-| Phone street | Compact top HUD; unobstructed street scene; separate bottom control strip |
+| Phone street | Compact top HUD; road-corner drive zones; explicit floating context actions |
 | Phone portrait arrival | Rotate-to-drive message with access to menus and account status |
 | Phone building studio | One column and one step at a time: Describe, Choose, Preview |
 | Desktop street | Top navigation, wide scene, optional contextual right panel, keyboard hint bar |
 | Desktop building studio | Prompt/settings column; three candidates across the workspace; neighbourhood preview below |
 | Narrow desktop window | Reflow menus and editor; offer an expand-window message if the driving scene becomes unusable |
 
-Phone HUD shows the active car and coins on the left, street name centrally where space permits, and Map, Cars and Menu on the right. The bottom strip has two directional buttons under the left thumb and a fixed-position Park/Collect action under the right thumb. Minimum touch targets are 44 CSS pixels; driving controls target 52–56 pixels. The owner Ticket action appears only after explicitly selecting an illegal parked car and is separate from the driver's context action. The parking lane and selected stall remain unobstructed.
+Phone HUD shows the active car and coins on the left, street name centrally where space permits, and Map, Cars and Menu on the right. Tapping the lower-left or lower-right quarter of the street nudges the car in that direction; holding drives continuously. Each zone has a small visible cue. Park, Collect, Ticket and Cross Street stay as explicit floating actions above the road, so a drive gesture cannot trigger them. Minimum touch targets are 44 CSS pixels. The owner Ticket action appears only after explicitly selecting an illegal parked car and is separate from the driver's context action. The parking lane and selected stall remain unobstructed.
 
 Respect safe areas, browser chrome and the on-screen keyboard. The target phone references are 844 × 390 landscape and 390 × 844 portrait CSS pixels, with additional checks at 667 × 375 and 320 × 568. Compact HUD labels on smaller landscape screens rather than shrinking touch targets. If the available scene becomes too short, show an expand/fullscreen suggestion with usable menu access. Do not assume forced browser orientation is available; the layout must work with a rotation prompt alone.
 

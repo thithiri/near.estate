@@ -7,6 +7,7 @@ COPY apps/web ./apps/web
 COPY services/api ./services/api
 COPY services/worker ./services/worker
 COPY contracts/estate/seed.json ./contracts/estate/seed.json
+COPY contracts/estate/seed-v2.json ./contracts/estate/seed-v2.json
 ARG VITE_ESTATE_CONTRACT_ID=""
 ENV VITE_ESTATE_CONTRACT_ID=${VITE_ESTATE_CONTRACT_ID}
 RUN npm ci && npm run build -w @estate/shared && npm run build -w @estate/web

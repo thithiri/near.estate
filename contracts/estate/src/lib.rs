@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "migration-types", allow(dead_code, unused_imports))]
+
 #[cfg(all(target_arch = "wasm32", not(near)))]
 compile_error!("NEAR contract WASM must be built with --cfg near");
 
@@ -6,10 +8,13 @@ use near_sdk::{
     Promise,
 };
 
+mod city_v2;
 mod parking;
 mod world;
-use parking::{calculate_settlement, SettlementReason};
-pub use parking::{Facility, ParkingSession, SessionTerms, Settlement};
+pub use city_v2::{plot_price_yocto, GameConfigV2, PlotSeedV2, PlotV2};
+pub use parking::{
+    calculate_settlement, Facility, ParkingSession, SessionTerms, Settlement, SettlementReason,
+};
 pub use world::{
     AppearanceDecision, AppearanceReference, AppearanceStatus, BuildingState, BuildingType,
     MediaApproval, MediaDecision, MediaDecisionStatus, MediaIdentity, MediaKind, MediaProposal,
@@ -171,7 +176,7 @@ impl Default for GameConfig {
 }
 
 impl GameConfig {
-    fn validate(&self) {
+    pub fn validate(&self) {
         const COIN: u128 = 1_000_000;
         require!(
             self.version >= 1 && self.version <= 1_000_000,
@@ -297,6 +302,7 @@ impl GameConfig {
     }
 }
 
+#[cfg(not(feature = "migration-types"))]
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
 pub struct Contract {
@@ -322,6 +328,7 @@ pub struct Contract {
     inspector_attempts_in_window: u8,
 }
 
+#[cfg(not(feature = "migration-types"))]
 #[near]
 impl Contract {
     #[init]
@@ -664,6 +671,7 @@ impl Contract {
     #[payable]
     pub fn seed_plot(&mut self, seed: PlotSeed) -> Plot {
         self.require_admin();
+        self.require_not_paused();
         require!(seed.index < 8, "plot index must be 0 through 7");
         require!(
             seed.variant == 1 || seed.variant == 2,
@@ -732,6 +740,7 @@ impl Contract {
     #[payable]
     pub fn seed_npc_site(&mut self, seed: NPCSiteSeed) -> NPCSite {
         self.require_admin();
+        self.require_not_paused();
         require!(
             seed.id.starts_with("npc-")
                 && seed.id.len() <= 40
@@ -1006,6 +1015,7 @@ impl Contract {
 
     pub fn approve_appearance(&mut self, plot_id: String, expected: AppearanceReference) -> Plot {
         self.require_moderator();
+        self.require_not_paused();
         let mut plot = self.pending_appearance_plot(&plot_id, &expected);
         let now = Self::now_seconds();
         if let Some(last) = plot.building.last_facade_approved_at {
@@ -1043,6 +1053,7 @@ impl Contract {
         reason: String,
     ) -> Plot {
         self.require_moderator();
+        self.require_not_paused();
         Self::validate_moderation_reason(&reason);
         let mut plot = self.pending_appearance_plot(&plot_id, &expected);
         plot.building.pending_appearance = None;
@@ -1065,6 +1076,7 @@ impl Contract {
         reason: String,
     ) -> Plot {
         self.require_moderator();
+        self.require_not_paused();
         Self::validate_moderation_reason(&reason);
         let mut plot = self
             .plots
@@ -1159,6 +1171,7 @@ impl Contract {
         expected: MediaProposal,
     ) -> PlotView {
         self.require_moderator();
+        self.require_not_paused();
         let mut plot = self.pending_media_plot(&plot_id, kind, &expected);
         let now = Self::now_seconds();
         let slot = Self::media_slot_mut(&mut plot, kind);
@@ -1201,6 +1214,7 @@ impl Contract {
         reason: String,
     ) -> PlotView {
         self.require_moderator();
+        self.require_not_paused();
         Self::validate_moderation_reason(&reason);
         let mut plot = self.pending_media_plot(&plot_id, kind, &expected);
         let slot = Self::media_slot_mut(&mut plot, kind);
@@ -1223,6 +1237,7 @@ impl Contract {
         kind: MediaKind,
         expected_media_revision: u64,
     ) -> PlotView {
+        self.require_not_paused();
         let caller = env::predecessor_account_id();
         let mut plot = self.owned_plot(&plot_id, &caller);
         let now = Self::now_seconds();
@@ -1253,6 +1268,7 @@ impl Contract {
         reason: String,
     ) -> PlotView {
         self.require_moderator();
+        self.require_not_paused();
         Self::validate_moderation_reason(&reason);
         let mut plot = self
             .plots
@@ -1873,6 +1889,7 @@ impl Contract {
 
     pub fn update_config(&mut self, config: GameConfig) {
         self.require_admin();
+        self.require_not_paused();
         let next_version = match self.config.version.checked_add(1) {
             Some(value) => value,
             None => env::panic_str("config version overflow"),
@@ -1901,7 +1918,7 @@ impl Contract {
     }
 
     fn require_not_paused(&self) {
-        require!(!self.paused, "new economic actions are paused");
+        require!(!self.paused, "new game changes are paused");
     }
 
     fn owned_plot(&self, plot_id: &str, caller: &AccountId) -> Plot {
@@ -2768,6 +2785,123 @@ mod tests {
         assert!(contract
             .get_space_session("plot-main-n-0".to_string(), 0)
             .is_none());
+    }
+
+    #[test]
+    fn pause_freezes_plot_and_moderation_changes() {
+        use std::panic::{catch_unwind, AssertUnwindSafe};
+
+        let mut contract = seeded_contract();
+        let admin = account("admin.testnet");
+        let owner = account("owner.testnet");
+        let moderator = account("moderator.testnet");
+        context(&admin, 1_000_000_000_000_000_000_000_000, 1_000);
+        contract.seed_plot(PlotSeed {
+            road_id: RoadId::Main,
+            side: Side::North,
+            index: 1,
+            building_type: BuildingType::Retail,
+            variant: 1,
+        });
+        register_at(&mut contract, &owner, 1_000);
+        let first_id = "plot-main-n-0".to_string();
+        let second_id = "plot-main-n-1".to_string();
+        context(
+            &owner,
+            contract.plot_purchase_quote(first_id.clone()).0,
+            1_001,
+        );
+        contract.buy_plot(first_id.clone());
+        let plot = contract
+            .get_plot(first_id.clone())
+            .expect("owned plot")
+            .plot;
+        context(&owner, 0, 1_002);
+        let media = contract.propose_media(
+            first_id.clone(),
+            MediaKind::Logo,
+            plot.logo.revision,
+            plot.building.layout_revision,
+            MediaIdentity {
+                asset_hash: "a".repeat(64),
+                link: None,
+            },
+        );
+        let appearance = contract.propose_appearance(
+            first_id.clone(),
+            plot.building.appearance_revision,
+            "b".repeat(64),
+        );
+        let before = contract
+            .get_plot(first_id.clone())
+            .expect("owned plot")
+            .plot;
+
+        context(&admin, 0, 1_003);
+        contract.set_paused(true);
+        context(
+            &owner,
+            contract.plot_purchase_quote(second_id.clone()).0,
+            1_004,
+        );
+        assert!(catch_unwind(AssertUnwindSafe(|| contract.buy_plot(second_id.clone()))).is_err());
+        context(&owner, 0, 1_004);
+        assert!(catch_unwind(AssertUnwindSafe(
+            || contract.set_rule(first_id.clone(), ParkingRule::NoParking,)
+        ))
+        .is_err());
+        assert!(catch_unwind(AssertUnwindSafe(|| contract.choose_preset(
+            first_id.clone(),
+            2,
+            "#73D9A6".to_string(),
+            "Freeze Test".to_string(),
+        )))
+        .is_err());
+        assert!(catch_unwind(AssertUnwindSafe(|| contract.remove_media(
+            first_id.clone(),
+            MediaKind::Logo,
+            media.revision,
+        )))
+        .is_err());
+        context(&moderator, 0, 1_004);
+        assert!(catch_unwind(AssertUnwindSafe(|| contract.approve_media(
+            first_id.clone(),
+            MediaKind::Logo,
+            media.clone(),
+        )))
+        .is_err());
+        assert!(catch_unwind(AssertUnwindSafe(
+            || contract.approve_appearance(first_id.clone(), appearance.clone(),)
+        ))
+        .is_err());
+        context(&admin, 1_000_000_000_000_000_000_000_000, 1_004);
+        assert!(
+            catch_unwind(AssertUnwindSafe(|| contract.seed_plot(PlotSeed {
+                road_id: RoadId::Main,
+                side: Side::North,
+                index: 2,
+                building_type: BuildingType::Retail,
+                variant: 1,
+            })))
+            .is_err()
+        );
+        let mut next_config = contract.get_config();
+        next_config.version += 1;
+        assert!(catch_unwind(AssertUnwindSafe(|| contract.update_config(next_config))).is_err());
+        let after = contract.get_plot(first_id).expect("owned plot").plot;
+        assert_eq!(contract.plot_count(), 2);
+        assert!(contract
+            .get_plot(second_id)
+            .expect("unowned plot")
+            .plot
+            .owner
+            .is_none());
+        assert_eq!(
+            after.building.appearance_revision,
+            before.building.appearance_revision
+        );
+        assert_eq!(after.logo.revision, before.logo.revision);
+        assert_eq!(after.pending_rule.is_some(), before.pending_rule.is_some());
     }
 
     #[test]

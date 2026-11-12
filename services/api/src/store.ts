@@ -2,8 +2,13 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import type { AssetManifest } from "@estate/shared";
+import type { AssetManifest, AssetManifestV2 } from "@estate/shared";
 import type { GenerationPromptSpec } from "./prompt-builder.js";
+import type { buildVariableGenerationPrompt } from "./variable-prompt-builder.js";
+
+export type StoredGenerationPromptSpec =
+  | GenerationPromptSpec
+  | ReturnType<typeof buildVariableGenerationPrompt>;
 
 export type Challenge = {
   id: string;
@@ -55,7 +60,7 @@ export type MockCandidate = {
   id: 1 | 2 | 3;
   variant: 1 | 2;
   palette: string;
-  manifest: AssetManifest;
+  manifest: AssetManifest | AssetManifestV2;
   manifestHash: string;
   spriteHash: string;
   thumbnailHash: string;
@@ -70,7 +75,7 @@ export type GenerationJob = {
   layoutRevision: number;
   appearanceRevision: number | null;
   description: string;
-  promptSpec: GenerationPromptSpec | null;
+  promptSpec: StoredGenerationPromptSpec | null;
   status:
     | "ready"
     | "selected"
@@ -395,7 +400,7 @@ export class ApiStore {
       | "promptSpec"
       | "mode"
     > & {
-      promptSpec?: GenerationPromptSpec | null;
+      promptSpec?: StoredGenerationPromptSpec | null;
       mode?: GenerationJob["mode"];
       id?: string;
       readyAt?: number;
@@ -576,7 +581,7 @@ export class ApiStore {
     return job;
   }
 
-  publicManifest(manifestHash: string): AssetManifest | null {
+  publicManifest(manifestHash: string): AssetManifest | AssetManifestV2 | null {
     const approved = this.db
       .prepare(
         "SELECT * FROM generation_jobs WHERE status IN ('approved', 'revoked')",
@@ -830,7 +835,7 @@ export class ApiStore {
       appearanceRevision: value.appearance_revision,
       description: value.description,
       promptSpec: value.prompt_json
-        ? (JSON.parse(value.prompt_json) as GenerationPromptSpec)
+        ? (JSON.parse(value.prompt_json) as StoredGenerationPromptSpec)
         : null,
       status: value.status,
       selectedCandidateId: value.selected_candidate_id,

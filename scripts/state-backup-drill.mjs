@@ -13,9 +13,16 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import sharp from "sharp";
+import { canonicalJson } from "@estate/shared";
 import { ApiStore } from "../services/api/dist/store.js";
 import { EventStore } from "../services/worker/dist/event-store.js";
+import {
+  verifyCarriedMedia,
+  verifyDeedWorkflows,
+  verifyVariableCityBackup,
+} from "./variable-city-backup.mjs";
 
 const root = await mkdtemp(join(tmpdir(), "estate-backup-drill-"));
 const data = join(root, "data");
@@ -146,6 +153,95 @@ try {
     layoutRevision: 1,
     createdAt: 1_800_001,
   });
+  const approvedProposal = api.createMediaProposal({
+    uploadId: upload.id,
+    accountId: "owner.testnet",
+    plotId: "plot-main-n-0",
+    kind: "Logo",
+    assetHash,
+    link: null,
+    buildingType: "Retail",
+    level: 1,
+    layoutRevision: 1,
+    expectedMediaRevision: 0,
+    createdAt: 1_800_001,
+  });
+  api.markMediaSubmitted(approvedProposal.id, 1);
+  api.markMediaDecided(approvedProposal.id, "approved", 1_800_002, null);
+  const pendingUpload = api.recordUpload({
+    accountId: "owner.testnet",
+    plotId: "plot-main-n-0",
+    kind: "Billboard",
+    hash: paidThumbnailHash,
+    layoutRevision: 1,
+    createdAt: 1_800_001,
+  });
+  const pendingProposal = api.createMediaProposal({
+    uploadId: pendingUpload.id,
+    accountId: "owner.testnet",
+    plotId: "plot-main-n-0",
+    kind: "Billboard",
+    assetHash: paidThumbnailHash,
+    link: null,
+    buildingType: "Retail",
+    level: 1,
+    layoutRevision: 1,
+    expectedMediaRevision: 0,
+    createdAt: 1_800_001,
+  });
+  api.markMediaSubmitted(pendingProposal.id, 1);
+  const facadeManifest = {
+    schemaVersion: 1,
+    renderProfileVersion: 1,
+    buildingType: "Retail",
+    level: 1,
+    spriteHash: assetHash,
+    thumbnailHash: paidThumbnailHash,
+    alphaBounds: { x: 0, y: 90, width: 140, height: 70 },
+    logoRect: null,
+    billboardRect: null,
+  };
+  const facadeHash = createHash("sha256")
+    .update(canonicalJson(facadeManifest))
+    .digest("hex");
+  api.db
+    .prepare(
+      `INSERT INTO generation_jobs
+       (id, account_id, plot_id, building_type, level, layout_revision,
+        description, candidates_json, created_at, status, selected_candidate_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      "approved-facade-job",
+      "owner.testnet",
+      "plot-main-n-0",
+      "Retail",
+      1,
+      1,
+      "Backup fixture",
+      JSON.stringify([
+        {
+          id: 1,
+          manifestHash: facadeHash,
+          manifest: facadeManifest,
+          spriteHash: assetHash,
+          thumbnailHash: paidThumbnailHash,
+        },
+      ]),
+      1_800_001,
+      "approved",
+      1,
+    );
+  api.db
+    .prepare(
+      "INSERT INTO generation_assets (job_id, hash, is_public) VALUES (?, ?, 1)",
+    )
+    .run("approved-facade-job", assetHash);
+  api.db
+    .prepare(
+      "INSERT INTO generation_assets (job_id, hash, is_public) VALUES (?, ?, 1)",
+    )
+    .run("approved-facade-job", paidThumbnailHash);
   const expiredHash = "f".repeat(64);
   const expiredUpload = api.recordUpload({
     accountId: "owner.testnet",
@@ -227,6 +323,198 @@ try {
   assert.equal(backup.eventCount, 2);
   assert.equal(backup.cursor.last_height, 11);
   assert.equal(backup.files, 5);
+  const frozenInventory = {
+    paused: true,
+    contractId,
+    finalBlock: { hash: second.hash, height: 11 },
+    ownedPlots: [
+      {
+        id: "plot-main-n-0",
+        owner: "owner.testnet",
+        building: {
+          approved_manifest_hash: facadeHash,
+          pending_appearance: null,
+        },
+        logo: {
+          active: {
+            content: { asset_hash: assetHash, link: null },
+            approved_layout_revision: 1,
+          },
+        },
+        billboard: {
+          active: null,
+          pending: {
+            revision: 1,
+            owner: "owner.testnet",
+            building_type: "Retail",
+            level: 1,
+            layout_revision: 1,
+            content: { asset_hash: paidThumbnailHash, link: null },
+          },
+        },
+      },
+    ],
+  };
+  const deedMoves = [{ from: "plot-main-n-0", to: "plot-main-n-1" }];
+  const migrationBackup = await verifyVariableCityBackup(
+    archive,
+    frozenInventory,
+    deedMoves,
+  );
+  assert.equal(migrationBackup.indexerCursorHeight, 11);
+  assert.match(migrationBackup.backupManifestSha256, /^[a-f0-9]{64}$/);
+  assert.equal(migrationBackup.chainMediaAssetsVerified, true);
+  assert.equal(migrationBackup.carriedLogoAndBillboardCount, 2);
+  assert.equal(migrationBackup.carriedFacadeCount, 1);
+  assert.equal(migrationBackup.deedWorkflowsVerified, true);
+  assert.equal(migrationBackup.deedWorkflowMoveCount, 1);
+  assert.ok(migrationBackup.deedWorkflowSourceRows >= 4);
+  assert.throws(
+    () =>
+      verifyCarriedMedia(
+        archive,
+        {
+          ownedPlots: [
+            { ...frozenInventory.ownedPlots[0], owner: "someone-else.testnet" },
+          ],
+        },
+        new Set([assetHash, paidThumbnailHash]),
+      ),
+    /Carried logo is not public in the backup/,
+  );
+  const sourceDb = new DatabaseSync(join(data, "estate.sqlite"));
+  try {
+    sourceDb
+      .prepare("UPDATE media_proposals SET status = 'rejected' WHERE id = ?")
+      .run(pendingProposal.id);
+    assert.throws(
+      () =>
+        verifyCarriedMedia(
+          data,
+          frozenInventory,
+          new Set([assetHash, paidThumbnailHash]),
+        ),
+      /Carried pending billboard moderation proposal is missing/,
+    );
+    sourceDb
+      .prepare("UPDATE media_proposals SET status = 'submitted' WHERE id = ?")
+      .run(pendingProposal.id);
+    sourceDb
+      .prepare("UPDATE media_proposals SET status = 'revoked' WHERE id = ?")
+      .run(approvedProposal.id);
+    assert.throws(
+      () =>
+        verifyCarriedMedia(
+          data,
+          frozenInventory,
+          new Set([assetHash, paidThumbnailHash]),
+        ),
+      /Carried logo moderation proposal is missing/,
+    );
+    sourceDb
+      .prepare("UPDATE media_proposals SET status = 'approved' WHERE id = ?")
+      .run(approvedProposal.id);
+    sourceDb
+      .prepare("UPDATE generation_jobs SET status = 'revoked' WHERE id = ?")
+      .run("approved-facade-job");
+    assert.throws(
+      () =>
+        verifyCarriedMedia(
+          data,
+          frozenInventory,
+          new Set([assetHash, paidThumbnailHash]),
+        ),
+      /Carried approved facade manifest is missing/,
+    );
+    sourceDb
+      .prepare("UPDATE generation_jobs SET status = 'approved' WHERE id = ?")
+      .run("approved-facade-job");
+    sourceDb
+      .prepare("UPDATE generation_assets SET is_public = 0 WHERE hash = ?")
+      .run(paidThumbnailHash);
+    assert.throws(
+      () =>
+        verifyCarriedMedia(
+          data,
+          frozenInventory,
+          new Set([assetHash, paidThumbnailHash]),
+        ),
+      /Carried approved facade asset is not public/,
+    );
+    sourceDb
+      .prepare(
+        "INSERT INTO media_upload_attempts (id, account_id, plot_id, created_at) VALUES (?, ?, ?, ?)",
+      )
+      .run("destination-conflict", "owner.testnet", deedMoves[0].to, 1_800_002);
+    assert.throws(
+      () => verifyDeedWorkflows(data, deedMoves),
+      /Destination plot-main-n-1 already has media_upload_attempts records/,
+    );
+  } finally {
+    sourceDb
+      .prepare("UPDATE generation_assets SET is_public = 1 WHERE hash = ?")
+      .run(paidThumbnailHash);
+    sourceDb
+      .prepare("DELETE FROM media_upload_attempts WHERE id = ?")
+      .run("destination-conflict");
+    sourceDb.close();
+  }
+  await assert.rejects(
+    verifyVariableCityBackup(archive, {
+      ...frozenInventory,
+      ownedPlots: [
+        {
+          ...frozenInventory.ownedPlots[0],
+          logo: { active: { content: { asset_hash: "f".repeat(64) } } },
+        },
+      ],
+    }),
+    /Carried logo asset is missing/,
+  );
+  await assert.rejects(
+    verifyVariableCityBackup(archive, {
+      ...frozenInventory,
+      ownedPlots: [
+        {
+          ...frozenInventory.ownedPlots[0],
+          billboard: {
+            active: null,
+            pending: { content: { asset_hash: "f".repeat(64) } },
+          },
+        },
+      ],
+    }),
+    /Carried pending billboard asset is missing/,
+  );
+  await assert.rejects(
+    verifyVariableCityBackup(archive, {
+      ...frozenInventory,
+      ownedPlots: [
+        {
+          ...frozenInventory.ownedPlots[0],
+          building: {
+            ...frozenInventory.ownedPlots[0].building,
+            approved_manifest_hash: "f".repeat(64),
+          },
+        },
+      ],
+    }),
+    /Carried approved facade manifest is missing/,
+  );
+  await assert.rejects(
+    verifyVariableCityBackup(archive, {
+      ...frozenInventory,
+      finalBlock: { hash: "other-block", height: 11 },
+    }),
+    /cursor differs from the frozen block/,
+  );
+  await assert.rejects(
+    verifyVariableCityBackup(archive, {
+      ...frozenInventory,
+      finalBlock: { hash: "future-block", height: 12 },
+    }),
+    /behind the frozen block/,
+  );
   execFileSync(process.execPath, [command, "verify", archive], {
     encoding: "utf8",
   });

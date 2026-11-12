@@ -1,0 +1,16 @@
+{
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "reportSha256": "b0058e9d57797a5a02deaad79d6446dc1501e277fdc7127f2f3e6060b7676fbd",
+  "inventoryBlock": 277344338,
+  "paused": true,
+  "migrationReady": true,
+  "remainingGates": [],
+  "releaseWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+  "live": {
+    "contractId": "dev-20261110121817-59798568433631.testnet",
+    "blockHeight": 277344787,
+    "stateSha256": "59894605b85d057a8e73cd70b55eb23e423324a5b2815c0110dc657feb1edb7a",
+    "codeSha256": "8132e2ab092bdfa0ddb368f894edb5782b95a049cad094d4b2410d007b4fab0c",
+    "paused": true
+  }
+}
