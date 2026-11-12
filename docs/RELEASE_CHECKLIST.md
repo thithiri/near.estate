@@ -6,6 +6,17 @@
 
 The saved prior version-2 binary passed a read-only [reverse rehearsal](../deployments/runtime-upgrade-sandbox-db33845c80179c1a.json) and [runner drill](../deployments/runtime-upgrade-drill-db33845c80179c1a.json) against the current live-state import. This proves the code-only recovery path in a local sandbox, not a live reversal or a general schema-migration rollback. The [incident runbook](INCIDENTS.md) now uses the current version-2 commands.
 
+### Open invite-beta gates, 13 November
+
+| Gate           | Current evidence                                                                                                                                   | Needed to close                                                                                                                              |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Named wallets  | Direct signer and local browser fixture journeys pass; Meteor currently has no account available in this browser.                                  | Sign the complete driver/owner and restricted-key lifecycle through supported named wallets, including redirect recovery.                    |
+| Real devices   | Desktop and emulated phone screen journeys pass; GPU memory and long sessions have not been measured on a physical phone.                          | Inspect landscape driving and portrait menus on a physical phone, including memory and touch behavior.                                       |
+| Hosted release | Local Compose TLS, backup/restore and monitor delivery drills pass; the public release probe passes local tests but has no hostname to inspect.    | Supply a target VPS and public hostname, then verify the deployed candidate over public TLS, hosted roles, alerts and fresh-volume recovery. |
+| Hosted checks  | Earlier GitHub Actions runs passed; the private repository is currently inaccessible from this session through both Git and the GitHub connection. | Restore repository access, push a reviewed candidate and record its hosted checks and image digests.                                         |
+
+Paid image generation remains disabled for this curated-only beta by the user's decision; it has a separate Phase 6 release gate before generated buildings can be enabled.
+
 Snapshot: 2026-11-11. This checklist follows the [V1 phase gates](V1_SPEC.md#implementation-phases-and-numbered-tasks). A checked item needs direct evidence for the stated scope; local tests do not stand in for a browser, provider or VPS journey. Update this file and [DECISIONS.md](DECISIONS.md) after each gate.
 
 ## Candidate identity
