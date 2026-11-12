@@ -77,7 +77,15 @@ try {
       await page.keyboard.up("ArrowRight");
       if (pageErrors.length)
         throw new Error(`Street page errors: ${pageErrors.join("; ")}`);
-      viewports.push({ widthCssPx: width, heightCssPx: height, ...sample });
+      const guestTextures = await page.evaluate(
+        () => window.__nearEstateGuestTextureStats?.() ?? null,
+      );
+      viewports.push({
+        widthCssPx: width,
+        heightCssPx: height,
+        ...sample,
+        guestTextures,
+      });
     } finally {
       await page.close();
     }
@@ -100,10 +108,10 @@ const report = {
   browser: `Headless Chromium ${browserVersion} on ${process.platform}`,
   renderer,
   method:
-    "Headless desktop Chromium viewport emulation; requestAnimationFrame intervals and page JavaScript heap",
+    "Headless desktop Chromium viewport emulation; requestAnimationFrame intervals, page JavaScript heap and the development facade-cache estimate",
   viewports,
   limits:
-    "Not a physical phone, long play session, GPU memory measurement or live testnet street.",
+    "The cache estimate counts loaded facade pixel area, not physical GPU allocation. This is not a physical phone, long play session or live testnet street.",
 };
 if (output) await writeFile(output, `${JSON.stringify(report, null, 2)}\n`);
 console.log(JSON.stringify(report, null, 2));

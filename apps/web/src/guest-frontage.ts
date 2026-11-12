@@ -220,6 +220,28 @@ export class GuestFrontageTextureCache {
   private retiring = new Map<string, Promise<void>>();
   private pruning = false;
 
+  stats(): {
+    currentFacades: number;
+    cachedImages: number;
+    loadedImages: number;
+    estimatedDecodedBytes: number;
+  } {
+    const loaded = [...this.entries.values()].filter(
+      (entry): entry is CachedTexture & { texture: Texture } =>
+        entry.loaded && entry.texture !== null,
+    );
+    return {
+      currentFacades: this.views.length,
+      cachedImages: this.entries.size,
+      loadedImages: loaded.length,
+      estimatedDecodedBytes: loaded.reduce(
+        (total, entry) =>
+          total + entry.texture.width * entry.texture.height * 4,
+        0,
+      ),
+    };
+  }
+
   setViews(views: GuestFrontageView[]): void {
     for (const view of this.views) {
       view.group.wanted = false;

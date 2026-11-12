@@ -204,6 +204,10 @@ let variableFacades: Array<{
 let renderedLiveSceneKey: string | null = null;
 const facadeTextures = new PresetTextureCache();
 const guestFacadeTextures = new GuestFrontageTextureCache();
+if (import.meta.env.DEV)
+  Object.assign(window, {
+    __nearEstateGuestTextureStats: () => guestFacadeTextures.stats(),
+  });
 const impressionReporter = new ImpressionReporter();
 const approvedManifests = new Map<string, AssetManifest | AssetManifestV2>();
 const loadingManifests = new Set<string>();
