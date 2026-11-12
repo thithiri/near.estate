@@ -1,5 +1,7 @@
 # Testnet deployment
 
+For the current 100-plot version-2 city, use the dedicated code-only upgrade commands in [Operations](../docs/OPERATIONS.md): `city:runtime:upgrade:rehearse`, `:plan`, `:drill`, then `:apply` with the protected contract key. The older `testnet:code:*` commands below inspect the 80-plot version-1 layout and must not be used on version 2. A paused interrupted run uses `:recover`; an already reopened candidate with an unfinished manifest uses `:finalize`. The [current read-only plan](runtime-upgrade-plan-ad148df441a41d1f.json) and [sandbox drill](runtime-upgrade-drill-ad148df441a41d1f.json) do not mean the candidate is live.
+
 The [role-key handover record](testnet-role-key-handover.json) documents a live key-only rotation on the shared city's moderator and inspector accounts. It records two restricted keys overlapping on each account, removal of the old key while the replacement remained valid, removal of the replacement, and the final one-key-per-account state. No contract role action or hosted service restart was part of that drill.
 
 The [local moderation mount probe](local-moderation-mount-probe.json) records a nonroot API container starting with a mode-0600 throwaway key mount, then serving the protected review page. That key had no on-chain permission and the probe was not a signing test.

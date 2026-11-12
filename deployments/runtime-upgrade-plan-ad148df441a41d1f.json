@@ -1,0 +1,11 @@
+{
+  "scope": "read-only live testnet plan",
+  "status": "ready",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "beforeWasmSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
+  "afterWasmSha256": "ad148df441a41d1f7263974fb1db6821b70b7754a3a46c8c594b759e0822b887",
+  "beforeStateSha256": "75ca98a500152eab325be156b5a8b9ea66b72cf8711b5a48aaec352cd1eb96b8",
+  "beforePublicViewsSha256": "e7ef607173496a230e1673ad78b396d5d0416fe63e5ca7bceafe362606a19379",
+  "stateEntries": 381,
+  "rehearsalFile": "deployments/runtime-upgrade-sandbox-ad148df441a41d1f.json"
+}

@@ -15,6 +15,7 @@
   "streetSideViewsChecked": 10,
   "plotsCoveredByViews": 100,
   "publicViewsUnchanged": true,
+  "publicViewsSha256": "e7ef607173496a230e1673ad78b396d5d0416fe63e5ca7bceafe362606a19379",
   "rollbackCodeSha256": "db33845c80179c1a6e59adf36a209d6f2efd239856a94818ef84af302d12affa",
   "rollbackPublicViewsUnchanged": true
 }

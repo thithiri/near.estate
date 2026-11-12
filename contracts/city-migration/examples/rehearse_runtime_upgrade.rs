@@ -137,6 +137,7 @@ async fn main() -> Result<()> {
     );
     ensure!(!before_root.paused, "live city is already paused");
     let before_views = views(&sandbox, &id).await?;
+    let before_views_hash = hash(&near_sdk::serde_json::to_vec(&before_views)?);
     ensure!(
         !before_views[0].is_null(),
         "review plot missing before upgrade"
@@ -222,6 +223,7 @@ async fn main() -> Result<()> {
         "streetSideViewsChecked": 10,
         "plotsCoveredByViews": 100,
         "publicViewsUnchanged": true,
+        "publicViewsSha256": before_views_hash,
         "rollbackCodeSha256": expected_live_code,
         "rollbackPublicViewsUnchanged": true,
     });
