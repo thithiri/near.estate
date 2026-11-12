@@ -567,11 +567,6 @@ async fn main() -> Result<()> {
             } else if hash(&worker.view_code(&id).await?) == candidate_hash {
                 record["status"] = json!("reopen_review_required");
                 write_json(&record_path, &record)?;
-            } else if hash(&worker.view_code(&id).await?) == old_hash
-                && state_hash(&current) == field(&record, "beforeStateSha256")?
-            {
-                record["status"] = json!("unchanged");
-                write_json(&record_path, &record)?;
             }
             return Err(error);
         }
