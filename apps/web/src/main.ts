@@ -42,7 +42,9 @@ import { choices, paintBuilding } from "./frontage-art.js";
 import {
   choiceForGuestPlot,
   createGuestFrontage,
+  GuestFrontageTextureCache,
   type GuestFrontage,
+  type GuestFrontageView,
 } from "./guest-frontage.js";
 import { mountGuestDesignPicker } from "./guest-design-picker.js";
 import type { BuildingLevel } from "./frontage-layout.js";
@@ -201,6 +203,7 @@ let variableFacades: Array<{
 }> = [];
 let renderedLiveSceneKey: string | null = null;
 const facadeTextures = new PresetTextureCache();
+const guestFacadeTextures = new GuestFrontageTextureCache();
 const impressionReporter = new ImpressionReporter();
 const approvedManifests = new Map<string, AssetManifest | AssetManifestV2>();
 const loadingManifests = new Set<string>();
@@ -766,6 +769,7 @@ function liveSceneKey(): string {
 
 function drawWorld(): void {
   facadeTextures.setViews([]);
+  guestFacadeTextures.setViews([]);
   variableFacades = [];
   world.removeChildren().forEach((child) => child.destroy({ children: true }));
   const road = currentRoad();
@@ -797,6 +801,7 @@ function drawWorld(): void {
     }
   }
   const facades = [];
+  const guestFacades: GuestFrontageView[] = [];
   const chainSide =
     liveMode &&
     liveStreet?.street?.road_id === roadId &&
@@ -915,6 +920,7 @@ function drawWorld(): void {
       sprite.cursor = "pointer";
       sprite.on("pointertap", openThisPlot);
       world.addChild(sprite);
+      guestFacades.push({ x, width: choice.units * 85, group: sprite });
       if (liveMode)
         variableFacades.push({
           plotId: plot.id,
@@ -1092,6 +1098,7 @@ function drawWorld(): void {
     );
   }
   facadeTextures.setViews(facades);
+  guestFacadeTextures.setViews(guestFacades);
   for (const site of city.npcSites.filter(
     (entry) => entry.roadId === roadId && entry.side === side,
   )) {
@@ -2779,6 +2786,7 @@ app.ticker.add((ticker) => {
   world.x = -cameraLeft * scale;
   backdrop.x = -cameraLeft * scale * 0.4;
   facadeTextures.updateVisible(cameraLeft, visibleWidth);
+  guestFacadeTextures.updateVisible(cameraLeft, visibleWidth);
   if (
     liveMode &&
     !document.hidden &&

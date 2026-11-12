@@ -41,3 +41,13 @@ test("shared and repeated URLs count once", () => {
   );
   assert.deepEqual([...selected].sort(), [0, 1]);
 });
+
+test("wide plots stay near the viewport until their real right edge passes", () => {
+  const selected = selectNearTextureViews(
+    [{ x: 0, width: 255, urls: ["wide"] }],
+    330,
+    100,
+    1,
+  );
+  assert.deepEqual([...selected], [0]);
+});

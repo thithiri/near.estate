@@ -1,5 +1,7 @@
 # Invite beta release checklist
 
+**Current update, 12 November 2026:** The [version-2 city release](../deployments/variable-city-release-db33845c80179c1a.json) is active on testnet. Signed parking on all three curb widths, plot ownership, ticketing, natural expiry/reuse and three-unit logo moderation have separate evidence in [PROGRESS.md](PROGRESS.md). The current guest buildings are newly illustrated, and their loading path is bounded by a 32-texture cache. This checklist still contains earlier V1 candidate snapshots below; its release decision remains **not ready** while named-wallet browser signing, the target VPS and final operator gates remain open.
+
 Snapshot: 2026-11-11. This checklist follows the [V1 phase gates](V1_SPEC.md#implementation-phases-and-numbered-tasks). A checked item needs direct evidence for the stated scope; local tests do not stand in for a browser, provider or VPS journey. Update this file and [DECISIONS.md](DECISIONS.md) after each gate.
 
 ## Candidate identity

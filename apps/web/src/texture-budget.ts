@@ -2,6 +2,7 @@ const PLOT_PITCH = 170;
 
 export type TextureCandidate = {
   x: number;
+  width?: number;
   urls: readonly string[];
 };
 
@@ -18,18 +19,21 @@ export function selectNearTextureViews(
     .map((candidate, index) => ({ candidate, index }))
     .filter(
       ({ candidate }) =>
-        candidate.x + PLOT_PITCH >= nearLeft && candidate.x <= nearRight,
+        candidate.x + (candidate.width ?? PLOT_PITCH) >= nearLeft &&
+        candidate.x <= nearRight,
     )
     .sort((a, b) => {
       const distance = (candidate: TextureCandidate) =>
         candidate.x > cameraRight
           ? candidate.x - cameraRight
-          : candidate.x + PLOT_PITCH < cameraLeft
-            ? cameraLeft - candidate.x - PLOT_PITCH
+          : candidate.x + (candidate.width ?? PLOT_PITCH) < cameraLeft
+            ? cameraLeft - candidate.x - (candidate.width ?? PLOT_PITCH)
             : 0;
       const center = (candidate: TextureCandidate) =>
         Math.abs(
-          candidate.x + PLOT_PITCH / 2 - (cameraLeft + visibleWidth / 2),
+          candidate.x +
+            (candidate.width ?? PLOT_PITCH) / 2 -
+            (cameraLeft + visibleWidth / 2),
         );
       return (
         distance(a.candidate) - distance(b.candidate) ||
