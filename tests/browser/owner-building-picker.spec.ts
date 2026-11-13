@@ -373,12 +373,21 @@ test("owner compares a fitting design beside the plot before applying it", async
   await expect(
     page.locator(".design-street-building.is-selected"),
   ).toContainText("1U");
+  await expect(page.locator(".design-preview-stall")).toHaveCount(2);
+  await expect(page.locator(".design-preview-sign")).toHaveCount(2);
   await expect(page.locator("#owner-apply-design")).toBeDisabled();
   await page.locator('[data-owner-design="1"]').click();
   await expect(
     page.locator(".design-street-building.is-selected img"),
   ).toHaveAttribute("alt", "Coffee pod on plot 1");
   expect(await page.evaluate(() => (window as any).designCalls)).toEqual([]);
+  await page.locator('[data-owner-preview-level="4"]').click();
+  await expect(
+    page.locator(".design-street-building.is-selected"),
+  ).toContainText("LV 4");
+  await expect(page.locator("#owner-apply-design")).toBeDisabled();
+  await page.locator('[data-owner-preview-level="2"]').click();
+  await expect(page.locator("#owner-apply-design")).toBeEnabled();
   await page.locator("#owner-apply-design").click();
   await expect
     .poll(() => page.evaluate(() => (window as any).designCalls))

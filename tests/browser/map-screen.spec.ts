@@ -44,6 +44,7 @@ test("trip card routes the player toward a nearby curb", async ({ page }) => {
   await page.locator(".map-trip-stop button").first().click();
   await expect(page.locator("#street-screen")).toBeVisible();
   await expect(page.locator("#other-screen")).toBeHidden();
+  await expect(page.locator("#trip-street-card")).toContainText("TRIP");
 });
 
 test("parking near a trip stop stamps the visit without awarding coins", async ({
@@ -60,7 +61,7 @@ test("parking near a trip stop stamps the visit without awarding coins", async (
   );
   await page.locator(".map-trip-stop button").first().click();
   await expect(page.locator(".destination-trip-status")).toContainText(
-    "enjoy an activity",
+    "finish an activity",
   );
   await page
     .locator(
@@ -69,8 +70,18 @@ test("parking near a trip stop stamps the visit without awarding coins", async (
     .first()
     .click();
   await page.locator('[data-screen="Map"]:visible').first().click();
-  await expect(page.locator(".map-trip-progress")).toHaveText("1/2 visited");
+  await expect(page.locator(".map-trip-progress")).toHaveText("0/2 complete");
   await expect(page.locator("#balance")).toHaveText(balanceAfterParking ?? "");
+  await expect(page.locator(".map-trip-stop").first()).toContainText(
+    "collect your car",
+  );
+  await page.locator(".map-trip-stop button").first().click();
+  await expect(page.locator("#trip-street-card")).toContainText(
+    "collect your car",
+  );
+  await page.locator("#trip-street-card").click();
+  await page.locator('[data-screen="Map"]:visible').first().click();
+  await expect(page.locator(".map-trip-progress")).toHaveText("1/2 complete");
 });
 
 test("map road and tower pins travel to their destinations", async ({

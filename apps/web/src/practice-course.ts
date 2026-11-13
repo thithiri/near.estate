@@ -156,7 +156,12 @@ function drawCourse(
 
 export function mountPracticeCourse(
   host: HTMLElement,
-  options: { tier: 1 | 2 | 3; color: string; profileId: string },
+  options: {
+    tier: 1 | 2 | 3;
+    color: string;
+    profileId: string;
+    onFinish?: () => void;
+  },
 ): () => void {
   const canvas = host.querySelector<HTMLCanvasElement>("#practice-canvas");
   const start = host.querySelector<HTMLButtonElement>("#practice-start");
@@ -203,6 +208,7 @@ export function mountPracticeCourse(
         best = run.elapsed;
         saveBest(key, best);
       }
+      options.onFinish?.();
     }
     refresh();
     if (running) frameId = requestAnimationFrame(tick);

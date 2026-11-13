@@ -149,7 +149,10 @@ export function drawCinemaFrame(
   }
 }
 
-export function mountCinemaShort(host: HTMLElement): () => void {
+export function mountCinemaShort(
+  host: HTMLElement,
+  onComplete?: () => void,
+): () => void {
   const canvas = host.querySelector<HTMLCanvasElement>("#cinema-canvas");
   const play = host.querySelector<HTMLButtonElement>("#cinema-play");
   const restart = host.querySelector<HTMLButtonElement>("#cinema-restart");
@@ -200,8 +203,10 @@ export function mountCinemaShort(host: HTMLElement): () => void {
       (performance.now() - startedAt) / 1_000,
     );
     render();
-    if (elapsed >= DURATION_SECONDS) pause();
-    else frameId = requestAnimationFrame(tick);
+    if (elapsed >= DURATION_SECONDS) {
+      pause();
+      onComplete?.();
+    } else frameId = requestAnimationFrame(tick);
   };
   const toggle = () => {
     if (playing) return pause();

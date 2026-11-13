@@ -2827,7 +2827,7 @@ h3 {
 .design-street-scroll {
   overflow-x: auto;
   border-radius: 8px;
-  background: linear-gradient(#9dd5e8 78%, #e9dfc9 78%);
+  background: #9dd5e8;
 }
 .design-street-row {
   display: flex;
@@ -2843,18 +2843,51 @@ h3 {
   text-align: center;
 }
 .design-street-image {
-  display: flex;
-  align-items: end;
-  justify-content: center;
-  height: 152px;
+  position: relative;
+  height: 190px;
   overflow: hidden;
 }
-.design-street-image img {
+.design-street-image .design-preview-facade {
   display: block;
-  max-width: 100%;
-  height: 146px;
+  width: 100%;
+  height: 190px;
   object-fit: contain;
   object-position: bottom;
+}
+.design-preview-sign {
+  position: absolute;
+  overflow: hidden;
+  border: 1px solid #36515e;
+  background: #fff9ed;
+}
+.design-preview-logo,
+.design-preview-name {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+}
+.design-preview-logo {
+  background: #176e73;
+  color: #fff;
+}
+.design-preview-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.design-preview-name {
+  color: #263a4e;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.design-preview-billboard {
+  position: absolute;
+  object-fit: cover;
 }
 .design-street-building > span {
   display: block;
@@ -2873,14 +2906,74 @@ h3 {
   border-radius: 5px;
 }
 .design-street-sidewalk {
-  height: 10px;
+  height: 8px;
   background: #d7cbb5;
   border-top: 2px solid #f5eee0;
+}
+.design-preview-stalls {
+  display: flex;
+  gap: 0;
+  height: 37px;
+  background: #536878;
+}
+.design-preview-stall {
+  flex: 0 0 85px;
+  margin: 2px 0;
+  border-left: 2px solid #f7f3e7;
+  border-right: 2px solid #f7f3e7;
+  border-bottom: 2px solid #f7f3e7;
+  color: #fff;
+}
+.design-preview-stall span {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: #176e73;
+  font-size: 8px;
+  font-weight: 900;
 }
 .design-street-road {
   height: 18px;
   background: #536878;
-  border-top: 2px solid #e8eaed;
+  border-top: 1px dashed #e8eaed;
+}
+.trip-street-card:not([hidden]) {
+  position: absolute;
+  z-index: 7;
+  top: 5px;
+  left: max(8px, env(safe-area-inset-left));
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: min(370px, calc(100% - 20px));
+  padding: 5px 8px;
+  border: 1px solid #fff9edb0;
+  border-radius: 10px;
+  background: #192b45df;
+  color: #fff9ed;
+  box-shadow: 0 3px 10px #192b4530;
+  text-align: left;
+  cursor: pointer;
+}
+.trip-street-card small {
+  color: #ffdc6d;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+.trip-street-card strong,
+.trip-street-card span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.trip-street-card strong {
+  font-size: 12px;
+}
+.trip-street-card span {
+  font-size: 10px;
 }
 .guest-design-card small {
   margin-top: 3px;
@@ -2948,6 +3041,26 @@ h3 {
   display: block;
   margin-top: 5px;
   font-weight: 800;
+}
+.owner-preview-levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 11px;
+}
+.owner-preview-levels button {
+  min-height: 36px;
+  padding: 5px 9px;
+  border: 1px solid #a7beba;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 750;
+}
+.owner-preview-levels button[aria-pressed="true"] {
+  border-color: #176e73;
+  background: #d6efeb;
 }
 .controlbar {
   position: absolute;

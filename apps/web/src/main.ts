@@ -48,7 +48,14 @@ import {
   type GuestFrontageView,
 } from "./guest-frontage.js";
 import { mountGuestDesignPicker } from "./guest-design-picker.js";
-import { parkedNearStop, readTripProgress, todaysTrip } from "./todays-trip.js";
+import { PlaytestRecorder, type PlaytestEventName } from "./playtest-log.js";
+import {
+  markTripActivity,
+  markTripCollection,
+  parkedNearStop,
+  readTripProgress,
+  todaysTrip,
+} from "./todays-trip.js";
 import type { BuildingLevel } from "./frontage-layout.js";
 import { visibleMediaHash, visibleMediaLink } from "./media-view.js";
 import { plotEarningPreview, towerEarningPreview } from "./plot-earnings.js";
@@ -87,6 +94,11 @@ const horseBettingDemoEnabled =
 const horseDemoBook = horseBettingDemoEnabled ? new HorseBettingDemo() : null;
 let city = guestCity;
 const game = new MockGame(city);
+const playtestRecorder = new PlaytestRecorder(localStorage);
+playtestRecorder.noteVisit();
+function recordGuestPlaytest(name: PlaytestEventName): void {
+  if (!liveMode) playtestRecorder.record(name);
+}
 if (
   import.meta.env.DEV &&
   new URLSearchParams(window.location.search).has("full-curbs")
@@ -118,6 +130,8 @@ const plotPanel = document.querySelector<HTMLElement>("#plot-panel")!;
 const plotLinks = document.querySelector<HTMLElement>("#plot-links")!;
 const status = document.querySelector<HTMLElement>("#status")!;
 const actionButton = document.querySelector<HTMLButtonElement>("#action")!;
+const tripStreetCard =
+  document.querySelector<HTMLButtonElement>("#trip-street-card")!;
 const panelAction = document.querySelector<HTMLButtonElement>("#panel-action")!;
 const collectButton = document.querySelector<HTMLButtonElement>("#collect")!;
 const panelCollect =
@@ -1336,6 +1350,7 @@ function renderPlotLinks(logo?: string, billboard?: string): void {
 
 function updatePanel(): void {
   updateCrossSideControl();
+  updateTripStreetCard();
   if (liveMode) {
     updateLivePanel();
     return;
@@ -1776,6 +1791,8 @@ function collectParkedCar(): void {
     } else {
       status.textContent = `Collected ${formatCoins(game.collect().toString())} coins`;
     }
+    recordGuestPlaytest("collect");
+    finishTripCollection(String(session.id));
     if (session.carId === game.activeCarId) restoreCarToSession(session);
     drawWorld();
     updatePanel();
@@ -1798,6 +1815,7 @@ async function collectLiveCar(): Promise<void> {
         : "collect",
       { expected_session_id: session.id },
     );
+    finishTripCollection(String(session.id));
     if (session.car_id === live.selectedCarId)
       restoreCarToSession({
         facility: session.facility,
@@ -1839,6 +1857,7 @@ function action(requestedSlot?: number): void {
       const site = city.npcSites.find((entry) => entry.id === target.id);
       if (site?.role === "ParkingTower") {
         const session = game.parkTower(site.id, selectedTowerFloor);
+        recordGuestPlaytest("park_legal");
         message = `Parked on floor ${selectedTowerFloor + 1}, space ${(session.space % TOWER_SPACES_PER_FLOOR) + 1}. Collect earnings when ready.`;
       } else {
         if (!site) return;
@@ -1858,6 +1877,7 @@ function action(requestedSlot?: number): void {
       message = `Ticketed visitor for ${formatCoins(game.ticket(target.id).toString())} coins`;
     else if (target.kind === "Plot") {
       const session = game.park(target.id, requestedSlot);
+      recordGuestPlaytest(session.legal ? "park_legal" : "park_illegal");
       message = `Parked in space ${session.space + 1}. Collect earnings when ready.`;
     } else {
       return;
@@ -1970,7 +1990,10 @@ async function liveAction(requestedSlot?: number): Promise<void> {
   }
 }
 
-function currentParkedPlace(): { facility: string; locationId: string } | null {
+function currentParkedPlace(): Pick<
+  MockSession,
+  "facility" | "locationId"
+> | null {
   if (liveMode) {
     const session = liveStreet?.activeSession;
     return session
@@ -1983,12 +2006,55 @@ function currentParkedPlace(): { facility: string; locationId: string } | null {
     : null;
 }
 
+function currentParkingSessionId(): string | null {
+  const session = liveMode ? liveStreet?.activeSession : game.playerSession();
+  return session ? String(session.id) : null;
+}
+
 function tripStorageKey(): string {
-  return `near-estate-trip-v1:${liveMode ? (liveStreet?.accountId ?? "testnet-viewer") : "guest"}`;
+  return `near-estate-trip-v2:${liveMode ? (liveStreet?.accountId ?? "testnet-viewer") : "guest"}`;
 }
 
 function tripStopsForToday(): NPCSite[] {
   return todaysTrip(city);
+}
+
+function finishTripCollection(sessionId: string): void {
+  const stops = tripStopsForToday();
+  const key = tripStorageKey();
+  const progress = readTripProgress(localStorage, key, stops);
+  const next = markTripCollection(progress, sessionId);
+  if (next !== progress) {
+    localStorage.setItem(key, JSON.stringify(next));
+    recordGuestPlaytest("trip_stop_complete");
+  }
+}
+
+function updateTripStreetCard(): void {
+  const stops = tripStopsForToday();
+  const progress = readTripProgress(localStorage, tripStorageKey(), stops);
+  const next = stops.find((stop) => !progress.collected.includes(stop.id));
+  tripStreetCard.hidden = !next || Boolean(guestBuildingPreview);
+  if (!next) return;
+  const parked = currentParkedPlace();
+  const activityDone = progress.completed.includes(next.id);
+  const near = parkedNearStop(city, next, parked);
+  const road = city.streets.find((entry) => entry.id === next.roadId);
+  const roadHere = roadId === next.roadId && side === next.side;
+  const title = document.querySelector<HTMLElement>("#trip-street-title")!;
+  const hint = document.querySelector<HTMLElement>("#trip-street-hint")!;
+  title.textContent = `${progress.collected.length + 1}/2 · ${next.name}`;
+  hint.textContent = activityDone
+    ? "Activity done · collect your car ↗"
+    : near
+      ? "Parked nearby · visit now ↗"
+      : parked
+        ? "Collect your car to continue ↗"
+        : roadHere
+          ? "Find a free curb space nearby ↗"
+          : `Go to ${road?.name ?? next.roadId} · ${curbDirection(next.roadId, next.side)} curb ↗`;
+  tripStreetCard.dataset.tripAction =
+    activityDone || (parked && !near) ? "collect" : near ? "visit" : "map";
 }
 
 function cityMapMarkup(): string {
@@ -2100,14 +2166,17 @@ function cityMapMarkup(): string {
   const trip = readTripProgress(localStorage, tripStorageKey(), tripStops);
   const tripCards = tripStops
     .map((site, index) => {
-      const complete = trip.completed.includes(site.id);
+      const locked =
+        index > 0 && !trip.collected.includes(tripStops[index - 1]!.id);
+      const activityDone = trip.completed.includes(site.id);
+      const complete = trip.collected.includes(site.id);
       const near = parkedNearStop(city, site, parkedCarLocation);
-      return `<div class="map-trip-stop ${complete ? "is-complete" : ""}"><span class="map-trip-number">${complete ? "✓" : index + 1}</span><span><strong>${mapText(site.name)}</strong><small>${complete ? "Visited today" : near ? "Parked nearby · visit now" : "Drive and park nearby"}</small></span><button type="button" data-trip-stop="${site.id}">${complete || near ? "Visit" : "Go"}</button></div>`;
+      return `<div class="map-trip-stop ${complete ? "is-complete" : ""}"><span class="map-trip-number">${complete ? "✓" : index + 1}</span><span><strong>${mapText(site.name)}</strong><small>${locked ? "Finish the first stop to unlock" : complete ? "Trip stop complete" : activityDone ? "Activity done · collect your car" : near ? "Parked nearby · visit now" : "Drive and park nearby"}</small></span><button type="button" data-trip-stop="${site.id}" ${locked ? "disabled" : ""}>${locked ? "Later" : activityDone && !complete ? "Collect" : complete || near ? "Visit" : "Go"}</button></div>`;
     })
     .join("");
   return `<div class="city-map-screen">
     <div class="map-heading"><div><span class="map-eyebrow">PARKING CITY · CITY GUIDE</span><h1>City map</h1><p>${liveMode ? "Shared testnet city" : "Five connected roads"} · ${parkedActiveCar ? "Car parked" : hasActiveCar ? "Driving" : "Viewing"} on ${mapText(markerRoad.name)}, ${curbDirection(marker.roadId, marker.side).toLowerCase()} curb.</p></div><span class="map-heading-badge">${parkedActiveCar ? "PARKED" : hasActiveCar ? "YOU ARE HERE" : "CURRENT VIEW"}</span></div>
-    <section class="map-trip" aria-label="Today's trip"><div class="map-trip-head"><span class="map-eyebrow">TWO CITY STOPS</span><h2>Today's trip</h2><span class="map-trip-progress">${trip.completed.length}/${tripStops.length} visited</span></div><p>Drive to each stop, park within two plots on the same curb, then visit. Collect your car when you leave. Stamps are saved on this device; no coins are awarded.</p><div class="map-trip-stops">${tripCards}</div></section>
+    <section class="map-trip" aria-label="Today's trip"><div class="map-trip-head"><span class="map-eyebrow">TWO CITY STOPS</span><h2>Today's trip</h2><span class="map-trip-progress">${trip.collected.length}/${tripStops.length} complete</span></div><p>Drive to each stop, park within two plots on the same curb, finish an activity, then collect your car. Progress stays on this device; no coins are awarded.</p><div class="map-trip-stops">${tripCards}</div></section>
     <div class="map-primary">
       <section class="map-board" aria-label="City street diagram"><div class="map-board-head"><strong>Explore the streets</strong><span>Tap a road to explore <span aria-hidden="true">↗</span></span></div>
         <svg class="city-map" viewBox="0 0 500 300" role="group" aria-label="Five connected roads, parking towers and your car position">
@@ -2261,6 +2330,7 @@ function myPlotsMarkup(): string {
 }
 
 function menuMarkup(): string {
+  const playtest = playtestRecorder.read();
   return `<div class="menu-screen"><h1>Menu</h1><div class="card-grid menu-grid">
     <article class="card"><h2>Explore</h2>
       <button data-menu-go="Street">Street</button>
@@ -2277,6 +2347,7 @@ function menuMarkup(): string {
     </article>`
         : ""
     }
+    <article class="card"><h2>Help test the city</h2><p>Optional guest playtest log. It records only action names and elapsed minutes in this browser. No wallet, location, or image data is included or sent automatically.</p><p>${playtest?.enabled ? `Recording · ${playtest.events.length} events` : playtest ? `Paused · ${playtest.events.length} events saved` : "Recording is off"}</p><button id="menu-playtest-toggle" type="button">${playtest?.enabled ? "Pause recording" : "Start recording"}</button>${playtest?.events.length ? `<button id="menu-playtest-export" type="button">Download my playtest log</button><button id="menu-playtest-clear" type="button">Clear local log</button>` : ""}</article>
   </div></div>`;
 }
 
@@ -2339,6 +2410,32 @@ function showScreen(screen: string): void {
   }
   if (screen === "Menu") {
     otherScreen.innerHTML = menuMarkup();
+    otherScreen
+      .querySelector<HTMLButtonElement>("#menu-playtest-toggle")
+      ?.addEventListener("click", () => {
+        playtestRecorder.setEnabled(!playtestRecorder.read()?.enabled);
+        showScreen("Menu");
+      });
+    otherScreen
+      .querySelector<HTMLButtonElement>("#menu-playtest-export")
+      ?.addEventListener("click", () => {
+        const blob = new Blob(
+          [JSON.stringify(playtestRecorder.export(), null, 2)],
+          { type: "application/json" },
+        );
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "near-estate-playtest.json";
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+      });
+    otherScreen
+      .querySelector<HTMLButtonElement>("#menu-playtest-clear")
+      ?.addEventListener("click", () => {
+        playtestRecorder.clear();
+        showScreen("Menu");
+      });
     otherScreen
       .querySelectorAll<HTMLButtonElement>("[data-menu-go]")
       .forEach((button) =>
@@ -2424,6 +2521,20 @@ function showScreen(screen: string): void {
             (entry) => entry.id === button.dataset.tripStop,
           );
           if (!site) return;
+          const progress = readTripProgress(
+            localStorage,
+            tripStorageKey(),
+            tripStopsForToday(),
+          );
+          if (
+            progress.completed.includes(site.id) &&
+            !progress.collected.includes(site.id)
+          ) {
+            const parked = currentParkedPlace();
+            if (parked) restoreCarToSession(parked);
+            showScreen("Street");
+            return;
+          }
           if (parkedNearStop(city, site, currentParkedPlace())) {
             goToSite(site.id);
             return;
@@ -2507,6 +2618,7 @@ function showScreen(screen: string): void {
             game.selectCar(button.dataset.repairCar!);
             const points = DEFAULT_CONFIG.maxDurability - game.car.durability;
             game.repair(points);
+            recordGuestPlaytest("repair");
             return `Repaired ${game.car.body} by ${points} points`;
           }),
         ),
@@ -2520,6 +2632,7 @@ function showScreen(screen: string): void {
             const points =
               DEFAULT_CONFIG.parkDurabilityCost - game.car.durability;
             game.repair(points);
+            recordGuestPlaytest("repair");
             return `${game.car.body} is ready to park`;
           }),
         ),
@@ -2538,6 +2651,7 @@ function showScreen(screen: string): void {
           garageAction(() => {
             game.selectCar(button.dataset.upgradeCar!);
             game.upgradeCar();
+            recordGuestPlaytest("upgrade");
             return `${game.car.body} upgraded to tier ${game.car.tier}`;
           }),
         ),
@@ -2617,6 +2731,7 @@ function showScreen(screen: string): void {
           plotIndex: plot.index,
           choice: choiceForGuestPlot(plot, guestDesigns.get(plot.id)),
           level: guestLevelForPlot(plot),
+          rule: game.rules.get(plot.id) === "NoParking" ? "NO P" : "FREE",
         })),
       city.streets.find((street) => street.id === target.roadId)!.name,
       (choiceId, level) => {
@@ -2645,6 +2760,7 @@ function showScreen(screen: string): void {
     if (!site) throw new Error("Destination is missing");
     otherScreen.innerHTML = destinationMarkup(site);
     const tripStops = tripStopsForToday();
+    let finishActivity = () => {};
     if (tripStops.some((stop) => stop.id === site.id)) {
       const progress = readTripProgress(
         localStorage,
@@ -2652,50 +2768,61 @@ function showScreen(screen: string): void {
         tripStops,
       );
       const near = parkedNearStop(city, site, currentParkedPlace());
+      const stopIndex = tripStops.findIndex((stop) => stop.id === site.id);
+      const locked =
+        stopIndex > 0 &&
+        !progress.collected.includes(tripStops[stopIndex - 1]!.id);
       const notice = document.createElement("p");
       notice.className = "destination-trip-status";
       notice.setAttribute("role", "status");
-      notice.textContent = progress.completed.includes(site.id)
-        ? "Today's trip: this stop is already stamped."
-        : near
-          ? "Today's trip: enjoy an activity here to stamp this stop."
-          : "Today's trip: park within two plots on this curb, then enjoy an activity.";
+      notice.textContent = locked
+        ? "Today's trip: complete the first stop before this one."
+        : progress.collected.includes(site.id)
+          ? "Today's trip: this stop is complete."
+          : progress.completed.includes(site.id)
+            ? "Today's trip: activity finished. Collect your car to complete this stop."
+            : near
+              ? "Today's trip: finish an activity here to continue."
+              : "Today's trip: park within two plots on this curb, then finish an activity.";
       otherScreen.querySelector(".destination-card > div")?.prepend(notice);
-      const activityButton = {
-        RepairGarage: "#destination-cars",
-        Cinema: "#cinema-play",
-        BurgerStop: "#destination-burger",
-        PracticeCourse: "#practice-start",
-        HorseCourse: "#horse-race-watch",
-        ParkingTower: "",
-      }[site.role];
-      if (activityButton)
+      finishActivity = () => {
+        if (locked) return;
+        if (!parkedNearStop(city, site, currentParkedPlace())) return;
+        const sessionId = currentParkingSessionId();
+        if (!sessionId) return;
+        const latest = readTripProgress(
+          localStorage,
+          tripStorageKey(),
+          tripStops,
+        );
+        const next = markTripActivity(latest, site.id, sessionId);
+        if (next !== latest)
+          localStorage.setItem(tripStorageKey(), JSON.stringify(next));
+        notice.textContent =
+          "Today's trip: activity finished. Collect your car to complete this stop.";
+      };
+      if (site.role === "RepairGarage" || site.role === "BurgerStop")
         otherScreen
-          .querySelector<HTMLButtonElement>(activityButton)
-          ?.addEventListener("click", () => {
-            if (!parkedNearStop(city, site, currentParkedPlace())) return;
-            const latest = readTripProgress(
-              localStorage,
-              tripStorageKey(),
-              tripStops,
-            );
-            if (!latest.completed.includes(site.id)) {
-              latest.completed.push(site.id);
-              localStorage.setItem(tripStorageKey(), JSON.stringify(latest));
-            }
-            notice.textContent =
-              "Today's trip: activity stamped. Collect your car when you're ready to leave.";
-          });
+          .querySelector<HTMLButtonElement>(
+            site.role === "RepairGarage"
+              ? "#destination-cars"
+              : "#destination-burger",
+          )
+          ?.addEventListener("click", finishActivity);
     }
     otherScreen
       .querySelector<HTMLButtonElement>("#destination-back")!
       .addEventListener("click", () => showScreen("Street"));
     otherScreen
       .querySelector<HTMLButtonElement>("#destination-cars")
-      ?.addEventListener("click", () => showScreen("Cars"));
+      ?.addEventListener("click", () => {
+        recordGuestPlaytest("garage_opened");
+        showScreen("Cars");
+      });
     otherScreen
       .querySelector<HTMLButtonElement>("#destination-burger")
       ?.addEventListener("click", () => {
+        recordGuestPlaytest("burger_visit");
         burgerVisits++;
         otherScreen.querySelector<HTMLElement>("#burger-count")!.textContent =
           `${burgerVisits} burger break${burgerVisits === 1 ? "" : "s"} enjoyed this visit.`;
@@ -2703,7 +2830,11 @@ function showScreen(screen: string): void {
           "#destination-message",
         )!.textContent = "Enjoy your burger. Your coins and car are unchanged.";
       });
-    if (site.role === "Cinema") unmountCinema = mountCinemaShort(otherScreen);
+    if (site.role === "Cinema")
+      unmountCinema = mountCinemaShort(otherScreen, () => {
+        recordGuestPlaytest("cinema_finished");
+        finishActivity();
+      });
     if (site.role === "HorseCourse") {
       const book = !liveMode ? horseDemoBook : null;
       const message =
@@ -2717,6 +2848,8 @@ function showScreen(screen: string): void {
       };
       updateBalance();
       const dispose = mountHorseRace(otherScreen, (raceNumber) => {
+        recordGuestPlaytest("horse_race_finished");
+        finishActivity();
         if (book?.pendingBet?.race !== raceNumber) return;
         const result = book.settle(raceNumber);
         updateBalance();
@@ -2761,6 +2894,10 @@ function showScreen(screen: string): void {
           tier: car.tier as 1 | 2 | 3,
           color: car.color,
           profileId: liveMode ? (liveStreet?.accountId ?? "testnet") : "guest",
+          onFinish: () => {
+            recordGuestPlaytest("practice_finished");
+            finishActivity();
+          },
         });
     }
     const decalButton =
@@ -3132,6 +3269,24 @@ document
     showScreen("Designs");
   });
 actionButton.addEventListener("click", () => action());
+tripStreetCard.addEventListener("click", () => {
+  const action = tripStreetCard.dataset.tripAction;
+  if (action === "collect") {
+    collectParkedCar();
+    return;
+  }
+  if (action === "visit") {
+    const stops = tripStopsForToday();
+    const progress = readTripProgress(localStorage, tripStorageKey(), stops);
+    const next = stops.find((stop) => !progress.collected.includes(stop.id));
+    if (next && parkedNearStop(city, next, currentParkedPlace())) {
+      activeSiteId = next.id;
+      showScreen("Destination");
+    }
+    return;
+  }
+  showScreen("Map");
+});
 panelAction.addEventListener("click", () => action());
 towerFloorSelect.addEventListener("change", () => {
   selectedTowerFloor = Number(towerFloorSelect.value);

@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { validateCitySeed } from "@estate/shared";
 import rawSeed from "../../../contracts/estate/seed-v2-horse.json";
-import { parkedNearStop, readTripProgress, todaysTrip } from "./todays-trip.js";
+import {
+  markTripActivity,
+  markTripCollection,
+  parkedNearStop,
+  readTripProgress,
+  todaysTrip,
+} from "./todays-trip.js";
 
 const city = validateCitySeed(rawSeed);
 const day = new Date("2026-11-13T12:00:00Z");
@@ -54,9 +60,22 @@ test("local trip progress ignores stale and unknown stamps", () => {
   assert.deepEqual(readTripProgress(storage, key, stops, day).completed, [
     stops[0]!.id,
   ]);
+  assert.deepEqual(readTripProgress(storage, key, stops, day).collected, []);
   assert.deepEqual(
     readTripProgress(storage, key, stops, new Date("2026-11-14T00:00:00Z"))
       .completed,
     [],
   );
+});
+
+test("a stop completes only after the activity's own parked session is collected", () => {
+  const stopId = todaysTrip(city, day)[0]!.id;
+  const fresh = readTripProgress({ getItem: () => null }, "trip", [], day);
+  const activity = markTripActivity(fresh, stopId, "session-7");
+  assert.deepEqual(activity.completed, [stopId]);
+  assert.deepEqual(activity.collected, []);
+  assert.equal(markTripCollection(activity, "different-session"), activity);
+  const complete = markTripCollection(activity, "session-7");
+  assert.deepEqual(complete.collected, [stopId]);
+  assert.deepEqual(complete.parkedSessions, {});
 });

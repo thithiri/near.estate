@@ -1,6 +1,11 @@
 import type { CitySeed, NPCSite } from "@estate/shared";
 
-export type TripProgress = { day: string; completed: string[] };
+export type TripProgress = {
+  day: string;
+  completed: string[];
+  collected: string[];
+  parkedSessions: Record<string, string>;
+};
 export type ParkedPlace = { facility: string; locationId: string };
 
 export function todaysTrip(city: CitySeed, now = new Date()): NPCSite[] {
@@ -24,20 +29,64 @@ export function readTripProgress(
   stops: NPCSite[],
   now = new Date(),
 ): TripProgress {
-  const empty = { day: tripDay(now), completed: [] };
+  const empty: TripProgress = {
+    day: tripDay(now),
+    completed: [],
+    collected: [],
+    parkedSessions: {},
+  };
   try {
     const value = JSON.parse(storage.getItem(key) ?? "null");
     if (value?.day !== empty.day || !Array.isArray(value.completed))
       return empty;
-    return {
-      day: empty.day,
-      completed: stops
-        .filter((stop) => value.completed.includes(stop.id))
-        .map((stop) => stop.id),
-    };
+    const completed = stops
+      .filter((stop) => value.completed.includes(stop.id))
+      .map((stop) => stop.id);
+    const collected = completed.filter(
+      (id) => Array.isArray(value.collected) && value.collected.includes(id),
+    );
+    const parkedSessions = Object.fromEntries(
+      completed
+        .filter(
+          (id) =>
+            !collected.includes(id) &&
+            typeof value.parkedSessions?.[id] === "string" &&
+            value.parkedSessions[id].length > 0,
+        )
+        .map((id) => [id, value.parkedSessions[id]]),
+    );
+    return { day: empty.day, completed, collected, parkedSessions };
   } catch {
     return empty;
   }
+}
+
+export function markTripActivity(
+  progress: TripProgress,
+  stopId: string,
+  sessionId: string,
+): TripProgress {
+  if (progress.completed.includes(stopId)) return progress;
+  return {
+    ...progress,
+    completed: [...progress.completed, stopId],
+    parkedSessions: { ...progress.parkedSessions, [stopId]: sessionId },
+  };
+}
+
+export function markTripCollection(
+  progress: TripProgress,
+  sessionId: string,
+): TripProgress {
+  const collected = progress.completed.filter(
+    (id) =>
+      progress.collected.includes(id) ||
+      progress.parkedSessions[id] === sessionId,
+  );
+  if (collected.length === progress.collected.length) return progress;
+  const parkedSessions = { ...progress.parkedSessions };
+  for (const id of collected) delete parkedSessions[id];
+  return { ...progress, collected, parkedSessions };
 }
 
 export function parkedNearStop(

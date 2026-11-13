@@ -30,6 +30,7 @@ import { adDestinationLink, submitAdForReview } from "./owner-ad-flow.js";
 import { prepareBillboardImage } from "./billboard-preview.js";
 import { choices } from "./frontage-art.js";
 import { guestBuildingUrl } from "./guest-illustration.js";
+import { visibleMediaHash } from "./media-view.js";
 import {
   streetDesignPreviewMarkup,
   type StreetPreviewBuilding,
@@ -160,7 +161,11 @@ export class ChainScreen {
     breakdown: ChainPlotPurchaseBreakdown;
   } | null = null;
   private selectedOwnedPlotId: string | null = null;
-  private previewDesign: { plotId: string; index: number } | null = null;
+  private previewDesign: {
+    plotId: string;
+    index: number;
+    level: BuildingLevel;
+  } | null = null;
   private ownerDraft: OwnerDraft | null = null;
   private pendingUpload:
     | (ArtworkUpload & { plotId: string; kind: "Logo" | "Billboard" })
@@ -956,6 +961,10 @@ export class ChainScreen {
       this.previewDesign?.plotId === plot.id
         ? this.previewDesign.index
         : (variablePlot?.design_choice ?? 0);
+    const previewLevel =
+      this.previewDesign?.plotId === plot.id
+        ? this.previewDesign.level
+        : (building.level as BuildingLevel);
     const previewChoice = designChoices[previewIndex];
     const previewBuildings: StreetPreviewBuilding[] = variablePlot
       ? this.plots
@@ -973,9 +982,13 @@ export class ChainScreen {
               "frontage_units" in neighbour ? neighbour.frontage_units : 2;
             const index =
               "design_choice" in neighbour ? neighbour.design_choice : 0;
-            const approvedHash = isSelected
-              ? null
-              : neighbour.building.approved_manifest_hash;
+            const showCurrentArt =
+              !isSelected ||
+              (previewIndex === variablePlot.design_choice &&
+                previewLevel === building.level);
+            const approvedHash = showCurrentArt
+              ? neighbour.building.approved_manifest_hash
+              : null;
             if (approvedHash)
               this.requestNeighbourThumbnail(
                 approvedHash,
@@ -985,15 +998,45 @@ export class ChainScreen {
             const imageUrl = approvedHash
               ? this.approvedNeighbourThumbnails.get(approvedHash)
               : undefined;
+            const showMedia = showCurrentArt;
+            const logoHash = showMedia
+              ? visibleMediaHash(
+                  neighbour.logo,
+                  entry.logo_eligible,
+                  neighbour.building.layout_revision,
+                )
+              : undefined;
+            const billboardHash = showMedia
+              ? visibleMediaHash(
+                  neighbour.billboard,
+                  entry.billboard_eligible,
+                  neighbour.building.layout_revision,
+                )
+              : undefined;
             return {
               plotIndex: neighbour.index,
               choice: isSelected
                 ? previewChoice!
                 : choices.filter((choice) => choice.units === width)[index]!,
-              level: neighbour.building.level as BuildingLevel,
+              level: isSelected
+                ? previewLevel
+                : (neighbour.building.level as BuildingLevel),
               selected: isSelected,
               approvedHash: approvedHash ?? undefined,
               imageUrl,
+              name: neighbour.building.name,
+              logoUrl: logoHash ? `/api/assets/${logoHash}` : undefined,
+              billboardUrl: billboardHash
+                ? `/api/assets/${billboardHash}`
+                : undefined,
+              rule:
+                entry.effective_rule.kind === "NoParking"
+                  ? "NO P"
+                  : entry.effective_rule.kind === "Meter"
+                    ? "METER"
+                    : entry.effective_rule.kind === "ColorOnly"
+                      ? `${entry.effective_rule.color.toUpperCase()} ONLY`
+                      : "FREE",
               imageStatus:
                 approvedHash && !imageUrl
                   ? Date.now() <
@@ -1038,6 +1081,9 @@ export class ChainScreen {
     const affectedMedia = (["logo", "billboard"] as const).filter(
       (kind) => plot[kind].active || plot[kind].pending,
     );
+    const ownerDesignMarkup = variablePlot
+      ? `<div class="owner-curated-designs"><h4>Street design · ${variablePlot.frontage_units} unit${variablePlot.frontage_units === 1 ? "" : "s"}</h4><p>Select a shape and inspect it beside the actual neighbouring plots and curb spaces.</p><div class="owner-design-options">${designChoices.map((choice, index) => `<button type="button" data-owner-design="${index}" aria-pressed="${previewIndex === index}" ${this.busy ? "disabled" : ""}><img src="${html(guestBuildingUrl(choice, previewLevel))}" alt="" width="${choice.units * 85}" height="190" /><span>${html(choice.name)}${variablePlot.design_choice === index ? " · current" : ""}</span></button>`).join("")}</div><div class="owner-preview-levels" aria-label="Preview building heights">${([1, 2, 3, 4] as const).map((level) => `<button type="button" data-owner-preview-level="${level}" aria-pressed="${previewLevel === level}">Level ${level}${building.level === level ? " · current" : ""}</button>`).join("")}</div>${streetPreview}<p class="muted">${previewLevel === building.level ? "This preview is local. A new design hides approved media until reviewed for the new shape." : `Level ${previewLevel} is a visual comparison. Your plot is level ${building.level}; upgrade it separately before applying this look.`}</p><button type="button" id="owner-apply-design" ${this.busy || previewIndex === variablePlot.design_choice || previewLevel !== building.level ? "disabled" : ""}>Use ${html(previewChoice?.name ?? "this design")} at level ${building.level} · wallet confirmation</button>${this.previewDesign?.plotId === plot.id ? `<button type="button" id="owner-cancel-design-preview">Cancel preview</button>` : ""}</div>`
+      : "";
     return `<section class="card" id="chain-owned-plots"><h2>My plots · ${owned.length}</h2>
       <label>Manage plot <select id="chain-owned-plot">${owned.map((entry) => `<option value="${html(entry.plot.id)}" ${entry.plot.id === plot.id ? "selected" : ""}>${html(entry.plot.road_id)} · ${curbDirection(entry.plot.road_id, entry.plot.side)} · Plot ${entry.plot.index + 1}${entry.plot.corner ? " (corner)" : ""}</option>`).join("")}</select></label>
       <div class="owner-grid">
@@ -1053,7 +1099,7 @@ export class ChainScreen {
         </div>
         <div class="owner-section"><h3>Building</h3>
           <p>Current: ${variablePlot ? `${html(streetDesign?.name ?? "Building")} · level ${building.level} · ${variablePlot.frontage_units} unit${variablePlot.frontage_units === 1 ? "" : "s"}` : `${html(building.building_type)} · level ${building.level} · ${ownerShapeName(building.building_type, building.variant as 1 | 2)}`}</p>
-          ${variablePlot ? `<div class="owner-curated-designs"><h4>Street design · ${variablePlot.frontage_units} unit${variablePlot.frontage_units === 1 ? "" : "s"}</h4><p>Select a shape to compare it with the buildings beside your plot. Your building level sets its height.</p><div class="owner-design-options">${designChoices.map((choice, index) => `<button type="button" data-owner-design="${index}" aria-pressed="${previewIndex === index}" ${this.busy ? "disabled" : ""}><img src="${html(guestBuildingUrl(choice, building.level as BuildingLevel))}" alt="" width="${choice.units * 85}" height="190" /><span>${html(choice.name)}${variablePlot.design_choice === index ? " · current" : ""}</span></button>`).join("")}</div>${streetPreview}<p class="muted">This preview is local. Applying a new design replaces the current facade and hides approved media until it is reviewed for the new shape.</p><button type="button" id="owner-apply-design" ${this.busy || previewIndex === variablePlot.design_choice ? "disabled" : ""}>Use ${html(previewChoice?.name ?? "this design")} · wallet confirmation</button></div>` : ""}
+          ${ownerDesignMarkup}
           ${variablePlot ? `<p class="owner-preview-label"><strong>Street preview:</strong> ${html(streetDesign?.name ?? "Building")} · level ${building.level}</p><div class="owner-variable-preview" aria-label="Current street building preview">${streetDesign ? `<img src="${html(guestBuildingUrl(streetDesign, building.level as BuildingLevel))}" alt="${html(streetDesign.name)} at level ${building.level}" width="${streetDesign.units * 85}" height="190" />` : "Art unavailable"}</div><label>Building category <select id="owner-variable-building-type">${BuildingType.options.map((type) => `<option value="${type}" ${draft.buildingType === type ? "selected" : ""}>${type}</option>`).join("")}</select></label><p class="muted">The category is stored with the plot and shapes future custom-art prompts. It does not change this illustrated street design. Changing category costs coins.</p>` : `${ownerTypePickerMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}${ownerShapePickerMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}<p class="owner-preview-label"><strong>Preview:</strong> ${draft.buildingType} · level ${building.level} · ${ownerShapeName(draft.buildingType, draft.variant)}</p><div class="owner-building-preview" aria-label="Selected building preview">${buildingMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}</div>`}
           ${changingType ? `<p class="muted">This change keeps the current colour and name (${html(building.name)}). Edit them after the type change confirms.</p>` : `${ownerPalettePickerMarkup(draft.palette)}${variablePlot ? `<p class="muted">The curated building artwork has fixed colours; this accent is saved for branding and future custom art.</p>` : ""}<label>Name <input id="owner-building-name" maxlength="24" value="${html(draft.name)}" /></label>`}
           ${changingType ? `<button id="owner-change-type" ${this.busy || BigInt(balance) < typeCost ? "disabled" : ""}>Change to ${draft.buildingType} · ${formatCoins(config.change_building_type_cost)} coins</button><p class="muted">${variablePlot ? "The street design stays the same." : "Changing type uses its curated preset and keeps the current level."} Choose colour and name afterward.</p>` : `<button id="owner-save-preset" ${this.busy ? "disabled" : ""}>${variablePlot ? "Save name and branding" : "Use this preset"}</button>`}
@@ -1734,13 +1780,44 @@ export class ChainScreen {
       .forEach((button) =>
         button.addEventListener("click", () => {
           if (!this.selectedOwnedPlotId) return;
+          const selected = this.plots.find(
+            (entry) => entry.plot.id === this.selectedOwnedPlotId,
+          );
+          if (!selected) return;
           this.previewDesign = {
             plotId: this.selectedOwnedPlotId,
             index: Number(button.dataset.ownerDesign),
+            level:
+              this.previewDesign?.plotId === this.selectedOwnedPlotId
+                ? this.previewDesign.level
+                : (selected.plot.building.level as BuildingLevel),
           };
           this.render();
         }),
       );
+    this.host
+      .querySelectorAll<HTMLButtonElement>("[data-owner-preview-level]")
+      .forEach((button) =>
+        button.addEventListener("click", () => {
+          const selected = this.plots.find(
+            (entry) => entry.plot.id === this.selectedOwnedPlotId,
+          );
+          if (!selected || !("design_choice" in selected.plot)) return;
+          this.previewDesign = {
+            plotId: selected.plot.id,
+            index:
+              this.previewDesign?.plotId === selected.plot.id
+                ? this.previewDesign.index
+                : selected.plot.design_choice,
+            level: Number(button.dataset.ownerPreviewLevel) as BuildingLevel,
+          };
+          this.render();
+        }),
+      );
+    on("#owner-cancel-design-preview", () => {
+      this.previewDesign = null;
+      this.render();
+    });
     on(
       "#owner-apply-design",
       () =>
