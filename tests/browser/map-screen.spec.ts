@@ -14,6 +14,10 @@ test("phone map shows a clear location and all city destinations", async ({
   await expect(page.locator("[data-map-site]")).toHaveCount(5);
   await expect(page.locator("button[data-tower]")).toHaveCount(3);
   await expect(page.locator("button[data-site]")).toHaveCount(5);
+  await expect(
+    page.getByRole("region", { name: "Today's trip" }),
+  ).toBeVisible();
+  await expect(page.locator(".map-trip-stop")).toHaveCount(2);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);
@@ -32,6 +36,41 @@ test("phone map shows a clear location and all city destinations", async ({
   expect(mainLabel).not.toBeNull();
   expect(mainTower).not.toBeNull();
   expect(mainLabel!.x + mainLabel!.width < mainTower!.x).toBe(true);
+});
+
+test("trip card routes the player toward a nearby curb", async ({ page }) => {
+  await page.goto("/");
+  await page.locator('[data-screen="Map"]:visible').first().click();
+  await page.locator(".map-trip-stop button").first().click();
+  await expect(page.locator("#street-screen")).toBeVisible();
+  await expect(page.locator("#other-screen")).toBeHidden();
+});
+
+test("parking near a trip stop stamps the visit without awarding coins", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator('[data-screen="Map"]:visible').first().click();
+  await page.locator(".map-trip-stop button").first().click();
+  await page.locator("#action").click();
+  const balanceAfterParking = await page.locator("#balance").textContent();
+  await page.locator('[data-screen="Map"]:visible').first().click();
+  await expect(page.locator(".map-trip-stop").first()).toContainText(
+    "Parked nearby",
+  );
+  await page.locator(".map-trip-stop button").first().click();
+  await expect(page.locator(".destination-trip-status")).toContainText(
+    "enjoy an activity",
+  );
+  await page
+    .locator(
+      "#destination-burger, #cinema-play, #practice-start, #horse-race-watch, #destination-cars",
+    )
+    .first()
+    .click();
+  await page.locator('[data-screen="Map"]:visible').first().click();
+  await expect(page.locator(".map-trip-progress")).toHaveText("1/2 visited");
+  await expect(page.locator("#balance")).toHaveText(balanceAfterParking ?? "");
 });
 
 test("map road and tower pins travel to their destinations", async ({

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
-import { canonicalJson, validateAssetManifest } from "@estate/shared";
+import {
+  canonicalJson,
+  validateAssetManifest,
+  validateAssetManifestV2,
+  variableFrontageMediaLayout,
+} from "@estate/shared";
 import { loadApprovedNeighbourThumbnail } from "./approved-neighbour.js";
 
 const png = Buffer.from(
@@ -60,5 +65,34 @@ test("owner neighbour preview accepts only the exact approved plot image", async
   await assert.rejects(
     loadApprovedNeighbourThumbnail(approvedHash, "Cafe", 2, changedFetcher),
     /hash mismatch/,
+  );
+});
+
+test("owner neighbour preview accepts a verified variable-width facade", async () => {
+  const media = variableFrontageMediaLayout(1, 0, 2);
+  const variableManifest = validateAssetManifestV2({
+    schemaVersion: 2,
+    renderProfileVersion: 2,
+    frontageUnits: 1,
+    designChoice: 0,
+    buildingType: "Cafe",
+    level: 2,
+    spriteHash: "a".repeat(64),
+    thumbnailHash,
+    alphaBounds: { x: 3, y: 90, width: 79, height: 100 },
+    logoRect: media.logo,
+    billboardRect: media.billboard,
+  });
+  const hash = createHash("sha256")
+    .update(canonicalJson(variableManifest))
+    .digest("hex");
+  const fetcher = (async (input: string | URL | Request) =>
+    String(input).startsWith("/api/manifests/")
+      ? Response.json(variableManifest)
+      : new Response(png)) as typeof fetch;
+  assert.ok(
+    (await loadApprovedNeighbourThumbnail(hash, "Cafe", 2, fetcher)).startsWith(
+      "data:image/png;base64,",
+    ),
   );
 });

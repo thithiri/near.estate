@@ -30,6 +30,10 @@ import { adDestinationLink, submitAdForReview } from "./owner-ad-flow.js";
 import { prepareBillboardImage } from "./billboard-preview.js";
 import { choices } from "./frontage-art.js";
 import { guestBuildingUrl } from "./guest-illustration.js";
+import {
+  streetDesignPreviewMarkup,
+  type StreetPreviewBuilding,
+} from "./street-design-preview.js";
 import { carSpriteFile } from "./world-sprites.js";
 import type { BuildingLevel } from "./frontage-layout.js";
 import {
@@ -156,6 +160,7 @@ export class ChainScreen {
     breakdown: ChainPlotPurchaseBreakdown;
   } | null = null;
   private selectedOwnedPlotId: string | null = null;
+  private previewDesign: { plotId: string; index: number } | null = null;
   private ownerDraft: OwnerDraft | null = null;
   private pendingUpload:
     | (ArtworkUpload & { plotId: string; kind: "Logo" | "Billboard" })
@@ -383,6 +388,7 @@ export class ChainScreen {
         !ownedPlots.some((entry) => entry.plot.id === this.selectedOwnedPlotId)
       ) {
         this.selectedOwnedPlotId = ownedPlots[0]?.plot.id ?? null;
+        this.previewDesign = null;
         this.ownerDraft = null;
         this.plotStats = null;
         this.plotStatsRequest++;
@@ -568,6 +574,13 @@ export class ChainScreen {
           ".owner-neighbour-status",
         );
         if (url) {
+          const streetImage = card.querySelector<HTMLImageElement>(
+            ".design-street-image img",
+          );
+          if (streetImage) {
+            streetImage.src = url;
+            streetImage.alt = "Approved custom facade";
+          }
           const art = card.querySelector(".studio-building");
           if (art) {
             const image = document.createElement("img");
@@ -939,6 +952,74 @@ export class ChainScreen {
     const streetDesign = variablePlot
       ? designChoices[variablePlot.design_choice]
       : null;
+    const previewIndex =
+      this.previewDesign?.plotId === plot.id
+        ? this.previewDesign.index
+        : (variablePlot?.design_choice ?? 0);
+    const previewChoice = designChoices[previewIndex];
+    const previewBuildings: StreetPreviewBuilding[] = variablePlot
+      ? this.plots
+          .filter(
+            (entry) =>
+              entry.plot.road_id === plot.road_id &&
+              entry.plot.side === plot.side &&
+              Math.abs(entry.plot.index - plot.index) <= 1 &&
+              "frontage_units" in entry.plot,
+          )
+          .map((entry) => {
+            const neighbour = entry.plot;
+            const isSelected = neighbour.id === plot.id;
+            const width =
+              "frontage_units" in neighbour ? neighbour.frontage_units : 2;
+            const index =
+              "design_choice" in neighbour ? neighbour.design_choice : 0;
+            const approvedHash = isSelected
+              ? null
+              : neighbour.building.approved_manifest_hash;
+            if (approvedHash)
+              this.requestNeighbourThumbnail(
+                approvedHash,
+                neighbour.building.building_type,
+                neighbour.building.level,
+              );
+            const imageUrl = approvedHash
+              ? this.approvedNeighbourThumbnails.get(approvedHash)
+              : undefined;
+            return {
+              plotIndex: neighbour.index,
+              choice: isSelected
+                ? previewChoice!
+                : choices.filter((choice) => choice.units === width)[index]!,
+              level: neighbour.building.level as BuildingLevel,
+              selected: isSelected,
+              approvedHash: approvedHash ?? undefined,
+              imageUrl,
+              imageStatus:
+                approvedHash && !imageUrl
+                  ? Date.now() <
+                    (this.failedNeighbourThumbnails.get(approvedHash) ?? 0)
+                    ? "Custom art unavailable · base shown"
+                    : "Loading custom art…"
+                  : undefined,
+            };
+          })
+      : [];
+    const streetPreview =
+      variablePlot && previewChoice
+        ? streetDesignPreviewMarkup(
+            plot.road_id === "main"
+              ? "Main Street"
+              : plot.road_id === "market"
+                ? "Market Street"
+                : plot.road_id === "river"
+                  ? "River Street"
+                  : plot.road_id === "central"
+                    ? "Central Avenue"
+                    : "Harbor Avenue",
+            curbDirection(plot.road_id, plot.side),
+            previewBuildings,
+          )
+        : "";
     const pending =
       plot.pending_rule && plot.pending_rule.effective_at > this.chainTime;
     const typeCost = BigInt(config.change_building_type_cost);
@@ -972,7 +1053,7 @@ export class ChainScreen {
         </div>
         <div class="owner-section"><h3>Building</h3>
           <p>Current: ${variablePlot ? `${html(streetDesign?.name ?? "Building")} · level ${building.level} · ${variablePlot.frontage_units} unit${variablePlot.frontage_units === 1 ? "" : "s"}` : `${html(building.building_type)} · level ${building.level} · ${ownerShapeName(building.building_type, building.variant as 1 | 2)}`}</p>
-          ${variablePlot ? `<div class="owner-curated-designs"><h4>Street design · ${variablePlot.frontage_units} unit${variablePlot.frontage_units === 1 ? "" : "s"}</h4><p>Choose one of five shapes for this plot. The current building level sets its height.</p><div class="owner-design-options">${designChoices.map((choice, index) => `<button type="button" data-owner-design="${index}" aria-pressed="${variablePlot.design_choice === index}" ${this.busy || variablePlot.design_choice === index ? "disabled" : ""}><img src="${html(guestBuildingUrl(choice, building.level as BuildingLevel))}" alt="" width="${choice.units * 85}" height="190" /><span>${html(choice.name)}</span></button>`).join("")}</div><p class="muted">A new design replaces the current facade and hides approved media until it is reviewed for the new shape. Your wallet confirms the change.</p></div>` : ""}
+          ${variablePlot ? `<div class="owner-curated-designs"><h4>Street design · ${variablePlot.frontage_units} unit${variablePlot.frontage_units === 1 ? "" : "s"}</h4><p>Select a shape to compare it with the buildings beside your plot. Your building level sets its height.</p><div class="owner-design-options">${designChoices.map((choice, index) => `<button type="button" data-owner-design="${index}" aria-pressed="${previewIndex === index}" ${this.busy ? "disabled" : ""}><img src="${html(guestBuildingUrl(choice, building.level as BuildingLevel))}" alt="" width="${choice.units * 85}" height="190" /><span>${html(choice.name)}${variablePlot.design_choice === index ? " · current" : ""}</span></button>`).join("")}</div>${streetPreview}<p class="muted">This preview is local. Applying a new design replaces the current facade and hides approved media until it is reviewed for the new shape.</p><button type="button" id="owner-apply-design" ${this.busy || previewIndex === variablePlot.design_choice ? "disabled" : ""}>Use ${html(previewChoice?.name ?? "this design")} · wallet confirmation</button></div>` : ""}
           ${variablePlot ? `<p class="owner-preview-label"><strong>Street preview:</strong> ${html(streetDesign?.name ?? "Building")} · level ${building.level}</p><div class="owner-variable-preview" aria-label="Current street building preview">${streetDesign ? `<img src="${html(guestBuildingUrl(streetDesign, building.level as BuildingLevel))}" alt="${html(streetDesign.name)} at level ${building.level}" width="${streetDesign.units * 85}" height="190" />` : "Art unavailable"}</div><label>Building category <select id="owner-variable-building-type">${BuildingType.options.map((type) => `<option value="${type}" ${draft.buildingType === type ? "selected" : ""}>${type}</option>`).join("")}</select></label><p class="muted">The category is stored with the plot and shapes future custom-art prompts. It does not change this illustrated street design. Changing category costs coins.</p>` : `${ownerTypePickerMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}${ownerShapePickerMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}<p class="owner-preview-label"><strong>Preview:</strong> ${draft.buildingType} · level ${building.level} · ${ownerShapeName(draft.buildingType, draft.variant)}</p><div class="owner-building-preview" aria-label="Selected building preview">${buildingMarkup(draft.buildingType, draft.variant, building.level, previewPalette)}</div>`}
           ${changingType ? `<p class="muted">This change keeps the current colour and name (${html(building.name)}). Edit them after the type change confirms.</p>` : `${ownerPalettePickerMarkup(draft.palette)}${variablePlot ? `<p class="muted">The curated building artwork has fixed colours; this accent is saved for branding and future custom art.</p>` : ""}<label>Name <input id="owner-building-name" maxlength="24" value="${html(draft.name)}" /></label>`}
           ${changingType ? `<button id="owner-change-type" ${this.busy || BigInt(balance) < typeCost ? "disabled" : ""}>Change to ${draft.buildingType} · ${formatCoins(config.change_building_type_cost)} coins</button><p class="muted">${variablePlot ? "The street design stays the same." : "Changing type uses its curated preset and keeps the current level."} Choose colour and name afterward.</p>` : `<button id="owner-save-preset" ${this.busy ? "disabled" : ""}>${variablePlot ? "Save name and branding" : "Use this preset"}</button>`}
@@ -1282,6 +1363,7 @@ export class ChainScreen {
       .querySelector<HTMLSelectElement>("#chain-owned-plot")
       ?.addEventListener("change", (event) => {
         this.selectedOwnedPlotId = (event.target as HTMLSelectElement).value;
+        this.previewDesign = null;
         const plot = this.plots.find(
           (entry) => entry.plot.id === this.selectedOwnedPlotId,
         );
@@ -1651,20 +1733,32 @@ export class ChainScreen {
       .querySelectorAll<HTMLButtonElement>("[data-owner-design]")
       .forEach((button) =>
         button.addEventListener("click", () => {
-          void this.mutate(async () => {
-            const plotId = this.selectedOwnedPlotId;
-            if (!plotId || !this.wallet)
-              throw new Error("Select an owned plot first");
-            await this.wallet.chooseDesign(
-              plotId,
-              Number(button.dataset.ownerDesign),
-            );
-            this.ownerDraft = null;
-            this.ownerFetchedAt = 0;
-            return "Building design confirmed on testnet.";
-          });
+          if (!this.selectedOwnedPlotId) return;
+          this.previewDesign = {
+            plotId: this.selectedOwnedPlotId,
+            index: Number(button.dataset.ownerDesign),
+          };
+          this.render();
         }),
       );
+    on(
+      "#owner-apply-design",
+      () =>
+        void this.mutate(async () => {
+          const preview = this.previewDesign;
+          if (
+            !preview ||
+            preview.plotId !== this.selectedOwnedPlotId ||
+            !this.wallet
+          )
+            throw new Error("Select a building design first");
+          await this.wallet.chooseDesign(preview.plotId, preview.index);
+          this.previewDesign = null;
+          this.ownerDraft = null;
+          this.ownerFetchedAt = 0;
+          return "Building design confirmed on testnet.";
+        }),
+    );
     on(
       "#owner-change-type",
       () =>

@@ -1,6 +1,8 @@
 import {
   manifestHash,
+  manifestHashV2,
   validateAssetManifest,
+  validateAssetManifestV2,
   type AssetManifest,
 } from "@estate/shared";
 
@@ -31,9 +33,15 @@ export async function loadApprovedNeighbourThumbnail(
   const manifestResponse = await fetcher(`/api/manifests/${approvedHash}`);
   if (!manifestResponse.ok)
     throw new Error("Approved facade manifest unavailable");
-  const manifest = validateAssetManifest(await manifestResponse.json());
+  const raw = await manifestResponse.json();
+  const manifest =
+    raw && typeof raw === "object" && raw.schemaVersion === 2
+      ? validateAssetManifestV2(raw)
+      : validateAssetManifest(raw);
   if (
-    (await manifestHash(manifest)) !== approvedHash ||
+    (manifest.schemaVersion === 2
+      ? await manifestHashV2(manifest)
+      : await manifestHash(manifest)) !== approvedHash ||
     manifest.buildingType !== buildingType ||
     manifest.level !== level
   )

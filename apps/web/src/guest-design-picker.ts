@@ -5,6 +5,10 @@ import {
   paintGuestChoice,
   preloadGuestBuilding,
 } from "./guest-illustration.js";
+import {
+  streetDesignPreviewMarkup,
+  type StreetPreviewBuilding,
+} from "./street-design-preview.js";
 
 export function mountGuestDesignPicker(
   root: HTMLElement,
@@ -15,6 +19,8 @@ export function mountGuestDesignPicker(
   onLogo: (logo: ImageBitmap | null) => void,
   currentAd: ImageBitmap | null,
   onAd: (ad: ImageBitmap | null) => void,
+  neighbours: StreetPreviewBuilding[],
+  roadName: string,
   onChoose: (id: string, level: BuildingLevel) => void,
   onBack: () => void,
 ): void {
@@ -37,8 +43,9 @@ export function mountGuestDesignPicker(
   const intro = document.createElement("p");
   intro.className = "muted";
   intro.textContent =
-    "Choose a height and silhouette to see them on the playable street. This is a local visual preview.";
+    "Select a height and shape, compare it with the neighbouring plots, then show it on the playable street. This is a local visual preview.";
   let level = currentLevel;
+  let selectedId = currentId;
   const levels = document.createElement("fieldset");
   levels.className = "guest-design-levels";
   const legend = document.createElement("legend");
@@ -88,6 +95,19 @@ export function mountGuestDesignPicker(
   logoStatus.textContent = "Local preview only · image stays on this device";
   const grid = document.createElement("div");
   grid.className = "guest-design-grid";
+  const contextPreview = document.createElement("div");
+  const showOnStreet = document.createElement("button");
+  showOnStreet.type = "button";
+  showOnStreet.className = "primary guest-design-apply";
+  showOnStreet.addEventListener("click", () => onChoose(selectedId, level));
+  const redrawContext = () => {
+    const selected = eligible.find((choice) => choice.id === selectedId)!;
+    contextPreview.innerHTML = streetDesignPreviewMarkup(roadName, plot.side, [
+      ...neighbours,
+      { plotIndex: plot.index, choice: selected, level, selected: true },
+    ]);
+    showOnStreet.textContent = `Show ${selected.name} on my street`;
+  };
   const redraw = () => {
     grid
       .querySelectorAll<HTMLButtonElement>(".guest-design-card")
@@ -108,6 +128,7 @@ export function mountGuestDesignPicker(
           );
         }
       });
+    redrawContext();
   };
   const requestIllustrations = () => {
     const requestedLevel = level;
@@ -200,7 +221,7 @@ export function mountGuestDesignPicker(
     button.setAttribute("aria-pressed", String(choice.id === currentId));
     button.setAttribute(
       "aria-label",
-      `Use ${choice.name} on plot ${plot.index + 1}`,
+      `Preview ${choice.name} on plot ${plot.index + 1}`,
     );
     const canvas = document.createElement("canvas");
     canvas.width = units * 85;
@@ -220,10 +241,27 @@ export function mountGuestDesignPicker(
       caption.append(ad);
     }
     button.append(canvas, caption);
-    button.addEventListener("click", () => onChoose(choice.id, level));
+    button.addEventListener("click", () => {
+      selectedId = choice.id;
+      grid
+        .querySelectorAll<HTMLButtonElement>(".guest-design-card")
+        .forEach((card) =>
+          card.setAttribute("aria-pressed", String(card === button)),
+        );
+      redrawContext();
+    });
     grid.append(button);
   }
-  wrapper.append(heading, intro, levels, grid, logoTools);
+  redrawContext();
+  wrapper.append(
+    heading,
+    intro,
+    levels,
+    grid,
+    contextPreview,
+    showOnStreet,
+    logoTools,
+  );
   if (adTools.childElementCount) wrapper.append(adTools);
   root.replaceChildren(wrapper);
   requestIllustrations();

@@ -69,6 +69,7 @@ const ownerReviewPage = `<!doctype html><html><head>
     }
     const adCalls = [];
     window.adCalls = adCalls;
+    window.designCalls = [];
     window.uploadedAdBytes = [];
     const adUpload = { uploadId: "upload-1", hash: "a".repeat(64), url: "/api/assets/preview", width: 512, height: 256, status: "pending", layoutRevision: 1 };
     const adProposal = { id: "proposal-1", uploadId: adUpload.uploadId, accountId, plotId: plot.plot.id, kind: "Billboard", assetHash: adUpload.hash, link: "https://example.com/ad", buildingType: "Cafe", level, layoutRevision: 1, expectedMediaRevision: 0, proposalRevision: null, status: "selected", decidedAt: null, decisionReason: null, createdAt: 1, assetUrl: adUpload.url };
@@ -82,7 +83,7 @@ const ownerReviewPage = `<!doctype html><html><head>
     const screen = new ChainScreen(document.querySelector("#host"), {}, () => ({ roadId: "main", side: "North" }), [], async () => ({}));
     Object.assign(screen, {
       visible: true,
-      wallet: query.has("ad-flow") ? adWallet : { accountId, hasPendingGameplayAction: () => false },
+      wallet: query.has("ad-flow") ? adWallet : { accountId, hasPendingGameplayAction: () => false, chooseDesign: async (plotId, index) => { window.designCalls.push([plotId, index]); } },
       player: { account_id: accountId, account: { balance: "100000000", active_session_id: null, last_emergency_repair_at: null }, cars: [], active_session: null },
       plots: customNeighbour ? [plot, neighbor] : [plot],
       mockJob: customNeighbour || query.has("variable-job") ? mockJob : null,
@@ -91,7 +92,7 @@ const ownerReviewPage = `<!doctype html><html><head>
       selectedOwnedPlotId: "plot-main-n-0",
       ownerDraft: { plotId: "plot-main-n-0", ruleKind: "Free", meterRate: "5", color: "Red", buildingType: "Cafe", variant: 1, palette: "#F6C85F", name: "Cafe" },
     });
-    if (query.has("ad-flow")) screen.refresh = async () => screen.render();
+    if (query.has("ad-flow") || query.has("design-preview")) screen.refresh = async () => screen.render();
     screen.render();
   </script></body></html>`;
 
@@ -357,6 +358,31 @@ test("version-2 owner controls offer logos and only supported billboard surfaces
   await expect(page.locator("#owner-logo-file")).toBeVisible();
   await expect(page.locator("#owner-ad-file")).toBeVisible();
   await expect(page.locator("#owner-upload-ad")).toBeVisible();
+});
+
+test("owner compares a fitting design beside the plot before applying it", async ({
+  page,
+}) => {
+  await page.route("**/__owner_type_review**", (route) =>
+    route.fulfill({ contentType: "text/html", body: ownerReviewPage }),
+  );
+  await page.goto(
+    "/__owner_type_review?variable=one&custom-neighbour&design-preview",
+  );
+  await expect(page.locator(".design-street-building")).toHaveCount(2);
+  await expect(
+    page.locator(".design-street-building.is-selected"),
+  ).toContainText("1U");
+  await expect(page.locator("#owner-apply-design")).toBeDisabled();
+  await page.locator('[data-owner-design="1"]').click();
+  await expect(
+    page.locator(".design-street-building.is-selected img"),
+  ).toHaveAttribute("alt", "Coffee pod on plot 1");
+  expect(await page.evaluate(() => (window as any).designCalls)).toEqual([]);
+  await page.locator("#owner-apply-design").click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).designCalls))
+    .toEqual([["plot-main-n-0", 1]]);
 });
 
 test("owner previews the real ad crop and submits its image, link and wallet proposal", async ({

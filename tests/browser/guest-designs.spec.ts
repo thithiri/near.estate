@@ -18,7 +18,7 @@ test("a guest can choose a fitting design and see it on the playable street", as
     page.getByRole("button", { name: "Level 4 · 160px" }),
   ).toHaveAttribute("aria-pressed", "true");
   const beforeLogo = await page
-    .getByRole("button", { name: "Use Arcade on plot 4" })
+    .getByRole("button", { name: "Preview Arcade on plot 4" })
     .locator("canvas")
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
   const logo = await page.evaluate(() => {
@@ -40,11 +40,16 @@ test("a guest can choose a fitting design and see it on the playable street", as
     "Previewing mark.png locally",
   );
   const afterLogo = await page
-    .getByRole("button", { name: "Use Arcade on plot 4" })
+    .getByRole("button", { name: "Preview Arcade on plot 4" })
     .locator("canvas")
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
   expect(afterLogo).not.toBe(beforeLogo);
-  await page.getByRole("button", { name: "Use Arcade on plot 4" }).click();
+  await page.getByRole("button", { name: "Preview Arcade on plot 4" }).click();
+  await expect(page.locator(".design-street-building")).toHaveCount(3);
+  await expect(
+    page.locator(".design-street-building.is-selected"),
+  ).toContainText("2U");
+  await page.getByRole("button", { name: "Show Arcade on my street" }).click();
   await expect(page.locator("#plot-title")).toContainText(
     "Arcade · Plot 4 · 2 units · Level 4",
   );
@@ -53,7 +58,7 @@ test("a guest can choose a fitting design and see it on the playable street", as
   await expect(page.locator("#panel-design")).toBeVisible();
   await page.locator("#panel-design").click();
   await expect(
-    page.getByRole("button", { name: "Use Arcade on plot 4" }),
+    page.getByRole("button", { name: "Preview Arcade on plot 4" }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
     page.getByRole("button", { name: "Level 4 · 160px" }),
@@ -138,7 +143,7 @@ test("building picker retries a failed illustration without losing its fallback"
       await route.fulfill({ status: 503, body: "Temporary image outage" });
     else await route.continue();
   });
-  const diner = page.getByRole("button", { name: "Use Diner on plot 4" });
+  const diner = page.getByRole("button", { name: "Preview Diner on plot 4" });
   const canvasImage = () =>
     diner
       .locator("canvas")
@@ -159,7 +164,7 @@ test("a local ad image fills an eligible billboard in the building picker", asyn
   await page.locator('[data-menu-go="My Plots"]').click();
   await page.getByRole("button", { name: "Choose street design" }).click();
   await page.getByRole("button", { name: "Level 3 · 130px" }).click();
-  const diner = page.getByRole("button", { name: "Use Diner on plot 4" });
+  const diner = page.getByRole("button", { name: "Preview Diner on plot 4" });
   const before = await diner
     .locator("canvas")
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
@@ -185,6 +190,7 @@ test("a local ad image fills an eligible billboard in the building picker", asyn
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
   expect(after).not.toBe(before);
   await diner.click();
+  await page.getByRole("button", { name: "Show Diner on my street" }).click();
   await expect(page.locator("#plot-title")).toContainText("Diner");
 });
 
