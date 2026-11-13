@@ -27,6 +27,7 @@ const roles = [
   "Cinema",
   "BurgerStop",
   "PracticeCourse",
+  "HorseCourse",
 ];
 const ink = "#1e2d49";
 const cream = "#fff8eb";
@@ -164,6 +165,40 @@ function siteSvg(role) {
       art += path(`M${x} 116 L${x + 15} 121 L${x} 127 Z`, "#F6C85F");
     }
     labelRect = { x: 28, y: 94, width: 84, height: 18 };
+  } else if (role === "HorseCourse") {
+    art += rect(9, 90, 122, 68, "#f0dcc2", 3);
+    art += path("M5 86 L19 57 L70 35 L121 57 L135 86 Z", "#2f6f65");
+    art += path("M12 82 L25 61 L70 43 L115 61 L128 82 Z", "#4a9a86");
+    for (const x of [24, 43, 97, 116]) {
+      art += line(x, 86, x, 158, "#a87859", 2);
+      art += rect(x - 2, 108, 5, 4, "#e9b85b", 1);
+    }
+    art += path(
+      "M46 158 L46 121 Q46 100 70 100 Q94 100 94 121 L94 158 Z",
+      "#31585b",
+    );
+    art += path(
+      "M53 158 L53 122 Q53 108 70 108 Q87 108 87 122 L87 158 Z",
+      "#abc8b4",
+    );
+    art += rect(21, 90, 98, 20, cream, 3);
+    art += line(11, 139, 45, 139, "#fff8eb", 2);
+    art += line(95, 139, 129, 139, "#fff8eb", 2);
+    art += line(13, 148, 44, 148, "#a87859", 2);
+    art += line(96, 148, 127, 148, "#a87859", 2);
+    art += path(
+      "M60 56 Q58 68 60 74 Q70 83 80 74 Q82 68 80 56",
+      "none",
+      "#e9b85b",
+      4,
+    );
+    art += circle(61, 58, 1.4, cream, "none", 0);
+    art += circle(79, 58, 1.4, cream, "none", 0);
+    art += line(20, 57, 20, 41, ink, 1.5);
+    art += path("M20 42 L34 46 L20 51 Z", "#ef8270");
+    art += line(120, 57, 120, 41, ink, 1.5);
+    art += path("M120 42 L106 46 L120 51 Z", "#f6c85f");
+    labelRect = { x: 24, y: 92, width: 92, height: 16 };
   } else throw new Error(`Unknown NPC role ${role}`);
   return { image: svg(140, 160, art), labelRect };
 }
@@ -219,9 +254,11 @@ async function verify(catalog) {
     !Array.isArray(catalog.cars) ||
     !Array.isArray(catalog.sites) ||
     catalog.cars.length !== 24 ||
-    catalog.sites.length !== 5
+    catalog.sites.length !== roles.length
   )
-    throw new Error("world sprite catalog must have 24 cars and 5 sites");
+    throw new Error(
+      `world sprite catalog must have 24 cars and ${roles.length} sites`,
+    );
   const expectedCars = new Set(
     bodies.flatMap((body) =>
       Object.keys(colors).map((color) => `${body}:${color}`),
@@ -254,7 +291,7 @@ async function verify(catalog) {
   }
   if (expectedCars.size || expectedSites.size)
     throw new Error("world sprite catalog is missing a body, color or site");
-  console.log("Validated 24 car and 5 civic destination sprites");
+  console.log(`Validated 24 car and ${roles.length} civic destination sprites`);
 }
 
 async function generate() {
@@ -297,7 +334,7 @@ async function generate() {
   }
   const catalog = { version: 1, cars, sites };
   await writeFile(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`);
-  console.log("Generated 24 car and 5 civic destination sprites");
+  console.log(`Generated 24 car and ${roles.length} civic destination sprites`);
   await verify(catalog);
 }
 

@@ -56,7 +56,7 @@ test("drive all five guest streets on both sides and open the connected map", as
   await expect(page.getByRole("heading", { name: "City map" })).toBeVisible();
   await expect(page.locator("button[data-road]")).toHaveCount(5);
   await expect(page.locator("button[data-tower]")).toHaveCount(3);
-  await expect(page.locator("button[data-site]")).toHaveCount(4);
+  await expect(page.locator("button[data-site]")).toHaveCount(5);
   await page.locator('button[data-road="main"]').click();
   await expect(page.locator("#mobile-street-name")).toContainText(
     "Main Street",

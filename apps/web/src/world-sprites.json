@@ -375,6 +375,23 @@
         "width": 84,
         "height": 18
       }
+    },
+    {
+      "role": "HorseCourse",
+      "sprite": "horsecourse.png",
+      "hash": "208a31f874427468020f4ec288a5803ae5cea9854f2e859cd3178d959d82f9e8",
+      "alphaBounds": {
+        "x": 4.25,
+        "y": 34.25,
+        "width": 131.5,
+        "height": 124.75
+      },
+      "labelRect": {
+        "x": 24,
+        "y": 92,
+        "width": 92,
+        "height": 16
+      }
     }
   ]
 }

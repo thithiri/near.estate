@@ -1,0 +1,18 @@
+{
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "candidateCodeSha256": "27e17dd14a6cb1094c8f71f8007481f5ed525dffb977ecbb512211271c88a646",
+  "beforeSiteCount": 7,
+  "afterSiteCount": 8,
+  "sandboxExactStorageVerified": true,
+  "site": {
+    "id": "npc-harbor-horse-course",
+    "road_id": "harbor",
+    "side": "South",
+    "frontage_index": 10,
+    "role": "HorseCourse",
+    "name": "Harbor Horse Course",
+    "capacity": 0
+  },
+  "status": "verified",
+  "transactionHash": "CqtgKzE2cP5EUpUi4FpEPme3Vwk8SB7tzPyGqkEMoLdk"
+}

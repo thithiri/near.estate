@@ -1,6 +1,6 @@
 # Harbor Horse Course — destination and house betting plan
 
-**Status:** plan only. The current testnet city has seven NPC sites and no horse course or bet methods.
+**Status:** Phase 1 is deployed on testnet: Harbor South frontage 10 is the eighth game-owned destination. The guest and testnet clients render its entrance, map card and free spectator race. A separate, browser-only demo can simulate coin bets with `?horse-betting-demo=1` in Vite development mode. It cannot spend parking coins. No on-chain bet methods or real betting are enabled. Phase 2 tasks 5–8, other than a small local ledger model, remain open.
 
 ## First-version design
 

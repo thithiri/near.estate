@@ -840,6 +840,69 @@ impl Contract {
             .collect()
     }
 
+    pub fn add_horse_course_site(&mut self) -> NPCSite {
+        require!(
+            env::predecessor_account_id() == self.inner.admin,
+            "admin only"
+        );
+        self.require_not_paused();
+        let site = NPCSite {
+            id: "npc-harbor-horse-course".to_owned(),
+            road_id: RoadId::Harbor,
+            side: Side::South,
+            frontage_index: 10,
+            role: ServiceRole::HorseCourse,
+            name: "Harbor Horse Course".to_owned(),
+            capacity: 0,
+        };
+        if let Some(existing) = self.inner.npc_sites.get(&site.id).cloned() {
+            require!(
+                existing.road_id == site.road_id
+                    && existing.side == site.side
+                    && existing.frontage_index == site.frontage_index
+                    && existing.role == site.role
+                    && existing.name == site.name
+                    && existing.capacity == 0,
+                "horse course site differs from expected layout"
+            );
+            return existing;
+        }
+        require!(
+            self.inner.city_version == 2
+                && self.inner.plot_count == 100
+                && self.inner.npc_site_count == 7,
+            "unexpected city layout for horse course"
+        );
+        for index in 0..self.inner.npc_site_count {
+            let id = self
+                .inner
+                .npc_site_ids
+                .get(&index)
+                .unwrap_or_else(|| env::panic_str("NPC site index missing"));
+            let other = self
+                .inner
+                .npc_sites
+                .get(id)
+                .unwrap_or_else(|| env::panic_str("NPC site record missing"));
+            require!(
+                other.road_id != site.road_id
+                    || other.side != site.side
+                    || other.frontage_index != site.frontage_index,
+                "horse course frontage is occupied"
+            );
+        }
+        self.inner.npc_sites.insert(site.id.clone(), site.clone());
+        self.inner.npc_site_ids.insert(7, site.id.clone());
+        self.inner.npc_site_count = 8;
+        self.inner.npc_sites.flush();
+        self.inner.npc_site_ids.flush();
+        self.emit(
+            "npc_site_seeded",
+            near_sdk::serde_json::json!({"site_id": site.id, "role": "game_owned"}),
+        );
+        site
+    }
+
     pub fn get_plot(&self, plot_id: String) -> Option<PlotViewV2> {
         self.inner.plots.get(&plot_id).cloned().map(|plot| {
             let effective_rule = plot.effective_rule(Self::now_seconds());

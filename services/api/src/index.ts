@@ -46,14 +46,21 @@ const chain = contractId
   ? new NearChainGateway(contractId, process.env.NEAR_RPC_URL)
   : null;
 const cityVersion = chain ? await chain.cityVersion() : 1;
+const npcSiteCount =
+  chain && cityVersion === 2 ? await chain.npcSiteCount() : 7;
+if (cityVersion === 2 && npcSiteCount !== 7 && npcSiteCount !== 8)
+  throw new Error(`Unsupported version-2 NPC site count: ${npcSiteCount}`);
+const seedFile =
+  cityVersion === 1
+    ? "seed.json"
+    : npcSiteCount === 8
+      ? "seed-v2-horse.json"
+      : "seed-v2.json";
 const citySeed = validateCitySeed(
   JSON.parse(
     readFileSync(
       fileURLToPath(
-        new URL(
-          `../../../contracts/estate/seed${cityVersion === 2 ? "-v2" : ""}.json`,
-          import.meta.url,
-        ),
+        new URL(`../../../contracts/estate/${seedFile}`, import.meta.url),
       ),
       "utf8",
     ),

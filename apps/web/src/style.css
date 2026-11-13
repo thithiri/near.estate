@@ -1405,6 +1405,108 @@ button:disabled {
   max-width: 760px;
   margin-top: 18px;
 }
+.horse-race-player {
+  width: 100%;
+  max-width: 760px;
+  margin-top: 18px;
+}
+.horse-race-player canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  background: #d8b78f;
+}
+.horse-race-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+.horse-race-controls button {
+  flex: 0 0 auto;
+}
+.horse-race-controls span {
+  font-weight: 700;
+}
+.horse-demo-bet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px 14px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 2px dashed var(--ink);
+  border-radius: 14px;
+  background: #fff5dc;
+}
+.horse-demo-bet > strong,
+.horse-demo-bet > p {
+  flex-basis: 100%;
+  margin: 0;
+}
+.horse-demo-bet label {
+  display: grid;
+  gap: 4px;
+  font-weight: 700;
+}
+.horse-demo-bet select {
+  min-height: 42px;
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  padding: 4px 8px;
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .horse-destination {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px;
+  }
+  .horse-destination > img {
+    display: none;
+  }
+  .horse-destination > div {
+    display: grid;
+    grid-template-columns: minmax(140px, 180px) minmax(0, 1fr);
+    align-content: start;
+    column-gap: 14px;
+  }
+  .horse-destination > div > .tag,
+  .horse-destination > div > h1,
+  .horse-destination > div > h2,
+  .horse-destination > div > p {
+    grid-column: 1;
+  }
+  .horse-destination h1 {
+    font-size: 23px;
+    line-height: 1.05;
+    margin: 8px 0;
+  }
+  .horse-destination h2 {
+    font-size: 15px;
+  }
+  .horse-destination > div > p {
+    font-size: 12px;
+    line-height: 1.25;
+    margin: 6px 0;
+  }
+  .horse-race-player {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    margin: 0;
+  }
+  .horse-race-player canvas {
+    width: min(100%, 320px);
+  }
+  .horse-race-controls {
+    margin-top: 6px;
+  }
+  .horse-race-controls button {
+    padding: 5px 10px;
+  }
+}
 .cinema-player canvas {
   display: block;
   width: 100%;
@@ -2369,6 +2471,9 @@ h3 {
   }
   .practice-destination > img {
     display: none;
+  }
+  .horse-race-controls {
+    flex-wrap: wrap;
   }
   .studio-heading {
     display: grid;

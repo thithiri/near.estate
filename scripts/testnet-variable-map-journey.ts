@@ -36,6 +36,7 @@ const deployment = JSON.parse(
   contractId: string;
   wasmSha256: string;
   citySeedVersion: number;
+  npcSiteCount: number;
 };
 assert.equal(deployment.network, "testnet");
 const release = JSON.parse(readFileSync(recordPath, "utf8")) as {
@@ -45,7 +46,13 @@ const release = JSON.parse(readFileSync(recordPath, "utf8")) as {
 assert.equal(release.contractId, deployment.contractId);
 const seed = validateCitySeed(
   JSON.parse(
-    readFileSync(resolve(root, "contracts/estate/seed-v2.json"), "utf8"),
+    readFileSync(
+      resolve(
+        root,
+        `contracts/estate/seed${deployment.npcSiteCount === 8 ? "-v2-horse" : "-v2"}.json`,
+      ),
+      "utf8",
+    ),
   ),
 );
 assert.equal(seed.version, 2);
@@ -62,6 +69,7 @@ const NPCSiteView = z.object({
     "Cinema",
     "BurgerStop",
     "PracticeCourse",
+    "HorseCourse",
   ]),
   name: z.string().min(1),
   capacity: z.number().int().nonnegative(),
@@ -178,11 +186,11 @@ async function audit() {
 
   const sites = await reader.view(
     "get_npc_sites",
-    { from_index: 0, limit: 7 },
-    z.array(NPCSiteView).length(7),
+    { from_index: 0, limit: deployment.npcSiteCount },
+    z.array(NPCSiteView).length(deployment.npcSiteCount),
   );
   const siteById = new Map(sites.map((site) => [site.id, site]));
-  assert.equal(siteById.size, 7);
+  assert.equal(siteById.size, deployment.npcSiteCount);
   for (const expected of seed.npcSites) {
     const actual = siteById.get(expected.id);
     assert(actual, `Missing civic site ${expected.id}`);

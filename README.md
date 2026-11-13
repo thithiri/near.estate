@@ -30,7 +30,7 @@ Guest mode runs the same game rules against local sample state, so nothing is wr
 4. Open **Cars** and click **Repair to full · 2 coins**. **You see** "Repaired Hatchback by 2 points" and 100% durability.
 5. Open **Menu → My Plots**, then click **Visit plot**. A visitor is parked illegally on your curb. Click **Ticket**. **You see** "Ticketed visitor".
 6. Open **Map** and click **Main Parking Tower**. **You see** the action change to **Park in tower**, which works even when every curb is full.
-7. The map also leads to the cinema, the burger stop and the solo practice course. None of them costs coins or durability.
+7. The map also leads to the cinema, the burger stop, the solo practice course and Harbor Horse Course. Watching a horse race is free and leaves coins and durability unchanged.
 
 ### B. Verify the live testnet game without keys (about 2 minutes)
 
@@ -72,7 +72,7 @@ This browser path has not yet been completed end to end with a named wallet, so 
 
 ## What is on-chain
 
-**Live contract:** [`dev-20261110121817-59798568433631.testnet`](https://testnet.nearblocks.io/address/dev-20261110121817-59798568433631.testnet), code SHA-256 `db33845c…12affa`.
+**Live contract:** [`dev-20261110121817-59798568433631.testnet`](https://testnet.nearblocks.io/address/dev-20261110121817-59798568433631.testnet), code SHA-256 `27e17dd1…c88a646`.
 
 The contract owns:
 
@@ -95,6 +95,7 @@ The repository history begins with a baseline commit that squashes development t
 - Phones have only been checked in emulated viewports.
 - Advertiser impressions are estimates.
 - Paid AI image generation is switched off, so building facades are curated.
+- Horse racing is a free spectator activity. A separate local betting simulation does not use game coins; on-chain wagering is not enabled.
 - The invite beta is not yet released; see [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md).
 
 ## Development

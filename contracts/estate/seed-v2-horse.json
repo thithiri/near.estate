@@ -1,0 +1,1414 @@
+{
+  "version": 2,
+  "streets": [
+    {
+      "id": "main",
+      "name": "Main Street",
+      "length": 14,
+      "connections": [
+        {
+          "at": 3,
+          "toRoadId": "central",
+          "toAt": 1,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "Intersection"
+        },
+        {
+          "at": 6,
+          "toRoadId": "harbor",
+          "toAt": 1,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "Intersection"
+        },
+        {
+          "at": 0,
+          "toRoadId": "market",
+          "toAt": 0,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "End"
+        }
+      ],
+      "frontageUnits": {
+        "North": [
+          2,
+          1,
+          1,
+          2,
+          2,
+          2,
+          2,
+          3,
+          1,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "South": [
+          1,
+          1,
+          2,
+          2,
+          2,
+          2,
+          2,
+          1,
+          2,
+          3,
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "id": "market",
+      "name": "Market Street",
+      "length": 14,
+      "connections": [
+        {
+          "at": 3,
+          "toRoadId": "central",
+          "toAt": 4,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "Intersection"
+        },
+        {
+          "at": 6,
+          "toRoadId": "harbor",
+          "toAt": 4,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "Intersection"
+        },
+        {
+          "at": 0,
+          "toRoadId": "main",
+          "toAt": 0,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "End"
+        },
+        {
+          "at": 13,
+          "toRoadId": "river",
+          "toAt": 13,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "End"
+        }
+      ],
+      "frontageUnits": {
+        "North": [
+          1,
+          1,
+          2,
+          2,
+          2,
+          2,
+          2,
+          1,
+          2,
+          3,
+          2,
+          2,
+          2,
+          2
+        ],
+        "South": [
+          1,
+          2,
+          2,
+          1,
+          2,
+          2,
+          2,
+          2,
+          3,
+          1,
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "id": "river",
+      "name": "River Street",
+      "length": 14,
+      "connections": [
+        {
+          "at": 3,
+          "toRoadId": "central",
+          "toAt": 6,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "Intersection"
+        },
+        {
+          "at": 6,
+          "toRoadId": "harbor",
+          "toAt": 6,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "Intersection"
+        },
+        {
+          "at": 13,
+          "toRoadId": "market",
+          "toAt": 13,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "End"
+        }
+      ],
+      "frontageUnits": {
+        "North": [
+          1,
+          2,
+          2,
+          1,
+          2,
+          2,
+          2,
+          2,
+          3,
+          1,
+          2,
+          2,
+          2,
+          2
+        ],
+        "South": [
+          2,
+          2,
+          1,
+          1,
+          2,
+          2,
+          2,
+          3,
+          1,
+          2,
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "id": "central",
+      "name": "Central Avenue",
+      "length": 14,
+      "connections": [
+        {
+          "at": 1,
+          "toRoadId": "main",
+          "toAt": 3,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "Intersection"
+        },
+        {
+          "at": 4,
+          "toRoadId": "market",
+          "toAt": 3,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "Intersection"
+        },
+        {
+          "at": 6,
+          "toRoadId": "river",
+          "toAt": 3,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "Intersection"
+        }
+      ],
+      "frontageUnits": {
+        "North": [
+          2,
+          1,
+          1,
+          2,
+          1,
+          2,
+          2,
+          2,
+          2,
+          3,
+          2,
+          2,
+          2,
+          2
+        ],
+        "South": [
+          1,
+          2,
+          2,
+          1,
+          1,
+          2,
+          2,
+          2,
+          3,
+          2,
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "id": "harbor",
+      "name": "Harbor Avenue",
+      "length": 14,
+      "connections": [
+        {
+          "at": 1,
+          "toRoadId": "main",
+          "toAt": 6,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "Intersection"
+        },
+        {
+          "at": 4,
+          "toRoadId": "market",
+          "toAt": 6,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "Intersection"
+        },
+        {
+          "at": 6,
+          "toRoadId": "river",
+          "toAt": 6,
+          "toSide": "North",
+          "facing": "Right",
+          "kind": "Intersection"
+        }
+      ],
+      "frontageUnits": {
+        "North": [
+          1,
+          2,
+          2,
+          1,
+          1,
+          2,
+          2,
+          2,
+          3,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "South": [
+          2,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          3,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    }
+  ],
+  "plots": [
+    {
+      "id": "plot-main-n-0",
+      "roadId": "main",
+      "side": "North",
+      "index": 0,
+      "corner": true,
+      "initialType": "Retail",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-main-n-1",
+      "roadId": "main",
+      "side": "North",
+      "index": 1,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-main-n-2",
+      "roadId": "main",
+      "side": "North",
+      "index": 2,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-main-n-3",
+      "roadId": "main",
+      "side": "North",
+      "index": 3,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-main-n-4",
+      "roadId": "main",
+      "side": "North",
+      "index": 4,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-main-n-5",
+      "roadId": "main",
+      "side": "North",
+      "index": 5,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-main-n-6",
+      "roadId": "main",
+      "side": "North",
+      "index": 6,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-main-n-7",
+      "roadId": "main",
+      "side": "North",
+      "index": 7,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 2,
+      "frontageUnits": 3
+    },
+    {
+      "id": "plot-main-n-8",
+      "roadId": "main",
+      "side": "North",
+      "index": 8,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-main-n-9",
+      "roadId": "main",
+      "side": "North",
+      "index": 9,
+      "corner": true,
+      "initialType": "Cafe",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-main-s-0",
+      "roadId": "main",
+      "side": "South",
+      "index": 0,
+      "corner": true,
+      "initialType": "Retail",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-main-s-1",
+      "roadId": "main",
+      "side": "South",
+      "index": 1,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-main-s-2",
+      "roadId": "main",
+      "side": "South",
+      "index": 2,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-main-s-3",
+      "roadId": "main",
+      "side": "South",
+      "index": 3,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-main-s-4",
+      "roadId": "main",
+      "side": "South",
+      "index": 4,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-main-s-5",
+      "roadId": "main",
+      "side": "South",
+      "index": 5,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-main-s-6",
+      "roadId": "main",
+      "side": "South",
+      "index": 6,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-main-s-7",
+      "roadId": "main",
+      "side": "South",
+      "index": 7,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-main-s-8",
+      "roadId": "main",
+      "side": "South",
+      "index": 8,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-main-s-9",
+      "roadId": "main",
+      "side": "South",
+      "index": 9,
+      "corner": true,
+      "initialType": "Cafe",
+      "initialVariant": 2,
+      "frontageUnits": 3
+    },
+    {
+      "id": "plot-market-n-0",
+      "roadId": "market",
+      "side": "North",
+      "index": 0,
+      "corner": true,
+      "initialType": "Cafe",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-market-n-1",
+      "roadId": "market",
+      "side": "North",
+      "index": 1,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-market-n-2",
+      "roadId": "market",
+      "side": "North",
+      "index": 2,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-market-n-3",
+      "roadId": "market",
+      "side": "North",
+      "index": 3,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-market-n-4",
+      "roadId": "market",
+      "side": "North",
+      "index": 4,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-market-n-5",
+      "roadId": "market",
+      "side": "North",
+      "index": 5,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-market-n-6",
+      "roadId": "market",
+      "side": "North",
+      "index": 6,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-market-n-7",
+      "roadId": "market",
+      "side": "North",
+      "index": 7,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-market-n-8",
+      "roadId": "market",
+      "side": "North",
+      "index": 8,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-market-n-9",
+      "roadId": "market",
+      "side": "North",
+      "index": 9,
+      "corner": true,
+      "initialType": "Restaurant",
+      "initialVariant": 2,
+      "frontageUnits": 3
+    },
+    {
+      "id": "plot-market-s-0",
+      "roadId": "market",
+      "side": "South",
+      "index": 0,
+      "corner": true,
+      "initialType": "Cafe",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-market-s-1",
+      "roadId": "market",
+      "side": "South",
+      "index": 1,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-market-s-2",
+      "roadId": "market",
+      "side": "South",
+      "index": 2,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-market-s-3",
+      "roadId": "market",
+      "side": "South",
+      "index": 3,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-market-s-4",
+      "roadId": "market",
+      "side": "South",
+      "index": 4,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-market-s-5",
+      "roadId": "market",
+      "side": "South",
+      "index": 5,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-market-s-6",
+      "roadId": "market",
+      "side": "South",
+      "index": 6,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-market-s-7",
+      "roadId": "market",
+      "side": "South",
+      "index": 7,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-market-s-8",
+      "roadId": "market",
+      "side": "South",
+      "index": 8,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 1,
+      "frontageUnits": 3
+    },
+    {
+      "id": "plot-market-s-9",
+      "roadId": "market",
+      "side": "South",
+      "index": 9,
+      "corner": true,
+      "initialType": "Restaurant",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-river-n-0",
+      "roadId": "river",
+      "side": "North",
+      "index": 0,
+      "corner": true,
+      "initialType": "Restaurant",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-river-n-1",
+      "roadId": "river",
+      "side": "North",
+      "index": 1,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-river-n-2",
+      "roadId": "river",
+      "side": "North",
+      "index": 2,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-river-n-3",
+      "roadId": "river",
+      "side": "North",
+      "index": 3,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-river-n-4",
+      "roadId": "river",
+      "side": "North",
+      "index": 4,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-river-n-5",
+      "roadId": "river",
+      "side": "North",
+      "index": 5,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-river-n-6",
+      "roadId": "river",
+      "side": "North",
+      "index": 6,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-river-n-7",
+      "roadId": "river",
+      "side": "North",
+      "index": 7,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-river-n-8",
+      "roadId": "river",
+      "side": "North",
+      "index": 8,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 1,
+      "frontageUnits": 3
+    },
+    {
+      "id": "plot-river-n-9",
+      "roadId": "river",
+      "side": "North",
+      "index": 9,
+      "corner": true,
+      "initialType": "Office",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-river-s-0",
+      "roadId": "river",
+      "side": "South",
+      "index": 0,
+      "corner": true,
+      "initialType": "Restaurant",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-river-s-1",
+      "roadId": "river",
+      "side": "South",
+      "index": 1,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-river-s-2",
+      "roadId": "river",
+      "side": "South",
+      "index": 2,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-river-s-3",
+      "roadId": "river",
+      "side": "South",
+      "index": 3,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-river-s-4",
+      "roadId": "river",
+      "side": "South",
+      "index": 4,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-river-s-5",
+      "roadId": "river",
+      "side": "South",
+      "index": 5,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-river-s-6",
+      "roadId": "river",
+      "side": "South",
+      "index": 6,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-river-s-7",
+      "roadId": "river",
+      "side": "South",
+      "index": 7,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 2,
+      "frontageUnits": 3
+    },
+    {
+      "id": "plot-river-s-8",
+      "roadId": "river",
+      "side": "South",
+      "index": 8,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-river-s-9",
+      "roadId": "river",
+      "side": "South",
+      "index": 9,
+      "corner": true,
+      "initialType": "Office",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-central-n-0",
+      "roadId": "central",
+      "side": "North",
+      "index": 0,
+      "corner": true,
+      "initialType": "Office",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-central-n-1",
+      "roadId": "central",
+      "side": "North",
+      "index": 1,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-central-n-2",
+      "roadId": "central",
+      "side": "North",
+      "index": 2,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-central-n-3",
+      "roadId": "central",
+      "side": "North",
+      "index": 3,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-central-n-4",
+      "roadId": "central",
+      "side": "North",
+      "index": 4,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-central-n-5",
+      "roadId": "central",
+      "side": "North",
+      "index": 5,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-central-n-6",
+      "roadId": "central",
+      "side": "North",
+      "index": 6,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-central-n-7",
+      "roadId": "central",
+      "side": "North",
+      "index": 7,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-central-n-8",
+      "roadId": "central",
+      "side": "North",
+      "index": 8,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-central-n-9",
+      "roadId": "central",
+      "side": "North",
+      "index": 9,
+      "corner": true,
+      "initialType": "Homes",
+      "initialVariant": 2,
+      "frontageUnits": 3
+    },
+    {
+      "id": "plot-central-s-0",
+      "roadId": "central",
+      "side": "South",
+      "index": 0,
+      "corner": true,
+      "initialType": "Office",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-central-s-1",
+      "roadId": "central",
+      "side": "South",
+      "index": 1,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-central-s-2",
+      "roadId": "central",
+      "side": "South",
+      "index": 2,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-central-s-3",
+      "roadId": "central",
+      "side": "South",
+      "index": 3,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-central-s-4",
+      "roadId": "central",
+      "side": "South",
+      "index": 4,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-central-s-5",
+      "roadId": "central",
+      "side": "South",
+      "index": 5,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-central-s-6",
+      "roadId": "central",
+      "side": "South",
+      "index": 6,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-central-s-7",
+      "roadId": "central",
+      "side": "South",
+      "index": 7,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-central-s-8",
+      "roadId": "central",
+      "side": "South",
+      "index": 8,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 1,
+      "frontageUnits": 3
+    },
+    {
+      "id": "plot-central-s-9",
+      "roadId": "central",
+      "side": "South",
+      "index": 9,
+      "corner": true,
+      "initialType": "Homes",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-harbor-n-0",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 0,
+      "corner": true,
+      "initialType": "Homes",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-harbor-n-1",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 1,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-harbor-n-2",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 2,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-harbor-n-3",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 3,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-harbor-n-4",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 4,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-harbor-n-5",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 5,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-harbor-n-6",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 6,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-harbor-n-7",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 7,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-harbor-n-8",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 8,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 1,
+      "frontageUnits": 3
+    },
+    {
+      "id": "plot-harbor-n-9",
+      "roadId": "harbor",
+      "side": "North",
+      "index": 9,
+      "corner": true,
+      "initialType": "Retail",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-harbor-s-0",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 0,
+      "corner": true,
+      "initialType": "Homes",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-harbor-s-1",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 1,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-harbor-s-2",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 2,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 1,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-harbor-s-3",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 3,
+      "corner": false,
+      "initialType": "Restaurant",
+      "initialVariant": 2,
+      "frontageUnits": 1
+    },
+    {
+      "id": "plot-harbor-s-4",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 4,
+      "corner": false,
+      "initialType": "Office",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-harbor-s-5",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 5,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-harbor-s-6",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 6,
+      "corner": false,
+      "initialType": "Retail",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-harbor-s-7",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 7,
+      "corner": false,
+      "initialType": "Cafe",
+      "initialVariant": 2,
+      "frontageUnits": 3
+    },
+    {
+      "id": "plot-harbor-s-8",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 8,
+      "corner": false,
+      "initialType": "Homes",
+      "initialVariant": 1,
+      "frontageUnits": 2
+    },
+    {
+      "id": "plot-harbor-s-9",
+      "roadId": "harbor",
+      "side": "South",
+      "index": 9,
+      "corner": true,
+      "initialType": "Retail",
+      "initialVariant": 2,
+      "frontageUnits": 2
+    }
+  ],
+  "npcSites": [
+    {
+      "id": "npc-main-tower",
+      "roadId": "main",
+      "side": "North",
+      "frontageIndex": 10,
+      "role": "ParkingTower",
+      "name": "Main Parking Tower",
+      "capacity": 32
+    },
+    {
+      "id": "npc-market-tower",
+      "roadId": "market",
+      "side": "South",
+      "frontageIndex": 10,
+      "role": "ParkingTower",
+      "name": "Market Parking Tower",
+      "capacity": 32
+    },
+    {
+      "id": "npc-river-tower",
+      "roadId": "river",
+      "side": "North",
+      "frontageIndex": 10,
+      "role": "ParkingTower",
+      "name": "River Parking Tower",
+      "capacity": 32
+    },
+    {
+      "id": "npc-central-garage",
+      "roadId": "central",
+      "side": "North",
+      "frontageIndex": 10,
+      "role": "RepairGarage",
+      "name": "City Garage",
+      "capacity": 0
+    },
+    {
+      "id": "npc-harbor-cinema",
+      "roadId": "harbor",
+      "side": "North",
+      "frontageIndex": 10,
+      "role": "Cinema",
+      "name": "Harbor Cinema",
+      "capacity": 0
+    },
+    {
+      "id": "npc-market-burgers",
+      "roadId": "market",
+      "side": "North",
+      "frontageIndex": 11,
+      "role": "BurgerStop",
+      "name": "Near & Far Burgers",
+      "capacity": 0
+    },
+    {
+      "id": "npc-central-course",
+      "roadId": "central",
+      "side": "South",
+      "frontageIndex": 11,
+      "role": "PracticeCourse",
+      "name": "Practice Course",
+      "capacity": 0
+    },
+    {
+      "id": "npc-harbor-horse-course",
+      "roadId": "harbor",
+      "side": "South",
+      "frontageIndex": 10,
+      "role": "HorseCourse",
+      "name": "Harbor Horse Course",
+      "capacity": 0
+    }
+  ]
+}

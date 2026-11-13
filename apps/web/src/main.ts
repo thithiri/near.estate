@@ -20,7 +20,7 @@ import {
   type ChainStreetSide,
 } from "@estate/shared";
 import rawSeed from "../../../contracts/estate/seed.json";
-import rawGuestSeed from "../../../contracts/estate/seed-v2.json";
+import rawGuestSeed from "../../../contracts/estate/seed-v2-horse.json";
 import {
   arrivalDirection,
   cityMapCurbPoint,
@@ -65,6 +65,8 @@ import {
 import { buildingShapeName } from "./building-shapes.js";
 import { MockStudio, type GuestBuildingPreview } from "./studio-screen.js";
 import { mountCinemaShort } from "./cinema-short.js";
+import { mountHorseRace } from "./horse-race.js";
+import { HorseBettingDemo } from "./horse-betting-demo.js";
 import { mountPracticeCourse } from "./practice-course.js";
 import { AdvertiserStatsScreen } from "./advertiser-stats.js";
 import { ImpressionReporter } from "./impressions.js";
@@ -78,6 +80,10 @@ import "./style.css";
 
 const chainCity = validateCitySeed(rawSeed);
 const guestCity = validateCitySeed(rawGuestSeed);
+const horseBettingDemoEnabled =
+  import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).has("horse-betting-demo");
+const horseDemoBook = horseBettingDemoEnabled ? new HorseBettingDemo() : null;
 let city = guestCity;
 const game = new MockGame(city);
 if (
@@ -194,6 +200,7 @@ function getWalletClient(): Promise<GameWalletClient> {
 let activeSiteId: string | null = null;
 let burgerVisits = 0;
 let unmountCinema: (() => void) | null = null;
+let unmountHorse: (() => void) | null = null;
 let unmountPractice: (() => void) | null = null;
 let carSprite: Container;
 let backdrop: Container;
@@ -1129,6 +1136,23 @@ function drawWorld(): void {
     (entry) => entry.roadId === roadId && entry.side === side,
   )) {
     const x = frontageX(road, site.frontageIndex, side);
+    if (site.role === "HorseCourse") {
+      const grounds = new Graphics();
+      const trackStart = x + frontageWidth(road, site.frontageIndex, side);
+      const trackEnd = roadWidth(road) - 14;
+      const trackWidth = Math.max(0, trackEnd - trackStart);
+      grounds.rect(trackStart, 149, trackWidth, 41).fill(0xa6cba1);
+      grounds.rect(trackStart, 162, trackWidth, 17).fill(0xcaa983);
+      grounds.rect(trackStart, 178, trackWidth, 4).fill(0xfff5dd);
+      for (let post = trackStart + 18; post < trackEnd; post += 65) {
+        grounds.rect(post, 169, 3, 21).fill(0xfff5dd);
+        grounds
+          .poly([post, 151, post + 15, 155, post, 160])
+          .fill(Math.floor((post - trackStart) / 65) % 2 ? 0x2f6f65 : 0xef8270);
+        grounds.rect(post, 150, 2, 16).fill(0x1e2d49);
+      }
+      world.addChild(grounds);
+    }
     const frontage = createNpcFacade(site.name, site.role, x);
     frontage.eventMode = "static";
     frontage.cursor = "pointer";
@@ -2013,6 +2037,7 @@ function cityMapMarkup(): string {
     Cinema: "▶",
     BurgerStop: "B",
     PracticeCourse: "⚑",
+    HorseCourse: "♞",
   };
   const activityPins = city.npcSites
     .filter((site) => site.role !== "ParkingTower")
@@ -2040,6 +2065,7 @@ function cityMapMarkup(): string {
     Cinema: { icon: "▶", hint: "Watch a short" },
     BurgerStop: { icon: "🍔", hint: "Take a free break" },
     PracticeCourse: { icon: "⚑", hint: "Race your best time" },
+    HorseCourse: { icon: "♞", hint: "Watch the horses race" },
   };
   const activityCards = city.npcSites
     .filter((site) => site.role !== "ParkingTower")
@@ -2113,6 +2139,11 @@ function destinationMarkup(site: NPCSite): string {
         ? `<div class="practice-player"><p>${practiceCar.body} · Tier ${practiceCar.tier} · ${practiceCar.color}</p><canvas id="practice-canvas" width="480" height="640" role="img" aria-label="Three-lane practice course with checkpoints and cones"></canvas><p id="practice-status" aria-live="polite"></p><div class="practice-controls"><button id="practice-start" class="primary" type="button">Start run</button><button id="practice-left" type="button" aria-label="Steer left">←</button><button id="practice-throttle" class="primary" type="button">Hold to drive</button><button id="practice-right" type="button" aria-label="Steer right">→</button></div><p class="muted">Keyboard: hold ↑ or W to drive; tap ←/→ or A/D to steer. Best time is saved in this browser.</p></div>`
         : `<p class="muted">Connect a testnet wallet and select a car to practice.</p>`,
     },
+    HorseCourse: {
+      title: "Four horses, one finish line",
+      body: "Watch a free race from the grandstand. Coin betting is not open in the shared city; the race never changes your game balance.",
+      action: `<div class="horse-race-player"><canvas id="horse-race-canvas" width="960" height="540" role="img" aria-label="Four horses racing on separate lanes at Harbor Horse Course"></canvas><div class="horse-race-controls"><button id="horse-race-watch" class="primary" type="button">Watch race</button><span id="horse-race-status" role="status" aria-live="polite"></span></div>${horseBettingDemoEnabled && !liveMode ? `<div class="horse-demo-bet"><strong>Local simulated bet · no game coins at stake</strong><p>Four horses, 25% each · 3.8× total return on a win · 5% house edge.</p><label>Horse <select id="horse-demo-choice"><option value="0">Copper Comet</option><option value="1">Blue Ribbon</option><option value="2">Golden Mile</option><option value="3">Green Flash</option></select></label><label>Stake <select id="horse-demo-stake"><option value="1">1 demo coin</option><option value="2">2 demo coins</option><option value="3">3 demo coins</option><option value="4">4 demo coins</option><option value="5">5 demo coins</option></select></label><button id="horse-demo-place" type="button">Place simulated bet</button><p id="horse-demo-balance">100 demo coins available</p><p id="horse-bet-message" role="status" aria-live="polite"></p></div>` : `<p class="muted">Spectator race · no stake or payout</p>`}</div>`,
+    },
     ParkingTower: {
       title: "Parking tower",
       body: "Drive beside the tower to park in an available space.",
@@ -2120,7 +2151,7 @@ function destinationMarkup(site: NPCSite): string {
     },
   }[site.role];
   return `<div class="destination-screen"><button id="destination-back">← Back to street</button>
-    <div class="destination-card card ${site.role === "Cinema" || site.role === "PracticeCourse" ? "cinema-destination" : ""} ${site.role === "PracticeCourse" ? "practice-destination" : ""}"><img src="${import.meta.env.BASE_URL}world/${siteSpriteFile(site.role)}" alt="${site.name}" width="280" height="320" />
+    <div class="destination-card card ${site.role === "Cinema" || site.role === "PracticeCourse" || site.role === "HorseCourse" ? "cinema-destination" : ""} ${site.role === "PracticeCourse" || site.role === "HorseCourse" ? "practice-destination" : ""} ${site.role === "HorseCourse" ? "horse-destination" : ""}"><img src="${import.meta.env.BASE_URL}world/${siteSpriteFile(site.role)}" alt="${site.name}" width="280" height="320" />
       <div><span class="tag">Game-owned destination</span><h1>${site.name}</h1><h2>${details.title}</h2><p>${details.body}</p>${details.action}</div>
     </div></div>`;
 }
@@ -2227,6 +2258,10 @@ function showScreen(screen: string): void {
     unmountCinema();
     unmountCinema = null;
   }
+  if (unmountHorse) {
+    unmountHorse();
+    unmountHorse = null;
+  }
   if (unmountPractice) {
     unmountPractice();
     unmountPractice = null;
@@ -2243,6 +2278,7 @@ function showScreen(screen: string): void {
   status.hidden = screen !== "Street" || portraitDriving.matches;
   streetScreen.hidden = screen !== "Street";
   otherScreen.hidden = screen === "Street";
+  window.scrollTo(0, 0);
   document
     .querySelectorAll<HTMLButtonElement>("[data-screen]")
     .forEach((button) => {
@@ -2546,6 +2582,56 @@ function showScreen(screen: string): void {
         )!.textContent = "Enjoy your burger. Your coins and car are unchanged.";
       });
     if (site.role === "Cinema") unmountCinema = mountCinemaShort(otherScreen);
+    if (site.role === "HorseCourse") {
+      const book = !liveMode ? horseDemoBook : null;
+      const message =
+        otherScreen.querySelector<HTMLElement>("#horse-bet-message");
+      const balance = otherScreen.querySelector<HTMLElement>(
+        "#horse-demo-balance",
+      );
+      const updateBalance = () => {
+        if (balance && book)
+          balance.textContent = `${formatCoins(book.playerBalance.toString())} demo coins available`;
+      };
+      updateBalance();
+      const dispose = mountHorseRace(otherScreen, (raceNumber) => {
+        if (book?.pendingBet?.race !== raceNumber) return;
+        const result = book.settle(raceNumber);
+        updateBalance();
+        if (message)
+          message.textContent = result.won
+            ? `Winner! ${formatCoins(result.returned.toString())} demo coins returned, including your stake.`
+            : "Your simulated stake went to the house. Your game coins are unchanged.";
+      });
+      otherScreen
+        .querySelector<HTMLButtonElement>("#horse-demo-place")
+        ?.addEventListener("click", () => {
+          if (!book || !message) return;
+          try {
+            if (otherScreen.dataset.horseRaceState !== "ready")
+              throw new Error("Wait for the next race before placing a bet");
+            const race = Number(otherScreen.dataset.horseRaceNumber);
+            const horse = Number(
+              otherScreen.querySelector<HTMLSelectElement>("#horse-demo-choice")
+                ?.value,
+            );
+            const stake = Number(
+              otherScreen.querySelector<HTMLSelectElement>("#horse-demo-stake")
+                ?.value,
+            );
+            book.place(race, horse, stake, Math.floor(Date.now() / 86_400_000));
+            updateBalance();
+            message.textContent = `Simulated ${stake}-coin stake accepted. Start the race to see the result.`;
+          } catch (error) {
+            message.textContent =
+              error instanceof Error ? error.message : String(error);
+          }
+        });
+      unmountHorse = () => {
+        dispose();
+        book?.refund();
+      };
+    }
     if (site.role === "PracticeCourse") {
       const car = liveMode ? liveStreet?.selectedCar : game.car;
       if (car)

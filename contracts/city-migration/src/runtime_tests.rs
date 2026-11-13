@@ -298,6 +298,40 @@ fn only_admin_can_change_ticket_reward_policy_and_zero_sends_rewards_to_treasury
 }
 
 #[test]
+fn horse_course_is_an_idempotent_admin_owned_eighth_site() {
+    let mut contract = fixture(ParkingRule::Free);
+    contract.inner.plot_count = 100;
+    contract.inner.npc_site_count = 7;
+    for index in 0..7u8 {
+        let id = format!("npc-old-{index}");
+        contract.inner.npc_sites.insert(
+            id.clone(),
+            NPCSite {
+                id: id.clone(),
+                road_id: RoadId::Main,
+                side: Side::North,
+                frontage_index: 10,
+                role: ServiceRole::ParkingTower,
+                name: id.clone(),
+                capacity: 32,
+            },
+        );
+        contract.inner.npc_site_ids.insert(index, id);
+    }
+    contract.inner.npc_sites.flush();
+    contract.inner.npc_site_ids.flush();
+    context("owner.testnet", 1_001);
+    assert!(catch_unwind(AssertUnwindSafe(|| contract.add_horse_course_site())).is_err());
+    context("city.testnet", 1_002);
+    let site = contract.add_horse_course_site();
+    assert_eq!(site.id, "npc-harbor-horse-course");
+    assert!(site.role == ServiceRole::HorseCourse);
+    assert_eq!(contract.npc_site_count(), 8);
+    assert_eq!(contract.add_horse_course_site().id, site.id);
+    assert_eq!(contract.npc_site_count(), 8);
+}
+
+#[test]
 fn moderator_can_revoke_active_facade_after_owner_submits_replacement() {
     let mut contract = fixture(ParkingRule::Free);
     context("owner.testnet", 1_000);

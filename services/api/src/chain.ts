@@ -66,6 +66,28 @@ export class NearChainGateway implements ChainGateway {
     return z.union([z.literal(1), z.literal(2)]).parse(value);
   }
 
+  async npcSiteCount(): Promise<number> {
+    const body = await this.query({
+      request_type: "call_function",
+      account_id: this.contractId,
+      method_name: "npc_site_count",
+      args_base64: Buffer.from("{}").toString("base64"),
+    });
+    if (body.error)
+      throw new Error(
+        `NEAR RPC rejected NPC site count: ${JSON.stringify(body.error)}`,
+      );
+    const result = z
+      .object({ result: z.array(z.number().int().min(0).max(255)) })
+      .parse(body.result);
+    return z
+      .number()
+      .int()
+      .min(0)
+      .max(20)
+      .parse(JSON.parse(Buffer.from(result.result).toString("utf8")));
+  }
+
   async hasAccessKey(accountId: string, publicKey: string): Promise<boolean> {
     const body = await this.query({
       request_type: "view_access_key",

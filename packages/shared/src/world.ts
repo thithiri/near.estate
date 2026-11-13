@@ -49,6 +49,7 @@ export const ServiceRole = z.enum([
   "Cinema",
   "BurgerStop",
   "PracticeCourse",
+  "HorseCourse",
 ]);
 export const NPCSite = z.object({
   id: z.string().regex(/^npc-[a-z0-9-]+$/),
@@ -109,7 +110,7 @@ export const CitySeed = z.discriminatedUnion("version", [
     version: z.literal(2),
     streets: z.array(Street).length(5),
     plots: z.array(PlayerPlot).length(100),
-    npcSites: z.array(NPCSite).length(7),
+    npcSites: z.array(NPCSite).min(7).max(8),
   }),
 ]);
 export type CitySeed = z.infer<typeof CitySeed>;
@@ -166,6 +167,15 @@ export function validateCitySeed(input: unknown): CitySeed {
   }
   if (seed.npcSites.filter((site) => site.role === "ParkingTower").length !== 3)
     throw new Error("city needs three parking towers");
+  const horseCourses = seed.npcSites.filter(
+    (site) => site.role === "HorseCourse",
+  );
+  if (
+    seed.version === 1
+      ? horseCourses.length !== 0
+      : horseCourses.length !== seed.npcSites.length - 7
+  )
+    throw new Error("version-2 city may add exactly one horse course");
   for (const road of seed.streets) {
     if (seed.version === 1 && road.frontageUnits)
       throw new Error(`legacy street has variable frontage: ${road.id}`);

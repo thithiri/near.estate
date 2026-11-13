@@ -184,6 +184,51 @@ test("variable city keeps opposite junctions aligned", () => {
   );
 });
 
+test("horse course occupies only the new Harbor civic frontage", () => {
+  const legacy = validateCitySeed(
+    JSON.parse(
+      readFileSync(
+        fileURLToPath(
+          new URL("../../../contracts/estate/seed-v2.json", import.meta.url),
+        ),
+        "utf8",
+      ),
+    ),
+  );
+  const expanded = validateCitySeed(
+    JSON.parse(
+      readFileSync(
+        fileURLToPath(
+          new URL(
+            "../../../contracts/estate/seed-v2-horse.json",
+            import.meta.url,
+          ),
+        ),
+        "utf8",
+      ),
+    ),
+  );
+  assert.equal(expanded.version, 2);
+  assert.deepEqual(expanded.streets, legacy.streets);
+  assert.deepEqual(expanded.plots, legacy.plots);
+  assert.deepEqual(expanded.npcSites.slice(0, 7), legacy.npcSites);
+  assert.deepEqual(expanded.npcSites[7], {
+    id: "npc-harbor-horse-course",
+    roadId: "harbor",
+    side: "South",
+    frontageIndex: 10,
+    role: "HorseCourse",
+    name: "Harbor Horse Course",
+    capacity: 0,
+  });
+  const overlapping = structuredClone(expanded);
+  overlapping.npcSites[7]!.frontageIndex = 8;
+  assert.throws(
+    () => validateCitySeed(overlapping),
+    /NPC site overlaps player frontage/,
+  );
+});
+
 test("manifest validator enforces level envelopes and stable canonical order", () => {
   const hash = "a".repeat(64);
   const base = {

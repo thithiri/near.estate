@@ -11,9 +11,9 @@ test("phone map shows a clear location and all city destinations", async ({
   await expect(page.locator(".map-position-label")).toHaveText("YOU");
   await expect(page.locator("button[data-road]")).toHaveCount(5);
   await expect(page.locator("[data-map-tower]")).toHaveCount(3);
-  await expect(page.locator("[data-map-site]")).toHaveCount(4);
+  await expect(page.locator("[data-map-site]")).toHaveCount(5);
   await expect(page.locator("button[data-tower]")).toHaveCount(3);
-  await expect(page.locator("button[data-site]")).toHaveCount(4);
+  await expect(page.locator("button[data-site]")).toHaveCount(5);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);

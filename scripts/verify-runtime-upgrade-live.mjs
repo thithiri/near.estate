@@ -35,7 +35,17 @@ assert.equal(map.currentCodeSha256, deployment.wasmSha256);
 assert(map.runtimeUpgradeRecords.includes(releaseRelative));
 assert.equal(map.plots, 100);
 assert.equal(map.curbSpaces, 180);
-assert.equal(map.civicSites, 7);
+assert.equal(map.civicSites, deployment.npcSiteCount);
+let horseSiteRecord = null;
+if (deployment.npcSiteCount === 8) {
+  horseSiteRecord = JSON.parse(
+    readFileSync(resolve(root, "deployments/testnet-horse-course-site.json")),
+  );
+  assert.equal(horseSiteRecord.contractId, deployment.contractId);
+  assert.equal(horseSiteRecord.candidateCodeSha256, deployment.wasmSha256);
+  assert.equal(horseSiteRecord.status, "verified");
+  assert.equal(horseSiteRecord.afterSiteCount, 8);
+}
 
 const rpcUrl =
   process.env.ESTATE_TESTNET_RPC_URL ?? "https://test.rpc.fastnear.com";
@@ -75,13 +85,13 @@ assert.equal(
 const blockHash = account.block_hash;
 assert(typeof blockHash === "string" && blockHash.length > 0);
 
-async function view(method) {
+async function view(method, args = {}) {
   const result = await query({
     request_type: "call_function",
     block_id: blockHash,
     account_id: deployment.contractId,
     method_name: method,
-    args_base64: Buffer.from("{}").toString("base64"),
+    args_base64: Buffer.from(JSON.stringify(args)).toString("base64"),
   });
   assert.equal(
     result.block_hash,
@@ -110,6 +120,12 @@ assert.deepEqual(roles, [
   deployment.moderatorId,
   deployment.inspectorId,
 ]);
+if (horseSiteRecord) {
+  const horse = await view("get_npc_site", {
+    site_id: "npc-harbor-horse-course",
+  });
+  assert.deepEqual(horse, horseSiteRecord.site);
+}
 
 const evidence = {
   network: "testnet",
@@ -123,6 +139,9 @@ const evidence = {
   plotCount,
   curbSpaces: map.curbSpaces,
   npcSiteCount,
+  horseSiteRecord: horseSiteRecord
+    ? "deployments/testnet-horse-course-site.json"
+    : null,
   paused,
   roles,
   statePreservedAtRelease: true,

@@ -1,5 +1,52 @@
 import { expect, test } from "@playwright/test";
 
+test("horse course is reachable and a spectator race leaves game coins alone", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto("/");
+  const balance = await page.locator("#balance").textContent();
+  await page.getByRole("button", { name: "Map", exact: true }).first().click();
+  await page.locator('[data-site="npc-harbor-horse-course"]').click();
+  await expect(
+    page.getByRole("heading", { name: "Harbor Horse Course" }),
+  ).toBeVisible();
+  const raceCanvas = await page.locator("#horse-race-canvas").boundingBox();
+  expect(raceCanvas).not.toBeNull();
+  expect(raceCanvas!.y + raceCanvas!.height).toBeLessThanOrEqual(390);
+  await page.locator("#horse-race-watch").click();
+  await expect(page.locator("#horse-race-status")).toContainText("wins");
+  await page.locator("#horse-race-watch").click();
+  await expect(page.locator("#horse-race-watch")).toHaveText("Watch race");
+  await page.locator("#horse-race-watch").click();
+  await expect(page.locator("#horse-race-status")).toContainText("wins");
+  expect(await page.locator("#balance").textContent()).toBe(balance);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(844);
+});
+
+test("local horse bet demo settles separately from parking coins", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/?horse-betting-demo=1");
+  const balance = await page.locator("#balance").textContent();
+  await page.getByRole("button", { name: "Map", exact: true }).first().click();
+  await page.locator('[data-site="npc-harbor-horse-course"]').click();
+  await page.locator("#horse-demo-place").click();
+  await expect(page.locator("#horse-demo-balance")).toContainText("99");
+  await page.locator("#horse-race-watch").click();
+  await expect(page.locator("#horse-bet-message")).toContainText("Winner!");
+  await expect(page.locator("#horse-demo-balance")).toContainText("102.8");
+  expect(await page.locator("#balance").textContent()).toBe(balance);
+  await page.locator("#destination-back").click();
+  await page.getByRole("button", { name: "Map", exact: true }).first().click();
+  await page.locator('[data-site="npc-harbor-horse-course"]').click();
+  await expect(page.locator("#horse-demo-balance")).toContainText("102.8");
+});
+
 test("practice course finishes, saves a best time and leaves parking resources alone", async ({
   page,
 }) => {

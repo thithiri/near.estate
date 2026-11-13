@@ -270,6 +270,7 @@ pub enum ServiceRole {
     Cinema,
     BurgerStop,
     PracticeCourse,
+    HorseCourse,
 }
 
 #[near(serializers = [borsh, json])]
@@ -285,7 +286,7 @@ pub struct NPCSiteSeed {
 }
 
 #[near(serializers = [borsh, json])]
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct NPCSite {
     pub id: String,
     pub road_id: RoadId,

@@ -6,7 +6,7 @@ import { carSpriteFile, siteSpriteFile } from "./world-sprites.js";
 
 test("all body, colour and civic destination combinations are available", () => {
   assert.equal(rawCatalog.cars.length, 24);
-  assert.equal(rawCatalog.sites.length, 5);
+  assert.equal(rawCatalog.sites.length, 6);
   for (const body of CarBody.options) {
     for (const color of CarColor.options)
       assert.match(carSpriteFile(body, color), /\.png$/);
