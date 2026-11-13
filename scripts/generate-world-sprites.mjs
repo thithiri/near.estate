@@ -7,6 +7,7 @@ import sharp from "sharp";
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const output = join(root, "apps/web/public/world");
 const catalogPath = join(root, "apps/web/src/world-sprites.json");
+const civicSourceDir = join(root, "art/source/civic-rendered");
 const bodies = [
   "Hatchback",
   "Sedan",
@@ -29,10 +30,17 @@ const roles = [
   "PracticeCourse",
   "HorseCourse",
 ];
+const civicLabels = {
+  ParkingTower: { x: 24, y: 33, width: 92, height: 14 },
+  RepairGarage: { x: 43, y: 116, width: 54, height: 13 },
+  Cinema: { x: 15, y: 77, width: 110, height: 16 },
+  BurgerStop: { x: 15, y: 106, width: 110, height: 15 },
+  PracticeCourse: { x: 23, y: 74, width: 94, height: 15 },
+  HorseCourse: { x: 31, y: 72, width: 78, height: 14 },
+};
 const ink = "#1e2d49";
 const cream = "#fff8eb";
 const window = "#bce7ec";
-const road = "#66768a";
 
 const svg = (width, height, body) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="${width * 4}" height="${height * 4}" viewBox="0 0 ${width} ${height}">${body}</svg>`;
@@ -110,100 +118,41 @@ function carSvg(body, color) {
   );
 }
 
-function siteSvg(role) {
-  let art = "";
-  let labelRect;
-  if (role === "ParkingTower") {
-    art += rect(13, 11, 114, 147, "#c9d9db", 2);
-    art += rect(8, 7, 124, 8, "#537e87", 1);
-    for (const y of [43, 73, 103, 133]) {
-      art += rect(20, y, 100, 19, road, 2);
-      for (const x of [46, 72, 98])
-        art += line(x, y + 1, x, y + 18, cream, 1.5);
-    }
-    art += rect(25, 20, 90, 16, cream, 2);
-    labelRect = { x: 25, y: 20, width: 90, height: 16 };
-  } else if (role === "RepairGarage") {
-    art += rect(10, 66, 120, 92, "#d9e7e7", 2);
-    art += path("M7 67 L32 50 L58 67 L85 50 L132 67 Z", "#69B9E9");
-    art += rect(20, 95, 100, 63, "#7c9fae", 2);
-    for (const y of [111, 127, 143]) art += line(22, y, 118, y, cream, 2);
-    art += rect(25, 76, 90, 15, cream, 2);
-    labelRect = { x: 25, y: 76, width: 90, height: 15 };
-  } else if (role === "Cinema") {
-    art += rect(16, 48, 108, 110, "#9187ba", 4);
-    art += path("M14 54 L70 28 L126 54 Z", "#c0b4d4");
-    art += rect(4, 82, 132, 20, "#F6C85F", 3);
-    for (const x of [11, 129]) art += circle(x, 92, 2, cream, "none", 0);
-    art += rect(37, 111, 66, 47, "#30455b", 3);
-    art += line(70, 112, 70, 157, cream, 1.5);
-    art += circle(70, 63, 12, "#f3e8dc");
-    for (const [x, y] of [
-      [65, 58],
-      [75, 58],
-      [65, 68],
-      [75, 68],
-    ])
-      art += circle(x, y, 2.3, ink, "none", 0);
-    labelRect = { x: 18, y: 84, width: 104, height: 15 };
-  } else if (role === "BurgerStop") {
-    art += rect(8, 91, 124, 67, "#f3c49f", 6);
-    art += path("M17 94 C20 65 120 65 123 94 Z", "#F6C85F");
-    art += path("M16 93 Q70 99 124 93 L124 99 Q70 105 16 99 Z", "#73D9A6");
-    art += rect(18, 110, 104, 18, cream, 3);
-    art += rect(20, 132, 35, 21, window, 3);
-    art += rect(64, 130, 20, 28, "#624d45", 2);
-    art += rect(93, 132, 29, 21, window, 3);
-    labelRect = { x: 18, y: 110, width: 104, height: 18 };
-  } else if (role === "PracticeCourse") {
-    art += rect(5, 99, 12, 59, "#e9e5d7", 1);
-    art += rect(123, 99, 12, 59, "#e9e5d7", 1);
-    art += path("M5 100 L70 67 L135 100 L135 111 L70 79 L5 111 Z", "#EF8270");
-    art += rect(28, 94, 84, 18, cream, 2);
-    for (const x of [25, 113]) {
-      art += line(x, 115, x, 154, ink, 2);
-      art += path(`M${x} 116 L${x + 15} 121 L${x} 127 Z`, "#F6C85F");
-    }
-    labelRect = { x: 28, y: 94, width: 84, height: 18 };
-  } else if (role === "HorseCourse") {
-    art += rect(9, 90, 122, 68, "#f0dcc2", 3);
-    art += path("M5 86 L19 57 L70 35 L121 57 L135 86 Z", "#2f6f65");
-    art += path("M12 82 L25 61 L70 43 L115 61 L128 82 Z", "#4a9a86");
-    for (const x of [24, 43, 97, 116]) {
-      art += line(x, 86, x, 158, "#a87859", 2);
-      art += rect(x - 2, 108, 5, 4, "#e9b85b", 1);
-    }
-    art += path(
-      "M46 158 L46 121 Q46 100 70 100 Q94 100 94 121 L94 158 Z",
-      "#31585b",
-    );
-    art += path(
-      "M53 158 L53 122 Q53 108 70 108 Q87 108 87 122 L87 158 Z",
-      "#abc8b4",
-    );
-    art += rect(21, 90, 98, 20, cream, 3);
-    art += line(11, 139, 45, 139, "#fff8eb", 2);
-    art += line(95, 139, 129, 139, "#fff8eb", 2);
-    art += line(13, 148, 44, 148, "#a87859", 2);
-    art += line(96, 148, 127, 148, "#a87859", 2);
-    art += path(
-      "M60 56 Q58 68 60 74 Q70 83 80 74 Q82 68 80 56",
-      "none",
-      "#e9b85b",
-      4,
-    );
-    art += circle(61, 58, 1.4, cream, "none", 0);
-    art += circle(79, 58, 1.4, cream, "none", 0);
-    art += line(20, 57, 20, 41, ink, 1.5);
-    art += path("M20 42 L34 46 L20 51 Z", "#ef8270");
-    art += line(120, 57, 120, 41, ink, 1.5);
-    art += path("M120 42 L106 46 L120 51 Z", "#f6c85f");
-    labelRect = { x: 24, y: 92, width: 92, height: 16 };
-  } else throw new Error(`Unknown NPC role ${role}`);
-  return { image: svg(140, 160, art), labelRect };
-}
-
 const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
+
+async function renderedSite(role) {
+  const source = await readFile(
+    join(civicSourceDir, `${role.toLowerCase()}.png`),
+  );
+  const metadata = await sharp(source).metadata();
+  if (!metadata.hasAlpha) throw new Error(`${role} source needs alpha`);
+  const { data: trimmed, info } = await sharp(source)
+    .trim({ threshold: 10 })
+    .png()
+    .toBuffer({ resolveWithObject: true });
+  const scale = Math.min(536 / info.width, 620 / info.height);
+  const width = Math.round(info.width * scale);
+  const height = Math.round(info.height * scale);
+  const resized = await sharp(trimmed).resize(width, height).png().toBuffer();
+  const data = await sharp({
+    create: {
+      width: 560,
+      height: 640,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
+  })
+    .composite([
+      {
+        input: resized,
+        left: Math.round((560 - width) / 2),
+        top: 640 - height,
+      },
+    ])
+    .png()
+    .toBuffer();
+  return { data, sourceHash: digest(source), labelRect: civicLabels[role] };
+}
 
 async function alphaBounds(png, width, height) {
   const { data, info } = await sharp(png)
@@ -283,6 +232,9 @@ async function verify(catalog) {
     const data = await readFile(join(output, entry.sprite));
     if (digest(data) !== entry.hash)
       throw new Error(`site hash mismatch ${entry.role}`);
+    const source = await renderedSite(entry.role);
+    if (entry.sourceHash !== source.sourceHash || !data.equals(source.data))
+      throw new Error(`rendered civic source mismatch ${entry.role}`);
     const bounds = await alphaBounds(data, 140, 160);
     if (JSON.stringify(bounds) !== JSON.stringify(entry.alphaBounds))
       throw new Error(`site alpha bounds mismatch ${entry.role}`);
@@ -318,8 +270,8 @@ async function generate() {
   }
   for (const role of roles) {
     const sprite = `${role.toLowerCase()}.png`;
-    const art = siteSvg(role);
-    const data = await sharp(Buffer.from(art.image)).png().toBuffer();
+    const art = await renderedSite(role);
+    const { data } = art;
     const bounds = await alphaBounds(data, 140, 160);
     checkBounds(bounds, 140, 160, role);
     checkBounds(art.labelRect, 140, 160, `${role} label`);
@@ -328,6 +280,7 @@ async function generate() {
       role,
       sprite,
       hash: digest(data),
+      sourceHash: art.sourceHash,
       alphaBounds: bounds,
       labelRect: art.labelRect,
     });

@@ -12,5 +12,5 @@ test("all body, colour and civic destination combinations are available", () => 
       assert.match(carSpriteFile(body, color), /\.png$/);
   }
   for (const role of ServiceRole.options)
-    assert.match(siteSpriteFile(role), /\.png$/);
+    assert.match(siteSpriteFile(role), /\.png\?v=[0-9a-f]{12}$/);
 });

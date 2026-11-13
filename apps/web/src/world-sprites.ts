@@ -36,7 +36,7 @@ export function carSpriteFile(body: string, color: string): string {
 export function siteSpriteFile(role: string): string {
   const site = sites.get(role);
   if (!site) throw new Error(`Missing civic sprite: ${role}`);
-  return site.sprite;
+  return `${site.sprite}?v=${site.hash.slice(0, 12)}`;
 }
 
 function loadInto(sprite: Sprite, fallback: Graphics, url: string): void {
@@ -118,6 +118,6 @@ export function createNpcFacade(
     site.labelRect.y + site.labelRect.height / 2,
   );
   group.addChild(fallback, sprite, text);
-  loadInto(sprite, fallback, assetUrl(site.sprite));
+  loadInto(sprite, fallback, assetUrl(siteSpriteFile(role)));
   return group;
 }

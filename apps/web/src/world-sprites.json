@@ -294,103 +294,109 @@
     {
       "role": "ParkingTower",
       "sprite": "parkingtower.png",
-      "hash": "dc207630ec9b10314951d3499ff3d9dccab5cc85e31976790dff6180c9376cef",
+      "hash": "708c08ad4143cb9b3f06565fe818513adaba3abc76326d027126d37ca24534f6",
+      "sourceHash": "a3ecbc93c23c8dc058f122b967a31ed2d6d84453839e08987bc2d55b2ddba71f",
       "alphaBounds": {
-        "x": 7.5,
-        "y": 6.5,
-        "width": 125,
-        "height": 152
+        "x": 6.25,
+        "y": 5,
+        "width": 127.5,
+        "height": 155
       },
       "labelRect": {
-        "x": 25,
-        "y": 20,
-        "width": 90,
-        "height": 16
+        "x": 24,
+        "y": 33,
+        "width": 92,
+        "height": 14
       }
     },
     {
       "role": "RepairGarage",
       "sprite": "repairgarage.png",
-      "hash": "7923ee6c5090546955140ea6f4ccbdb964cda0cf93d281c84df0a07f0f301ef3",
+      "hash": "048a109ec89d95a76d35f8b54c62b87b3c8af030c0089ca29257ed0aabe7a716",
+      "sourceHash": "e0cbef9bb62ba77ad3e08786e2198af8525b6148139edc9a0c0823607727e203",
       "alphaBounds": {
-        "x": 6.25,
-        "y": 49.25,
-        "width": 126.5,
-        "height": 109.25
+        "x": 3,
+        "y": 97.25,
+        "width": 134,
+        "height": 62.75
       },
       "labelRect": {
-        "x": 25,
-        "y": 76,
-        "width": 90,
-        "height": 15
+        "x": 43,
+        "y": 116,
+        "width": 54,
+        "height": 13
       }
     },
     {
       "role": "Cinema",
       "sprite": "cinema.png",
-      "hash": "1ae708e1c9f8f9446b01d79cc25f9a238bc5a9de283cb74938f48f1583a62dc8",
+      "hash": "c79a11579a03a2ee755c0fc665858252e8dc509cb2695d6133aba8ec8545ea3b",
+      "sourceHash": "3ff2614d0d459c4c8820a488ac6e91863c43dabb4bf14a20beefd7138588f60f",
       "alphaBounds": {
-        "x": 3.5,
-        "y": 27.25,
-        "width": 133,
-        "height": 131.25
+        "x": 3,
+        "y": 7.5,
+        "width": 134,
+        "height": 152.5
       },
       "labelRect": {
-        "x": 18,
-        "y": 84,
-        "width": 104,
-        "height": 15
+        "x": 15,
+        "y": 77,
+        "width": 110,
+        "height": 16
       }
     },
     {
       "role": "BurgerStop",
       "sprite": "burgerstop.png",
-      "hash": "2acde1939e6f689677f5a780121d001b695165b7874f2fd55dc82dd1956dab9e",
+      "hash": "3f29c8d381685a1a8a70cc3c9b2702ba6c99d993a6ecc7975c08b393bdcfd1e8",
+      "sourceHash": "aaef9b23745a0b3a61c52b1f7e25dce9db60aee66f753a0f25d4289e50b15d4a",
       "alphaBounds": {
-        "x": 7.5,
-        "y": 71.5,
-        "width": 125,
-        "height": 87
+        "x": 3,
+        "y": 82.75,
+        "width": 134,
+        "height": 77.25
       },
       "labelRect": {
-        "x": 18,
-        "y": 110,
-        "width": 104,
-        "height": 18
+        "x": 15,
+        "y": 106,
+        "width": 110,
+        "height": 15
       }
     },
     {
       "role": "PracticeCourse",
       "sprite": "practicecourse.png",
-      "hash": "7b7f4163aa1528942c958394a3784157efa67ef1a845d2fb455c65fe184c2f61",
+      "hash": "c5848dee702d2776f3ab48ee834fdce797030b41857f50be6333ee63bd393614",
+      "sourceHash": "6c616bbe428912a2649bb7be1f7dcca258d0c214302598515e4630559c6341f8",
       "alphaBounds": {
-        "x": 4.25,
-        "y": 66.25,
-        "width": 131.5,
-        "height": 92.25
+        "x": 3,
+        "y": 35,
+        "width": 134,
+        "height": 125
       },
       "labelRect": {
-        "x": 28,
-        "y": 94,
-        "width": 84,
-        "height": 18
+        "x": 23,
+        "y": 74,
+        "width": 94,
+        "height": 15
       }
     },
     {
       "role": "HorseCourse",
       "sprite": "horsecourse.png",
-      "hash": "208a31f874427468020f4ec288a5803ae5cea9854f2e859cd3178d959d82f9e8",
+      "hash": "95044e4160f0606a8f37e0a3db83ac3c48c0c9d26bda501d3e3f7e622845b6e2",
+      "sourceHash": "59a39c13c0da45f05d7be625d85a00b2710701acb86fd18dc4da358ebf4b8563",
       "alphaBounds": {
-        "x": 4.25,
-        "y": 34.25,
-        "width": 131.5,
-        "height": 124.75
+        "x": 3,
+        "y": 10.5,
+        "width": 134,
+        "height": 149.5
       },
       "labelRect": {
-        "x": 24,
-        "y": 92,
-        "width": 92,
-        "height": 16
+        "x": 31,
+        "y": 72,
+        "width": 78,
+        "height": 14
       }
     }
   ]
