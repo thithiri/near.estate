@@ -12,6 +12,7 @@ import {
   ChainStreetSideV1,
   ChainStreetSideV2,
   ChainStreetEconomyConfig,
+  ChainTicketRewardStatus,
   CoinString,
   TOWER_FLOORS,
   TOWER_SPACES_PER_FLOOR,
@@ -23,6 +24,7 @@ import {
   type ChainSession as SessionView,
   type ChainStreetSide as StreetSideView,
   type ChainStreetEconomyConfig as StreetEconomyConfig,
+  type ChainTicketRewardStatus as TicketRewardStatus,
 } from "@estate/shared";
 import { z } from "zod";
 
@@ -371,6 +373,14 @@ export class ChainReader {
 
   ownerConfig(): Promise<OwnerConfig> {
     return this.view("get_config", {}, ChainOwnerConfig);
+  }
+
+  ticketRewardStatus(plotId: string): Promise<TicketRewardStatus> {
+    return this.view(
+      "get_ticket_reward_status",
+      { plot_id: plotId },
+      ChainTicketRewardStatus,
+    );
   }
 
   streetEconomyConfig(): Promise<StreetEconomyConfig> {

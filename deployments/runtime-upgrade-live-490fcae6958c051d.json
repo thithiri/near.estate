@@ -1,0 +1,15 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "status": "verified",
+  "beforeWasmSha256": "ad148df441a41d1f7263974fb1db6821b70b7754a3a46c8c594b759e0822b887",
+  "afterWasmSha256": "490fcae6958c051d34b18e18d26adb63e6132941c8de5933bb7ad60669f82b09",
+  "beforeStateSha256": "75ca98a500152eab325be156b5a8b9ea66b72cf8711b5a48aaec352cd1eb96b8",
+  "beforePublicViewsSha256": "e7ef607173496a230e1673ad78b396d5d0416fe63e5ca7bceafe362606a19379",
+  "pauseTransactionHash": "4fwz7D2yJZYtSoQvA98HnAYKSc7iMUy5iVudBvn57FSX",
+  "pausedStateSha256": "a71d7b8762114cd5480d3139dda03af9ce310edd58cefdb09f7ea68e2bf480c1",
+  "deployTransactionHash": "54FCRCJV72gzq8FtMoJmWKUctLD1UcKmT3HPU3apiuat",
+  "reopenTransactionHash": "E765KU1CEwxrHpbvGmhq2Au7t2kcJUK58jMcmwiSJbuU",
+  "finalCodeSha256": "490fcae6958c051d34b18e18d26adb63e6132941c8de5933bb7ad60669f82b09",
+  "finalStateSha256": "75ca98a500152eab325be156b5a8b9ea66b72cf8711b5a48aaec352cd1eb96b8"
+}

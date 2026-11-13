@@ -3,9 +3,10 @@
   "contractId": "dev-20261110121817-59798568433631.testnet",
   "releaseRecord": "deployments/variable-city-release-db33845c80179c1a.json",
   "runtimeUpgradeRecords": [
-    "deployments/runtime-upgrade-live-ad148df441a41d1f.json"
+    "deployments/runtime-upgrade-live-ad148df441a41d1f.json",
+    "deployments/runtime-upgrade-live-490fcae6958c051d.json"
   ],
-  "currentCodeSha256": "ad148df441a41d1f7263974fb1db6821b70b7754a3a46c8c594b759e0822b887",
+  "currentCodeSha256": "490fcae6958c051d34b18e18d26adb63e6132941c8de5933bb7ad60669f82b09",
   "seedVersion": 2,
   "roads": 5,
   "streetSides": 10,
@@ -15,5 +16,5 @@
   "mapPoints": 100,
   "intersectionSignViews": 24,
   "endExitViews": 8,
-  "verifiedAt": "2026-11-12T21:28:32.658Z"
+  "verifiedAt": "2026-11-13T01:56:26.188Z"
 }

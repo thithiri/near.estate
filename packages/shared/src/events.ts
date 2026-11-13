@@ -15,6 +15,7 @@ export const GameEventName = z.enum([
   "collected",
   "expired",
   "ticketed",
+  "ticket_reward_policy_set",
   "inspection_attempted",
   "rule_scheduled",
   "building_updated",
@@ -55,6 +56,9 @@ const settlement = z
     driver_payout: CoinString,
     recipient_payout: CoinString,
     forfeited: CoinString,
+    owner_payout: CoinString.optional(),
+    treasury_payout: CoinString.optional(),
+    owner_account: accountId.nullable().optional(),
   })
   .strict()
   .superRefine((value, context) => {
@@ -78,6 +82,27 @@ const settlement = z
         path: ["gross"],
         message: "settlement payouts must add up to gross",
       });
+    }
+    const splitPresent =
+      value.owner_payout !== undefined ||
+      value.treasury_payout !== undefined ||
+      value.owner_account !== undefined;
+    if (splitPresent) {
+      if (
+        value.owner_payout === undefined ||
+        value.treasury_payout === undefined ||
+        value.owner_account === undefined ||
+        BigInt(value.owner_payout ?? "0") +
+          BigInt(value.treasury_payout ?? "0") !==
+          BigInt(value.recipient_payout) ||
+        BigInt(value.owner_payout ?? "0") > 0n !==
+          (value.owner_account !== null)
+      )
+        context.addIssue({
+          code: "custom",
+          path: ["owner_payout"],
+          message: "settlement recipient split is invalid",
+        });
     }
   });
 
@@ -155,6 +180,7 @@ export const GameEventPayloads = {
   collected: settlement,
   expired: settlement,
   ticketed: settlement,
+  ticket_reward_policy_set: z.object({ daily_owner_cap: CoinString }).strict(),
   inspection_attempted: z
     .object({ session_id: eventId, success: z.boolean() })
     .strict(),

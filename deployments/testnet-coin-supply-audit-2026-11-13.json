@@ -1,0 +1,19 @@
+{
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "indexedFromHeight": 277066408,
+  "reconciledHeight": 277444050,
+  "reconciledBlockHash": "4gACJhUe6Ne9SDYpjKzuDgHEFAj6zFDTufEdvjv7bcUt",
+  "registeredAccounts": 3,
+  "observedCars": 3,
+  "settlements": 21,
+  "archivedAmountBackfills": 4,
+  "grants": "300000000",
+  "settlementPayouts": "182904997",
+  "spending": "200000000",
+  "forfeited": "120000",
+  "expectedOutstanding": "282904997",
+  "observedOutstanding": "282904997",
+  "balancesMatch": true,
+  "historyCoverage": "starts_before_contract",
+  "currentSupplyVerified": true
+}

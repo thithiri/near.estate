@@ -1,6 +1,7 @@
 use super::*;
+use crate::runtime::TicketRewardPolicy;
 use near_estate_contract::{
-    BuildingType, CarBody, CarColor, MediaIdentity, MediaKind, ParkingRule, PendingRule,
+    BuildingType, CarBody, CarColor, MediaIdentity, MediaKind, ParkingRule, PendingRule, Settlement,
 };
 use near_sdk::{test_utils::VMContextBuilder, testing_env};
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -202,6 +203,97 @@ fn illegal_three_unit_space_tickets_to_owner_and_frees_car() {
             .plot
             .ticket_cooldown_until
             > 1_600
+    );
+}
+
+#[test]
+fn owner_ticket_reward_is_capped_per_plot_day_without_blocking_enforcement() {
+    let mut contract = fixture(ParkingRule::NoParking);
+    fn ticket_at(contract: &mut Contract, park_at: u64, ticket_at: u64) -> Settlement {
+        context("driver.testnet", park_at);
+        let session = contract.park(1, PLOT_ID.to_owned(), 0);
+        context("owner.testnet", ticket_at);
+        contract.ticket(PLOT_ID.to_owned(), 0, session.id)
+    }
+
+    let first = ticket_at(&mut contract, 1_000, 1_600);
+    assert_eq!(first.recipient_payout.0, 10_500_000);
+    let second = ticket_at(&mut contract, 1_601, 2_201);
+    assert_eq!(second.recipient_payout.0, 10_500_000);
+    assert_eq!(
+        contract
+            .get_account(account("owner.testnet"))
+            .expect("owner")
+            .balance
+            .0,
+        115 * COIN
+    );
+    assert_eq!(contract.get_treasury_coins().0, 6 * COIN);
+    let status = contract.get_ticket_reward_status(PLOT_ID.to_owned());
+    assert_eq!(status.owner_paid_today.0, 15 * COIN);
+    assert_eq!(status.owner_remaining_today.0, 0);
+
+    let third = ticket_at(&mut contract, 2_202, 2_802);
+    assert_eq!(third.recipient_payout.0, 10_500_000);
+    assert_eq!(
+        contract
+            .get_account(account("owner.testnet"))
+            .expect("owner")
+            .balance
+            .0,
+        115 * COIN
+    );
+    assert_eq!(contract.get_treasury_coins().0, 16_500_000);
+    assert!(contract.get_space_session(PLOT_ID.to_owned(), 0).is_none());
+
+    let next_day = ticket_at(&mut contract, 87_400, 88_000);
+    assert_eq!(next_day.recipient_payout.0, 10_500_000);
+    assert_eq!(
+        contract
+            .get_account(account("owner.testnet"))
+            .expect("owner")
+            .balance
+            .0,
+        125_500_000
+    );
+    assert_eq!(
+        contract
+            .get_ticket_reward_status(PLOT_ID.to_owned())
+            .owner_paid_today
+            .0,
+        10_500_000
+    );
+}
+
+#[test]
+fn only_admin_can_change_ticket_reward_policy_and_zero_sends_rewards_to_treasury() {
+    let mut contract = fixture(ParkingRule::NoParking);
+    context("owner.testnet", 1_000);
+    assert!(
+        catch_unwind(AssertUnwindSafe(|| contract.set_ticket_reward_policy(
+            TicketRewardPolicy {
+                daily_owner_cap: U128(0),
+            },
+        )))
+        .is_err()
+    );
+    context("city.testnet", 1_000);
+    contract.set_ticket_reward_policy(TicketRewardPolicy {
+        daily_owner_cap: U128(0),
+    });
+    context("driver.testnet", 1_001);
+    let session = contract.park(1, PLOT_ID.to_owned(), 0);
+    context("owner.testnet", 1_601);
+    let settlement = contract.ticket(PLOT_ID.to_owned(), 0, session.id);
+    assert_eq!(settlement.recipient_payout.0, 10_500_000);
+    assert_eq!(contract.get_treasury_coins().0, 10_500_000);
+    assert_eq!(
+        contract
+            .get_account(account("owner.testnet"))
+            .expect("owner")
+            .balance
+            .0,
+        100 * COIN
     );
 }
 

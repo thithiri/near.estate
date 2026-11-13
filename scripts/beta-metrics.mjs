@@ -394,6 +394,9 @@ export function readBetaMetrics(
     : new Set();
   const hasFullEconomySchema = [
     "starter_grants",
+    "driver_payout",
+    "recipient_payout",
+    "forfeited",
     "unpriced_cost_events",
     "unpriced_grant_events",
   ].every((column) => economyColumns.has(column));
@@ -404,6 +407,17 @@ export function readBetaMetrics(
       collections: total.collections + row.collections,
       tickets: total.tickets + row.tickets,
       grossCoinSubunits: total.grossCoinSubunits + BigInt(row.gross),
+      issuedCoinSubunits:
+        total.issuedCoinSubunits +
+        BigInt(row.starter_grants ?? "0") +
+        BigInt(row.driver_payout ?? "0") +
+        BigInt(row.recipient_payout ?? "0"),
+      driverPayoutSubunits:
+        total.driverPayoutSubunits + BigInt(row.driver_payout ?? "0"),
+      ownerOrTreasuryPayoutSubunits:
+        total.ownerOrTreasuryPayoutSubunits +
+        BigInt(row.recipient_payout ?? "0"),
+      forfeitedSubunits: total.forfeitedSubunits + BigInt(row.forfeited ?? "0"),
       knownCostCoinSubunits:
         total.knownCostCoinSubunits + BigInt(row.known_coin_costs),
       unpricedCostEvents:
@@ -417,6 +431,10 @@ export function readBetaMetrics(
       collections: 0,
       tickets: 0,
       grossCoinSubunits: 0n,
+      issuedCoinSubunits: 0n,
+      driverPayoutSubunits: 0n,
+      ownerOrTreasuryPayoutSubunits: 0n,
+      forfeitedSubunits: 0n,
       knownCostCoinSubunits: 0n,
       unpricedCostEvents: 0,
       unpricedGrantEvents: 0,
@@ -507,7 +525,21 @@ export function readBetaMetrics(
     },
     coinPacing: {
       grossEarnedSubunits: economy.grossCoinSubunits.toString(),
+      issuedSubunits: economy.issuedCoinSubunits.toString(),
+      driverPayoutSubunits: economy.driverPayoutSubunits.toString(),
+      ownerOrTreasuryPayoutSubunits:
+        economy.ownerOrTreasuryPayoutSubunits.toString(),
+      forfeitedSubunits: economy.forfeitedSubunits.toString(),
       knownSpentSubunits: economy.knownCostCoinSubunits.toString(),
+      knownNetChangeSubunits: (
+        economy.issuedCoinSubunits - economy.knownCostCoinSubunits
+      ).toString(),
+      knownSpendShareOfIssued: economy.issuedCoinSubunits
+        ? Number(
+            (economy.knownCostCoinSubunits * 10_000n) /
+              economy.issuedCoinSubunits,
+          ) / 10_000
+        : null,
       amountCoverageComplete:
         cursorSecond !== null &&
         hasFullEconomySchema &&

@@ -10,6 +10,12 @@ function exists(db: DatabaseSync, name: string): boolean {
   );
 }
 
+function hasColumn(db: DatabaseSync, table: string, name: string): boolean {
+  return (
+    db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>
+  ).some((column) => column.name === name);
+}
+
 function readPlotStatsUnwrapped(
   db: DatabaseSync,
   plotId: string,
@@ -71,6 +77,57 @@ function readPlotStatsUnwrapped(
     : [];
   const ads = new Map(adRows.map((row) => [row.day, row]));
   const chain = new Map(chainRows.map((row) => [row.day, row]));
+  const income = {
+    knownOwnerPayout: 0n,
+    meterPayout: 0n,
+    ticketPayout: 0n,
+    treasuryPayout: 0n,
+    unattributedSettlements: 0,
+  };
+  const traffic = { legalParks: 0, illegalParks: 0 };
+  if (
+    exists(db, "chain_events") &&
+    hasColumn(db, "chain_events", "event_name") &&
+    hasColumn(db, "chain_events", "payload_json") &&
+    (!link || hasColumn(db, "chain_events", "block_height"))
+  ) {
+    const cutoverFilter =
+      link && hasColumn(db, "chain_events", "block_height")
+        ? " AND block_height > ?"
+        : "";
+    const rows = db
+      .prepare(
+        `SELECT event_name, payload_json FROM chain_events WHERE location_id = ? AND block_day BETWEEN ? AND ? AND event_name IN ('parked', 'collected', 'expired', 'ticketed')${cutoverFilter}`,
+      )
+      .all(
+        ...(cutoverFilter
+          ? [plotId, startDay, endDay, link?.cutover_height ?? 0]
+          : [plotId, startDay, endDay]),
+      ) as Array<{
+      event_name: string;
+      payload_json: string;
+    }>;
+    for (const row of rows) {
+      const payload = JSON.parse(row.payload_json) as Record<string, unknown>;
+      if (row.event_name === "parked") {
+        if (payload.legal === true) traffic.legalParks++;
+        else if (payload.legal === false) traffic.illegalParks++;
+        continue;
+      }
+      if (
+        typeof payload.owner_payout !== "string" ||
+        typeof payload.treasury_payout !== "string"
+      ) {
+        income.unattributedSettlements++;
+        continue;
+      }
+      const owner = BigInt(payload.owner_payout);
+      income.knownOwnerPayout += owner;
+      income.treasuryPayout += BigInt(payload.treasury_payout);
+      if (row.event_name === "ticketed") income.ticketPayout += owner;
+      else income.meterPayout += owner;
+    }
+  }
   const days: PlotStats["days"] = [];
   for (let offset = 6; offset >= 0; offset--) {
     const day = new Date((today - offset) * 86_400_000)
@@ -188,6 +245,20 @@ function readPlotStatsUnwrapped(
     plotId,
     days,
     totals,
+    traffic: {
+      ...traffic,
+      unclassifiedParks: Math.max(
+        0,
+        totals.parks - traffic.legalParks - traffic.illegalParks,
+      ),
+    },
+    income: {
+      knownOwnerPayout: income.knownOwnerPayout.toString(),
+      meterPayout: income.meterPayout.toString(),
+      ticketPayout: income.ticketPayout.toString(),
+      treasuryPayout: income.treasuryPayout.toString(),
+      unattributedSettlements: income.unattributedSettlements,
+    },
     ...(linkedHistory ? { linkedHistory } : {}),
     freshness: {
       impressionReceivedAt: impression.received,

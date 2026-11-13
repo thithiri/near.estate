@@ -23,6 +23,7 @@ const samples = {
   plot_seeded: { plot_id },
   npc_site_seeded: { site_id: "npc-main-tower", role: "game_owned" },
   plot_bought: { plot_id, owner, price_yocto: "1000000000000000000000000" },
+  ticket_reward_policy_set: { daily_owner_cap: "15000000" },
   parked: {
     session_id: 1,
     car_id: 1,
@@ -175,6 +176,28 @@ test("payload variants accept paid building changes and emergency repair", () =>
       envelope("car_repaired", { car_id: 1, points: 2, emergency: true }),
     ).success,
     true,
+  );
+});
+
+test("ticket owner and treasury split must reconcile to recipient payout", () => {
+  const ticket = {
+    ...samples.ticketed,
+    owner_payout: "1500000",
+    treasury_payout: "2000000",
+    owner_account: owner,
+  };
+  assert.equal(GameEvent.safeParse(envelope("ticketed", ticket)).success, true);
+  assert.equal(
+    GameEvent.safeParse(
+      envelope("ticketed", { ...ticket, treasury_payout: "1000000" }),
+    ).success,
+    false,
+  );
+  assert.equal(
+    GameEvent.safeParse(
+      envelope("ticketed", { ...ticket, owner_account: null }),
+    ).success,
+    false,
   );
 });
 

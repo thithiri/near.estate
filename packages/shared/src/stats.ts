@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CoinString } from "./money.js";
 
 const count = z.number().int().nonnegative();
 const timestamp = z.number().int().nonnegative().nullable();
@@ -15,6 +16,18 @@ export const PlotStats = z.object({
   plotId: z.string().min(1),
   days: z.array(PlotDayStats).length(7),
   totals: PlotTotals,
+  traffic: z.object({
+    legalParks: count,
+    illegalParks: count,
+    unclassifiedParks: count,
+  }),
+  income: z.object({
+    knownOwnerPayout: CoinString,
+    meterPayout: CoinString,
+    ticketPayout: CoinString,
+    treasuryPayout: CoinString,
+    unattributedSettlements: count,
+  }),
   linkedHistory: z
     .object({
       sourcePlotId: z.string().min(1),

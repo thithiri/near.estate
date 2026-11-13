@@ -60,6 +60,7 @@ test("plot statistics combine persisted ad and chain totals with freshness", asy
     store.db.exec(`
       CREATE TABLE indexer_state (id INTEGER PRIMARY KEY, last_height INTEGER, last_timestamp_ns TEXT, updated_at INTEGER);
       CREATE TABLE plot_daily_stats (plot_id TEXT, day TEXT, parks INTEGER, tickets INTEGER);
+      CREATE TABLE chain_events (location_id TEXT, block_day TEXT, event_name TEXT, payload_json TEXT);
     `);
     store.db
       .prepare("INSERT INTO indexer_state VALUES (1, ?, ?, ?)")
@@ -67,6 +68,39 @@ test("plot statistics combine persisted ad and chain totals with freshness", asy
     store.db
       .prepare("INSERT INTO plot_daily_stats VALUES (?, ?, ?, ?)")
       .run(plotId, "2026-11-11", 3, 1);
+    const insertSettlement = store.db.prepare(
+      "INSERT INTO chain_events VALUES (?, ?, ?, ?)",
+    );
+    insertSettlement.run(
+      plotId,
+      "2026-11-11",
+      "collected",
+      JSON.stringify({ owner_payout: "10000000", treasury_payout: "0" }),
+    );
+    insertSettlement.run(
+      plotId,
+      "2026-11-11",
+      "ticketed",
+      JSON.stringify({ owner_payout: "5000000", treasury_payout: "5000000" }),
+    );
+    insertSettlement.run(
+      plotId,
+      "2026-11-11",
+      "expired",
+      JSON.stringify({ recipient_payout: "1000000" }),
+    );
+    insertSettlement.run(
+      plotId,
+      "2026-11-11",
+      "parked",
+      JSON.stringify({ legal: true }),
+    );
+    insertSettlement.run(
+      plotId,
+      "2026-11-11",
+      "parked",
+      JSON.stringify({ legal: false }),
+    );
     store.close();
 
     store = new ApiStore(dbPath, assets);
@@ -88,6 +122,18 @@ test("plot statistics combine persisted ad and chain totals with freshness", asy
     assert.equal(stats.totals.averageVisibleMs, 1_500);
     assert.equal(stats.totals.parks, 3);
     assert.equal(stats.totals.tickets, 1);
+    assert.deepEqual(stats.traffic, {
+      legalParks: 1,
+      illegalParks: 1,
+      unclassifiedParks: 1,
+    });
+    assert.deepEqual(stats.income, {
+      knownOwnerPayout: "15000000",
+      meterPayout: "10000000",
+      ticketPayout: "5000000",
+      treasuryPayout: "5000000",
+      unattributedSettlements: 1,
+    });
     assert.equal(stats.freshness.indexedThroughHeight, 277_000_001);
     assert.equal(stats.freshness.indexedThroughAt, (now - 12) * 1_000);
     assert.equal(stats.freshness.impressionReceivedAt, now * 1_000);
@@ -133,6 +179,72 @@ test("version-2 API city and stats include the tenth plot", async () => {
         .status,
       404,
     );
+  } finally {
+    store.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("moved deed income excludes the destination's pre-cutover events", () => {
+  const dir = mkdtempSync(join(tmpdir(), "estate-moved-income-"));
+  const store = new ApiStore(":memory:", join(dir, "assets"));
+  const now = Math.floor(Date.UTC(2026, 10, 13, 12) / 1_000);
+  try {
+    store.db.exec(`
+      CREATE TABLE deed_history_links (target_plot_id TEXT, source_plot_id TEXT, cutover_height INTEGER, cutover_at_ms INTEGER);
+      CREATE TABLE deed_destination_days (source_plot_id TEXT, day TEXT, impressions INTEGER, dwell_ms INTEGER, parks INTEGER, tickets INTEGER);
+      CREATE TABLE deed_history_days (source_plot_id TEXT, day TEXT, impressions INTEGER, dwell_ms INTEGER, parks INTEGER, tickets INTEGER);
+      CREATE TABLE impression_daily_stats (plot_id TEXT, day TEXT, impressions INTEGER, dwell_ms INTEGER);
+      CREATE TABLE impression_events (plot_id TEXT, received_at_ms INTEGER);
+      CREATE TABLE plot_daily_stats (plot_id TEXT, day TEXT, parks INTEGER, tickets INTEGER);
+      CREATE TABLE chain_events (location_id TEXT, block_day TEXT, block_height INTEGER, event_name TEXT, payload_json TEXT);
+    `);
+    const target = "plot-main-n-1";
+    store.db
+      .prepare("INSERT INTO deed_history_links VALUES (?, ?, ?, ?)")
+      .run(target, "plot-main-n-0", 50, now * 1_000 - 60_000);
+    store.db
+      .prepare("INSERT INTO deed_destination_days VALUES (?, ?, ?, ?, ?, ?)")
+      .run("plot-main-n-0", "2026-11-13", 0, 0, 1, 0);
+    store.db
+      .prepare("INSERT INTO plot_daily_stats VALUES (?, ?, ?, ?)")
+      .run(target, "2026-11-13", 2, 0);
+    const insert = store.db.prepare(
+      "INSERT INTO chain_events VALUES (?, ?, ?, ?, ?)",
+    );
+    insert.run(
+      target,
+      "2026-11-13",
+      40,
+      "parked",
+      JSON.stringify({ legal: false }),
+    );
+    insert.run(
+      target,
+      "2026-11-13",
+      45,
+      "collected",
+      JSON.stringify({ owner_payout: "9000000", treasury_payout: "0" }),
+    );
+    insert.run(
+      target,
+      "2026-11-13",
+      60,
+      "parked",
+      JSON.stringify({ legal: true }),
+    );
+    insert.run(
+      target,
+      "2026-11-13",
+      65,
+      "collected",
+      JSON.stringify({ owner_payout: "2000000", treasury_payout: "0" }),
+    );
+    const stats = readPlotStats(store.db, target, now);
+    assert.equal(stats.totals.parks, 1);
+    assert.equal(stats.traffic.legalParks, 1);
+    assert.equal(stats.traffic.illegalParks, 0);
+    assert.equal(stats.income.knownOwnerPayout, "2000000");
   } finally {
     store.close();
     rmSync(dir, { recursive: true, force: true });
@@ -193,6 +305,8 @@ test("economy telemetry keeps exact large coin sums and labels incomplete costs"
       };
       indexedThroughHeight: number | null;
       amountCoverageComplete: boolean;
+      sevenDayCoinFlow: { issued: string; spent: string; netChange: string };
+      indexedCoinFlow: { issued: string; spent: string; netChange: string };
       note: string;
     };
     assert.equal(body.totals.gross, "100000000000000000000");
@@ -201,6 +315,14 @@ test("economy telemetry keeps exact large coin sums and labels incomplete costs"
     assert.equal(body.totals.starterGrants, "100000000");
     assert.equal(body.totals.unpricedCostEvents, 2);
     assert.equal(body.totals.unpricedGrantEvents, 1);
+    assert.deepEqual(body.sevenDayCoinFlow, {
+      issued: "90000000000100000000",
+      spent: "5000000",
+      netChange: "90000000000095000000",
+      unpricedCostEvents: 2,
+      unpricedGrantEvents: 1,
+    });
+    assert.deepEqual(body.indexedCoinFlow, body.sevenDayCoinFlow);
     assert.equal(body.indexedThroughHeight, null);
     assert.equal(body.amountCoverageComplete, false);
     assert.match(body.note, /historical/);

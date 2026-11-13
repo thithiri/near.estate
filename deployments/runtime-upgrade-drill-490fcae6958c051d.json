@@ -1,0 +1,10 @@
+{
+  "scope": "local sandbox only; no signed testnet transactions",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "beforeWasmSha256": "ad148df441a41d1f7263974fb1db6821b70b7754a3a46c8c594b759e0822b887",
+  "afterWasmSha256": "490fcae6958c051d34b18e18d26adb63e6132941c8de5933bb7ad60669f82b09",
+  "beforeStateSha256": "75ca98a500152eab325be156b5a8b9ea66b72cf8711b5a48aaec352cd1eb96b8",
+  "pausedUpgradeReopenVerified": true,
+  "sameRecoveryFunctionVerified": true,
+  "rollbackRestoredExactStateAndViews": true
+}

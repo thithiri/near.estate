@@ -5,12 +5,48 @@ use near_estate_contract::{
     NPCSite, ParkedCarAppearance, ParkingRule, ParkingSession, PendingRule, PlotPurchaseBreakdown,
     PlotV2, RoadId, ServiceRole, SessionTerms, Settlement, SettlementReason, Side,
 };
-use near_sdk::{env, json_types::U128, near, require, AccountId, NearToken, Promise};
+use near_sdk::{
+    borsh::{self, BorshDeserialize, BorshSerialize},
+    env,
+    json_types::U128,
+    near, require, AccountId, NearToken, Promise,
+};
 
 use crate::{Contract, ContractExt};
 
 const TOWER_SPACES_PER_FLOOR: u8 = 8;
 const MAX_MODERATION_REASON_BYTES: usize = 240;
+const TICKET_POLICY_KEY: &[u8] = b"near_estate:ticket_policy:v1";
+const TICKET_USAGE_PREFIX: &[u8] = b"near_estate:ticket_usage:v1:";
+
+#[near(serializers = [borsh, json])]
+#[derive(Clone)]
+pub struct TicketRewardPolicy {
+    pub daily_owner_cap: U128,
+}
+
+impl Default for TicketRewardPolicy {
+    fn default() -> Self {
+        Self {
+            daily_owner_cap: U128(15_000_000),
+        }
+    }
+}
+
+#[derive(BorshDeserialize, BorshSerialize)]
+#[borsh(crate = "near_sdk::borsh")]
+struct TicketRewardUsage {
+    day: u64,
+    owner_paid: u128,
+}
+
+#[near(serializers = [json])]
+pub struct TicketRewardStatus {
+    pub daily_owner_cap: U128,
+    pub owner_paid_today: U128,
+    pub owner_remaining_today: U128,
+    pub resets_at: u64,
+}
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
@@ -41,6 +77,63 @@ pub struct StreetSideViewV2 {
 impl Contract {
     fn require_not_paused(&self) {
         require!(!self.inner.paused, "city is paused");
+    }
+
+    fn ticket_usage_key(plot_id: &str) -> Vec<u8> {
+        let mut key = Vec::with_capacity(TICKET_USAGE_PREFIX.len() + plot_id.len());
+        key.extend_from_slice(TICKET_USAGE_PREFIX);
+        key.extend_from_slice(plot_id.as_bytes());
+        key
+    }
+
+    fn ticket_usage(plot_id: &str, day: u64) -> u128 {
+        env::storage_read(&Self::ticket_usage_key(plot_id))
+            .map(|bytes| {
+                TicketRewardUsage::try_from_slice(&bytes)
+                    .unwrap_or_else(|_| env::panic_str("invalid ticket reward usage"))
+            })
+            .filter(|usage| usage.day == day)
+            .map_or(0, |usage| usage.owner_paid)
+    }
+
+    pub fn get_ticket_reward_policy(&self) -> TicketRewardPolicy {
+        env::storage_read(TICKET_POLICY_KEY).map_or_else(TicketRewardPolicy::default, |bytes| {
+            TicketRewardPolicy::try_from_slice(&bytes)
+                .unwrap_or_else(|_| env::panic_str("invalid ticket reward policy"))
+        })
+    }
+
+    pub fn get_ticket_reward_status(&self, plot_id: String) -> TicketRewardStatus {
+        require!(self.inner.plots.contains_key(&plot_id), "unknown plot");
+        let now = Self::now_seconds();
+        let day = now / 86_400;
+        let cap = self.get_ticket_reward_policy().daily_owner_cap.0;
+        let paid = Self::ticket_usage(&plot_id, day);
+        TicketRewardStatus {
+            daily_owner_cap: U128(cap),
+            owner_paid_today: U128(paid),
+            owner_remaining_today: U128(cap.saturating_sub(paid)),
+            resets_at: (day + 1) * 86_400,
+        }
+    }
+
+    pub fn set_ticket_reward_policy(&mut self, policy: TicketRewardPolicy) {
+        require!(
+            env::predecessor_account_id() == self.inner.admin,
+            "admin only"
+        );
+        self.require_not_paused();
+        require!(
+            policy.daily_owner_cap.0 <= 1_000_000_000,
+            "ticket daily owner cap exceeds 1000 coins"
+        );
+        let bytes = borsh::to_vec(&policy)
+            .unwrap_or_else(|_| env::panic_str("ticket reward policy encoding failed"));
+        env::storage_write(TICKET_POLICY_KEY, &bytes);
+        self.emit(
+            "ticket_reward_policy_set",
+            near_sdk::serde_json::json!({"daily_owner_cap": policy.daily_owner_cap.0.to_string()}),
+        );
     }
 
     fn require_moderator(&self) {
@@ -1596,7 +1689,7 @@ impl Contract {
                 now >= active.expires_at,
                 "account already has an earning car"
             );
-            self.settle_session(active_id, SettlementReason::Expire, None);
+            self.settle_session(active_id, SettlementReason::Expire, None, None);
             account = self.registered_account(&caller);
         }
         let key = Self::space_key(facility, &location_id, slot);
@@ -1608,7 +1701,7 @@ impl Contract {
                 .cloned()
                 .unwrap_or_else(|| env::panic_str("occupied session missing"));
             require!(now >= existing.expires_at, "parking space is occupied");
-            self.settle_session(existing_id, SettlementReason::Expire, None);
+            self.settle_session(existing_id, SettlementReason::Expire, None, None);
         }
         require!(
             account.active_session_id.is_none(),
@@ -1746,7 +1839,7 @@ impl Contract {
             Self::now_seconds() < session.expires_at,
             "session expired; call settle_expired"
         );
-        self.settle_session(expected_session_id, SettlementReason::Collect, None)
+        self.settle_session(expected_session_id, SettlementReason::Collect, None, None)
     }
 
     pub fn settle_expired(&mut self, expected_session_id: u64) -> Settlement {
@@ -1760,7 +1853,7 @@ impl Contract {
             Self::now_seconds() >= session.expires_at,
             "session has not expired"
         );
-        self.settle_session(expected_session_id, SettlementReason::Expire, None)
+        self.settle_session(expected_session_id, SettlementReason::Expire, None, None)
     }
 
     pub fn ticket(&mut self, plot_id: String, slot: u8, expected_session_id: u64) -> Settlement {
@@ -1791,8 +1884,31 @@ impl Contract {
         let cooldown_until = now
             .checked_add(u64::from(self.inner.config.ticket_cooldown_seconds))
             .unwrap_or_else(|| env::panic_str("ticket cooldown overflow"));
-        let settlement =
-            self.settle_session(expected_session_id, SettlementReason::Ticket, Some(caller));
+        let day = now / 86_400;
+        let prior_paid = Self::ticket_usage(&plot_id, day);
+        let daily_cap = self.get_ticket_reward_policy().daily_owner_cap.0;
+        let available = daily_cap.saturating_sub(prior_paid);
+        let gross_reward = calculate_settlement(&session, now, SettlementReason::Ticket)
+            .recipient_payout
+            .0;
+        let owner_reward = gross_reward.min(available);
+        let settlement = self.settle_session(
+            expected_session_id,
+            SettlementReason::Ticket,
+            Some(caller),
+            Some(owner_reward),
+        );
+        if owner_reward > 0 {
+            let usage = TicketRewardUsage {
+                day,
+                owner_paid: prior_paid
+                    .checked_add(owner_reward)
+                    .unwrap_or_else(|| env::panic_str("ticket reward usage overflow")),
+            };
+            let bytes = borsh::to_vec(&usage)
+                .unwrap_or_else(|_| env::panic_str("ticket reward usage encoding failed"));
+            env::storage_write(&Self::ticket_usage_key(&plot_id), &bytes);
+        }
         plot.ticket_cooldown_until = cooldown_until;
         self.write_owned_plot(plot_id, plot);
         settlement
@@ -1862,7 +1978,7 @@ impl Contract {
             near_sdk::serde_json::json!({"session_id": expected_session_id, "success": success}),
         );
         if success {
-            Some(self.settle_session(expected_session_id, SettlementReason::Ticket, None))
+            Some(self.settle_session(expected_session_id, SettlementReason::Ticket, None, None))
         } else {
             None
         }
@@ -1901,6 +2017,7 @@ impl Contract {
         session_id: u64,
         reason: SettlementReason,
         ticket_recipient: Option<AccountId>,
+        owner_ticket_reward: Option<u128>,
     ) -> Settlement {
         let session = self
             .inner
@@ -1941,23 +2058,44 @@ impl Contract {
         self.inner.cars.insert(session.car_id, car);
         self.inner.sessions.remove(&session_id);
         self.inner.space_sessions.remove(&key);
-        if settlement.recipient_payout.0 > 0 {
+        require!(
+            owner_ticket_reward.is_none()
+                || matches!(reason, SettlementReason::Ticket) && recipient.is_some(),
+            "ticket reward override requires an owner"
+        );
+        let owner_payout = if recipient.is_some() {
+            owner_ticket_reward.unwrap_or(settlement.recipient_payout.0)
+        } else {
+            0
+        };
+        require!(
+            owner_payout <= settlement.recipient_payout.0,
+            "ticket owner reward exceeds settlement"
+        );
+        let treasury_payout = settlement.recipient_payout.0 - owner_payout;
+        let owner_account = if owner_payout > 0 {
+            recipient.as_ref().map(ToString::to_string)
+        } else {
+            None
+        };
+        if owner_payout > 0 {
             if let Some(account_id) = recipient {
                 let mut owner = self.registered_account(&account_id);
                 owner.balance.0 = owner
                     .balance
                     .0
-                    .checked_add(settlement.recipient_payout.0)
+                    .checked_add(owner_payout)
                     .unwrap_or_else(|| env::panic_str("recipient balance overflow"));
                 self.inner.accounts.insert(account_id, owner);
-            } else {
-                self.inner.treasury_coins.0 = self
-                    .inner
-                    .treasury_coins
-                    .0
-                    .checked_add(settlement.recipient_payout.0)
-                    .unwrap_or_else(|| env::panic_str("treasury balance overflow"));
             }
+        }
+        if treasury_payout > 0 {
+            self.inner.treasury_coins.0 = self
+                .inner
+                .treasury_coins
+                .0
+                .checked_add(treasury_payout)
+                .unwrap_or_else(|| env::panic_str("treasury balance overflow"));
         }
         self.inner.accounts.flush();
         self.inner.cars.flush();
@@ -1983,6 +2121,9 @@ impl Contract {
                 "gross": settlement.gross.0.to_string(),
                 "driver_payout": settlement.driver_payout.0.to_string(),
                 "recipient_payout": settlement.recipient_payout.0.to_string(),
+                "owner_payout": owner_payout.to_string(),
+                "treasury_payout": treasury_payout.to_string(),
+                "owner_account": owner_account,
                 "forfeited": settlement.forfeited.0.to_string()
             }),
         );

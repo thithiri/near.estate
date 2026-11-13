@@ -246,6 +246,14 @@ export const ChainOwnerConfig = z.object({
 });
 export type ChainOwnerConfig = z.infer<typeof ChainOwnerConfig>;
 
+export const ChainTicketRewardStatus = z.object({
+  daily_owner_cap: CoinString,
+  owner_paid_today: CoinString,
+  owner_remaining_today: CoinString,
+  resets_at: z.number().int().nonnegative(),
+});
+export type ChainTicketRewardStatus = z.infer<typeof ChainTicketRewardStatus>;
+
 export const ChainStreetEconomyConfig = z.object({
   base_rate_per_hour: CoinString,
   tier_multiplier_bps: z.tuple([

@@ -39,6 +39,35 @@ type Row = {
   unpriced_grant_events?: number;
 };
 
+function coinFlow(rows: Row[]): {
+  issued: string;
+  spent: string;
+  netChange: string;
+  unpricedCostEvents: number;
+  unpricedGrantEvents: number;
+} {
+  let issued = 0n;
+  let spent = 0n;
+  let unpricedCostEvents = 0;
+  let unpricedGrantEvents = 0;
+  for (const row of rows) {
+    issued +=
+      BigInt(row.starter_grants ?? "0") +
+      BigInt(row.driver_payout) +
+      BigInt(row.recipient_payout);
+    spent += BigInt(row.known_coin_costs);
+    unpricedCostEvents += row.unpriced_cost_events ?? 0;
+    unpricedGrantEvents += row.unpriced_grant_events ?? 0;
+  }
+  return {
+    issued: issued.toString(),
+    spent: spent.toString(),
+    netChange: (issued - spent).toString(),
+    unpricedCostEvents,
+    unpricedGrantEvents,
+  };
+}
+
 function hasTable(db: DatabaseSync, name: string): boolean {
   return Boolean(
     db
@@ -56,6 +85,8 @@ function readEconomyStatsUnwrapped(
   indexedThroughHeight: number | null;
   indexedThroughAt: number | null;
   amountCoverageComplete: boolean;
+  sevenDayCoinFlow: ReturnType<typeof coinFlow>;
+  indexedCoinFlow: ReturnType<typeof coinFlow>;
   note: string;
 } {
   const today = Math.floor(nowSeconds / 86_400);
@@ -69,6 +100,9 @@ function readEconomyStatsUnwrapped(
         .all(start, end) as Row[])
     : [];
   const byDay = new Map(rows.map((row) => [row.day, row]));
+  const allRows = hasTable(db, "economy_daily_stats")
+    ? (db.prepare("SELECT * FROM economy_daily_stats").all() as Row[])
+    : [];
   const days: EconomyDay[] = [];
   for (let offset = 6; offset >= 0; offset--) {
     const day = new Date((today - offset) * 86_400_000)
@@ -147,6 +181,7 @@ function readEconomyStatsUnwrapped(
         | { last_height: number; last_timestamp_ns: string | null }
         | undefined)
     : undefined;
+  const indexedCoinFlow = coinFlow(allRows);
   return {
     days,
     totals,
@@ -156,12 +191,14 @@ function readEconomyStatsUnwrapped(
       : null,
     amountCoverageComplete:
       Boolean(cursor?.last_timestamp_ns) &&
-      totals.unpricedCostEvents === 0 &&
-      totals.unpricedGrantEvents === 0,
+      indexedCoinFlow.unpricedCostEvents === 0 &&
+      indexedCoinFlow.unpricedGrantEvents === 0,
+    sevenDayCoinFlow: coinFlow(rows),
+    indexedCoinFlow,
     note:
-      totals.unpricedCostEvents || totals.unpricedGrantEvents
-        ? "Some historical registration, car or cosmetic events lack amounts. Costs and starter grants are partial for this seven-day window."
-        : "Recorded costs and starter grants cover indexed events in this seven-day window; activity after the indexer cursor is not included.",
+      indexedCoinFlow.unpricedCostEvents || indexedCoinFlow.unpricedGrantEvents
+        ? "Some indexed historical registration, car or cosmetic events lack amounts. Issuance and spending totals are partial."
+        : "Coin flows cover indexed events only; the net change is not a verified outstanding supply or a chain balance reconciliation.",
   };
 }
 

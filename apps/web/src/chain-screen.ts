@@ -17,6 +17,7 @@ import {
   type ChainPlotPurchaseBreakdown,
   type ChainSession,
   type ChainStreetSide,
+  type ChainTicketRewardStatus,
 } from "@estate/shared";
 import { ChainReader } from "./chain-reader.js";
 import { curbDirection } from "./city-navigation.js";
@@ -141,6 +142,10 @@ export class ChainScreen {
   private ownerFetchedAt = 0;
   private ownerError = "";
   private plotStats: PlotStats | null = null;
+  private ticketRewardStatus: {
+    plotId: string;
+    value: ChainTicketRewardStatus;
+  } | null = null;
   private plotStatsError = "";
   private plotStatsLoading = false;
   private plotStatsRequest = 0;
@@ -857,8 +862,14 @@ export class ChainScreen {
       if (!response.ok)
         throw new Error(`Statistics unavailable (${response.status})`);
       const stats = PlotStats.parse(await response.json());
+      const ticketRewardStatus = await this.reader
+        .ticketRewardStatus(plotId)
+        .catch(() => null);
       if (!this.visible || request !== this.plotStatsRequest) return;
       this.plotStats = stats;
+      this.ticketRewardStatus = ticketRewardStatus
+        ? { plotId, value: ticketRewardStatus }
+        : null;
     } catch (error) {
       if (!this.visible || request !== this.plotStatsRequest) return;
       this.plotStatsError =
@@ -873,6 +884,10 @@ export class ChainScreen {
 
   private plotStatsMarkup(plotId: string): string {
     const stats = this.plotStats?.plotId === plotId ? this.plotStats : null;
+    const ticketStatus =
+      this.ticketRewardStatus?.plotId === plotId
+        ? this.ticketRewardStatus.value
+        : null;
     const indexedAt = stats?.freshness.indexedThroughAt;
     const indexLabel =
       indexedAt === null || indexedAt === undefined
@@ -886,7 +901,10 @@ export class ChainScreen {
       ${this.plotStatsError ? `<p role="alert">${html(this.plotStatsError)}</p>` : ""}
       ${
         stats
-          ? `<div class="owner-stats-grid"><div><span>Estimated views</span><strong>${stats.totals.impressions}</strong></div><div><span>Average visible time</span><strong>${(stats.totals.averageVisibleMs / 1_000).toFixed(1)} s</strong></div><div><span>Parks</span><strong>${stats.totals.parks}</strong></div><div><span>Tickets</span><strong>${stats.totals.tickets}</strong></div></div>
+          ? `<div class="owner-stats-grid"><div><span>Known parking income</span><strong>${formatCoins(stats.income.knownOwnerPayout)} coins</strong></div><div><span>Meter income</span><strong>${formatCoins(stats.income.meterPayout)}</strong></div><div><span>Ticket income</span><strong>${formatCoins(stats.income.ticketPayout)}</strong></div><div><span>Parks</span><strong>${stats.totals.parks}</strong></div><div><span>Legal / illegal</span><strong>${stats.traffic.legalParks} / ${stats.traffic.illegalParks}</strong></div><div><span>Tickets</span><strong>${stats.totals.tickets}</strong></div><div><span>Estimated ad views</span><strong>${stats.totals.impressions}</strong></div></div>
+        ${stats.traffic.unclassifiedParks ? `<p class="muted">${stats.traffic.unclassifiedParks} older park${stats.traffic.unclassifiedParks === 1 ? "" : "s"} lack${stats.traffic.unclassifiedParks === 1 ? "s" : ""} a legality classification.</p>` : ""}
+        ${stats.income.unattributedSettlements ? `<p class="muted">${stats.income.unattributedSettlements} older settlement${stats.income.unattributedSettlements === 1 ? "" : "s"} lack${stats.income.unattributedSettlements === 1 ? "s" : ""} an owner payout split, so income is partial.</p>` : ""}
+        ${ticketStatus ? `<p class="muted">Ticket rewards: ${formatCoins(ticketStatus.owner_paid_today)} of ${formatCoins(ticketStatus.daily_owner_cap)} coins paid to this plot owner today. ${formatCoins(ticketStatus.owner_remaining_today)} remain until ${new Date(ticketStatus.resets_at * 1_000).toLocaleString()}; further ticket proceeds go to the city treasury.</p>` : ""}
         <p class="muted">${html(indexLabel)} ${html(exposureLabel)} Views are client-reported estimates, not billing records.</p>
         <div class="owner-stats-days">${stats.days.map((day) => `<div class="owner-stats-day"><strong>${html(day.day)}</strong><span>${day.impressions} views · ${(day.averageVisibleMs / 1_000).toFixed(1)} s average · ${day.parks} parks · ${day.tickets} tickets</span></div>`).join("")}</div>
         ${stats.linkedHistory ? `<p class="chain-parked"><strong>Earlier deed activity:</strong> ${stats.linkedHistory.totals.impressions} views, ${stats.linkedHistory.totals.parks} parks and ${stats.linkedHistory.totals.tickets} tickets on ${html(stats.linkedHistory.sourcePlotId)} before the move. These are separate from this plot's totals.</p>` : ""}`
