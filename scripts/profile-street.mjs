@@ -13,9 +13,9 @@ const travelCycles =
 if (
   !Number.isSafeInteger(travelCycles) ||
   travelCycles < 0 ||
-  travelCycles > 20
+  travelCycles > 200
 )
-  throw new Error("Pass 0–20 whole cycles after --travel-cycles");
+  throw new Error("Pass 0–200 whole cycles after --travel-cycles");
 if (!/^https?:\/\//.test(url))
   throw new Error("ESTATE_PROFILE_URL must be an HTTP URL");
 
@@ -43,7 +43,17 @@ async function travelCity(page, cycles) {
       await page.waitForFunction(
         () => (window.__nearEstateGuestTextureStats?.().loadedImages ?? 0) > 0,
       );
-      const textures = await guestTextureStats(page);
+      const textures = await page.evaluate(() => {
+        const stats = window.__nearEstateGuestTextureStats?.();
+        return stats
+          ? {
+              ...stats,
+              jsHeapMiB: performance.memory
+                ? Math.round(performance.memory.usedJSHeapSize / 1_048_576)
+                : null,
+            }
+          : null;
+      });
       if (!textures || textures.cachedImages > 32)
         throw new Error(`Street cache exceeded its budget on ${road}`);
       snapshots.push({ cycle, road, ...textures });
@@ -58,6 +68,8 @@ async function travelCity(page, cycles) {
     peakEstimatedDecodedBytes: Math.max(
       ...snapshots.map((item) => item.estimatedDecodedBytes),
     ),
+    firstJsHeapMiB: snapshots[0]?.jsHeapMiB ?? null,
+    peakJsHeapMiB: Math.max(...snapshots.map((item) => item.jsHeapMiB ?? 0)),
     finalTextures: snapshots.at(-1),
     failedImages,
     jsHeapMiB: await page.evaluate(() =>
