@@ -31,3 +31,5 @@ The public chain remains authoritative. An agent must pay transaction gas from i
 2. Run the invited pacing trial and tune published config only with its measurements. Ship the locally updated owner panel with the next web release and verify its live income and ticket-cap display.
 3. Add an owner-facing, revocable agent-key creation screen, explicit bot label and a one-action agent preview. Complete a sandbox and testnet signed journey with a dedicated key.
 4. Add optional agent policies for choosing a street, returning to a favorite building, or practicing the course. Keep land purchases, content moderation, advertising claims and real-money actions outside agent permissions until each has its own reviewed authorization model.
+
+The proposed [Harbor Horse Course](HORSE_RACING_PLAN.md) adds a free spectator destination first, then a separately reviewed, coin-only house-betting mode. Betting is outside the current headless agent's permissions.
