@@ -165,6 +165,39 @@ const modeButton = document.querySelector<HTMLButtonElement>("#mode-button")!;
 const contractId = import.meta.env.VITE_ESTATE_CONTRACT_ID?.trim();
 networkButton.hidden = !contractId;
 modeButton.hidden = !contractId;
+
+// First-visit "How to play" card. It is non-modal, shown once per browser, and skipped
+// under browser automation so scripted checks see the plain street.
+const howToPlay = document.querySelector<HTMLElement>("#how-to-play")!;
+const howToPlayKey = "near-estate-how-to-play-v1";
+const dismissHowToPlay = () => {
+  howToPlay.hidden = true;
+  try {
+    localStorage.setItem(howToPlayKey, String(Date.now()));
+  } catch {
+    // Storage may be unavailable; the card simply returns next visit.
+  }
+};
+{
+  let seen = false;
+  try {
+    seen = localStorage.getItem(howToPlayKey) !== null;
+  } catch {
+    seen = false;
+  }
+  document.querySelector<HTMLElement>("#how-to-play-testnet")!.hidden =
+    !contractId;
+  howToPlay.hidden =
+    seen ||
+    navigator.webdriver ||
+    new URLSearchParams(location.search).has("no-intro");
+  document
+    .querySelector("#how-to-play-close")!
+    .addEventListener("click", dismissHowToPlay);
+  document
+    .querySelector("#how-to-play-start")!
+    .addEventListener("click", dismissHowToPlay);
+}
 let chainScreen: ChainScreen | null = null;
 let liveStreet: LiveStreet | null = null;
 let liveMode = false;

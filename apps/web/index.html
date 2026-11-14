@@ -12,7 +12,43 @@
       name="estate-source-revision"
       content="%VITE_ESTATE_SOURCE_REVISION%"
     />
-    <title>near.estate — Parking City</title>
+    <title>near.estate — the real estate and car game on NEAR</title>
+    <meta
+      name="description"
+      content="Own plots, raise buildings and set the rules for your street, or drive the city, park and earn. A side-scrolling city game on NEAR testnet. Guest play needs no wallet."
+    />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="near.estate" />
+    <meta property="og:url" content="https://near.estate/" />
+    <meta
+      property="og:title"
+      content="near.estate — the real estate and car game on NEAR"
+    />
+    <meta
+      property="og:description"
+      content="Own plots, raise buildings and set the rules for your street, or drive the city, park and earn. Agents can play too. Built at NEAR HACKATHON."
+    />
+    <meta property="og:image" content="https://near.estate/og-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="near.estate street with shops, a diner and parked cars, under the line Park. Earn. Build."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@near_estate" />
+    <meta
+      name="twitter:title"
+      content="near.estate — the real estate and car game on NEAR"
+    />
+    <meta
+      name="twitter:description"
+      content="Own plots, raise buildings and set the rules for your street, or drive the city, park and earn. Agents can play too."
+    />
+    <meta name="twitter:image" content="https://near.estate/og-card.png" />
   </head>
   <body>
     <div id="app">
@@ -66,6 +102,55 @@
                 <small>TRIP</small><strong id="trip-street-title"></strong
                 ><span id="trip-street-hint"></span>
               </button>
+              <section
+                id="how-to-play"
+                class="how-to-play"
+                aria-labelledby="how-to-play-title"
+                hidden
+              >
+                <button
+                  id="how-to-play-close"
+                  class="how-to-play-close"
+                  type="button"
+                  aria-label="Close how to play"
+                >
+                  ×
+                </button>
+                <h2 id="how-to-play-title">How to play</h2>
+                <ul>
+                  <li>
+                    <span aria-hidden="true">🚗</span
+                    ><span
+                      >Pick a curb and <b>Park</b>. Free is safe; No P pays more
+                      but risks a ticket.</span
+                    >
+                  </li>
+                  <li>
+                    <span aria-hidden="true">🎡</span
+                    ><span
+                      >While parked, visit a destination on the <b>Map</b> to
+                      earn a ♥ bonus.</span
+                    >
+                  </li>
+                  <li>
+                    <span aria-hidden="true">🏠</span
+                    ><span
+                      >Own a plot in <b>My Plots</b>: build, upgrade and set the
+                      curb rule.</span
+                    >
+                  </li>
+                  <li id="how-to-play-testnet" hidden>
+                    <span aria-hidden="true">🔗</span
+                    ><span
+                      ><b>Testnet street</b> shows the shared city on
+                      NEAR.</span
+                    >
+                  </li>
+                </ul>
+                <button id="how-to-play-start" class="primary" type="button">
+                  Start driving
+                </button>
+              </section>
               <div
                 class="street-gamepad"
                 role="group"

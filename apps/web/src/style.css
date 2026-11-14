@@ -3229,3 +3229,74 @@ h3 {
 .street-gamepad #action:not(:disabled):active {
   background: #f0ae13;
 }
+
+/* First-visit "How to play" card: sits in the sky over the street, non-modal. */
+.how-to-play:not([hidden]) {
+  position: absolute;
+  z-index: 8;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(460px, calc(100% - 24px));
+  padding: 14px 18px 14px;
+  border: 2px solid #192b45;
+  border-radius: 14px;
+  background: #fffdf5f2;
+  color: #192b45;
+  box-shadow: 0 6px 18px #192b4538;
+  text-align: left;
+}
+.how-to-play h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+.how-to-play ul {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.how-to-play li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  align-items: start;
+}
+.how-to-play li[hidden] {
+  display: none;
+}
+.how-to-play-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  padding: 2px 8px;
+  border: 0;
+  background: transparent;
+  color: #192b45;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+#how-to-play-start {
+  width: 100%;
+}
+@media (max-height: 520px) {
+  .how-to-play:not([hidden]) {
+    top: 98px;
+    width: min(420px, calc(100% - 180px));
+    padding: 8px 12px;
+  }
+  .how-to-play h2 {
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+  .how-to-play ul {
+    gap: 2px;
+    margin-bottom: 6px;
+    font-size: 11px;
+  }
+}
