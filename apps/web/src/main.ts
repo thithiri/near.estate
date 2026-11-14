@@ -86,6 +86,21 @@ import {
 } from "./world-sprites.js";
 import "./style.css";
 
+// A tab left open across a release can request a lazy wallet chunk that the new
+// release no longer contains. Reload once so it receives the new HTML manifest.
+window.addEventListener("vite:preloadError", (event) => {
+  event.preventDefault();
+  const key = "near-estate-module-reload-v1";
+  try {
+    const lastReload = Number(sessionStorage.getItem(key) ?? "0");
+    if (Date.now() - lastReload < 30_000) return;
+    sessionStorage.setItem(key, String(Date.now()));
+    window.location.reload();
+  } catch {
+    // If browser storage is unavailable, leave the original screen usable.
+  }
+});
+
 const chainCity = validateCitySeed(rawSeed);
 const guestCity = validateCitySeed(rawGuestSeed);
 const horseBettingDemoEnabled =

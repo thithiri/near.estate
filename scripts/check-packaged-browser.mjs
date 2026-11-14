@@ -112,6 +112,7 @@ try {
     const body = route.request().postDataJSON();
     const method = body?.params?.method_name;
     const value = {
+      city_version: 1,
       get_street_side: street,
       get_tower_floor_availability: [8, 8, 8, 8],
       get_tower_floor_sessions: Array(8).fill(null),
@@ -161,6 +162,19 @@ try {
 
   const response = await page.goto(address, { waitUntil: "domcontentloaded" });
   assert.equal(response?.status(), 200, "Packaged game HTML must load");
+  assert.match(
+    response.headers()["cache-control"] ?? "",
+    /no-cache/,
+    "Game HTML must be revalidated after a release",
+  );
+  const missingModule = await page.request.get(
+    new URL("/assets/near-estate-missing-module.js", address).href,
+  );
+  assert.equal(
+    missingModule.status(),
+    404,
+    "A missing JavaScript chunk must not receive the SPA HTML page",
+  );
   const policy = response.headers()["content-security-policy"] ?? "";
   assert.match(policy, /script-src 'self'/);
   assert.doesNotMatch(policy, /unsafe-eval/);
