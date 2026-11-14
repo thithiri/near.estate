@@ -31,7 +31,7 @@ const roles = [
   "HorseCourse",
 ];
 const civicLabels = {
-  ParkingTower: { x: 24, y: 33, width: 92, height: 14 },
+  ParkingTower: { x: 24, y: 36, width: 92, height: 14 },
   RepairGarage: { x: 43, y: 116, width: 54, height: 13 },
   Cinema: { x: 15, y: 77, width: 110, height: 16 },
   BurgerStop: { x: 15, y: 106, width: 110, height: 15 },
