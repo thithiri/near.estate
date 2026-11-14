@@ -103,6 +103,11 @@ button:disabled {
 .topbar nav .menu-nav {
   display: none;
 }
+.topbar nav .help-nav {
+  margin-left: auto;
+  font-size: 13px;
+  opacity: 0.85;
+}
 .wallet {
   display: flex;
   align-items: center;
@@ -2195,6 +2200,9 @@ button:disabled {
   .topbar nav .menu-nav {
     display: inline-block;
   }
+  .topbar nav .help-nav {
+    display: none;
+  }
   .guest {
     display: none;
   }
@@ -3370,4 +3378,9 @@ h3 {
 }
 .wallet #network-button[hidden] {
   display: none;
+}
+
+.wallet-icon {
+  display: block;
+  flex: none;
 }

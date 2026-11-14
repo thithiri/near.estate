@@ -176,6 +176,12 @@ document.querySelector<HTMLElement>(".guest")!.hidden = Boolean(contractId);
 // under browser automation so scripted checks see the plain street.
 const howToPlay = document.querySelector<HTMLElement>("#how-to-play")!;
 const howToPlayKey = "near-estate-how-to-play-v1";
+// Reopened on request from the Menu (phones) or the top nav (desktop), even after dismissal.
+const openHowToPlay = () => {
+  if (currentScreen !== "Street") showScreen("Street");
+  howToPlay.hidden = false;
+  document.querySelector<HTMLButtonElement>("#how-to-play-start")!.focus();
+};
 const dismissHowToPlay = () => {
   howToPlay.hidden = true;
   try {
@@ -203,6 +209,9 @@ const dismissHowToPlay = () => {
   document
     .querySelector("#how-to-play-start")!
     .addEventListener("click", dismissHowToPlay);
+  document
+    .querySelector("#nav-how-to-play")!
+    .addEventListener("click", openHowToPlay);
 }
 let chainScreen: ChainScreen | null = null;
 let liveStreet: LiveStreet | null = null;
@@ -2396,6 +2405,7 @@ function menuMarkup(): string {
       <button data-menu-go="Cars">Cars</button>
       <button data-menu-go="My Plots">My plots</button>
       <button data-menu-go="Stats">Advertiser stats</button>
+      <button data-menu-how-to-play type="button">How to play</button>
     </article>
     ${
       contractId
@@ -2504,6 +2514,9 @@ function showScreen(screen: string): void {
     otherScreen
       .querySelector<HTMLButtonElement>("[data-menu-mode]")
       ?.addEventListener("click", toggleStreetMode);
+    otherScreen
+      .querySelector<HTMLButtonElement>("[data-menu-how-to-play]")
+      ?.addEventListener("click", openHowToPlay);
     return;
   }
   if (screen === "Map") {

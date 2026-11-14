@@ -64,6 +64,9 @@
           <button data-screen="Cars">Cars</button>
           <button data-screen="My Plots">My Plots</button>
           <button data-screen="Menu" class="menu-nav">Menu</button>
+          <button id="nav-how-to-play" class="help-nav" type="button">
+            How to play
+          </button>
         </nav>
         <div class="wallet">
           <span class="balance-pill"
@@ -90,8 +93,34 @@
             hidden
             aria-label="Wallet and agents"
           >
-            <span aria-hidden="true">🔑</span
-            ><span class="wallet-label">Wallet</span>
+            <svg
+              class="wallet-icon"
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              aria-hidden="true"
+            >
+              <path
+                d="M5 8V6.5A2.5 2.5 0 0 1 7.5 4H17v4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <rect
+                x="3"
+                y="8"
+                width="18"
+                height="12"
+                rx="2.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <circle cx="16.5" cy="14" r="1.6" fill="currentColor" />
+            </svg>
+            <span class="wallet-label">Wallet</span>
           </button>
         </div>
       </header>
