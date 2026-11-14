@@ -1,22 +1,22 @@
 {
-  "checkedAt": "2026-11-14T16:36:29.884Z",
-  "command": "npm run release:probe -- https://near.estate 0f20c87f19676b11b91988d643863a4afbc9abe7",
+  "checkedAt": "2026-11-14T19:27:51.401Z",
+  "command": "npm run release:probe -- https://near.estate ee820a77923e72ebaaa2d678fc4fd0552262950b",
   "host": "DigitalOcean droplet, 1 vCPU / 1 GB RAM / 2 GB swap, Ubuntu 24.04, Docker Compose (api, indexer, web/Caddy)",
   "certificate": "Let's Encrypt, issued by Caddy automatic HTTPS",
   "serviceData": "API volume restored from a SQLite backup of the migrated service database (approved media and indexed events); the indexer then caught up from the saved cursor",
   "probe": {
     "origin": "https://near.estate",
     "contractId": "dev-20261110121817-59798568433631.testnet",
-    "sourceRevision": "0f20c87f19676b11b91988d643863a4afbc9abe7",
+    "sourceRevision": "ee820a77923e72ebaaa2d678fc4fd0552262950b",
     "cityVersion": 2,
     "streets": 5,
     "plots": 100,
     "npcSites": 8,
-    "indexedThroughHeight": 277682323,
-    "indexerAgeSeconds": 81,
+    "indexedThroughHeight": 277699880,
+    "indexerAgeSeconds": 78,
     "imageGenerationEnabled": false,
     "codeSha256": "f32cff1a48532d3ca2bc50bd920b1dd2e170e82b273e786f2589cd60c594d1f8",
-    "finalizedBlockHeight": 277682469,
+    "finalizedBlockHeight": 277700009,
     "paused": false,
     "httpsVerifiedByClient": true
   }
