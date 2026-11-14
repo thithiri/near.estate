@@ -35,8 +35,8 @@ const civicLabels = {
   RepairGarage: { x: 43, y: 116, width: 54, height: 13 },
   Cinema: { x: 15, y: 77, width: 110, height: 16 },
   BurgerStop: { x: 15, y: 106, width: 110, height: 15 },
-  PracticeCourse: { x: 23, y: 74, width: 94, height: 15 },
-  HorseCourse: { x: 31, y: 72, width: 78, height: 14 },
+  PracticeCourse: { x: 30, y: 70, width: 80, height: 14 },
+  HorseCourse: { x: 31, y: 76, width: 78, height: 14 },
 };
 const ink = "#1e2d49";
 const cream = "#fff8eb";

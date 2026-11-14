@@ -375,10 +375,10 @@
         "height": 125
       },
       "labelRect": {
-        "x": 23,
-        "y": 74,
-        "width": 94,
-        "height": 15
+        "x": 30,
+        "y": 70,
+        "width": 80,
+        "height": 14
       }
     },
     {
@@ -394,7 +394,7 @@
       },
       "labelRect": {
         "x": 31,
-        "y": 72,
+        "y": 76,
         "width": 78,
         "height": 14
       }
