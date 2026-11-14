@@ -1,0 +1,55 @@
+{
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "codeSha256": "f32cff1a48532d3ca2bc50bd920b1dd2e170e82b273e786f2589cd60c594d1f8",
+  "fuelConfigVersion": 3,
+  "fuelPerPark": 10,
+  "refillCostPerPoint": "200000",
+  "temporaryHeartSeconds": 60,
+  "restoredHeartSeconds": 600,
+  "driverId": "dev-20261110121826-61851458515092.testnet",
+  "carId": 1,
+  "plotId": "plot-market-n-9",
+  "siteId": "npc-market-burgers",
+  "slot": 0,
+  "sessionId": 24,
+  "collectionGain": "3183333",
+  "heartBonus": "2000000",
+  "bonusEvent": {
+    "owner": "dev-20261110121826-61851458515092.testnet",
+    "car_id": 1,
+    "session_id": 24,
+    "amount": "2000000"
+  },
+  "refillCost": "2000000",
+  "collectHash": "EspP5UVCaFqxz3Kq3RxQQAhEdUdsJJDaToFKY3tEHjcb",
+  "transactions": [
+    {
+      "label": "fuel-config",
+      "hash": "2XMkjvf1TeU68eVKfSDAroXWWGpzK7DtMUKjPjfExntN"
+    },
+    {
+      "label": "heart-policy-60s",
+      "hash": "2gkxNeBbiSCJMa3yMqoGp91hFSJgCRVsnfQmdnxug9eM"
+    },
+    {
+      "label": "park",
+      "hash": "DF8LNKWTniLbGvvyDV32wWFZmzqgkkv5WfPjqbrNCM4R"
+    },
+    {
+      "label": "check-in",
+      "hash": "ExibXpeU9EDg2Gb74JziCTqcP3jcJxYPKHBWeNEKL8nq"
+    },
+    {
+      "label": "collect",
+      "hash": "EspP5UVCaFqxz3Kq3RxQQAhEdUdsJJDaToFKY3tEHjcb"
+    },
+    {
+      "label": "refill",
+      "hash": "3YJcRH7sqUfMnYa6M884KovntfKYbsv6ya3asnbhKb2Z"
+    },
+    {
+      "label": "heart-policy-restore",
+      "hash": "9XNxm1dhWQguG8mAsHKiff8RvMtPD1fD74jnAXy3znic"
+    }
+  ]
+}

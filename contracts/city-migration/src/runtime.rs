@@ -24,6 +24,56 @@ const PLOT_AGENT_RESERVE_BYTES: u32 = 1_024;
 const PLOT_AGENT_HISTORY_LIMIT: usize = 8;
 const PLOT_AGENT_MAX_SECONDS: u64 = 30 * 86_400;
 const PLOT_AGENT_MAX_DAILY_COINS: u128 = 1_000_000_000;
+const HEART_STATE_PREFIX: &[u8] = b"near_estate:heart_state:v1:";
+const HEART_POLICY_KEY: &[u8] = b"near_estate:heart_policy:v1";
+
+#[near(serializers = [borsh, json])]
+#[derive(Clone)]
+pub struct HeartPolicy {
+    pub max_hearts_per_car: u8,
+    pub claims_per_day: u8,
+    pub bonuses_per_day: u8,
+    pub bonus_coins: U128,
+    pub min_park_seconds: u32,
+    pub nearby_plots: u8,
+}
+
+impl Default for HeartPolicy {
+    fn default() -> Self {
+        Self {
+            max_hearts_per_car: 2,
+            claims_per_day: 2,
+            bonuses_per_day: 2,
+            bonus_coins: U128(2_000_000),
+            min_park_seconds: 600,
+            nearby_plots: 2,
+        }
+    }
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Default)]
+#[borsh(crate = "near_sdk::borsh")]
+struct HeartState {
+    day: u64,
+    claimed_sites: Vec<String>,
+    bonuses_paid: u8,
+    cars: Vec<(u64, u8)>,
+}
+
+#[near(serializers = [json])]
+pub struct HeartStatus {
+    pub day: u64,
+    pub claimed_sites: Vec<String>,
+    pub claims_remaining: u8,
+    pub bonuses_remaining: u8,
+    pub car_hearts: Vec<CarHeartCount>,
+}
+
+#[near(serializers = [json])]
+pub struct CarHeartCount {
+    pub car_id: u64,
+    pub hearts: u8,
+}
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
@@ -122,6 +172,199 @@ pub struct StreetSideViewV2 {
 
 #[near]
 impl Contract {
+    pub fn get_heart_policy(&self) -> HeartPolicy {
+        env::storage_read(HEART_POLICY_KEY)
+            .map(|bytes| {
+                HeartPolicy::try_from_slice(&bytes)
+                    .unwrap_or_else(|_| env::panic_str("invalid heart policy"))
+            })
+            .unwrap_or_default()
+    }
+
+    pub fn set_heart_policy(&mut self, policy: HeartPolicy) {
+        require!(
+            env::predecessor_account_id() == self.inner.admin,
+            "admin only"
+        );
+        self.require_not_paused();
+        require!(
+            (1..=3).contains(&policy.max_hearts_per_car)
+                && (1..=4).contains(&policy.claims_per_day)
+                && (1..=4).contains(&policy.bonuses_per_day)
+                && policy.bonus_coins.0 <= 10_000_000
+                && (60..=1_800).contains(&policy.min_park_seconds)
+                && policy.nearby_plots <= 3,
+            "invalid heart policy"
+        );
+        let bytes = borsh::to_vec(&policy)
+            .unwrap_or_else(|_| env::panic_str("heart policy encoding failed"));
+        env::storage_write(HEART_POLICY_KEY, &bytes);
+        self.emit(
+            "heart_policy_set",
+            near_sdk::serde_json::json!({
+                "max_hearts_per_car": policy.max_hearts_per_car,
+                "claims_per_day": policy.claims_per_day,
+                "bonuses_per_day": policy.bonuses_per_day,
+                "bonus_coins": policy.bonus_coins,
+                "min_park_seconds": policy.min_park_seconds,
+                "nearby_plots": policy.nearby_plots
+            }),
+        );
+    }
+
+    fn heart_key(owner: &AccountId) -> Vec<u8> {
+        let mut key = Vec::with_capacity(HEART_STATE_PREFIX.len() + owner.as_str().len());
+        key.extend_from_slice(HEART_STATE_PREFIX);
+        key.extend_from_slice(owner.as_bytes());
+        key
+    }
+
+    fn read_hearts(owner: &AccountId, day: u64) -> HeartState {
+        let mut state = env::storage_read(&Self::heart_key(owner))
+            .map(|bytes| {
+                HeartState::try_from_slice(&bytes)
+                    .unwrap_or_else(|_| env::panic_str("invalid heart state"))
+            })
+            .unwrap_or_default();
+        if state.day != day {
+            state.day = day;
+            state.claimed_sites.clear();
+            state.bonuses_paid = 0;
+        }
+        state
+    }
+
+    fn write_hearts(owner: &AccountId, state: &HeartState) {
+        let bytes =
+            borsh::to_vec(state).unwrap_or_else(|_| env::panic_str("heart state encoding failed"));
+        env::storage_write(&Self::heart_key(owner), &bytes);
+    }
+
+    pub fn get_heart_status(&self, owner: AccountId) -> HeartStatus {
+        let policy = self.get_heart_policy();
+        let state = Self::read_hearts(&owner, Self::now_seconds() / 86_400);
+        HeartStatus {
+            day: state.day,
+            claims_remaining: policy
+                .claims_per_day
+                .saturating_sub(state.claimed_sites.len() as u8),
+            bonuses_remaining: policy.bonuses_per_day.saturating_sub(state.bonuses_paid),
+            claimed_sites: state.claimed_sites,
+            car_hearts: state
+                .cars
+                .into_iter()
+                .map(|(car_id, hearts)| CarHeartCount { car_id, hearts })
+                .collect(),
+        }
+    }
+
+    pub fn check_in_destination(
+        &mut self,
+        site_id: String,
+        expected_session_id: u64,
+    ) -> HeartStatus {
+        self.require_not_paused();
+        let policy = self.get_heart_policy();
+        let owner = env::predecessor_account_id();
+        let account = self.registered_account(&owner);
+        require!(
+            account.active_session_id == Some(expected_session_id),
+            "park the selected car before check-in"
+        );
+        let session = self
+            .inner
+            .sessions
+            .get(&expected_session_id)
+            .cloned()
+            .unwrap_or_else(|| env::panic_str("unknown parking session"));
+        require!(
+            session.driver == owner && session.legal,
+            "only the legal parked driver can check in"
+        );
+        require!(
+            Self::now_seconds() < session.expires_at,
+            "parking session expired"
+        );
+        let site = self
+            .inner
+            .npc_sites
+            .get(&site_id)
+            .unwrap_or_else(|| env::panic_str("unknown destination"));
+        require!(
+            matches!(
+                site.role,
+                ServiceRole::Cinema
+                    | ServiceRole::BurgerStop
+                    | ServiceRole::PracticeCourse
+                    | ServiceRole::HorseCourse
+            ),
+            "destination does not grant hearts"
+        );
+        let (road, side, index) = if session.facility == Facility::Tower {
+            let tower = self
+                .inner
+                .npc_sites
+                .get(&session.location_id)
+                .unwrap_or_else(|| env::panic_str("unknown parking tower"));
+            require!(
+                tower.role == ServiceRole::ParkingTower,
+                "parking location is not a tower"
+            );
+            (tower.road_id, tower.side, tower.frontage_index)
+        } else {
+            let plot = self
+                .inner
+                .plots
+                .get(&session.location_id)
+                .unwrap_or_else(|| env::panic_str("unknown parking plot"));
+            (plot.road_id, plot.side, plot.index)
+        };
+        require!(
+            road == site.road_id
+                && side == site.side
+                && index.abs_diff(site.frontage_index) <= policy.nearby_plots,
+            "park near the destination"
+        );
+        let day = Self::now_seconds() / 86_400;
+        let mut state = Self::read_hearts(&owner, day);
+        require!(
+            state.claimed_sites.len() < usize::from(policy.claims_per_day),
+            "daily heart check-ins reached"
+        );
+        require!(
+            !state.claimed_sites.contains(&site_id),
+            "destination already visited today"
+        );
+        let car = self.owned_car(session.car_id, &owner);
+        require!(
+            car.parked_session_id == Some(expected_session_id),
+            "car session changed"
+        );
+        let hearts = if let Some((_, count)) = state.cars.iter_mut().find(|(id, _)| *id == car.id) {
+            count
+        } else {
+            require!(
+                state.cars.len() < usize::from(self.inner.config.max_cars),
+                "heart car limit reached"
+            );
+            state.cars.push((car.id, 0));
+            &mut state
+                .cars
+                .last_mut()
+                .unwrap_or_else(|| env::panic_str("heart car missing"))
+                .1
+        };
+        require!(
+            *hearts < policy.max_hearts_per_car,
+            "car heart capacity reached"
+        );
+        *hearts += 1;
+        let heart_count = *hearts;
+        state.claimed_sites.push(site_id.clone());
+        Self::write_hearts(&owner, &state);
+        self.emit("destination_heart", near_sdk::serde_json::json!({"owner": owner, "car_id": car.id, "site_id": site_id, "session_id": expected_session_id, "hearts": heart_count}));
+        self.get_heart_status(owner)
+    }
     fn require_not_paused(&self) {
         require!(!self.inner.paused, "city is paused");
     }
@@ -2261,7 +2504,40 @@ impl Contract {
             Self::now_seconds() < session.expires_at,
             "session expired; call settle_expired"
         );
-        self.settle_session(expected_session_id, SettlementReason::Collect, None, None)
+        let owner = session.driver.clone();
+        let now = Self::now_seconds();
+        let day = now / 86_400;
+        let policy = self.get_heart_policy();
+        let mut heart_state = Self::read_hearts(&owner, day);
+        let bonus = session.legal
+            && now.saturating_sub(session.started_at) >= u64::from(policy.min_park_seconds)
+            && heart_state.bonuses_paid < policy.bonuses_per_day
+            && heart_state
+                .cars
+                .iter()
+                .any(|(id, hearts)| *id == session.car_id && *hearts > 0);
+        let settlement =
+            self.settle_session(expected_session_id, SettlementReason::Collect, None, None);
+        if bonus {
+            let mut account = self.registered_account(&owner);
+            account.balance.0 = account
+                .balance
+                .0
+                .checked_add(policy.bonus_coins.0)
+                .unwrap_or_else(|| env::panic_str("heart bonus balance overflow"));
+            self.inner.accounts.insert(owner.clone(), account);
+            self.inner.accounts.flush();
+            let (_, hearts) = heart_state
+                .cars
+                .iter_mut()
+                .find(|(id, count)| *id == session.car_id && *count > 0)
+                .unwrap_or_else(|| env::panic_str("heart disappeared during collection"));
+            *hearts -= 1;
+            heart_state.bonuses_paid += 1;
+            Self::write_hearts(&owner, &heart_state);
+            self.emit("visit_bonus_paid", near_sdk::serde_json::json!({"owner": owner, "car_id": session.car_id, "session_id": expected_session_id, "amount": policy.bonus_coins.0.to_string()}));
+        }
+        settlement
     }
 
     pub fn settle_expired(&mut self, expected_session_id: u64) -> Settlement {

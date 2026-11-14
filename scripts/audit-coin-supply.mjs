@@ -87,6 +87,7 @@ export async function auditCoinSupply(db, rpc, contractId) {
 
   let grants = 0n;
   let settlementPayouts = 0n;
+  let heartBonuses = 0n;
   let spending = 0n;
   let forfeited = 0n;
   let backfilledAmounts = 0;
@@ -148,6 +149,8 @@ export async function auditCoinSupply(db, rpc, contractId) {
       settlementPayouts += driver + recipient;
       forfeited += lost;
       settlements++;
+    } else if (name === "visit_bonus_paid") {
+      heartBonuses += amount(payload.amount, "visit heart bonus");
     }
   }
 
@@ -200,7 +203,8 @@ export async function auditCoinSupply(db, rpc, contractId) {
     ),
     "treasury balance",
   );
-  const expectedOutstanding = grants + settlementPayouts - spending;
+  const expectedOutstanding =
+    grants + settlementPayouts + heartBonuses - spending;
   const observedOutstanding =
     balances.reduce((sum, balance) => sum + balance, 0n) + treasury;
   return {
@@ -214,6 +218,7 @@ export async function auditCoinSupply(db, rpc, contractId) {
     archivedAmountBackfills: backfilledAmounts,
     grants: grants.toString(),
     settlementPayouts: settlementPayouts.toString(),
+    heartBonuses: heartBonuses.toString(),
     spending: spending.toString(),
     forfeited: forfeited.toString(),
     expectedOutstanding: expectedOutstanding.toString(),

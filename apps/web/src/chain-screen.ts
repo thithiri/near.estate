@@ -19,7 +19,11 @@ import {
   type ChainStreetSide,
   type ChainTicketRewardStatus,
 } from "@estate/shared";
-import { ChainReader, type PlotAgentAction } from "./chain-reader.js";
+import {
+  ChainReader,
+  type HeartStatus,
+  type PlotAgentAction,
+} from "./chain-reader.js";
 import { curbDirection } from "./city-navigation.js";
 import { garageRecovery } from "./garage-recovery.js";
 import { PRESET_PALETTES } from "./preset-catalog.js";
@@ -196,6 +200,7 @@ export class ChainScreen {
   };
   private plotAgentAccess: PlotAgentAccess | null = null;
   private plotAgentHistory: PlotAgentAction[] | null = null;
+  private heartStatus: HeartStatus | null = null;
   private accountId: string | null = null;
   private selectedCarId: number | null = null;
   private quote: string | null = null;
@@ -308,6 +313,7 @@ export class ChainScreen {
       this.parkingAgentStatus = null;
       this.plotAgentAccess = null;
       this.plotAgentHistory = null;
+      this.heartStatus = null;
       this.accountId = accountId;
     }
     const { roadId, side } = this.getRoadSide();
@@ -339,6 +345,7 @@ export class ChainScreen {
         parkingAgentStatus,
         plotAgentAccess,
         plotAgentHistory,
+        heartStatus,
         quote,
         towerState,
         towerSpaceState,
@@ -362,6 +369,9 @@ export class ChainScreen {
         accountId
           ? this.reader.plotAgentHistory(accountId).catch(() => null)
           : Promise.resolve(null),
+        accountId
+          ? this.reader.heartStatus(accountId).catch(() => null)
+          : Promise.resolve(null),
         accountId ? this.reader.registrationQuote() : Promise.resolve(null),
         tower ? this.reader.towerState(tower.id) : Promise.resolve(null),
         tower
@@ -384,6 +394,7 @@ export class ChainScreen {
       this.parkingAgentStatus = parkingAgentStatus;
       this.plotAgentAccess = plotAgentAccess;
       this.plotAgentHistory = plotAgentHistory;
+      this.heartStatus = heartStatus;
       this.quote = quote;
       this.towerFloors = towerState?.floors ?? null;
       this.towerAvailable = towerState?.available ?? null;
@@ -461,6 +472,7 @@ export class ChainScreen {
       this.parkingAgentStatus = null;
       this.plotAgentAccess = null;
       this.plotAgentHistory = null;
+      this.heartStatus = null;
       this.message =
         error instanceof Error ? error.message : "Chain read failed";
       this.render();
@@ -1284,11 +1296,12 @@ export class ChainScreen {
       ${
         registered
           ? `<section class="card"><h2>My cars</h2>
-        <label>Driving <select id="chain-car">${player!.cars.map((entry) => `<option value="${entry.id}" ${entry.id === this.selectedCarId ? "selected" : ""}>#${entry.id} ${entry.color} ${entry.body} · tier ${entry.tier} · ${entry.durability}${garageConfig ? `/${garageConfig.max_durability}` : ""} durability</option>`).join("")}</select></label>
+        <label>Driving <select id="chain-car">${player!.cars.map((entry) => `<option value="${entry.id}" ${entry.id === this.selectedCarId ? "selected" : ""}>#${entry.id} ${entry.color} ${entry.body} · tier ${entry.tier} · ⛽ ${entry.durability}${garageConfig ? `/${garageConfig.max_durability}` : ""} · ♥ ${this.heartStatus?.car_hearts.find((item) => item.car_id === entry.id)?.hearts ?? 0}</option>`).join("")}</select></label>
         ${car ? `<img class="chain-car-preview" src="${import.meta.env.BASE_URL}world/${carSpriteFile(car.body, car.color)}" alt="${html(car.color)} ${html(car.body)} selected car" width="192" height="96" />` : ""}
         ${car && !garageConfig ? `<p class="muted">Loading current repair costs…</p>` : ""}
-        ${car && garageConfig && fullRepairPoints > 0 && car.parked_session_id === null ? `<button id="chain-repair" ${!keyReady || this.busy || balance < fullRepairCost ? "disabled" : ""}>Repair to full · ${formatCoins(fullRepairCost.toString())} coins</button>` : ""}
-        ${car && garageConfig && parkRepairPoints > 0 && parkRepairPoints < fullRepairPoints && car.parked_session_id === null ? `<button id="chain-repair-to-park" ${!keyReady || this.busy || balance < parkRepairCost ? "disabled" : ""}>Repair to park · ${formatCoins(parkRepairCost.toString())} coins</button>` : ""}
+        ${car && garageConfig && fullRepairPoints > 0 && car.parked_session_id === null ? `<button id="chain-repair" ${!keyReady || this.busy || balance < fullRepairCost ? "disabled" : ""}>Fill tank · ${formatCoins(fullRepairCost.toString())} coins</button>` : ""}
+        ${car && garageConfig && parkRepairPoints > 0 && parkRepairPoints < fullRepairPoints && car.parked_session_id === null ? `<button id="chain-repair-to-park" ${!keyReady || this.busy || balance < parkRepairCost ? "disabled" : ""}>Fuel for one trip · ${formatCoins(parkRepairCost.toString())} coins</button>` : ""}
+        ${car ? `<p class="muted">♥ ${this.heartStatus?.car_hearts.find((item) => item.car_id === car.id)?.hearts ?? 0}/2 · Visit a game-owned attraction while parked nearby. A heart adds 2 coins to a legal collection after 10 minutes.</p>` : ""}
         ${recovery?.stranded ? `<button id="chain-emergency-repair" data-available-at="${recovery.availableAt ?? 0}" ${!keyReady || this.busy || !recovery.eligible ? "disabled" : ""}>Free starter repair</button><p class="muted" id="chain-emergency-countdown">${recovery.eligible ? "Ready now" : "Waiting for recovery cooldown"}</p>` : ""}
         ${car && car.tier < 3 && car.parked_session_id === null ? `<button id="chain-upgrade" ${busy}>Upgrade selected car</button>` : ""}
         ${

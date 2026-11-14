@@ -8,7 +8,7 @@ import {
   coins,
   validateCitySeed,
 } from "@estate/shared";
-import { MockGame } from "./mock-game.js";
+import { GUEST_CONFIG, MockGame } from "./mock-game.js";
 
 const path = fileURLToPath(
   new URL("../../../contracts/estate/seed.json", import.meta.url),
@@ -20,11 +20,29 @@ test("mock parking caps earnings and frees the slot once", () => {
   const game = new MockGame(city, () => clock.nowSeconds());
   const session = game.park("plot-main-n-0");
   assert.equal(session.legal, true);
-  assert.equal(game.car.durability, 98);
+  assert.equal(game.car.durability, 100 - GUEST_CONFIG.parkDurabilityCost);
   clock.advance(1_800);
   assert.equal(game.collect(), BigInt(coins(30)));
   assert.equal(game.openSlot("plot-main-n-0"), 0);
   assert.throws(() => game.collect());
+});
+
+test("destination hearts reward a later legal collection without rapid farming", () => {
+  const clock = new MockClock(10_000);
+  const game = new MockGame(city, () => clock.nowSeconds());
+  game.park("plot-harbor-n-7");
+  assert.equal(game.checkInDestination("npc-harbor-cinema"), 1);
+  assert.throws(
+    () => game.checkInDestination("npc-harbor-cinema"),
+    /Already visited/,
+  );
+  clock.advance(599);
+  assert.equal(game.collect(), 9_983_333n);
+  assert.equal(game.heartCount(), 1);
+  game.park("plot-harbor-n-7");
+  clock.advance(600);
+  assert.equal(game.collect(), BigInt(coins(12)));
+  assert.equal(game.heartCount(), 0);
 });
 
 test("parking a chosen curb space uses that exact space", () => {
@@ -140,7 +158,10 @@ test("buying and selecting cars keeps one earning session while another can driv
   clock.advance(60);
   assert.equal(game.collect(), BigInt(coins(1)));
   assert.equal(game.car.id, "starter");
-  assert.equal(game.cars.find((car) => car.id === sedan.id)?.durability, 98);
+  assert.equal(
+    game.cars.find((car) => car.id === sedan.id)?.durability,
+    100 - GUEST_CONFIG.parkDurabilityCost,
+  );
   game.buyCar("Pickup", "Green");
   assert.throws(() => game.buyCar("SUV", "Yellow"), /Garage is full/);
 });
@@ -162,8 +183,8 @@ test("guest emergency repair restores a stranded starter car once per cooldown",
   game.car.durability = 1;
   game.balance = 0n;
   assert.equal(game.recoveryStatus().eligible, true);
-  assert.equal(game.emergencyRepair(), 1);
-  assert.equal(game.car.durability, DEFAULT_CONFIG.parkDurabilityCost);
+  assert.equal(game.emergencyRepair(), GUEST_CONFIG.parkDurabilityCost - 1);
+  assert.equal(game.car.durability, GUEST_CONFIG.parkDurabilityCost);
   game.park("plot-main-n-0");
   assert.equal(game.car.durability, 0);
   assert.equal(game.recoveryStatus().eligible, false);
@@ -177,5 +198,5 @@ test("guest emergency repair restores a stranded starter car once per cooldown",
   assert.throws(() => game.emergencyRepair(), /cooldown/);
   clock.advance(DEFAULT_CONFIG.emergencyRepairCooldownSeconds);
   assert.equal(game.recoveryStatus().eligible, true);
-  assert.equal(game.emergencyRepair(), DEFAULT_CONFIG.parkDurabilityCost);
+  assert.equal(game.emergencyRepair(), GUEST_CONFIG.parkDurabilityCost);
 });

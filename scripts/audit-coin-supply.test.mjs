@@ -143,3 +143,25 @@ test("coin audit refuses ambiguous historical config changes", async () => {
     db.close();
   }
 });
+
+test("coin audit includes bounded destination heart credits", async () => {
+  const db = fixture();
+  try {
+    db.prepare(
+      "INSERT INTO chain_events VALUES ('heart', 6, 'visit_bonus_paid', ?, 0, 0)",
+    ).run(
+      JSON.stringify({
+        owner: "driver.testnet",
+        car_id: 1,
+        session_id: 1,
+        amount: "2000000",
+      }),
+    );
+    const report = await auditCoinSupply(db, rpc("40000000"), "city.testnet");
+    assert.equal(report.heartBonuses, "2000000");
+    assert.equal(report.expectedOutstanding, "50000000");
+    assert.equal(report.balancesMatch, true);
+  } finally {
+    db.close();
+  }
+});

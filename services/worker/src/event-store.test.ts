@@ -268,17 +268,32 @@ test("economy telemetry counts inspection attempts and known coin costs once", (
           cost: "200000000",
         },
       },
+      {
+        id: "receipt-heart:0:0",
+        receiptId: "receipt-heart",
+        logIndex: 0,
+        dataIndex: 0,
+        event: "visit_bonus_paid",
+        payload: {
+          owner: "driver.testnet",
+          car_id: 5,
+          session_id: 5,
+          amount: "2000000",
+        },
+      },
     );
-    assert.equal(store.applyHeight(30, current), 3);
+    assert.equal(store.applyHeight(30, current), 4);
     assert.equal(store.applyHeight(30, current), 0);
     const row = store.db.prepare("SELECT * FROM economy_daily_stats").get() as {
       inspector_attempts: number;
       inspector_successes: number;
       known_coin_costs: string;
+      heart_bonus: string;
     };
     assert.equal(row.inspector_attempts, 1);
     assert.equal(row.inspector_successes, 1);
     assert.equal(row.known_coin_costs, "202000000");
+    assert.equal(row.heart_bonus, "2000000");
   } finally {
     store.close();
   }

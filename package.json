@@ -59,6 +59,8 @@
     "city:runtime:upgrade:postcheck": "node scripts/verify-runtime-upgrade-live.mjs --write",
     "city:horse:plan": "cargo run --manifest-path contracts/city-migration/Cargo.toml --features runtime --example seed_horse_course_testnet -- --plan",
     "city:horse:apply": "cargo run --manifest-path contracts/city-migration/Cargo.toml --features runtime --example seed_horse_course_testnet -- --apply",
+    "testnet:heart-fuel:journey": "tsx scripts/testnet-heart-fuel-journey.ts --apply",
+    "testnet:heart-fuel:check": "tsc --noEmit --module esnext --moduleResolution bundler --target es2022 --types vite/client,node --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --strict scripts/testnet-heart-fuel-journey.ts",
     "city:migration:review": "tsx scripts/render-variable-deed-review.ts",
     "city:migration:media-review": "tsx scripts/render-deed-media-review.ts",
     "city:migration:media-review:check": "tsx scripts/render-deed-media-review.ts --check",

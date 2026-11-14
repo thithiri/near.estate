@@ -1,7 +1,7 @@
 import {
   CarBody,
   CarColor,
-  DEFAULT_CONFIG,
+  DEFAULT_CONFIG as BASE_CONFIG,
   TOWER_FLOORS,
   TOWER_SPACES_PER_FLOOR,
   settleParking,
@@ -11,6 +11,13 @@ import {
   type PlayerPlot,
 } from "@estate/shared";
 import { garageRecovery } from "./garage-recovery.js";
+
+export const GUEST_CONFIG = {
+  ...BASE_CONFIG,
+  parkDurabilityCost: 10,
+  repairCostPerPoint: "200000",
+};
+const DEFAULT_CONFIG = GUEST_CONFIG;
 
 export interface MockCar {
   id: string;
@@ -55,6 +62,58 @@ export class MockGame {
   private nextCar = 2;
   private ticketCooldownUntil = 0;
   private lastEmergencyRepairAt: number | null = null;
+  private heartDay = -1;
+  private heartSites = new Set<string>();
+  private heartBonusesPaid = 0;
+  private hearts = new Map<string, number>();
+
+  private refreshHeartDay(): void {
+    const day = Math.floor(this.nowSeconds() / 86_400);
+    if (day === this.heartDay) return;
+    this.heartDay = day;
+    this.heartSites.clear();
+    this.heartBonusesPaid = 0;
+  }
+
+  heartCount(carId = this.activeCarId): number {
+    return this.hearts.get(carId) ?? 0;
+  }
+
+  checkInDestination(siteId: string): number {
+    this.refreshHeartDay();
+    const site = this.city.npcSites.find((entry) => entry.id === siteId);
+    if (
+      !site ||
+      !["Cinema", "BurgerStop", "PracticeCourse", "HorseCourse"].includes(
+        site.role,
+      )
+    )
+      throw new Error("This destination does not grant hearts");
+    const session = this.playerSession();
+    if (!session || !session.legal || this.nowSeconds() >= session.expiresAt)
+      throw new Error("Park legally near the destination first");
+    const location =
+      session.facility === "Curb"
+        ? this.city.plots.find((entry) => entry.id === session.locationId)
+        : this.city.npcSites.find((entry) => entry.id === session.locationId);
+    if (
+      !location ||
+      location.roadId !== site.roadId ||
+      location.side !== site.side ||
+      Math.abs(
+        ("index" in location ? location.index : location.frontageIndex) -
+          site.frontageIndex,
+      ) > 2
+    )
+      throw new Error("Park within two plots of the destination");
+    if (this.heartSites.has(siteId)) throw new Error("Already visited today");
+    if (this.heartSites.size >= 2) throw new Error("Two hearts claimed today");
+    const count = this.heartCount(session.carId);
+    if (count >= 2) throw new Error("Car already has two hearts");
+    this.heartSites.add(siteId);
+    this.hearts.set(session.carId, count + 1);
+    return count + 1;
+  }
 
   constructor(
     readonly city: CitySeed,
@@ -318,9 +377,22 @@ export class MockGame {
       this.nowSeconds() - session.startedAt,
       "Collect",
     ).driverPayout;
-    this.balance += payout;
+    this.refreshHeartDay();
+    let bonus = 0n;
+    const hearts = this.heartCount(session.carId);
+    if (
+      session.legal &&
+      this.nowSeconds() - session.startedAt >= 600 &&
+      hearts > 0 &&
+      this.heartBonusesPaid < 2
+    ) {
+      bonus = 2_000_000n;
+      this.hearts.set(session.carId, hearts - 1);
+      this.heartBonusesPaid++;
+    }
+    this.balance += payout + bonus;
     this.sessions.delete(this.sessionKey(session));
-    return payout;
+    return payout + bonus;
   }
 
   settleExpired(): void {

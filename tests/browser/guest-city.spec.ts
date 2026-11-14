@@ -30,7 +30,7 @@ test("guest can park, collect, repair and ticket", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#action")).toHaveText("Park here");
   await page.locator("#action").click();
-  await expect(page.locator("#durability")).toContainText("98%");
+  await expect(page.locator("#durability")).toContainText("90%");
   await expect(page.locator("#collect")).toBeVisible();
 
   await page.locator("#collect").click();
@@ -39,11 +39,11 @@ test("guest can park, collect, repair and ticket", async ({ page }) => {
   const balanceBeforeRepair = Number(
     await page.locator("#balance").textContent(),
   );
-  await page.getByRole("button", { name: "Repair to full · 2 coins" }).click();
+  await page.getByRole("button", { name: "Fill tank · 2 coins" }).click();
   await expect(page.getByRole("status")).toHaveText(
-    "Repaired Hatchback by 2 points",
+    "Filled Hatchback by 10 fuel",
   );
-  await expect(page.getByText("100% durability")).toBeVisible();
+  await expect(page.getByText(/100% fuel/)).toBeVisible();
   const balanceAfterRepair = Number(
     await page.locator("#balance").textContent(),
   );
@@ -57,6 +57,18 @@ test("guest can park, collect, repair and ticket", async ({ page }) => {
   await page.locator("#action").click();
   await expect(page.locator("#status")).toContainText("Ticketed visitor");
   await expect(page.locator("#action")).toHaveText("Your curb");
+});
+
+test("guest earns a car heart after a nearby burger visit", async ({
+  page,
+}) => {
+  await page.goto("/?preview-plot=plot-market-n-9");
+  await expect(page.locator("#action")).toHaveText("Park here");
+  await page.locator("#action").click();
+  await page.getByRole("button", { name: "Map", exact: true }).first().click();
+  await page.locator('[data-site="npc-market-burgers"]').click();
+  await page.locator("#destination-burger").click();
+  await expect(page.locator("#heart-message")).toContainText("♥ 1/2");
 });
 
 test("full curbs leave the parking tower and free city stops available", async ({

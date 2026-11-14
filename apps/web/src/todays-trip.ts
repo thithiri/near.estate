@@ -9,7 +9,11 @@ export type TripProgress = {
 export type ParkedPlace = { facility: string; locationId: string };
 
 export function todaysTrip(city: CitySeed, now = new Date()): NPCSite[] {
-  const stops = city.npcSites.filter((site) => site.role !== "ParkingTower");
+  const stops = city.npcSites.filter((site) =>
+    ["Cinema", "BurgerStop", "PracticeCourse", "HorseCourse"].includes(
+      site.role,
+    ),
+  );
   if (stops.length < 2) return [];
   const dayNumber = Math.floor(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) /

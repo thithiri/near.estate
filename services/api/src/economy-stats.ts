@@ -16,6 +16,7 @@ type EconomyDay = {
   forfeited: string;
   knownCoinCosts: string;
   starterGrants: string;
+  heartBonus: string;
   unpricedCostEvents: number;
   unpricedGrantEvents: number;
 };
@@ -35,6 +36,7 @@ type Row = {
   forfeited: string;
   known_coin_costs: string;
   starter_grants?: string;
+  heart_bonus?: string;
   unpriced_cost_events?: number;
   unpriced_grant_events?: number;
 };
@@ -53,6 +55,7 @@ function coinFlow(rows: Row[]): {
   for (const row of rows) {
     issued +=
       BigInt(row.starter_grants ?? "0") +
+      BigInt(row.heart_bonus ?? "0") +
       BigInt(row.driver_payout) +
       BigInt(row.recipient_payout);
     spent += BigInt(row.known_coin_costs);
@@ -124,6 +127,7 @@ function readEconomyStatsUnwrapped(
       forfeited: row?.forfeited ?? "0",
       knownCoinCosts: row?.known_coin_costs ?? "0",
       starterGrants: row?.starter_grants ?? "0",
+      heartBonus: row?.heart_bonus ?? "0",
       unpricedCostEvents: row?.unpriced_cost_events ?? 0,
       unpricedGrantEvents: row?.unpriced_grant_events ?? 0,
     });
@@ -151,6 +155,7 @@ function readEconomyStatsUnwrapped(
       starterGrants: (
         BigInt(acc.starterGrants) + BigInt(day.starterGrants)
       ).toString(),
+      heartBonus: (BigInt(acc.heartBonus) + BigInt(day.heartBonus)).toString(),
       unpricedCostEvents: acc.unpricedCostEvents + day.unpricedCostEvents,
       unpricedGrantEvents: acc.unpricedGrantEvents + day.unpricedGrantEvents,
     }),
@@ -168,6 +173,7 @@ function readEconomyStatsUnwrapped(
       forfeited: "0",
       knownCoinCosts: "0",
       starterGrants: "0",
+      heartBonus: "0",
       unpricedCostEvents: 0,
       unpricedGrantEvents: 0,
     },

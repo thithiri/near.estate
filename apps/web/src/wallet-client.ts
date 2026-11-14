@@ -36,6 +36,7 @@ export const GAMEPLAY_METHODS = [
   "settle_expired",
   "ticket",
   "repair",
+  "check_in_destination",
   "emergency_repair",
   "set_rule",
 ] as const;

@@ -122,6 +122,7 @@ export class EventStore {
         forfeited TEXT NOT NULL DEFAULT '0',
         known_coin_costs TEXT NOT NULL DEFAULT '0',
         starter_grants TEXT NOT NULL DEFAULT '0',
+        heart_bonus TEXT NOT NULL DEFAULT '0',
         unpriced_cost_events INTEGER NOT NULL DEFAULT 0,
         unpriced_grant_events INTEGER NOT NULL DEFAULT 0
       ) STRICT;
@@ -136,6 +137,7 @@ export class EventStore {
     let economyNeedsRebuild = !hadEconomyTable;
     for (const [name, definition] of [
       ["starter_grants", "TEXT NOT NULL DEFAULT '0'"],
+      ["heart_bonus", "TEXT NOT NULL DEFAULT '0'"],
       ["unpriced_cost_events", "INTEGER NOT NULL DEFAULT 0"],
       ["unpriced_grant_events", "INTEGER NOT NULL DEFAULT 0"],
     ] as const) {
@@ -428,6 +430,7 @@ export class EventStore {
         "player_registered",
         "car_minted",
         "cosmetic_bought",
+        "visit_bonus_paid",
       ].includes(name)
     )
       return;
@@ -459,12 +462,13 @@ export class EventStore {
       forfeited: string;
       known_coin_costs: string;
       starter_grants: string;
+      heart_bonus: string;
       unpriced_cost_events: number;
       unpriced_grant_events: number;
     };
     this.db
       .prepare(
-        "UPDATE economy_daily_stats SET curb_parks = ?, tower_parks = ?, collections = ?, expiries = ?, tickets = ?, inspector_attempts = ?, inspector_successes = ?, gross = ?, driver_payout = ?, recipient_payout = ?, forfeited = ?, known_coin_costs = ?, starter_grants = ?, unpriced_cost_events = ?, unpriced_grant_events = ? WHERE day = ?",
+        "UPDATE economy_daily_stats SET curb_parks = ?, tower_parks = ?, collections = ?, expiries = ?, tickets = ?, inspector_attempts = ?, inspector_successes = ?, gross = ?, driver_payout = ?, recipient_payout = ?, forfeited = ?, known_coin_costs = ?, starter_grants = ?, heart_bonus = ?, unpriced_cost_events = ?, unpriced_grant_events = ? WHERE day = ?",
       )
       .run(
         row.curb_parks +
@@ -490,6 +494,10 @@ export class EventStore {
         ).toString(),
         (coin(row.known_coin_costs) + cost).toString(),
         (coin(row.starter_grants) + grant).toString(),
+        (
+          coin(row.heart_bonus) +
+          (name === "visit_bonus_paid" ? coin(payload.amount) : 0n)
+        ).toString(),
         row.unpriced_cost_events + Number(unpricedCost),
         row.unpriced_grant_events + Number(unpricedGrant),
         day,

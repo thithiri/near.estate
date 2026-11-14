@@ -19,6 +19,9 @@ export const GameEventName = z.enum([
   "plot_agent_authorized",
   "plot_agent_revoked",
   "plot_agent_action",
+  "destination_heart",
+  "visit_bonus_paid",
+  "heart_policy_set",
   "inspection_attempted",
   "rule_scheduled",
   "building_updated",
@@ -200,6 +203,33 @@ export const GameEventPayloads = {
       kind: z.enum(["Rule", "Ticket", "Design", "Upgrade"]),
       at: timestamp,
       coin_cost: CoinString,
+    })
+    .strict(),
+  destination_heart: z
+    .object({
+      owner: accountId,
+      car_id: eventId,
+      site_id: locationId,
+      session_id: eventId,
+      hearts: z.number().int().min(1).max(2),
+    })
+    .strict(),
+  visit_bonus_paid: z
+    .object({
+      owner: accountId,
+      car_id: eventId,
+      session_id: eventId,
+      amount: CoinString,
+    })
+    .strict(),
+  heart_policy_set: z
+    .object({
+      max_hearts_per_car: z.number().int().min(1).max(3),
+      claims_per_day: z.number().int().min(1).max(4),
+      bonuses_per_day: z.number().int().min(1).max(4),
+      bonus_coins: CoinString,
+      min_park_seconds: z.number().int().min(60).max(1800),
+      nearby_plots: z.number().int().min(0).max(3),
     })
     .strict(),
   inspection_attempted: z

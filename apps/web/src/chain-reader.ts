@@ -105,6 +105,19 @@ const PlotAgentAction = z.object({
   coin_cost: CoinString,
 });
 export type PlotAgentAction = z.infer<typeof PlotAgentAction>;
+const HeartStatus = z.object({
+  day: z.number().int().nonnegative(),
+  claimed_sites: z.array(z.string()),
+  claims_remaining: z.number().int().min(0).max(4),
+  bonuses_remaining: z.number().int().min(0).max(4),
+  car_hearts: z.array(
+    z.object({
+      car_id: z.number().int(),
+      hearts: z.number().int().min(0).max(3),
+    }),
+  ),
+});
+export type HeartStatus = z.infer<typeof HeartStatus>;
 export type TransactionOutcome = "success" | "failure" | "pending";
 
 function transactionOutcome(value: unknown): TransactionOutcome {
@@ -406,6 +419,10 @@ export class ChainReader {
       { owner: accountId },
       z.array(PlotAgentAction),
     );
+  }
+
+  heartStatus(accountId: string): Promise<HeartStatus> {
+    return this.view("get_heart_status", { owner: accountId }, HeartStatus);
   }
 
   plotPurchaseBreakdown(plotId: string): Promise<PlotPurchaseBreakdown> {

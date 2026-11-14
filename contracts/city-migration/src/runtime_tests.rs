@@ -310,6 +310,88 @@ fn fixture(rule: ParkingRule) -> Contract {
 }
 
 #[test]
+fn destination_heart_is_bounded_and_credits_only_a_long_legal_collect() {
+    let mut contract = fixture(ParkingRule::Free);
+    contract.inner.config.park_durability_cost = 10;
+    contract.inner.config.repair_cost_per_point = U128(200_000);
+    for (index, role) in [ServiceRole::Cinema, ServiceRole::BurgerStop]
+        .into_iter()
+        .enumerate()
+    {
+        let id = format!("npc-visit-{index}");
+        contract.inner.npc_sites.insert(
+            id.clone(),
+            NPCSite {
+                id,
+                road_id: RoadId::Main,
+                side: Side::North,
+                frontage_index: 2,
+                role,
+                name: "Visit".to_owned(),
+                capacity: 0,
+            },
+        );
+    }
+    contract.inner.npc_sites.flush();
+    context("driver.testnet", 1_000);
+    let session = contract.park(1, PLOT_ID.to_owned(), 0);
+    assert_eq!(contract.get_car(1).expect("car").durability, 90);
+    context("driver.testnet", 1_001);
+    let first = contract.check_in_destination("npc-visit-0".to_owned(), session.id);
+    assert_eq!(first.car_hearts[0].hearts, 1);
+    assert_eq!(first.claims_remaining, 1);
+    assert!(catch_unwind(AssertUnwindSafe(
+        || contract.check_in_destination("npc-visit-0".to_owned(), session.id)
+    ))
+    .is_err());
+    let second = contract.check_in_destination("npc-visit-1".to_owned(), session.id);
+    assert_eq!(second.car_hearts[0].hearts, 2);
+    assert_eq!(second.claims_remaining, 0);
+    context("driver.testnet", 1_599);
+    contract.collect(session.id);
+    assert_eq!(
+        contract
+            .get_heart_status(account("driver.testnet"))
+            .car_hearts[0]
+            .hearts,
+        2
+    );
+    context("driver.testnet", 1_600);
+    let second_session = contract.park(1, PLOT_ID.to_owned(), 0);
+    context("driver.testnet", 2_200);
+    let ordinary = contract.collect(second_session.id);
+    let driver_account = contract
+        .get_account(account("driver.testnet"))
+        .expect("driver");
+    assert_eq!(
+        driver_account.balance.0,
+        102 * COIN + ordinary.driver_payout.0 + 9_983_333
+    );
+    assert_eq!(
+        contract
+            .get_heart_status(account("driver.testnet"))
+            .car_hearts[0]
+            .hearts,
+        1
+    );
+}
+
+#[test]
+fn only_admin_can_tune_the_bounded_heart_policy() {
+    let mut contract = fixture(ParkingRule::Free);
+    let mut policy = contract.get_heart_policy();
+    policy.bonus_coins = U128(3 * COIN);
+    context("driver.testnet", 1_001);
+    assert!(catch_unwind(AssertUnwindSafe(
+        || contract.set_heart_policy(policy.clone())
+    ))
+    .is_err());
+    context("city.testnet", 1_002);
+    contract.set_heart_policy(policy);
+    assert_eq!(contract.get_heart_policy().bonus_coins.0, 3 * COIN);
+}
+
+#[test]
 fn third_curb_space_is_visible_and_collects_only_to_the_cap() {
     let mut contract = fixture(ParkingRule::Free);
     context("driver.testnet", 1_000);

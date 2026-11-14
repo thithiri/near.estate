@@ -1393,6 +1393,19 @@ button:disabled {
 .destination-card button {
   max-width: 280px;
 }
+.fuel-pump {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 8px;
+  padding: 12px;
+  border: 2px solid #1f5d60;
+  border-radius: 12px;
+  background: #e5f4ec;
+}
+.fuel-pump span {
+  font-size: 32px;
+}
 .cinema-destination {
   grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
   align-items: start;

@@ -38,7 +38,7 @@ import {
   type Road,
   type RoadConnection,
 } from "./city-navigation.js";
-import { MockGame, type MockSession } from "./mock-game.js";
+import { GUEST_CONFIG, MockGame, type MockSession } from "./mock-game.js";
 import { choices, paintBuilding } from "./frontage-art.js";
 import {
   choiceForGuestPlot,
@@ -1168,7 +1168,11 @@ function drawWorld(): void {
       }
       world.addChild(grounds);
     }
-    const frontage = createNpcFacade(site.name, site.role, x);
+    const frontage = createNpcFacade(
+      site.role === "RepairGarage" ? "NEAR FUEL" : site.name,
+      site.role,
+      x,
+    );
     frontage.eventMode = "static";
     frontage.cursor = "pointer";
     frontage.on("pointertap", () => {
@@ -1389,7 +1393,7 @@ function updatePanel(): void {
     if (site) {
       if (site.role === "ParkingTower")
         showTowerFloorControl(game.towerFloorAvailability(site.id));
-      title = site.name;
+      title = site.role === "RepairGarage" ? "NEAR Fuel & Service" : site.name;
       rule =
         site.role === "ParkingTower"
           ? "Game-owned · always legal"
@@ -1434,7 +1438,7 @@ function updatePanel(): void {
       else if (towerOpen === 0) mode = "Tower full";
       else if (game.towerFloorAvailability(site.id)[selectedTowerFloor] === 0)
         mode = "Floor full";
-      else if (game.car.durability < DEFAULT_CONFIG.parkDurabilityCost)
+      else if (game.car.durability < GUEST_CONFIG.parkDurabilityCost)
         mode = "Repair car";
       else mode = "Park in tower";
       enabled = nearby && ["Visit", "Park in tower"].includes(mode);
@@ -1485,7 +1489,7 @@ function updatePanel(): void {
     else if (plot.id === game.ownedPlotId) mode = "Your curb";
     else if (activeSession) mode = "Car already earning";
     else if (curbOpen === 0) mode = "Spaces full";
-    else if (game.car.durability < DEFAULT_CONFIG.parkDurabilityCost)
+    else if (game.car.durability < GUEST_CONFIG.parkDurabilityCost)
       mode = "Repair car";
     else mode = "Park here";
     enabled = nearby && ["Ticket", "Park here"].includes(mode);
@@ -1505,7 +1509,7 @@ function updatePanel(): void {
     game.balance.toString(),
   );
   document.querySelector<HTMLElement>("#durability")!.textContent =
-    `🔧 ${game.car.durability}%`;
+    `⛽ ${game.car.durability}%`;
   document.querySelector<HTMLElement>("#car-name")!.textContent =
     `${game.car.body} · Tier ${game.car.tier}`;
   document.querySelector<HTMLElement>("#mobile-car-chip")!.textContent =
@@ -1590,7 +1594,7 @@ function updateLivePanel(): void {
     if (site) {
       if (site.role === "ParkingTower" && live?.towerFloors)
         showTowerFloorControl(live.towerFloors);
-      title = site.name;
+      title = site.role === "RepairGarage" ? "NEAR Fuel & Service" : site.name;
       rule =
         site.role === "ParkingTower"
           ? "Game-owned · always legal"
@@ -1742,7 +1746,7 @@ function updateLivePanel(): void {
     ? formatCoins(live.player.account.balance)
     : "—";
   document.querySelector<HTMLElement>("#durability")!.textContent = car
-    ? `🔧 ${car.durability}%`
+    ? `⛽ ${car.durability}%`
     : "🔧 —";
   document.querySelector<HTMLElement>("#car-name")!.textContent = car
     ? `${car.body} · Tier ${car.tier}`
@@ -1863,7 +1867,7 @@ function action(requestedSlot?: number): void {
         if (!site) return;
         activeSiteId = site.id;
         showScreen("Destination");
-        status.textContent = `Visiting ${site.name}`;
+        status.textContent = `Visiting ${site.role === "RepairGarage" ? "NEAR Fuel & Service" : site.name}`;
         return;
       }
     } else if (
@@ -2149,7 +2153,7 @@ function cityMapMarkup(): string {
     )
     .join("");
   const siteDetails: Record<string, { icon: string; hint: string }> = {
-    RepairGarage: { icon: "⚙", hint: "Repair and upgrades" },
+    RepairGarage: { icon: "⛽", hint: "Fill fuel and service cars" },
     Cinema: { icon: "▶", hint: "Watch a short" },
     BurgerStop: { icon: "🍔", hint: "Take a free break" },
     PracticeCourse: { icon: "⚑", hint: "Race your best time" },
@@ -2159,7 +2163,7 @@ function cityMapMarkup(): string {
     .filter((site) => site.role !== "ParkingTower")
     .map((site) => {
       const detail = siteDetails[site.role]!;
-      return `<button class="map-place" data-site="${site.id}"><span class="map-place-icon" aria-hidden="true">${detail.icon}</span><span><strong>${mapText(site.name)}</strong><small>${detail.hint}</small></span><span class="map-place-arrow" aria-hidden="true">↗</span></button>`;
+      return `<button class="map-place" data-site="${site.id}"><span class="map-place-icon" aria-hidden="true">${detail.icon}</span><span><strong>${mapText(site.role === "RepairGarage" ? "NEAR Fuel & Service" : site.name)}</strong><small>${detail.hint}</small></span><span class="map-place-arrow" aria-hidden="true">↗</span></button>`;
     })
     .join("");
   const tripStops = tripStopsForToday();
@@ -2176,7 +2180,7 @@ function cityMapMarkup(): string {
     .join("");
   return `<div class="city-map-screen">
     <div class="map-heading"><div><span class="map-eyebrow">PARKING CITY · CITY GUIDE</span><h1>City map</h1><p>${liveMode ? "Shared testnet city" : "Five connected roads"} · ${parkedActiveCar ? "Car parked" : hasActiveCar ? "Driving" : "Viewing"} on ${mapText(markerRoad.name)}, ${curbDirection(marker.roadId, marker.side).toLowerCase()} curb.</p></div><span class="map-heading-badge">${parkedActiveCar ? "PARKED" : hasActiveCar ? "YOU ARE HERE" : "CURRENT VIEW"}</span></div>
-    <section class="map-trip" aria-label="Today's trip"><div class="map-trip-head"><span class="map-eyebrow">TWO CITY STOPS</span><h2>Today's trip</h2><span class="map-trip-progress">${trip.collected.length}/${tripStops.length} complete</span></div><p>Drive to each stop, park within two plots on the same curb, finish an activity, then collect your car. Progress stays on this device; no coins are awarded.</p><div class="map-trip-stops">${tripCards}</div></section>
+    <section class="map-trip" aria-label="Today's trip"><div class="map-trip-head"><span class="map-eyebrow">TWO CITY STOPS</span><h2>Today's trip</h2><span class="map-trip-progress">${trip.collected.length}/${tripStops.length} complete</span></div><p>Drive to each stop, park within two plots on the same curb, finish an activity, then collect your car. Qualifying visits grant car hearts; a long legal park can turn one into 2 bonus coins.</p><div class="map-trip-stops">${tripCards}</div></section>
     <div class="map-primary">
       <section class="map-board" aria-label="City street diagram"><div class="map-board-head"><strong>Explore the streets</strong><span>Tap a road to explore <span aria-hidden="true">↗</span></span></div>
         <svg class="city-map" viewBox="0 0 500 300" role="group" aria-label="Five connected roads, parking towers and your car position">
@@ -2219,30 +2223,30 @@ function destinationMarkup(site: NPCSite): string {
     : `<button id="destination-decal" ${liveMode || game.balance < BigInt(DEFAULT_CONFIG.burgerDecalCost) ? "disabled" : ""}>${liveMode ? "Checking decal price…" : `Buy burger decal · ${formatCoins(DEFAULT_CONFIG.burgerDecalCost)} coins`}</button>`;
   const details = {
     RepairGarage: {
-      title: "Keep your cars ready",
-      body: "Repair durability, compare bodies and upgrade tiers in the car garage.",
-      action: `<button id="destination-cars" class="primary">Open my cars</button>`,
+      title: "Fuel for the next trip",
+      body: "One parking session uses fuel for one city trip. Fill your selected car here, or open the garage to change cars and upgrade.",
+      action: `<div class="fuel-pump"><span aria-hidden="true">⛽</span><button id="destination-refuel" class="primary">Fill selected car</button></div><p id="fuel-message" role="status" class="muted"></p><button id="destination-cars">Open my cars</button>`,
     },
     Cinema: {
       title: "Now showing: The Last Space",
-      body: "An original, silent 18-second near.estate short. Watching is free and does not change parking earnings.",
+      body: "An original, silent 18-second near.estate short. Finish it while parked nearby to earn a car heart.",
       action: `<div class="cinema-player"><canvas id="cinema-canvas" width="960" height="540" role="img" aria-label="Animated short about a red car finding the last parking space"></canvas><div class="cinema-controls"><button id="cinema-play" class="primary" type="button">Play short</button><button id="cinema-restart" type="button">Replay</button><progress id="cinema-progress" max="18" value="0" aria-label="Film progress"></progress><span id="cinema-time">0 / 18s</span></div><p id="cinema-caption" class="muted" aria-live="polite"></p></div>`,
     },
     BurgerStop: {
       title: "Take a burger break",
-      body: "Take a free burger break while your car earns parking coins. Visits do not change your balance or durability.",
+      body: "Take a free burger break while parked nearby to earn a car heart. Hearts can add 2 coins to a legal collection after 10 minutes.",
       action: `<button id="destination-burger" class="primary">Get a free burger</button><p id="burger-count">${burgerVisits ? `${burgerVisits} burger break${burgerVisits === 1 ? "" : "s"} enjoyed this visit.` : "No burger breaks yet."}</p><div class="burger-cosmetic"><h3>Burger decal</h3><p>One-time cosmetic for your cars. It does not change speed, parking income or durability.</p>${decalAction}<p id="destination-message" class="muted" aria-live="polite"></p></div>`,
     },
     PracticeCourse: {
       title: "Solo practice course",
-      body: "Drive through three checkpoints and finish quickly. Higher-tier cars move faster; cones add time. No coins or durability are at stake.",
+      body: "Drive through three checkpoints and finish quickly. Higher-tier cars move faster; cones add time. Finish while parked nearby to earn a car heart.",
       action: practiceCar
         ? `<div class="practice-player"><p>${practiceCar.body} · Tier ${practiceCar.tier} · ${practiceCar.color}</p><canvas id="practice-canvas" width="480" height="640" role="img" aria-label="Three-lane practice course with checkpoints and cones"></canvas><p id="practice-status" aria-live="polite"></p><div class="practice-controls"><button id="practice-start" class="primary" type="button">Start run</button><button id="practice-left" type="button" aria-label="Steer left">←</button><button id="practice-throttle" class="primary" type="button">Hold to drive</button><button id="practice-right" type="button" aria-label="Steer right">→</button></div><p class="muted">Keyboard: hold ↑ or W to drive; tap ←/→ or A/D to steer. Best time is saved in this browser.</p></div>`
         : `<p class="muted">Connect a testnet wallet and select a car to practice.</p>`,
     },
     HorseCourse: {
       title: "Four horses, one finish line",
-      body: "Watch a free race from the grandstand. Coin betting is not open in the shared city; the race never changes your game balance.",
+      body: "Watch a free race from the grandstand. Finish while parked nearby to earn a car heart. Coin betting is not open.",
       action: `<div class="horse-race-player"><canvas id="horse-race-canvas" width="960" height="540" role="img" aria-label="Four horses racing on separate lanes at Harbor Horse Course"></canvas><div class="horse-race-controls"><button id="horse-race-watch" class="primary" type="button">Watch race</button><span id="horse-race-status" role="status" aria-live="polite"></span></div>${horseBettingDemoEnabled && !liveMode ? `<div class="horse-demo-bet"><strong>Local simulated bet · no game coins at stake</strong><p>Four horses, 25% each · 3.8× total return on a win · 5% house edge.</p><label>Horse <select id="horse-demo-choice"><option value="0">Copper Comet</option><option value="1">Blue Ribbon</option><option value="2">Golden Mile</option><option value="3">Green Flash</option></select></label><label>Stake <select id="horse-demo-stake"><option value="1">1 demo coin</option><option value="2">2 demo coins</option><option value="3">3 demo coins</option><option value="4">4 demo coins</option><option value="5">5 demo coins</option></select></label><button id="horse-demo-place" type="button">Place simulated bet</button><p id="horse-demo-balance">100 demo coins available</p><p id="horse-bet-message" role="status" aria-live="polite"></p></div>` : `<p class="muted">Spectator race · no stake or payout</p>`}</div>`,
     },
     ParkingTower: {
@@ -2253,7 +2257,7 @@ function destinationMarkup(site: NPCSite): string {
   }[site.role];
   return `<div class="destination-screen"><button id="destination-back">← Back to street</button>
     <div class="destination-card card ${site.role === "Cinema" || site.role === "PracticeCourse" || site.role === "HorseCourse" ? "cinema-destination" : ""} ${site.role === "PracticeCourse" || site.role === "HorseCourse" ? "practice-destination" : ""} ${site.role === "HorseCourse" ? "horse-destination" : ""}"><img src="${import.meta.env.BASE_URL}world/${siteSpriteFile(site.role)}" alt="${site.name}" width="280" height="320" />
-      <div><span class="tag">Game-owned destination</span><h1>${site.name}</h1><h2>${details.title}</h2><p>${details.body}</p>${details.action}</div>
+      <div><span class="tag">Game-owned destination</span><h1>${site.role === "RepairGarage" ? "NEAR Fuel & Service" : site.name}</h1><h2>${details.title}</h2><p>${details.body}</p>${details.action}${["Cinema", "BurgerStop", "PracticeCourse", "HorseCourse"].includes(site.role) ? `<p id="heart-message" class="muted" role="status">Park legally within two plots, then finish this activity for one ♥. Two check-ins per day.</p>` : ""}</div>
     </div></div>`;
 }
 
@@ -2274,28 +2278,28 @@ function carsMarkup(): string {
           car.tier < 3
             ? DEFAULT_CONFIG.tierUpgradeCosts[car.tier - 1]
             : undefined;
-        const fullPoints = DEFAULT_CONFIG.maxDurability - car.durability;
+        const fullPoints = GUEST_CONFIG.maxDurability - car.durability;
         const parkPoints = Math.max(
           0,
-          DEFAULT_CONFIG.parkDurabilityCost - car.durability,
+          GUEST_CONFIG.parkDurabilityCost - car.durability,
         );
         const fullCost =
-          BigInt(fullPoints) * BigInt(DEFAULT_CONFIG.repairCostPerPoint);
+          BigInt(fullPoints) * BigInt(GUEST_CONFIG.repairCostPerPoint);
         const parkCost =
-          BigInt(parkPoints) * BigInt(DEFAULT_CONFIG.repairCostPerPoint);
+          BigInt(parkPoints) * BigInt(GUEST_CONFIG.repairCostPerPoint);
         return `<article class="card car-card">
           <img src="${import.meta.env.BASE_URL}world/${carSpriteFile(car.body, car.color)}" alt="${car.color} ${car.body}" width="192" height="96" />
           <h2>${car.body}</h2>
-          <p>${car.color} · Tier ${car.tier} · ${car.durability}% durability</p>
+          <p>${car.color} · Tier ${car.tier} · ⛽ ${car.durability}% fuel · ♥ ${game.heartCount(car.id)}/2</p>
           <p><span class="tag">${isParked ? "Parked and earning" : isActive ? "Driving now" : "In garage"}</span></p>
           <button data-select-car="${car.id}" ${isActive ? "disabled" : ""}>${isActive ? "Selected" : isParked ? "Select parked car" : "Drive this car"}</button>
-          <button data-repair-car="${car.id}" ${fullPoints === 0 || isParked || game.balance < fullCost ? "disabled" : ""}>${fullPoints === 0 ? "Fully repaired" : `Repair to full · ${formatCoins(fullCost.toString())} coins`}</button>
-          ${parkPoints > 0 && parkPoints < fullPoints ? `<button data-repair-to-park="${car.id}" ${isParked || game.balance < parkCost ? "disabled" : ""}>Repair to park · ${formatCoins(parkCost.toString())} coins</button>` : ""}
+          <button data-repair-car="${car.id}" ${fullPoints === 0 || isParked || game.balance < fullCost ? "disabled" : ""}>${fullPoints === 0 ? "Tank full" : `Fill tank · ${formatCoins(fullCost.toString())} coins`}</button>
+          ${parkPoints > 0 && parkPoints < fullPoints ? `<button data-repair-to-park="${car.id}" ${isParked || game.balance < parkCost ? "disabled" : ""}>Fuel for one trip · ${formatCoins(parkCost.toString())} coins</button>` : ""}
           <button data-upgrade-car="${car.id}" ${!upgradeCost || isParked || game.balance < BigInt(upgradeCost) ? "disabled" : ""}>${upgradeCost ? `Upgrade · ${formatCoins(upgradeCost)} coins` : "Max tier"}</button>
         </article>`;
       })
       .join("")}</div>
-    ${recovery.stranded ? `<section class="card"><h2>Free starter repair</h2><p class="muted">When no car can park and you cannot afford a repair, restore your starter car to parking durability once per cooldown.</p><button id="guest-emergency-repair" ${recovery.eligible ? "" : "disabled"}>${recovery.eligible ? "Restore starter car" : `Available after ${new Date(recovery.availableAt! * 1000).toLocaleString()}`}</button></section>` : ""}
+    ${recovery.stranded ? `<section class="card"><h2>Emergency fuel</h2><p class="muted">When no car can park and you cannot afford a refill, add enough fuel for one trip once per cooldown.</p><button id="guest-emergency-repair" ${recovery.eligible ? "" : "disabled"}>${recovery.eligible ? "Fuel starter car" : `Available after ${new Date(recovery.availableAt! * 1000).toLocaleString()}`}</button></section>` : ""}
     <section class="card car-showroom">
       <h2>Choose your next car</h2>
       <div class="car-purchase-controls">
@@ -2304,7 +2308,7 @@ function carsMarkup(): string {
         <img id="buy-preview" src="${import.meta.env.BASE_URL}world/${carSpriteFile("Hatchback", "Red")}" alt="Red Hatchback preview" width="192" height="96" />
       </div>
       <button class="primary" id="buy-car" ${canBuy ? "" : "disabled"}>Buy car · ${formatCoins(DEFAULT_CONFIG.buyCarCost)} coins</button>
-      <p class="muted">${game.cars.length >= DEFAULT_CONFIG.maxCars ? "Garage full: three cars maximum." : game.balance < buyCost ? `Earn ${formatCoins((buyCost - game.balance).toString())} more coins to buy a car.` : "A new car starts at tier 1 with full durability."}</p>
+      <p class="muted">${game.cars.length >= DEFAULT_CONFIG.maxCars ? "Garage full: three cars maximum." : game.balance < buyCost ? `Earn ${formatCoins((buyCost - game.balance).toString())} more coins to buy a car.` : "A new car starts at tier 1 with a full tank."}</p>
     </section>`;
 }
 
@@ -2616,10 +2620,10 @@ function showScreen(screen: string): void {
         button.addEventListener("click", () =>
           garageAction(() => {
             game.selectCar(button.dataset.repairCar!);
-            const points = DEFAULT_CONFIG.maxDurability - game.car.durability;
+            const points = GUEST_CONFIG.maxDurability - game.car.durability;
             game.repair(points);
             recordGuestPlaytest("repair");
-            return `Repaired ${game.car.body} by ${points} points`;
+            return `Filled ${game.car.body} by ${points} fuel`;
           }),
         ),
       );
@@ -2630,7 +2634,7 @@ function showScreen(screen: string): void {
           garageAction(() => {
             game.selectCar(button.dataset.repairToPark!);
             const points =
-              DEFAULT_CONFIG.parkDurabilityCost - game.car.durability;
+              GUEST_CONFIG.parkDurabilityCost - game.car.durability;
             game.repair(points);
             recordGuestPlaytest("repair");
             return `${game.car.body} is ready to park`;
@@ -2801,15 +2805,72 @@ function showScreen(screen: string): void {
         notice.textContent =
           "Today's trip: activity finished. Collect your car to complete this stop.";
       };
-      if (site.role === "RepairGarage" || site.role === "BurgerStop")
+      if (site.role === "RepairGarage")
         otherScreen
-          .querySelector<HTMLButtonElement>(
-            site.role === "RepairGarage"
-              ? "#destination-cars"
-              : "#destination-burger",
-          )
+          .querySelector<HTMLButtonElement>("#destination-cars")
           ?.addEventListener("click", finishActivity);
     }
+    const finishTripActivity = finishActivity;
+    let heartSubmitted = false;
+    finishActivity = () => {
+      finishTripActivity();
+      if (
+        heartSubmitted ||
+        !["Cinema", "BurgerStop", "PracticeCourse", "HorseCourse"].includes(
+          site.role,
+        )
+      )
+        return;
+      const notice = otherScreen.querySelector<HTMLElement>("#heart-message");
+      if (!parkedNearStop(city, site, currentParkedPlace())) {
+        if (notice)
+          notice.textContent = "Park legally within two plots to earn a heart.";
+        return;
+      }
+      heartSubmitted = true;
+      if (liveMode) {
+        const live = liveStreet;
+        const session = live?.activeSession;
+        if (!live || !session) {
+          heartSubmitted = false;
+          return;
+        }
+        void live
+          .call("check_in_destination", {
+            site_id: site.id,
+            expected_session_id: session.id,
+          })
+          .then(() => {
+            if (notice)
+              notice.textContent =
+                "♥ Earned for this car. Collect after 10 minutes for 2 bonus coins.";
+          })
+          .catch((error: unknown) => {
+            heartSubmitted = false;
+            if (notice)
+              notice.textContent =
+                error instanceof Error
+                  ? error.message
+                  : "Heart check-in failed";
+          });
+      } else {
+        try {
+          const hearts = game.checkInDestination(site.id);
+          if (notice)
+            notice.textContent = `♥ ${hearts}/2 on this car. Collect after 10 minutes for 2 bonus coins.`;
+          updatePanel();
+        } catch (error) {
+          heartSubmitted = false;
+          if (notice)
+            notice.textContent =
+              error instanceof Error ? error.message : "Heart check-in failed";
+        }
+      }
+    };
+    if (site.role === "BurgerStop")
+      otherScreen
+        .querySelector<HTMLButtonElement>("#destination-burger")
+        ?.addEventListener("click", finishActivity);
     otherScreen
       .querySelector<HTMLButtonElement>("#destination-back")!
       .addEventListener("click", () => showScreen("Street"));
@@ -2819,6 +2880,77 @@ function showScreen(screen: string): void {
         recordGuestPlaytest("garage_opened");
         showScreen("Cars");
       });
+    const pump = otherScreen.querySelector<HTMLButtonElement>(
+      "#destination-refuel",
+    );
+    const pumpMessage = otherScreen.querySelector<HTMLElement>("#fuel-message");
+    if (pump && pumpMessage) {
+      const points = GUEST_CONFIG.maxDurability - game.car.durability;
+      pump.disabled =
+        liveMode ||
+        points === 0 ||
+        Boolean(liveMode ? liveStreet?.activeSession : game.playerSession());
+      if (points === 0) pump.textContent = "Tank full";
+      else if (!liveMode)
+        pump.textContent = `Fill ${points} fuel · ${formatCoins((BigInt(points) * BigInt(GUEST_CONFIG.repairCostPerPoint)).toString())} coins`;
+      else
+        void liveStreet?.reader
+          .ownerConfig()
+          .then((config) => {
+            const livePoints = Math.max(
+              0,
+              config.max_durability -
+                (liveStreet?.selectedCar?.durability ?? config.max_durability),
+            );
+            pump.disabled =
+              livePoints === 0 || Boolean(liveStreet?.activeSession);
+            pump.textContent =
+              livePoints === 0
+                ? "Tank full"
+                : `Fill ${livePoints} fuel · ${formatCoins((BigInt(livePoints) * BigInt(config.repair_cost_per_point)).toString())} coins`;
+          })
+          .catch(() => {
+            pumpMessage.textContent = "Fuel price unavailable. Try again.";
+          });
+      pump.addEventListener("click", () => {
+        if (liveMode) {
+          const live = liveStreet;
+          const car = live?.selectedCar;
+          if (!live || !car) return;
+          pump.disabled = true;
+          void live.reader
+            .ownerConfig()
+            .then((config) =>
+              live.call("repair", {
+                car_id: car.id,
+                points: config.max_durability - car.durability,
+              }),
+            )
+            .then(() => {
+              pumpMessage.textContent =
+                "Tank filled. Your car is ready for more trips.";
+              pump.textContent = "Tank full";
+            })
+            .catch((error: unknown) => {
+              pump.disabled = false;
+              pumpMessage.textContent =
+                error instanceof Error ? error.message : "Refill failed";
+            });
+        } else {
+          try {
+            game.repair(points);
+            pump.disabled = true;
+            pump.textContent = "Tank full";
+            pumpMessage.textContent =
+              "Tank filled. Your car is ready for more trips.";
+            updatePanel();
+          } catch (error) {
+            pumpMessage.textContent =
+              error instanceof Error ? error.message : "Refill failed";
+          }
+        }
+      });
+    }
     otherScreen
       .querySelector<HTMLButtonElement>("#destination-burger")
       ?.addEventListener("click", () => {

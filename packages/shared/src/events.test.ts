@@ -38,6 +38,22 @@ const samples = {
     at: 7_200,
     coin_cost: "0",
   },
+  destination_heart: {
+    owner,
+    car_id: 1,
+    site_id: "npc-harbor-cinema",
+    session_id: 1,
+    hearts: 1,
+  },
+  visit_bonus_paid: { owner, car_id: 1, session_id: 1, amount: "2000000" },
+  heart_policy_set: {
+    max_hearts_per_car: 2,
+    claims_per_day: 2,
+    bonuses_per_day: 2,
+    bonus_coins: "2000000",
+    min_park_seconds: 600,
+    nearby_plots: 2,
+  },
   parked: {
     session_id: 1,
     car_id: 1,

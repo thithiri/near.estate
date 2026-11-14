@@ -111,7 +111,7 @@ for (const viewport of [
 
     await navigation.getByRole("button", { name: "Cars" }).click();
     await expect(page.getByRole("heading", { name: "My cars" })).toBeVisible();
-    await expect(page.getByText("100% durability")).toBeVisible();
+    await expect(page.getByText(/100% fuel/)).toBeVisible();
     await noHorizontalOverflow(page);
 
     if (viewport.name === "phone landscape") {
