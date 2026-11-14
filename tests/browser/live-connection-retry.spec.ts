@@ -120,9 +120,8 @@ test("a failed initial testnet read offers a retry and recovers the street", asy
   await page.locator("#cross-side").click();
   await page.locator("#cross-side").click();
   await expect(page.locator("#status")).toHaveClass(/curb-feedback/);
-  const mode = page.getByRole("button", {
-    name: "Switch between guest and testnet street",
-  });
+  const mode = page.getByRole("button", { name: "Testnet", exact: true });
+  const guestMode = page.getByRole("button", { name: "Guest", exact: true });
   await mode.click();
   const retry = page.getByRole("button", { name: "Retry connection" });
   await expect(retry).toBeVisible();
@@ -138,10 +137,10 @@ test("a failed initial testnet read offers a retry and recovers the street", asy
     "Shared testnet state",
   );
   holdNextRead = true;
-  await mode.click();
+  await guestMode.click();
   await mode.click();
   await expect.poll(() => heldReadStarted).toBe(true);
-  await mode.click();
+  await guestMode.click();
   await mode.click();
   await expect(page.locator("#status")).toHaveText(
     "Viewing shared testnet street.",

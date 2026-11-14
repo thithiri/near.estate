@@ -190,12 +190,12 @@ try {
       item.url().includes(`/presets/${fallbackPreset.sprite}`) && item.ok(),
     { timeout: 15_000 },
   );
-  await page.getByRole("button", { name: "Testnet street" }).click();
+  await page.getByRole("button", { name: "Testnet", exact: true }).click();
   await Promise.all([failedSprite, curatedFallback]);
   await page
     .getByText("Viewing shared testnet street.", { exact: true })
     .waitFor();
-  await page.getByRole("button", { name: "Open live testnet city" }).click();
+  await page.getByRole("button", { name: "Wallet and agents" }).click();
   await page.getByRole("button", { name: "Connect wallet" }).click();
   await page.getByText("Meteor Wallet", { exact: true }).waitFor();
   const scriptViolations = await page.evaluate(

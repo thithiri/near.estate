@@ -193,7 +193,8 @@ test("version-2 street displays approved logo and billboard in its canvas", asyn
   });
   await page.goto("/");
   const modeButton = page.getByRole("button", {
-    name: "Switch between guest and testnet street",
+    name: "Testnet",
+    exact: true,
   });
   await expect(
     modeButton,

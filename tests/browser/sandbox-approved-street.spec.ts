@@ -131,7 +131,8 @@ test("sandbox-approved three-unit facade and logo render on the playable street"
   });
   await page.goto(`/?preview-plot=${rehearsal.plotId}`);
   const modeButton = page.getByRole("button", {
-    name: "Switch between guest and testnet street",
+    name: "Testnet",
+    exact: true,
   });
   await expect(
     modeButton,

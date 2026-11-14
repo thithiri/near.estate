@@ -161,10 +161,16 @@ const crossSideButton =
   document.querySelector<HTMLButtonElement>("#cross-side")!;
 const networkButton =
   document.querySelector<HTMLButtonElement>("#network-button")!;
-const modeButton = document.querySelector<HTMLButtonElement>("#mode-button")!;
+const modeToggle = document.querySelector<HTMLElement>("#mode-toggle")!;
+const modeGuestButton =
+  document.querySelector<HTMLButtonElement>("#mode-guest")!;
+const modeTestnetButton =
+  document.querySelector<HTMLButtonElement>("#mode-testnet")!;
 const contractId = import.meta.env.VITE_ESTATE_CONTRACT_ID?.trim();
 networkButton.hidden = !contractId;
-modeButton.hidden = !contractId;
+modeToggle.hidden = !contractId;
+// With a testnet contract the Guest | Testnet toggle replaces the static mode label.
+document.querySelector<HTMLElement>(".guest")!.hidden = Boolean(contractId);
 
 // First-visit "How to play" card. It is non-modal, shown once per browser, and skipped
 // under browser automation so scripted checks see the plain street.
@@ -3244,6 +3250,11 @@ async function openLiveStreet(): Promise<void> {
   }
 }
 
+function syncModeToggle(): void {
+  modeGuestButton.setAttribute("aria-pressed", String(!liveMode));
+  modeTestnetButton.setAttribute("aria-pressed", String(liveMode));
+}
+
 function toggleStreetMode(): void {
   completeCurbCrossing();
   if (!contractId) return;
@@ -3267,7 +3278,7 @@ function toggleStreetMode(): void {
     "viewing-curb",
     "live-connection-error",
   );
-  modeButton.textContent = liveMode ? "Guest mode" : "Testnet street";
+  syncModeToggle();
   status.textContent = liveMode
     ? "Loading shared testnet street…"
     : "Guest preview uses local sample parking.";
@@ -3429,7 +3440,12 @@ portraitDriving.addEventListener("change", () => {
   status.hidden = currentScreen !== "Street" || portraitDriving.matches;
 });
 networkButton.addEventListener("click", () => showScreen("Testnet"));
-modeButton.addEventListener("click", toggleStreetMode);
+modeGuestButton.addEventListener("click", () => {
+  if (liveMode) toggleStreetMode();
+});
+modeTestnetButton.addEventListener("click", () => {
+  if (!liveMode) toggleStreetMode();
+});
 document
   .querySelector<HTMLButtonElement>("#guest-building-edit")!
   .addEventListener("click", () => showScreen("Studio"));

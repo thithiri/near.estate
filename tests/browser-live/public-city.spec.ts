@@ -4,7 +4,7 @@ test("public testnet city and advertiser stats load together", async ({
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Open live testnet city" }).click();
+  await page.getByRole("button", { name: "Wallet and agents" }).click();
   await expect(page.getByRole("heading", { name: "Live city" })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Near Garden · Plot 4" }),
@@ -37,7 +37,7 @@ test("public testnet city and advertiser stats load together", async ({
 
 test("wallet chooser offers an active wallet", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Open live testnet city" }).click();
+  await page.getByRole("button", { name: "Wallet and agents" }).click();
   await page.getByRole("button", { name: "Connect wallet" }).click();
   await expect(page.getByText("Meteor Wallet", { exact: true })).toBeVisible();
   await expect(page.getByText("MyNearWallet", { exact: true })).toHaveCount(0);
@@ -52,7 +52,7 @@ test("experimental second wallet rejects a forged connection", async ({
     "Run a Vite city server with VITE_EXPERIMENTAL_INTEAR=1",
   );
   await page.goto("/");
-  await page.getByRole("button", { name: "Open live testnet city" }).click();
+  await page.getByRole("button", { name: "Wallet and agents" }).click();
   await page.getByRole("button", { name: "Connect wallet" }).click();
   await page.getByText("Intear Wallet", { exact: true }).click();
   const connection = page.frameLocator(

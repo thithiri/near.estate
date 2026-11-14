@@ -20,7 +20,7 @@ Owners play a different game on the same map: buy a plot, choose a distinct one-
 
 1. Open **[near.estate](https://near.estate)**. Guest play starts immediately and spends no NEAR. Drive with the arrows or touch controls, then tap an empty marked parking space or **Park here**. The car moves into the curb and its fuel drops by 10.
 2. Choose **Collect** to take the parking earnings. Open **Cars** or visit **NEAR Fuel & Service** to refill; the 10 fuel used by one park costs 2 game coins. Use **Map** to visit the cinema, burgers, practice course, horse course or a parking tower.
-3. To inspect the shared world, choose **Testnet street**. Buildings, plot ownership, rules and occupancy come from NEAR. With a funded testnet wallet, register for a starter car and 100 coins, approve a limited gameplay key once, and play without a wallet popup for each park or collect.
+3. To inspect the shared world, switch the top-right toggle to **Testnet**. Buildings, plot ownership, rules and occupancy come from NEAR. With a funded testnet wallet, register for a starter car and 100 coins, approve a limited gameplay key once, and play without a wallet popup for each park or collect.
 
 The hosted [release probe](deployments/vps-release-2026-11-14.json) verified HTTPS, the web/API/indexer deployment, five roads, 100 plots, eight game-owned sites, an open contract and a current finalized-block indexer. The hosted site runs commit `96e1343` from `main`, and `/api/health` reports the same revision. The guest experience works without a wallet. A named-wallet browser journey is still an open release check; the signed contract journeys below used protected testnet accounts.
 

@@ -66,21 +66,32 @@
           <button data-screen="Menu" class="menu-nav">Menu</button>
         </nav>
         <div class="wallet">
-          <span id="balance">100</span> <span aria-label="coins">🟡</span
+          <span class="balance-pill"
+            ><span id="balance">100</span>
+            <span aria-label="coins">🟡</span></span
           ><span class="guest">Guest preview</span>
-          <button
-            id="mode-button"
+          <div
+            id="mode-toggle"
+            class="mode-toggle"
+            role="group"
+            aria-label="Street data"
             hidden
-            aria-label="Switch between guest and testnet street"
           >
-            Testnet street
-          </button>
+            <button id="mode-guest" type="button" aria-pressed="true">
+              Guest
+            </button>
+            <button id="mode-testnet" type="button" aria-pressed="false">
+              Testnet
+            </button>
+          </div>
           <button
             id="network-button"
+            type="button"
             hidden
-            aria-label="Open live testnet city"
+            aria-label="Wallet and agents"
           >
-            Wallet
+            <span aria-hidden="true">🔑</span
+            ><span class="wallet-label">Wallet</span>
           </button>
         </div>
       </header>
@@ -142,8 +153,8 @@
                   <li id="how-to-play-testnet" hidden>
                     <span aria-hidden="true">🔗</span
                     ><span
-                      ><b>Testnet street</b> shows the shared city on
-                      NEAR.</span
+                      >Switch the top toggle to <b>Testnet</b> to see the shared
+                      city on NEAR.</span
                     >
                   </li>
                 </ul>
