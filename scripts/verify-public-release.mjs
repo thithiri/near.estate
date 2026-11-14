@@ -176,7 +176,7 @@ export async function verifyPublicRelease(
     city.version !== deployment.citySeedVersion ||
     city.streets?.length !== 5 ||
     city.plots?.length !== 100 ||
-    city.npcSites?.length !== 7
+    city.npcSites?.length !== deployment.npcSiteCount
   )
     throw new Error("Public API is serving the wrong city seed");
   if (generation.enabled !== false)

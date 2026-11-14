@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { baseEncode } from "@near-js/utils";
 import { verifyPublicRelease } from "./verify-public-release.mjs";
@@ -7,8 +8,10 @@ const origin = "https://game.example.com";
 const contractId = "dev-20261110121817-59798568433631.testnet";
 const sourceRevision = "a".repeat(40);
 const nowMs = Date.parse("2026-11-13T05:00:00Z");
-const codeSha256 =
-  "ad148df441a41d1f7263974fb1db6821b70b7754a3a46c8c594b759e0822b887";
+const deployment = JSON.parse(
+  readFileSync(new URL("../deployments/testnet.json", import.meta.url), "utf8"),
+);
+const codeSha256 = deployment.wasmSha256;
 const blockHash = "final-block";
 
 function responses(changes = {}) {
@@ -24,7 +27,7 @@ function responses(changes = {}) {
       version: 2,
       streets: Array(5).fill({}),
       plots: Array(100).fill({}),
-      npcSites: Array(7).fill({}),
+      npcSites: Array(deployment.npcSiteCount).fill({}),
     },
     "/api/stats/economy": {
       indexedThroughHeight: 277418599,

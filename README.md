@@ -18,7 +18,9 @@ Coins are nontransferable testnet game points. Plots cost testnet NEAR. See [doc
 
 ## Try it: do X, see Y
 
-You need Node 22 and a shell. Steps A–C need no wallet, keys or testnet NEAR.
+**Hosted:** https://near.estate runs this repository (release commit `0f20c87`) with the API, approved artwork and the event indexer. Open it to follow steps A and C without installing anything: it starts in guest mode, and **Testnet street** in the top bar switches to the shared testnet city. The [release check](deployments/vps-release-2026-11-14.json) ties the hosted site to that commit and the live contract code.
+
+To run it yourself you need Node 22 and a shell. Steps A–C need no wallet, keys or testnet NEAR.
 
 ### A. Play the guest city (about 2 minutes)
 
@@ -144,7 +146,7 @@ Ownership, parking capacity and terms, game coins, rules, tickets, building leve
 
 Operator setup, incident procedures and state recovery are documented in [Operations](docs/OPERATIONS.md), [Incidents](docs/INCIDENTS.md) and [Recovery](docs/RECOVERY.md).
 
-The VPS deployment uses [the production Compose override](infra/compose.prod.yaml), [optional expiry sweep](infra/compose.expiry.example.yaml) and [domain Caddyfile](infra/Caddyfile.prod); public TLS issuance and invite-beta release remain unverified.
+The VPS deployment uses [the production Compose override](infra/compose.prod.yaml), [optional expiry sweep](infra/compose.expiry.example.yaml) and [domain Caddyfile](infra/Caddyfile.prod); it serves https://near.estate with a Let's Encrypt certificate, verified by the [release check](deployments/vps-release-2026-11-14.json). The invite-beta release remains unverified.
 
 ## Layout
 
