@@ -1,159 +1,106 @@
 # near.estate
 
-A 2D city-parking game whose economy runs on a NEAR testnet contract. Players drive through a side-scrolling city of five roads, park to earn coins, repair and upgrade cars, buy street plots, set the parking rules in front of them, and customize the buildings with moderated logos and billboards. Built for the NEAR HACKATHON **Games With Real Economies** track (`games`).
+**Drive the city. Find a curb. Make it yours.**
 
-![Main Street on desktop](docs/images/near-estate-refreshed-street-desktop-v1.png)
+near.estate is an illustrated, side-scrolling parking city for people and software agents. Drivers hunt for a space, take a calculated risk on a parking rule, collect coins, refuel, upgrade their cars and visit cinemas, burgers and race courses. Plot owners shape the same streets with buildings, parking rules, logos and billboards. The spaces, cars, ownership and payouts live on **NEAR testnet**; the moment-to-moment game feels like a browser game.
 
-## The problem it explores
+Built for the NEAR HACKATHON **Games With Real Economies** track. [Play the hosted game](https://near.estate) · [Inspect the live contract](https://testnet.nearblocks.io/address/dev-20261110121817-59798568433631.testnet) · [Check the receipts](EVIDENCE.md)
 
-Most on-chain games make the chain the gameplay: wallets, popups and tokens come first. near.estate makes **scarce, player-owned curb space** the gameplay and keeps the chain in the background:
+![The near.estate street on desktop](docs/images/near-estate-live-v2-street-desktop-v1.png)
 
-- **Scarce space.** There are 180 curb spaces in front of 100 player plots, plus three game-owned towers with 96 spaces. Each space holds one car at a time, and the contract enforces capacity.
-- **Owners set the rules.** Each plot's owner chooses Free, Meter (they collect a fee, capped at half the driver's earnings), ColorOnly or NoParking. A new rule takes effect after five minutes.
-- **Tickets.** Owners ticket illegal parkers and keep 70% of what the session had earned. An inspector NPC patrols too, within limits set by the contract.
-- **Sessions end on their own.** Parking earns for at most 30 minutes. Anyone can then settle the expired session, which pays the original driver and frees the space.
-- **No wallet popup per action.** After one wallet approval, parking, collecting, ticketing, repairs and rule changes are signed in the page with a restricted gameplay key. That key cannot attach deposits or call any other method.
+## Why it is fun
 
-Coins are nontransferable testnet game points. Plots cost testnet NEAR. See [docs/GAME_RULES.md](docs/GAME_RULES.md) for the exact numbers.
+The city is a small shared economy with visible choices. A legal free curb is safe; a metered curb shares your earnings with its owner; an illegal park earns faster but can be ticketed. If nearby spaces fill, a game-owned parking tower still offers a legal place at a lower earning rate. Roads connect through intersections, so finding a good space is a drive rather than a menu choice.
 
-## Try it: do X, see Y
+Parking gives you time to do something else. Visit **Near & Far Burgers**, watch the cinema or horses, or beat your personal time on the practice course. A qualifying nearby visit gives your parked car a heart; collecting after at least ten minutes can spend that heart for a small coin bonus. Fuel makes each parking trip cost something, while upgrades and building choices give the coins a purpose. A two-stop daily route offers a reason to explore another part of the city. [The exact loop and limits](docs/HEARTS_AND_FUEL.md) are public.
 
-**Hosted:** https://near.estate runs this repository (release commit `0f20c87`) with the API, approved artwork and the event indexer. Open it to follow steps A and C without installing anything: it starts in guest mode, and **Testnet street** in the top bar switches to the shared testnet city. The [release check](deployments/vps-release-2026-11-14.json) ties the hosted site to that commit and the live contract code.
+Owners play a different game on the same map: buy a plot, choose a distinct one-, two- or three-unit building, upgrade its height, set its curb rule, and observe traffic and income. A logo or billboard can turn a facade into a recognizable destination after moderation. A driver looking for parking becomes an owner's visitor; the owner's rule changes the driver's next decision.
 
-To run it yourself you need Node 22 and a shell. Steps A–C need no wallet, keys or testnet NEAR.
+## Try it in two minutes
 
-### A. Play the guest city (about 2 minutes)
+1. Open **[near.estate](https://near.estate)**. Guest play starts immediately and spends no NEAR. Drive with the arrows or touch controls, then tap an empty marked parking space or **Park here**. The car moves into the curb and its fuel drops by 10.
+2. Choose **Collect** to take the parking earnings. Open **Cars** or visit **NEAR Fuel & Service** to refill; the 10 fuel used by one park costs 2 game coins. Use **Map** to visit the cinema, burgers, practice course, horse course or a parking tower.
+3. To inspect the shared world, choose **Testnet street**. Buildings, plot ownership, rules and occupancy come from NEAR. With a funded testnet wallet, register for a starter car and 100 coins, approve a limited gameplay key once, and play without a wallet popup for each park or collect.
 
-Guest mode runs the same game rules against local sample state, so nothing is written to the chain.
+The hosted [release probe](deployments/vps-release-2026-11-14.json) verified HTTPS, the web/API/indexer deployment, five roads, 100 plots, eight game-owned sites, an open contract and a current finalized-block indexer at release revision `0f20c87`. The guest experience works without a wallet. A named-wallet browser journey is still an open release check; the signed contract journeys below used protected testnet accounts.
 
-1. Run `npm ci`, then `npm run dev:guest`, and open http://localhost:5173. **You see** Main Street, your red hatchback on the road and a balance of 100 coins.
-2. Click **Park here**, or press Space. **You see** the car pull into the curb, durability drop to 98% and a **Collect** button appear.
-3. Click **Collect**. **You see** the car back on the road with its earnings added.
-4. Open **Cars** and click **Repair to full · 2 coins**. **You see** "Repaired Hatchback by 2 points" and 100% durability.
-5. Open **Menu → My Plots**, then click **Visit plot**. A visitor is parked illegally on your curb. Click **Ticket**. **You see** "Ticketed visitor".
-6. Open **Map** and click **Main Parking Tower**. **You see** the action change to **Park in tower**, which works even when every curb is full.
-7. The map also leads to the cinema, the burger stop, the solo practice course and Harbor Horse Course. Watching a horse race is free and leaves coins and durability unchanged.
+## A real economy with bounded stakes
 
-### B. Verify the live testnet game without keys (about 2 minutes)
+| Player decision            | Game effect                                                                                                                                     | NEAR makes it dependable                                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Find a space**           | 100 plots span five roads: 30 have one curb space, 60 have two and 10 have three. Three game-owned towers add 96 spaces.                        | One contract enforces exclusive occupancy, so two drivers cannot earn from the same slot.                                            |
+| **Choose risk and timing** | Tier-1 legal curb parking earns 60 coins/hour, capped after 30 minutes. Illegal parking earns 1.5× while exposing accrued earnings to a ticket. | The contract freezes the rule and earning terms at park time and settles each session once.                                          |
+| **Keep the car moving**    | A park uses 10 of 100 fuel. Replacing that fuel costs 2 coins. Higher car tiers earn faster; cars also have six bodies and four colors.         | Coin balances, car ownership, fuel and upgrades are recorded with the same account as parking.                                       |
+| **Visit the city**         | A legal nearby destination check-in gives a car a heart. A qualifying collection spends one for 2 bonus coins.                                  | The contract checks the parked session, distance, daily limits and payout. The maximum default bonus is 4 coins per account per day. |
+| **Own a frontage**         | Plot owners choose Free, Meter, ColorOnly or NoParking, collect meter income and can ticket an illegal car. Rule changes take five minutes.     | Ownership, delayed rules, ticket permissions, cooldowns and owner payouts are enforced for human and agent callers alike.            |
+| **Make it recognizable**   | Owners choose among five building types, multiple shapes and four paid levels; approved logos and billboards appear on the street.              | The approved asset hash and building revision live on-chain; images and view estimates are served off-chain.                         |
 
-```sh
-npm run judge:verify
+Coins are **internal, nontransferable, nonredeemable game points**, not a token or cash prize. Plots and cars are contract registries, not NFTs. Testnet NEAR pays for plot purchases, storage and transaction gas. Parking rewards create coins; repairs, car and building upgrades, cosmetics and other configured actions spend them. Meter fees and tickets move part of a session's value to an owner or treasury under contract rules. [Game rules](docs/GAME_RULES.md) and the [coin audit](scripts/audit-coin-supply.mjs) show the exact accounting. The illustrated city has a limited number of physical stalls; the towers keep a crowded street playable without inventing duplicate curb spaces.
+
+## Why NEAR fits without taking over the screen
+
+- **Limited function-call keys.** After a wallet authorizes a key for selected game methods and a finite gas allowance, routine actions can be signed in-page. The player sees **Park**, **Collect** and **Ticket**; purchases and other higher-trust actions still go through the wallet. NEAR's native key permissions also make the agent budgets below possible.
+- **One authoritative state transition.** A park checks the owner, car, fuel, rule and slot together. Collection or ticketing pays and frees the slot together. A losing simultaneous park cannot drain fuel or create a second payout. [Two-account contention](deployments/testnet-contested-curb-journey-post-upgrade.json) was verified on testnet.
+- **Ownership with legible rules.** A plot deed, car, pending rule, building level and approved media hash are shared city state. Owners cannot change the legality of a car that already parked; the session keeps its original terms.
+- **Open, checkable history.** Contract events feed a finalized-block indexer, so parking, tickets and owner income can appear in the UI. The API serves artwork and estimated ad views, while the economic outcome stays on-chain. Ad impressions are explicitly estimates, not chain-verified billing.
+
+## Humans and agents share the city
+
+A human can drive in the browser, browse buildings and destinations, choose where to park, manage cars and own plots. A parking agent instead reads the same finalized city state and uses a **separate key** allowed only to park, collect and settle expired sessions. Its 0.05 testnet NEAR allowance limits gas; it cannot buy a plot, attach a deposit, refill or spend game coins. The owner can revoke that key.
+
+A plot/building agent gets a different, owner-authorized grant for named plots, an expiry, daily action and coin ceilings, and optional design permission. It may ticket, schedule a rule or select/upgrade a curated design within those limits. Purchases and moderated image publication remain owner/operator actions. Agents face the same occupancy, rule, fuel and payout checks as humans. The [agent guide](docs/GAME_LOOPS_AND_AGENTS.md) explains setup and limits.
+
+This is working beyond a mock: a [three-agent testnet pilot](deployments/testnet-agent-pilot-2026-11-14.json) recorded two restricted car agents parking and collecting, plus a plot agent changing a building design. Receipt checks matched each signing key and event; the temporary grants and keys were revoked. A [safeguard journey](deployments/testnet-agent-safeguards-2026-11-14.json) also proved that wrong-plot, over-budget, stale-preview and expired-grant actions are rejected. Long unattended operation and named-wallet setup for these agents remain to be tested.
+
+## Proof that the core game works
+
+Run **`npm run judge:verify`** with Node 22. It needs no private key and makes read-only testnet calls. It checks the live code hash and city counts, then fetches recorded transaction receipts and `near_estate` events for parking, collection, plot purchase, owner ticketing, expiry settlement, logo proposal and a contested space. It prints explorer links and exits nonzero on a mismatch. It passed against the shared city on 14 November 2026.
+
+| End-to-end path                                             | Public evidence                                                                                                                         |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Hosted web, API, indexer, HTTPS and contract code match     | [VPS release probe](deployments/vps-release-2026-11-14.json)                                                                            |
+| 1-, 2- and 3-unit curbs; park and collect                   | [Width journey](deployments/testnet-variable-width-journey.json)                                                                        |
+| Buy a plot, choose its building, approve logo/media         | [Ownership](deployments/testnet-variable-ownership-journey.json) · [Logo approval](deployments/testnet-v2-three-unit-logo-journey.json) |
+| Owner sets NoParking, driver parks illegally, owner tickets | [Two-account ticket journey](deployments/testnet-two-account-ticket-v2-journey.json)                                                    |
+| An expired space pays its driver and becomes usable again   | [Expiry journey](deployments/testnet-variable-expiry-journey.json)                                                                      |
+| Burger visit → heart → bonus collect → fuel refill          | [Signed heart and fuel journey](deployments/testnet-heart-fuel-journey-2026-11-14.json)                                                 |
+| Two car agents and a plot agent act through restricted keys | [Agent pilot](deployments/testnet-agent-pilot-2026-11-14.json)                                                                          |
+
+The heart journey temporarily shortened the collection wait to one minute for verification, then restored the normal ten-minute policy. Its final receipt includes a separate 2-coin `visit_bonus_paid` event. The [evidence index](EVIDENCE.md) links more receipts and sandbox results. Guest browser tests cover driving, parking, tower fallback, destinations, studio screens and responsive layouts; `npm run test:browser` runs them locally.
+
+## How it is built
+
+```text
+apps/web                 Vite, TypeScript, PixiJS street and menus
+contracts/city-migration Current near-sdk Rust city runtime
+contracts/estate         Original contract, config and layout fixtures
+packages/shared          Rules, types, events and city data
+services/api             Hono API, image processing, moderation and stats
+services/worker          Finalized event indexer and SQLite aggregates
+infra                    Docker Compose and Caddy for one VPS
 ```
 
-**You see** about 30 `PASS` lines and then `All checks passed.` The script uses only read-only RPC calls. It:
+The client renders one side of one road at a time; a map and intersections connect the city. Buildings use normalized illustrated sprites, with logos and billboard art added separately so a player can change signage without regenerating the building. Moderation approves an exact image hash and revision before publication. The operator runs image hosting, moderation, impression estimates, indexer and NPC inspector. The contract remains authoritative for owned assets, parking, coins, rules and payouts. [Visual tour](docs/VISUALS.md) · [Architecture and API](docs/API.md) · [Trust and operations](docs/OPERATIONS.md).
 
-- checks that the live contract's code hash matches [deployments/testnet.json](deployments/testnet.json);
-- reads the city from contract views: 100 plots, 180 curb spaces, three towers of 32 spaces, and separate admin, moderator and inspector roles;
-- re-fetches every recorded journey transaction from an archival node, then checks its outcome and its `near_estate` events.
+## What comes next
 
-Each transaction prints with a testnet explorer link. [EVIDENCE.md](EVIDENCE.md) maps each claim to its record.
+1. **Watch real players.** Complete a named-wallet browser journey on desktop and a physical phone, then run a small invited playtest. Tune pacing from repeat drives, destinations, failed parks and owner income rather than scripted testnet traffic.
+2. **Make the city feel more alive.** Improve route prompts, practice-race replay and destination feedback; expand agent policies while keeping their permissions narrow and actions visible to owners.
+3. **Grow ownership carefully.** Add agent-prepared building prompts behind owner authorization and existing moderation. Paid image generation is currently off; curated designs and owner-uploaded approved media already work.
+4. **Release a measured beta.** Finish the remaining wallet, phone and operational checks in the [release checklist](docs/RELEASE_CHECKLIST.md). Horse racing is currently free to watch; the betting simulation is local only and does not use game coins.
 
-### C. See the shared testnet street
+The hosted site is a **working technical preview**. Advertising views are estimates; physical-device performance, named-wallet end-to-end signing, paid image generation and extended unattended agents remain open before an invite beta.
 
-1. Run `npm run dev:city` and open http://localhost:5173.
-2. Click **Testnet street** in the top bar. **You see** "Viewing shared testnet street." The buildings, owners' names, parking rules, prices and free spaces now come from the contract on testnet.
-3. Click a plot. **You see** its owner state, testnet NEAR price and current occupancy.
+## Develop locally
 
-Without the service database, approved logos and billboards appear as initials.
+```sh
+npm ci
+npm run dev:guest    # fast local game at http://localhost:5173
+npm run dev:city     # read the shared testnet city
+```
 
-### D. Play on testnet with a wallet (human judges)
+`dev:guest` hot reloads the street and UI. `dev:city` reads the contract and works as a web-only preview; approved artwork and live stats need a migrated private service-data snapshot. [Development and snapshot instructions](docs/OPERATIONS.md) explain that setup. Run `npm run test:browser` for guest journeys, `npm run check` for workspace checks, and `npm run contract:test` with Rust and the WASM target for contract suites. Private signing keys, moderator credentials and service data stay outside the repository.
 
-Click **Wallet** to connect a [Meteor](https://meteorwallet.app) testnet account that holds a little testnet NEAR. The game then:
+## Credits and disclosures
 
-1. registers the account with a storage deposit, granting 100 coins and a starter car;
-2. asks for one approval of the restricted gameplay key;
-3. parks and collects with no further popups.
-
-This browser path has not yet been completed end to end with a named wallet, so treat it as unverified. The same contract calls are proven by the scripted journeys in step B.
-
-### E. Run the test suites
-
-- `npx playwright install chromium --only-shell`, then `npm run test:browser`, runs 54 guest browser journeys at desktop and phone viewport sizes in about 3 minutes.
-- `npm run check` runs the workspace type checks and unit tests.
-- `npm run contract:test` needs Rust with the `wasm32-unknown-unknown` target.
-
-## What is on-chain
-
-**Live contract:** [`dev-20261110121817-59798568433631.testnet`](https://testnet.nearblocks.io/address/dev-20261110121817-59798568433631.testnet), code SHA-256 `f32cff1a…c594d1f8`.
-
-The contract owns:
-
-- accounts, coins and cars;
-- plot ownership, rules, tickets and building levels;
-- every parking session, with its frozen economic terms;
-- the approved artwork and media hashes.
-
-A Node/SQLite service handles image uploads, moderation, ad-impression estimates and an event indexer that reads only finalized blocks. The live code is built from [`contracts/city-migration`](contracts/city-migration); the version-1 rules it ports live in [`contracts/estate`](contracts/estate).
-
-## Timeline
-
-The repository history begins with a baseline commit that squashes development through 2026-11-10 (UTC). The testnet contract and its role accounts were created on 2026-11-10 at 12:18 UTC (`dev-20261110121817-…`). The variable-width version-2 city went live on 2026-11-12; see its [release record](deployments/variable-city-release-db33845c80179c1a.json).
-
-## Known limits
-
-[EVIDENCE.md](EVIDENCE.md#not-done-or-known-limits) lists them all. In short:
-
-- No named wallet has completed the browser journey yet.
-- Phones have only been checked in emulated viewports.
-- Advertiser impressions are estimates.
-- Paid AI image generation is switched off, so building facades are curated.
-- Horse racing is a free spectator activity. A separate local betting simulation does not use game coins; on-chain wagering is not enabled.
-- The invite beta is not yet released; see [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md).
-
-## Disclosures
-
-**AI assistance.** AI coding agents built this project under the author's direction and review. OpenAI Codex and Anthropic Claude Code wrote most of the code, tests, scripts and documentation. An OpenAI image model generated the illustrated buildings, cars and civic sites; the originals in [`art/source`](art/source) carry OpenAI content credentials (C2PA). Scripts in [`scripts/`](scripts) then crop, normalize and hash them for the game.
-
-**Libraries and services.** No project template was used. The main dependencies are:
-
-- **Contract:** `near-sdk` 5.30.1, `near-workspaces` 0.24 for sandbox tests, `serde` and `sha2`.
-- **Web client:** Vite, PixiJS, `@near-js/*`, NEAR Wallet Selector with Meteor (and an experimental Intear option), and Zod.
-- **API and indexer:** Hono, `sharp` for image decoding and re-encoding, Node's built-in SQLite, and Zod.
-- **Tooling:** TypeScript, `tsx`, Playwright, Prettier and `patch-package`.
-- **External services:** NEAR testnet RPC (FastNEAR), the Neardata block stream and the Meteor wallet.
-
-## Development
-
-`dev:guest` starts the instant local city with hot reload. `npm run dev:city` starts a web-only preview of the deployed testnet street and wallet chooser. It reads the contract ID from `deployments/testnet.json` and keeps live chain reads available; approved artwork, uploads, impressions and stats return a clear 503 because no local service database is attached. To work with approved artwork and stats, run `npm run dev:city:snapshot -- /absolute/path/to/migrated/private/media`. It creates a protected, ignored snapshot under `data/dev-city-snapshots` and prints the `API_DATA_DIR=... DEV_INDEXER=0 npm run dev:city` command to start the API against that copy. The snapshot uses SQLite's backup operation and checks the hash of each copied image. The city command reads the current deed cutover and reopen times from its active release record. With `DEV_INDEXER=0`, stats reflect the snapshot's cursor; set `DEV_INDEXER=1` on the copy when current indexed activity is needed. For another contract, set `INDEXER_START_HEIGHT` to that contract's creation height. The app opens at `http://localhost:5173`. If ports are occupied, set `WEB_PORT` and `API_PORT` together, for example `WEB_PORT=5176 API_PORT=3001 npm run dev:city`. Both commands require one terminal and stop their local processes with Ctrl-C.
-
-For the quick edit loop, keep the chosen dev command running: Vite refreshes street/UI changes, shared game code recompiles on change, and the API and indexer restart after service edits when a migrated service directory is attached. Run `npm run test -w @estate/web` or `npm run test -w @estate/api` for the part you changed. With `dev:guest` already running, use `npm run test:browser:local` to check guest journeys without a second server or build; set `ESTATE_BROWSER_LOCAL_URL` if its port differs from 5173. `npm run test:browser` still starts and stops its own guest server on port 5187 for an independent run. The suite covers park/collect/repair/ticket, full-curb tower fallback, complete practice and cinema journeys, plus screen navigation and horizontal-overflow checks at desktop, phone landscape and phone portrait sizes; its first local run needs `npx playwright install chromium --only-shell`. Run browser tests separately from `npm run check` because both commands use the shared build output. Run `npm run check`, `npm run assets:check`, and `npm run contract:test` at the relevant phase gate. The repository's `.cargo/config.toml` supplies the NEAR host-function build flag for WASM, and the contract rejects a WASM build that omits it. Rust contract changes still need a new testnet deployment before Live city can show them.
-
-With `dev:guest` running, use `npm run profile:street` in another terminal for an eight-second driving sample at desktop and phone-sized browser viewports. Set `ESTATE_PROFILE_URL` if the dev server uses another port; `--travel-cycles 20` adds rapid map and curb travel in one page, while up to 200 cycles allow a longer cache and JavaScript-heap check. `--out /path/to/report.json` saves the result. This local browser check does not measure a physical phone or GPU memory.
-
-For a contract code swap, `npm run contract:layout:check` runs the frozen storage-layout tests locally. The testnet code-upgrade tool runs this guard automatically before its sandbox rehearsal or live apply. A changed layout needs a migration procedure instead of the ordinary code-upgrade path.
-
-With `dev:city` running against a migrated `API_DATA_DIR`, `ESTATE_BROWSER_LIVE_URL=http://localhost:5173 npm run test:browser:live` checks the public testnet street and advertiser stats in Chromium. It uses the running city and API, makes no wallet transaction and fails if the indexed block is over ten minutes old. Set the URL to your chosen `WEB_PORT` when different. For an isolated local data snapshot with its indexer disabled, add `ESTATE_BROWSER_SNAPSHOT=1`; this skips only the ten-minute cursor check and is accepted only with a localhost URL.
-
-For the second-wallet compatibility spike, start a separate local city with `VITE_EXPERIMENTAL_INTEAR=1 npm run dev:city`. This adds Intear to the local wallet chooser; normal builds show Meteor only. With that city running, set `ESTATE_EXPERIMENTAL_INTEAR=1` alongside `ESTATE_BROWSER_LIVE_URL` to check that Intear's connection screen opens. Sign-in, artwork signing and gameplay-key approval still need a real-wallet test before this option can be released.
-
-The repeatable two-account testnet ticket journey uses separate private owner and driver credential files. Set `ESTATE_OWNER_KEY_FILE` and `ESTATE_DRIVER_KEY_FILE` to absolute paths outside this repository, run `npm run testnet:two-account:plan`, then `npm run testnet:two-account:apply`. Apply buys one dedicated shared-city plot at the quoted testnet NEAR price, schedules NoParking, and exits until the five-minute rule delay passes. Run apply again after that deadline to park the driver's car illegally, ticket it from the owner account, and schedule Free as the restored rule. After Free becomes effective, `npm run testnet:two-account:verify` checks the final state and transaction outcomes. The private journal lets an interrupted run check the exact signed transaction before continuing. This tests direct signed contract calls; named browser wallets have a separate release gate.
-
-With the same two private credential paths, `npm run testnet:contested-curb:plan` checks an unowned Free curb and both cars, then `npm run testnet:contested-curb:apply` signs and broadcasts two park attempts for that one slot, verifies one winner and one loser, and collects the winner. Its private journal retains exact signed bytes if a network reply is lost. Set `API_DATA_DIR` to the running city's SQLite data directory and run `npm run testnet:contested-curb:indexed` to verify exactly one park and one collection reached the event index.
-
-`npm ci` applies two Meteor dependency manifest patches and an experimental Intear browser-message guard from `patches/`. Keep install scripts enabled; `npm ls` and the production audit are checked in the [release checklist](docs/RELEASE_CHECKLIST.md).
-
-The web app starts in guest mode with local mock state. Guest actions do not affect shared ownership or rewards. To show the separate **Live city** screen after deploying the contract, set `VITE_ESTATE_CONTRACT_ID` to the deployed `.testnet` account before starting or building the web app. The live screen reads the selected street side and supports wallet-backed registration, purchases, curb and tower parking, collection, tickets, and repairs. The illustrated Street has an explicit testnet switch: it renders chain-backed buildings, rules, occupancy, selected car and balance, and uses the restricted key for parking, collection and owner tickets. Guest mode stays local. Two-account journeys have been signed directly with testnet keys (see [EVIDENCE.md](EVIDENCE.md)); a named browser wallet has not yet completed them.
-
-For a local **parking agent**, create a separate protected key with `npm run agent:key:new -- --account player.testnet`, then connect that account in Live city and paste the printed public key into the Parking agent card. Run `npm run agent:run -- --account player.testnet --car-id 1 --key-file /absolute/path/player.testnet.key.json` on the agent computer, using the chosen car's ID. This agent can only park, collect and settle expired parking; its key has a 0.05 testnet NEAR gas allowance and cannot spend game coins. Revoke the agent key in Live city to stop its on-chain access. Browser wallet disconnect does not revoke it. The plot/building-agent contract methods are now live on testnet, and a [three-agent pilot](deployments/testnet-agent-pilot-2026-11-14.json) verified two car agents and one building agent; its temporary keys were revoked. See [the agent guide](docs/GAME_LOOPS_AND_AGENTS.md).
-
-## Testnet deployment
-
-`npm run deploy:plan` builds the exact release WebAssembly, validates the city seed, and prints its SHA-256 without contacting testnet. The shared testnet city is recorded in [deployments/testnet.json](deployments/testnet.json): 100 variable-width plots (180 curb spaces) and eight game-owned sites. The version-2 city was introduced by its [release record](deployments/variable-city-release-db33845c80179c1a.json), and later state-preserving runtime upgrades are recorded in `deployments/runtime-upgrade-*.json`; the latest is [`runtime-upgrade-live-f32cff1a48532d3c.json`](deployments/runtime-upgrade-live-f32cff1a48532d3c.json). A [restricted-key check](deployments/testnet-gameplay-key.json) passed method, deposit and receiver limits, allowance exhaustion and on-chain revocation. An [event-source probe](deployments/testnet-event-source.json) matched a finalized contract receipt between Neardata and archival RPC and rediscovered its transaction from the archived block. Wallet UI transactions still need testing with Meteor and a second active wallet. The deployment and credential procedure is in [deployments/README.md](deployments/README.md). The contract restricts first initialization to the contract account.
-
-## Trust boundary
-
-Ownership, parking capacity and terms, game coins, rules, tickets, building levels and approved appearance hashes belong on-chain. The operator controls image hosting, prompt generation, moderation decisions, impression estimates, the event indexer, the inspector account and the expiry sweep. The inspector account is limited by contract rules, but can still choose or omit targets. The expiry account can only call the public `settle_expired` method through its runtime key; the contract decides whether a session has expired and what it pays. No game coin has a redemption or transfer method in V1.
-
-Operator setup, incident procedures and state recovery are documented in [Operations](docs/OPERATIONS.md), [Incidents](docs/INCIDENTS.md) and [Recovery](docs/RECOVERY.md).
-
-The VPS deployment uses [the production Compose override](infra/compose.prod.yaml), [optional expiry sweep](infra/compose.expiry.example.yaml) and [domain Caddyfile](infra/Caddyfile.prod); it serves https://near.estate with a Let's Encrypt certificate, verified by the [release check](deployments/vps-release-2026-11-14.json). The invite-beta release remains unverified.
-
-## Layout
-
-Phone driving uses landscape; menus and the building studio also work in portrait. Desktop has a wide scene and a dismissible plot panel. The [phone](docs/images/near-estate-phone-layout-v1.png) and [computer](docs/images/near-estate-computer-layout-v1.png) sheets are references, not screenshots of the app.
-
-See the [current game visuals](docs/VISUALS.md) for street and building studio captures, plus the illustrated building draft sheet. The [building image specification](docs/BUILDING_IMAGE_SPEC.md) records the prompt and size rules. The [building ad guide](docs/ADS.md) explains image upload, preview, billboard placement and approval. Guest image previews stay local; live owner publication uses the approval flow.
-
-## Status
-
-The [numbered progress tracker](docs/PROGRESS.md), [decisions](docs/DECISIONS.md) and [invite-beta release checklist](docs/RELEASE_CHECKLIST.md) show verified work and unverified gates. The [recovery runbook](docs/RECOVERY.md) covers the shared SQLite volume, immutable artwork and deployment records. Do not use a local build as evidence of a completed testnet or paid-generation phase.
+AI coding agents built much of the code, tests and documentation under the author's direction and review. OpenAI Codex and Anthropic Claude Code were used; an OpenAI image model produced illustrated buildings, cars and civic sites, then repository scripts normalized and hashed the assets. The main libraries are near-sdk, near-workspaces, PixiJS, Vite, NEAR Wallet Selector, Hono, Sharp, SQLite, Zod and Playwright. No project template was used. Original art and processing scripts are under [art/source](art/source) and [scripts](scripts).
