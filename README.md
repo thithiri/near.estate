@@ -22,7 +22,7 @@ Owners play a different game on the same map: buy a plot, choose a distinct one-
 2. Choose **Collect** to take the parking earnings. Open **Cars** or visit **NEAR Fuel & Service** to refill; the 10 fuel used by one park costs 2 game coins. Use **Map** to visit the cinema, burgers, practice course, horse course or a parking tower.
 3. To inspect the shared world, switch the top-right toggle to **Testnet**. Buildings, plot ownership, rules and occupancy come from NEAR. With a funded testnet wallet, register for a starter car and 100 coins, approve a limited gameplay key once, and play without a wallet popup for each park or collect.
 
-The hosted [release probe](deployments/vps-release-2026-11-14.json) verified HTTPS, the web/API/indexer deployment, five roads, 100 plots, eight game-owned sites, an open contract and a current finalized-block indexer. The hosted site runs commit `96e1343` from `main`, and `/api/health` reports the same revision. The guest experience works without a wallet. A named-wallet browser journey is still an open release check; the signed contract journeys below used protected testnet accounts.
+The hosted [release probe](deployments/vps-release-2026-11-14.json) verified HTTPS, the web/API/indexer deployment, five roads, 100 plots, eight game-owned sites, an open contract and a current finalized-block indexer. The hosted site runs commit `fe5161e` from `main`, and `/api/health` reports the same revision. The guest experience works without a wallet. A named-wallet browser journey is still an open release check; the signed contract journeys below used protected testnet accounts.
 
 ## A real economy with bounded stakes
 
