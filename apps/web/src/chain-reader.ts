@@ -97,6 +97,14 @@ const PlotAgentStatus = z.object({
   actions_remaining_today: z.number().int().nonnegative(),
 });
 export type PlotAgentStatus = z.infer<typeof PlotAgentStatus>;
+const PlotAgentAction = z.object({
+  at: z.number().int().nonnegative(),
+  public_key: z.string(),
+  plot_id: z.string(),
+  kind: z.enum(["Rule", "Ticket", "Design", "Upgrade"]),
+  coin_cost: CoinString,
+});
+export type PlotAgentAction = z.infer<typeof PlotAgentAction>;
 export type TransactionOutcome = "success" | "failure" | "pending";
 
 function transactionOutcome(value: unknown): TransactionOutcome {
@@ -389,6 +397,14 @@ export class ChainReader {
       "get_plot_agent_status",
       { owner: accountId },
       PlotAgentStatus.nullable(),
+    );
+  }
+
+  plotAgentHistory(accountId: string): Promise<PlotAgentAction[]> {
+    return this.view(
+      "get_plot_agent_history",
+      { owner: accountId },
+      z.array(PlotAgentAction),
     );
   }
 

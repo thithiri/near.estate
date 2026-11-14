@@ -18,6 +18,7 @@ export const GameEventName = z.enum([
   "ticket_reward_policy_set",
   "plot_agent_authorized",
   "plot_agent_revoked",
+  "plot_agent_action",
   "inspection_attempted",
   "rule_scheduled",
   "building_updated",
@@ -191,6 +192,16 @@ export const GameEventPayloads = {
     })
     .strict(),
   plot_agent_revoked: z.object({ owner: accountId }).strict(),
+  plot_agent_action: z
+    .object({
+      owner: accountId,
+      public_key: z.string().startsWith("ed25519:"),
+      plot_id: locationId,
+      kind: z.enum(["Rule", "Ticket", "Design", "Upgrade"]),
+      at: timestamp,
+      coin_cost: CoinString,
+    })
+    .strict(),
   inspection_attempted: z
     .object({ session_id: eventId, success: z.boolean() })
     .strict(),

@@ -105,6 +105,10 @@ const ownerReviewPage = `<!doctype html><html><head>
       paidAvailable: query.has("paid"),
       ownerConfig: { version: 1, park_durability_cost: 5, max_durability: 100, repair_cost_per_point: "1000000", emergency_repair_cooldown_seconds: 3600, meter_rate_max_per_hour: "20000000", rule_delay_seconds: 3600, change_building_type_cost: "50000000", building_upgrade_costs: ["100000000", "200000000", "300000000"] },
       selectedOwnedPlotId: "plot-main-n-0",
+      plotAgentHistory: query.has("agent-history") ? [
+        { at: 1_700_000_000, public_key: "ed25519:agent", plot_id: "plot-main-n-0", kind: "Design", coin_cost: "0" },
+        { at: 1_700_000_100, public_key: "ed25519:agent", plot_id: "plot-main-n-0", kind: "Upgrade", coin_cost: "200000000" },
+      ] : [],
       ownerDraft: { plotId: "plot-main-n-0", ruleKind: "Free", meterRate: "5", color: "Red", buildingType: "Cafe", variant: 1, palette: "#F6C85F", name: "Cafe" },
     });
     if (query.has("ad-flow") || query.has("design-preview") || query.has("agent-flow")) screen.refresh = async () => screen.render();
@@ -242,6 +246,21 @@ for (const width of [320, 1280]) {
     }
   });
 }
+
+test("owner sees recent plot-agent actions after grant revocation", async ({
+  page,
+}) => {
+  await page.route("**/__owner_type_review?agent-history", (route) =>
+    route.fulfill({ contentType: "text/html", body: ownerReviewPage }),
+  );
+  await page.goto("/__owner_type_review?agent-history");
+  const actions = page.locator(".chain-agent-history li");
+  await expect(actions).toHaveCount(2);
+  await expect(actions.first()).toContainText(
+    "upgrade · plot-main-n-0 · 200 coins",
+  );
+  await expect(actions.last()).toContainText("design · plot-main-n-0");
+});
 
 test("owner can authorize and revoke a separate parking-agent key", async ({
   page,

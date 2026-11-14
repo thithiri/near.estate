@@ -241,6 +241,27 @@ async function main() {
       nowSeconds,
     });
   }
+  if (plan.kind === "call" && plan.method !== "agent_ticket") {
+    const current = await view(url, contractId, "get_plot", {
+      plot_id: plan.args.plot_id,
+    });
+    if (current?.plot?.owner !== accountId)
+      throw new Error("Agent plot is no longer owned by this account");
+    if (plan.method === "agent_set_rule") {
+      const pending = current.plot.pending_rule;
+      plan.args.expected_rule =
+        pending && nowSeconds >= pending.effective_at
+          ? pending.rule
+          : current.plot.rule;
+      plan.args.expected_pending_effective_at =
+        pending && nowSeconds < pending.effective_at
+          ? pending.effective_at
+          : null;
+    } else {
+      plan.args.expected_layout_revision =
+        current.plot.building.layout_revision;
+    }
+  }
   console.log(JSON.stringify({ accountId, contractId, plan }));
   if (!execute) return;
   const pair = await privateKey(keyFile, accountId);

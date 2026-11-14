@@ -1,0 +1,22 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "releaseRecord": "deployments/runtime-upgrade-live-1af427ded0f90097.json",
+  "mapAuditRecord": "deployments/testnet-variable-map-journey.json",
+  "finalizedBlockHeight": 277656870,
+  "finalizedBlockHash": "EZernezNehTdLihKaspmJUQTvTEoY24V82hDSmz4QznU",
+  "codeSha256": "1af427ded0f90097b52e7680db5b850470bf572304c89ea20b833f09799e8ee9",
+  "cityVersion": 2,
+  "plotCount": 100,
+  "curbSpaces": 180,
+  "npcSiteCount": 8,
+  "horseSiteRecord": "deployments/testnet-horse-course-site.json",
+  "paused": false,
+  "roles": [
+    "dev-20261110121817-59798568433631.testnet",
+    "dev-20261110121820-76563125621460.testnet",
+    "dev-20261110121823-64776049168223.testnet"
+  ],
+  "statePreservedAtRelease": true,
+  "checkedAt": "2026-11-14T12:27:58.606Z"
+}

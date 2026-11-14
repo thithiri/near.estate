@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { baseDecode } from "@near-js/utils";
 
@@ -31,10 +31,30 @@ for (const field of [
 ])
   assert.equal(typeof release[field], "string", `${field} is missing`);
 assert.equal(map.contractId, deployment.contractId);
-assert.equal(map.currentCodeSha256, release.beforeWasmSha256);
+const verifiedReleases = readdirSync(resolve(root, "deployments"))
+  .filter((name) => /^runtime-upgrade-live-[a-f0-9]{16}\.json$/.test(name))
+  .map((name) =>
+    JSON.parse(readFileSync(resolve(root, "deployments", name), "utf8")),
+  )
+  .filter(
+    (record) =>
+      record.status === "verified" &&
+      record.contractId === deployment.contractId,
+  );
+const reachable = new Set([map.currentCodeSha256]);
+for (let pass = 0; pass < verifiedReleases.length; pass++) {
+  for (const record of verifiedReleases) {
+    if (reachable.has(record.beforeWasmSha256))
+      reachable.add(record.afterWasmSha256);
+  }
+}
+assert(
+  reachable.has(release.beforeWasmSha256),
+  "Verified release chain does not connect the map audit to this upgrade",
+);
 assert(
   map.runtimeUpgradeRecords.includes(
-    `deployments/runtime-upgrade-live-${release.beforeWasmSha256.slice(0, 16)}.json`,
+    `deployments/runtime-upgrade-live-${map.currentCodeSha256.slice(0, 16)}.json`,
   ),
 );
 assert.equal(map.plots, 100);

@@ -30,6 +30,14 @@ const samples = {
     expires_at: 7_200,
   },
   plot_agent_revoked: { owner },
+  plot_agent_action: {
+    owner,
+    public_key: "ed25519:agentkey",
+    plot_id,
+    kind: "Design",
+    at: 7_200,
+    coin_cost: "0",
+  },
   parked: {
     session_id: 1,
     car_id: 1,

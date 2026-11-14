@@ -19,7 +19,9 @@ const MAX_MODERATION_REASON_BYTES: usize = 240;
 const TICKET_POLICY_KEY: &[u8] = b"near_estate:ticket_policy:v1";
 const TICKET_USAGE_PREFIX: &[u8] = b"near_estate:ticket_usage:v1:";
 const PLOT_AGENT_PREFIX: &[u8] = b"near_estate:plot_agent:v1:";
+const PLOT_AGENT_HISTORY_PREFIX: &[u8] = b"near_estate:plot_agent_history:v1:";
 const PLOT_AGENT_RESERVE_BYTES: u32 = 1_024;
+const PLOT_AGENT_HISTORY_LIMIT: usize = 8;
 const PLOT_AGENT_MAX_SECONDS: u64 = 30 * 86_400;
 const PLOT_AGENT_MAX_DAILY_COINS: u128 = 1_000_000_000;
 
@@ -76,6 +78,25 @@ pub struct PlotAgentStatus {
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
+pub enum PlotAgentActionKind {
+    Rule,
+    Ticket,
+    Design,
+    Upgrade,
+}
+
+#[near(serializers = [borsh, json])]
+#[derive(Clone)]
+pub struct PlotAgentAction {
+    pub at: u64,
+    pub public_key: String,
+    pub plot_id: String,
+    pub kind: PlotAgentActionKind,
+    pub coin_cost: U128,
+}
+
+#[near(serializers = [borsh, json])]
+#[derive(Clone)]
 pub struct PlotViewV2 {
     pub plot: PlotV2,
     pub effective_rule: ParkingRule,
@@ -117,6 +138,54 @@ impl Contract {
             PlotAgentGrant::try_from_slice(&bytes)
                 .unwrap_or_else(|_| env::panic_str("invalid plot agent grant"))
         })
+    }
+
+    fn plot_agent_history_key(owner: &AccountId) -> Vec<u8> {
+        let mut key = Vec::with_capacity(PLOT_AGENT_HISTORY_PREFIX.len() + owner.as_str().len());
+        key.extend_from_slice(PLOT_AGENT_HISTORY_PREFIX);
+        key.extend_from_slice(owner.as_bytes());
+        key
+    }
+
+    pub fn get_plot_agent_history(&self, owner: AccountId) -> Vec<PlotAgentAction> {
+        env::storage_read(&Self::plot_agent_history_key(&owner))
+            .map(|bytes| {
+                Vec::<PlotAgentAction>::try_from_slice(&bytes)
+                    .unwrap_or_else(|_| env::panic_str("invalid plot agent history"))
+            })
+            .unwrap_or_default()
+    }
+
+    fn record_plot_agent_action(
+        &mut self,
+        plot_id: &str,
+        kind: PlotAgentActionKind,
+        coin_cost: u128,
+    ) {
+        let owner = env::predecessor_account_id();
+        let action = PlotAgentAction {
+            at: Self::now_seconds(),
+            public_key: env::signer_account_pk().to_string(),
+            plot_id: plot_id.to_owned(),
+            kind,
+            coin_cost: U128(coin_cost),
+        };
+        let mut history = self.get_plot_agent_history(owner.clone());
+        if history.len() == PLOT_AGENT_HISTORY_LIMIT {
+            history.remove(0);
+        }
+        history.push(action.clone());
+        let bytes = borsh::to_vec(&history)
+            .unwrap_or_else(|_| env::panic_str("plot agent history encoding failed"));
+        env::storage_write(&Self::plot_agent_history_key(&owner), &bytes);
+        self.emit(
+            "plot_agent_action",
+            near_sdk::serde_json::json!({
+                "owner": owner, "public_key": action.public_key,
+                "plot_id": action.plot_id, "kind": action.kind,
+                "at": action.at, "coin_cost": action.coin_cost
+            }),
+        );
     }
 
     pub fn plot_agent_storage_quote(&self) -> U128 {
@@ -292,9 +361,29 @@ impl Contract {
         env::storage_write(&Self::plot_agent_key(&owner), &bytes);
     }
 
-    pub fn agent_set_rule(&mut self, plot_id: String, rule: ParkingRule) -> PlotViewV2 {
+    pub fn agent_set_rule(
+        &mut self,
+        plot_id: String,
+        rule: ParkingRule,
+        expected_rule: ParkingRule,
+        expected_pending_effective_at: Option<u64>,
+    ) -> PlotViewV2 {
+        let owner = env::predecessor_account_id();
+        let mut observed = self.owned_plot(&plot_id, &owner);
+        observed.promote_pending(Self::now_seconds());
+        require!(
+            observed.rule == expected_rule
+                && observed
+                    .pending_rule
+                    .as_ref()
+                    .map(|pending| pending.effective_at)
+                    == expected_pending_effective_at,
+            "plot rule changed since agent preview"
+        );
         self.use_plot_agent(&plot_id, 0, false);
-        self.set_rule(plot_id, rule)
+        let view = self.set_rule(plot_id.clone(), rule);
+        self.record_plot_agent_action(&plot_id, PlotAgentActionKind::Rule, 0);
+        view
     }
 
     pub fn agent_ticket(
@@ -304,24 +393,49 @@ impl Contract {
         expected_session_id: u64,
     ) -> Settlement {
         self.use_plot_agent(&plot_id, 0, false);
-        self.ticket(plot_id, slot, expected_session_id)
+        let settlement = self.ticket(plot_id.clone(), slot, expected_session_id);
+        self.record_plot_agent_action(&plot_id, PlotAgentActionKind::Ticket, 0);
+        settlement
     }
 
-    pub fn agent_choose_design(&mut self, plot_id: String, choice: u8) -> PlotV2 {
-        self.use_plot_agent(&plot_id, 0, true);
-        self.choose_design(plot_id, choice)
-    }
-
-    pub fn agent_upgrade_building(&mut self, plot_id: String) -> PlotV2 {
+    pub fn agent_choose_design(
+        &mut self,
+        plot_id: String,
+        choice: u8,
+        expected_layout_revision: u64,
+    ) -> PlotV2 {
         let owner = env::predecessor_account_id();
         let plot = self.owned_plot(&plot_id, &owner);
+        require!(
+            plot.building.layout_revision == expected_layout_revision,
+            "building changed since agent preview"
+        );
+        self.use_plot_agent(&plot_id, 0, true);
+        let plot = self.choose_design(plot_id.clone(), choice);
+        self.record_plot_agent_action(&plot_id, PlotAgentActionKind::Design, 0);
+        plot
+    }
+
+    pub fn agent_upgrade_building(
+        &mut self,
+        plot_id: String,
+        expected_layout_revision: u64,
+    ) -> PlotV2 {
+        let owner = env::predecessor_account_id();
+        let plot = self.owned_plot(&plot_id, &owner);
+        require!(
+            plot.building.layout_revision == expected_layout_revision,
+            "building changed since agent preview"
+        );
         require!(
             (1..4).contains(&plot.building.level),
             "building is already level 4"
         );
         let cost = self.inner.config.building_upgrade_costs[usize::from(plot.building.level - 1)].0;
         self.use_plot_agent(&plot_id, cost, true);
-        self.upgrade_building(plot_id)
+        let plot = self.upgrade_building(plot_id.clone());
+        self.record_plot_agent_action(&plot_id, PlotAgentActionKind::Upgrade, cost);
+        plot
     }
 
     fn ticket_usage_key(plot_id: &str) -> Vec<u8> {

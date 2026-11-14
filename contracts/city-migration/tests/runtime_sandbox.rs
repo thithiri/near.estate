@@ -253,7 +253,7 @@ async fn deployed_runtime_parks_and_tickets_a_three_unit_curb() -> Result<()> {
     );
     let changed = agent
         .call(city.id(), "agent_set_rule")
-        .args_json(json!({"plot_id": plot_id, "rule": {"kind": "Free"}}))
+        .args_json(json!({"plot_id": plot_id, "rule": {"kind": "Free"}, "expected_rule": {"kind": "NoParking"}, "expected_pending_effective_at": null}))
         .transact()
         .await?;
     ensure!(changed.is_success(), "agent rule failed: {changed:?}");
@@ -271,7 +271,7 @@ async fn deployed_runtime_parks_and_tickets_a_three_unit_curb() -> Result<()> {
     );
     let design = agent
         .call(city.id(), "agent_choose_design")
-        .args_json(json!({"plot_id": plot_id, "choice": 1}))
+        .args_json(json!({"plot_id": plot_id, "choice": 1, "expected_layout_revision": 1}))
         .transact()
         .await?;
     ensure!(
@@ -288,7 +288,7 @@ async fn deployed_runtime_parks_and_tickets_a_three_unit_curb() -> Result<()> {
     );
     let after_revoke = agent
         .call(city.id(), "agent_set_rule")
-        .args_json(json!({"plot_id": plot_id, "rule": {"kind": "Free"}}))
+        .args_json(json!({"plot_id": plot_id, "rule": {"kind": "Free"}, "expected_rule": {"kind": "NoParking"}, "expected_pending_effective_at": null}))
         .transact()
         .await?;
     ensure!(!after_revoke.is_success(), "revoked agent still acted");

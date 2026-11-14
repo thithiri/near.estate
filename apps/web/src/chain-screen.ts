@@ -19,7 +19,7 @@ import {
   type ChainStreetSide,
   type ChainTicketRewardStatus,
 } from "@estate/shared";
-import { ChainReader } from "./chain-reader.js";
+import { ChainReader, type PlotAgentAction } from "./chain-reader.js";
 import { curbDirection } from "./city-navigation.js";
 import { garageRecovery } from "./garage-recovery.js";
 import { PRESET_PALETTES } from "./preset-catalog.js";
@@ -195,6 +195,7 @@ export class ChainScreen {
     allowance: null,
   };
   private plotAgentAccess: PlotAgentAccess | null = null;
+  private plotAgentHistory: PlotAgentAction[] | null = null;
   private accountId: string | null = null;
   private selectedCarId: number | null = null;
   private quote: string | null = null;
@@ -306,6 +307,7 @@ export class ChainScreen {
       this.keyStatus = "none";
       this.parkingAgentStatus = null;
       this.plotAgentAccess = null;
+      this.plotAgentHistory = null;
       this.accountId = accountId;
     }
     const { roadId, side } = this.getRoadSide();
@@ -336,6 +338,7 @@ export class ChainScreen {
         keyStatus,
         parkingAgentStatus,
         plotAgentAccess,
+        plotAgentHistory,
         quote,
         towerState,
         towerSpaceState,
@@ -355,6 +358,9 @@ export class ChainScreen {
             }),
         accountId && this.wallet?.plotAgentAccess
           ? this.wallet.plotAgentAccess().catch(() => null)
+          : Promise.resolve(null),
+        accountId
+          ? this.reader.plotAgentHistory(accountId).catch(() => null)
           : Promise.resolve(null),
         accountId ? this.reader.registrationQuote() : Promise.resolve(null),
         tower ? this.reader.towerState(tower.id) : Promise.resolve(null),
@@ -377,6 +383,7 @@ export class ChainScreen {
       this.keyStatus = keyStatus;
       this.parkingAgentStatus = parkingAgentStatus;
       this.plotAgentAccess = plotAgentAccess;
+      this.plotAgentHistory = plotAgentHistory;
       this.quote = quote;
       this.towerFloors = towerState?.floors ?? null;
       this.towerAvailable = towerState?.available ?? null;
@@ -453,6 +460,7 @@ export class ChainScreen {
       this.keyStatus = "none";
       this.parkingAgentStatus = null;
       this.plotAgentAccess = null;
+      this.plotAgentHistory = null;
       this.message =
         error instanceof Error ? error.message : "Chain read failed";
       this.render();
@@ -1179,6 +1187,20 @@ export class ChainScreen {
       <p>Delegate selected plot actions for seven days. The agent's coin spending stays in your account and is limited on-chain each UTC day.</p>
       ${access === null ? `<p class="muted">Plot-agent controls are unavailable until the new contract runtime is released or the connection recovers.</p>` : grant ? `<p><strong>${state === "ready" ? "Ready to run" : "Grant active, key needs attention"}</strong> · ${html(grant.plot_ids.join(", "))}</p><p>${formatCoins(access.status!.coins_remaining_today)} of ${formatCoins(grant.daily_coin_limit)} coins left today · ${access.status!.actions_remaining_today} of ${grant.daily_action_limit} actions left · design changes ${grant.allow_design_changes ? "allowed" : "off"}.</p><p class="muted">Expires ${new Date(grant.expires_at * 1000).toLocaleString()}. Agent key: <code>${html(grant.public_key)}</code></p><button id="plot-agent-revoke" ${this.busy ? "disabled" : ""}>Revoke plot agent · wallet confirmation</button>` : `<p><strong>${state === "pending-key" ? "Key awaiting confirmation" : state === "pending-grant" ? "Key ready; grant still needed" : state === "inactive" ? "Key has wrong permissions or no gas" : "Off"}</strong></p><p class="muted">Generate a separate key on the agent computer with <code>npm run agent:key:new -- --account ${html(accountId)} --role plot</code>. Paste only its public key. Setup may require two wallet confirmations and a refundable storage reserve.</p><label>Agent public key <input id="plot-agent-public-key" autocomplete="off" spellcheck="false" value="${html(publicKey)}" placeholder="ed25519:…" /></label><label>Managed plot <select id="plot-agent-plot">${owned.map((entry) => `<option value="${html(entry.plot.id)}" ${entry.plot.id === this.selectedOwnedPlotId ? "selected" : ""}>${html(entry.plot.road_id)} · plot ${entry.plot.index + 1}</option>`).join("")}</select></label><label>Daily coin limit <select id="plot-agent-coins"><option value="0">0 coins · rules and tickets only</option><option value="50000000">50 coins</option><option value="200000000">200 coins</option></select></label><label>Daily actions <select id="plot-agent-actions"><option value="5">5 actions</option><option value="10">10 actions</option><option value="20">20 actions</option></select></label><label><input id="plot-agent-design" type="checkbox" /> Allow curated design changes and building upgrades (may hide approved media)</label><button id="plot-agent-authorize" ${this.busy || state === "inactive" ? "disabled" : ""}>Authorize plot agent · wallet confirmation</button>${state === "inactive" ? `<button id="plot-agent-revoke" ${this.busy ? "disabled" : ""}>Remove inactive key</button>` : ""}`}
       <p class="muted">Plot purchases still need your wallet. Generated images still need moderation. Disconnecting your wallet does not revoke this agent.</p>
+      <h3>Recent agent actions</h3>
+      ${
+        this.plotAgentHistory === null
+          ? `<p class="muted">Action history is unavailable until the contract update or connection recovers.</p>`
+          : this.plotAgentHistory.length === 0
+            ? `<p class="muted">No agent actions yet.</p>`
+            : `<ol class="chain-agent-history">${[...this.plotAgentHistory]
+                .reverse()
+                .map(
+                  (action) =>
+                    `<li><time datetime="${new Date(action.at * 1000).toISOString()}">${html(new Date(action.at * 1000).toLocaleString())}</time> · ${html(action.kind.toLowerCase())} · ${html(action.plot_id)}${BigInt(action.coin_cost) > 0n ? ` · ${formatCoins(action.coin_cost)} coins` : ""}</li>`,
+                )
+                .join("")}</ol>`
+      }
     </section>`;
   }
 

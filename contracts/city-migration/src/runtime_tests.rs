@@ -51,17 +51,42 @@ fn plot_agent_rule_is_scoped_and_uses_the_owner_rule_delay() {
     let mut contract = fixture(ParkingRule::Free);
     authorize_agent(&mut contract, false, 0, 1);
     agent_context("owner.testnet", 1_001, AGENT_KEY, 0);
-    let view = contract.agent_set_rule(PLOT_ID.to_owned(), ParkingRule::NoParking);
+    let view = contract.agent_set_rule(
+        PLOT_ID.to_owned(),
+        ParkingRule::NoParking,
+        ParkingRule::Free,
+        None,
+    );
     assert!(matches!(view.effective_rule, ParkingRule::Free));
     assert!(view.plot.pending_rule.is_some());
     let status = contract
         .get_plot_agent_status(account("owner.testnet"))
         .expect("agent status");
     assert_eq!(status.actions_remaining_today, 0);
+    let history = contract.get_plot_agent_history(account("owner.testnet"));
+    assert_eq!(history.len(), 1);
+    assert!(matches!(
+        history[0].kind,
+        crate::runtime::PlotAgentActionKind::Rule
+    ));
+    assert_eq!(history[0].plot_id, PLOT_ID);
     assert!(catch_unwind(AssertUnwindSafe(|| {
-        contract.agent_set_rule(PLOT_ID.to_owned(), ParkingRule::Free)
+        contract.agent_set_rule(
+            PLOT_ID.to_owned(),
+            ParkingRule::Free,
+            ParkingRule::Free,
+            None,
+        )
     }))
     .is_err());
+    context("owner.testnet", 1_002);
+    contract.revoke_plot_agent();
+    assert_eq!(
+        contract
+            .get_plot_agent_history(account("owner.testnet"))
+            .len(),
+        1
+    );
 }
 
 #[test]
@@ -70,12 +95,22 @@ fn plot_agent_rejects_wrong_key_and_expired_grant() {
     authorize_agent(&mut contract, false, 0, 5);
     agent_context("owner.testnet", 1_001, OTHER_KEY, 0);
     assert!(catch_unwind(AssertUnwindSafe(|| {
-        contract.agent_set_rule(PLOT_ID.to_owned(), ParkingRule::NoParking)
+        contract.agent_set_rule(
+            PLOT_ID.to_owned(),
+            ParkingRule::NoParking,
+            ParkingRule::Free,
+            None,
+        )
     }))
     .is_err());
     agent_context("owner.testnet", 2_000, AGENT_KEY, 0);
     assert!(catch_unwind(AssertUnwindSafe(|| {
-        contract.agent_set_rule(PLOT_ID.to_owned(), ParkingRule::NoParking)
+        contract.agent_set_rule(
+            PLOT_ID.to_owned(),
+            ParkingRule::NoParking,
+            ParkingRule::Free,
+            None,
+        )
     }))
     .is_err());
 }
@@ -86,7 +121,7 @@ fn building_agent_needs_design_permission_and_coin_budget() {
     authorize_agent(&mut contract, false, 0, 5);
     agent_context("owner.testnet", 1_001, AGENT_KEY, 0);
     assert!(catch_unwind(AssertUnwindSafe(|| {
-        contract.agent_choose_design(PLOT_ID.to_owned(), 1)
+        contract.agent_choose_design(PLOT_ID.to_owned(), 1, 1)
     }))
     .is_err());
     context("owner.testnet", 1_002);
@@ -97,12 +132,12 @@ fn building_agent_needs_design_permission_and_coin_budget() {
     agent_context("owner.testnet", 1_001, AGENT_KEY, 0);
     assert_eq!(
         contract
-            .agent_choose_design(PLOT_ID.to_owned(), 1)
+            .agent_choose_design(PLOT_ID.to_owned(), 1, 1)
             .design_choice,
         1
     );
     assert!(catch_unwind(AssertUnwindSafe(|| {
-        contract.agent_upgrade_building(PLOT_ID.to_owned())
+        contract.agent_upgrade_building(PLOT_ID.to_owned(), 2)
     }))
     .is_err());
     assert_eq!(
@@ -127,9 +162,67 @@ fn revoked_plot_agent_cannot_act() {
         .is_none());
     agent_context("owner.testnet", 1_002, AGENT_KEY, 0);
     assert!(catch_unwind(AssertUnwindSafe(|| {
-        contract.agent_set_rule(PLOT_ID.to_owned(), ParkingRule::NoParking)
+        contract.agent_set_rule(
+            PLOT_ID.to_owned(),
+            ParkingRule::NoParking,
+            ParkingRule::Free,
+            None,
+        )
     }))
     .is_err());
+}
+
+#[test]
+fn owner_rule_edit_makes_the_agent_preview_stale() {
+    let mut contract = fixture(ParkingRule::Free);
+    authorize_agent(&mut contract, false, 0, 5);
+    context("owner.testnet", 1_001);
+    contract.set_rule(PLOT_ID.to_owned(), ParkingRule::NoParking);
+    agent_context("owner.testnet", 1_002, AGENT_KEY, 0);
+    assert!(catch_unwind(AssertUnwindSafe(|| {
+        contract.agent_set_rule(
+            PLOT_ID.to_owned(),
+            ParkingRule::Free,
+            ParkingRule::Free,
+            None,
+        )
+    }))
+    .is_err());
+    assert_eq!(
+        contract
+            .get_plot_agent_status(account("owner.testnet"))
+            .expect("agent status")
+            .grant
+            .actions_today,
+        0
+    );
+    assert!(contract
+        .get_plot_agent_history(account("owner.testnet"))
+        .is_empty());
+}
+
+#[test]
+fn owner_building_edit_makes_the_agent_preview_stale() {
+    let mut contract = fixture(ParkingRule::Free);
+    authorize_agent(&mut contract, true, 0, 5);
+    context("owner.testnet", 1_001);
+    contract.choose_design(PLOT_ID.to_owned(), 1);
+    agent_context("owner.testnet", 1_002, AGENT_KEY, 0);
+    assert!(catch_unwind(AssertUnwindSafe(|| {
+        contract.agent_choose_design(PLOT_ID.to_owned(), 0, 1)
+    }))
+    .is_err());
+    assert_eq!(
+        contract
+            .get_plot_agent_status(account("owner.testnet"))
+            .expect("agent status")
+            .grant
+            .actions_today,
+        0
+    );
+    assert!(contract
+        .get_plot_agent_history(account("owner.testnet"))
+        .is_empty());
 }
 
 fn fixture(rule: ParkingRule) -> Contract {

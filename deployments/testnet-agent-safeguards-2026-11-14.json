@@ -1,0 +1,89 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "codeSha256": "1af427ded0f90097b52e7680db5b850470bf572304c89ea20b833f09799e8ee9",
+  "ownerId": "dev-20261110121829-19069405494728.testnet",
+  "plotId": "plot-main-n-1",
+  "otherPlotId": "plot-main-n-7",
+  "agentPublicKey": "ed25519:3kPuBvLtkaPPuCqgyouhd4BiaSEdEfw8m1yarLimz9VN",
+  "originalDesignChoice": 4,
+  "priorHistoryCount": 0,
+  "transactions": [
+    {
+      "label": "safeguard-add-key",
+      "hash": "FzxKErKttfiYyr1fJwH5LhLtLXM5z7RoTM6aUp7GktMA",
+      "outcome": "success",
+      "failure": null
+    },
+    {
+      "label": "safeguard-authorize",
+      "hash": "7BrDPtWnkBCHpTAnsrG5rdy1YUqw2tM7hDDrGiyiWKU8",
+      "outcome": "success",
+      "failure": null
+    },
+    {
+      "label": "safeguard-wrong-plot",
+      "hash": "8ZCDTWX2Wj3xVwK1TygrYfZM4HNSWUeAY8DAi22rs9Jx",
+      "outcome": "failure",
+      "failure": "plot is outside agent scope"
+    },
+    {
+      "label": "safeguard-over-budget",
+      "hash": "7Zp3Rac1yXNHHvnfMxU5HGvWs9gY9YePzaWmrtrGfaaw",
+      "outcome": "failure",
+      "failure": "plot agent daily coin limit reached"
+    },
+    {
+      "label": "safeguard-owner-edit",
+      "hash": "Fs19wtWxmBjXRMvXGN2bdJtYZt7FUf3CBj4adfYZYE8e",
+      "outcome": "success",
+      "failure": null
+    },
+    {
+      "label": "safeguard-stale-preview",
+      "hash": "EsLqAABssenHZnZoA2hJ2J9752fVCvyySTPvsbzd3uns",
+      "outcome": "failure",
+      "failure": "building changed since agent preview"
+    },
+    {
+      "label": "safeguard-lost-reply",
+      "hash": "Cza4tzcLfoHrEXJZuBeMBebrRTVWs4rd1dSk8eAAHeVD",
+      "outcome": "success",
+      "failure": null
+    },
+    {
+      "label": "safeguard-revoke",
+      "hash": "57gDKMGwkvfb2nJ3VWFNWSgZcZ97cmcyVujgNQkQMNmg",
+      "outcome": "success",
+      "failure": null
+    },
+    {
+      "label": "safeguard-short-grant",
+      "hash": "AugR7MUHE8mog65UhejcajjwSWQgJ7rc8RHH5H6kdQ3z",
+      "outcome": "success",
+      "failure": null
+    },
+    {
+      "label": "safeguard-expired",
+      "hash": "GuUZ4vSzUv9Gjgw1fASBAqAr2MZW8sY2jn6Vzgct5AWe",
+      "outcome": "failure",
+      "failure": "plot agent grant expired"
+    },
+    {
+      "label": "safeguard-revoke-expired",
+      "hash": "BhrsB4H3cyCUqMx9imJviRCEMNZmFoRMY2YhYH4Bzk9q",
+      "outcome": "success",
+      "failure": null
+    },
+    {
+      "label": "safeguard-delete-key",
+      "hash": "EbtTAmxauPNgLw2er6zyaNEF5CDykyrtbYawh7EfnMZP",
+      "outcome": "success",
+      "failure": null
+    }
+  ],
+  "interruptedTransactionHash": "Cza4tzcLfoHrEXJZuBeMBebrRTVWs4rd1dSk8eAAHeVD",
+  "historyAfterAction": 1,
+  "keysRevoked": true,
+  "completedAt": "2026-11-14T12:31:14.901Z"
+}
