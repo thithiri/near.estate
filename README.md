@@ -98,6 +98,18 @@ The repository history begins with a baseline commit that squashes development t
 - Horse racing is a free spectator activity. A separate local betting simulation does not use game coins; on-chain wagering is not enabled.
 - The invite beta is not yet released; see [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md).
 
+## Disclosures
+
+**AI assistance.** AI coding agents built this project under the author's direction and review. OpenAI Codex and Anthropic Claude Code wrote most of the code, tests, scripts and documentation. An OpenAI image model generated the illustrated buildings, cars and civic sites; the originals in [`art/source`](art/source) carry OpenAI content credentials (C2PA). Scripts in [`scripts/`](scripts) then crop, normalize and hash them for the game.
+
+**Libraries and services.** No project template was used. The main dependencies are:
+
+- **Contract:** `near-sdk` 5.30.1, `near-workspaces` 0.24 for sandbox tests, `serde` and `sha2`.
+- **Web client:** Vite, PixiJS, `@near-js/*`, NEAR Wallet Selector with Meteor (and an experimental Intear option), and Zod.
+- **API and indexer:** Hono, `sharp` for image decoding and re-encoding, Node's built-in SQLite, and Zod.
+- **Tooling:** TypeScript, `tsx`, Playwright, Prettier and `patch-package`.
+- **External services:** NEAR testnet RPC (FastNEAR), the Neardata block stream and the Meteor wallet.
+
 ## Development
 
 `dev:guest` starts the instant local city with hot reload. `npm run dev:city` starts a web-only preview of the deployed testnet street and wallet chooser. It reads the contract ID from `deployments/testnet.json` and keeps live chain reads available; approved artwork, uploads, impressions and stats return a clear 503 because no local service database is attached. To work with approved artwork and stats, run `npm run dev:city:snapshot -- /absolute/path/to/migrated/private/media`. It creates a protected, ignored snapshot under `data/dev-city-snapshots` and prints the `API_DATA_DIR=... DEV_INDEXER=0 npm run dev:city` command to start the API against that copy. The snapshot uses SQLite's backup operation and checks the hash of each copied image. The city command reads the current deed cutover and reopen times from its active release record. With `DEV_INDEXER=0`, stats reflect the snapshot's cursor; set `DEV_INDEXER=1` on the copy when current indexed activity is needed. For another contract, set `INDEXER_START_HEIGHT` to that contract's creation height. The app opens at `http://localhost:5173`. If ports are occupied, set `WEB_PORT` and `API_PORT` together, for example `WEB_PORT=5176 API_PORT=3001 npm run dev:city`. Both commands require one terminal and stop their local processes with Ctrl-C.
