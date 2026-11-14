@@ -8,6 +8,7 @@ COPY services/api ./services/api
 COPY services/worker ./services/worker
 COPY contracts/estate/seed.json ./contracts/estate/seed.json
 COPY contracts/estate/seed-v2.json ./contracts/estate/seed-v2.json
+COPY contracts/estate/seed-v2-horse.json ./contracts/estate/seed-v2-horse.json
 ARG VITE_ESTATE_CONTRACT_ID=""
 ARG ESTATE_SOURCE_REVISION=unknown
 ENV VITE_ESTATE_CONTRACT_ID=${VITE_ESTATE_CONTRACT_ID}

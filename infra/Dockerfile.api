@@ -13,6 +13,7 @@ COPY services/worker ./services/worker
 COPY apps/web ./apps/web
 COPY contracts/estate/seed.json ./contracts/estate/seed.json
 COPY contracts/estate/seed-v2.json ./contracts/estate/seed-v2.json
+COPY contracts/estate/seed-v2-horse.json ./contracts/estate/seed-v2-horse.json
 COPY contracts/estate/migration-v1-to-v2-draft.json ./contracts/estate/migration-v1-to-v2-draft.json
 RUN npm run build -w @estate/shared && npm run build -w @estate/api
 
@@ -37,6 +38,7 @@ COPY --from=build /app/services/api/package.json ./services/api/package.json
 COPY --from=build /app/services/api/dist ./services/api/dist
 COPY --from=build /app/contracts/estate/seed.json ./contracts/estate/seed.json
 COPY --from=build /app/contracts/estate/seed-v2.json ./contracts/estate/seed-v2.json
+COPY --from=build /app/contracts/estate/seed-v2-horse.json ./contracts/estate/seed-v2-horse.json
 COPY --from=build /app/contracts/estate/migration-v1-to-v2-draft.json ./contracts/estate/migration-v1-to-v2-draft.json
 COPY --from=build /app/apps/web/src/preset-catalog.json ./apps/web/src/preset-catalog.json
 COPY --from=build /app/apps/web/src/guest-illustrations.json ./apps/web/src/guest-illustrations.json
