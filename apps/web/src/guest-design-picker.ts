@@ -10,6 +10,8 @@ import {
   type StreetPreviewBuilding,
 } from "./street-design-preview.js";
 
+const PREVIEW_TEXTURE_SCALE = 4;
+
 export function mountGuestDesignPicker(
   root: HTMLElement,
   plot: PlayerPlot,
@@ -224,11 +226,15 @@ export function mountGuestDesignPicker(
       `Preview ${choice.name} on plot ${plot.index + 1}`,
     );
     const canvas = document.createElement("canvas");
-    canvas.width = units * 85;
-    canvas.height = 190;
+    canvas.width = units * 85 * PREVIEW_TEXTURE_SCALE;
+    canvas.height = 190 * PREVIEW_TEXTURE_SCALE;
     const context = canvas.getContext("2d");
-    if (context)
+    if (context) {
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = "high";
+      context.scale(PREVIEW_TEXTURE_SCALE, PREVIEW_TEXTURE_SCALE);
       paintGuestChoice(context, choice, level, previewLogo, true, previewAd);
+    }
     const caption = document.createElement("span");
     const name = document.createElement("strong");
     name.textContent = choice.name;

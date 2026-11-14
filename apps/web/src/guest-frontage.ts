@@ -9,6 +9,7 @@ import { selectNearTextureViews } from "./texture-budget.js";
 const MAX_LOADED_TEXTURES = 32;
 const FIRST_RETRY_MS = 15_000;
 const MAX_RETRY_MS = 300_000;
+const MEDIA_TEXTURE_SCALE = 4;
 
 function textureRetryDelay(failures: number): number {
   return Math.min(
@@ -32,6 +33,8 @@ async function coveredAdTexture(
     canvas.height = height * 4;
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Ad canvas is unavailable");
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
     const sourceWidth = Math.min(
       bitmap.width,
       bitmap.height * (width / height),
@@ -159,17 +162,42 @@ export function createGuestFrontage(
   customFacade.scale.set(0.25);
   customFacade.visible = false;
   group.customFacadeSprite = customFacade;
+  const layout = frontageMediaLayout(choice, level);
+  const mediaRects = [layout.sign, layout.billboard].filter(
+    (rect): rect is ArtRect => rect !== null,
+  );
+  const left = Math.max(
+    0,
+    Math.floor(Math.min(...mediaRects.map((rect) => rect.x)) - 2),
+  );
+  const top = Math.max(
+    0,
+    Math.floor(Math.min(...mediaRects.map((rect) => rect.y)) - 2),
+  );
+  const right = Math.min(
+    choice.units * 85,
+    Math.ceil(Math.max(...mediaRects.map((rect) => rect.x + rect.width))) + 2,
+  );
+  const bottom = Math.min(
+    190,
+    Math.ceil(Math.max(...mediaRects.map((rect) => rect.y + rect.height))) + 2,
+  );
   const overlayCanvas = document.createElement("canvas");
-  overlayCanvas.width = choice.units * 85;
-  overlayCanvas.height = 190;
+  overlayCanvas.width = (right - left) * MEDIA_TEXTURE_SCALE;
+  overlayCanvas.height = (bottom - top) * MEDIA_TEXTURE_SCALE;
   const context = overlayCanvas.getContext("2d");
   if (!context) throw new Error("Building overlay canvas is unavailable");
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.scale(MEDIA_TEXTURE_SCALE, MEDIA_TEXTURE_SCALE);
+  context.translate(-left, -top);
   paintGuestMedia(context, displayedChoice, level, logo, true, adPreview);
   const overlay = new Sprite(Texture.from(overlayCanvas));
+  overlay.position.set(left, top);
+  overlay.scale.set(1 / MEDIA_TEXTURE_SCALE);
   group.overlaySprite = overlay;
   overlay.visible = Boolean(adPreview);
   group.addChild(fallback, illustration, customFacade, overlay);
-  const layout = frontageMediaLayout(choice, level);
   const approvedLogoRect = {
     x: layout.logo.x + 1,
     y: layout.logo.y + 1,
