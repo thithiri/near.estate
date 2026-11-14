@@ -16,7 +16,7 @@ import {
   PARKING_AGENT_METHODS,
 } from "./agent-permission.mjs";
 
-const CALL_GAS = 60n * 10n ** 12n;
+const CALL_GAS = 30n * 10n ** 12n;
 const METHODS = PARKING_AGENT_METHODS;
 const ROADS = ["main", "market", "river", "central", "harbor"];
 const SIDES = ["North", "South"];
@@ -143,7 +143,8 @@ async function resume(url, accountId, path, carId) {
             ? "failed"
             : "success"
           : "pending";
-    } catch {
+    } catch (error) {
+      if (/INVALID_TRANSACTION|InvalidTxError/.test(String(error))) throw error;
       state = await outcome(url, pending.hash, accountId).catch(
         () => "pending",
       );

@@ -31,8 +31,12 @@ for (const field of [
 ])
   assert.equal(typeof release[field], "string", `${field} is missing`);
 assert.equal(map.contractId, deployment.contractId);
-assert.equal(map.currentCodeSha256, deployment.wasmSha256);
-assert(map.runtimeUpgradeRecords.includes(releaseRelative));
+assert.equal(map.currentCodeSha256, release.beforeWasmSha256);
+assert(
+  map.runtimeUpgradeRecords.includes(
+    `deployments/runtime-upgrade-live-${release.beforeWasmSha256.slice(0, 16)}.json`,
+  ),
+);
 assert.equal(map.plots, 100);
 assert.equal(map.curbSpaces, 180);
 assert.equal(map.civicSites, deployment.npcSiteCount);
@@ -42,7 +46,7 @@ if (deployment.npcSiteCount === 8) {
     readFileSync(resolve(root, "deployments/testnet-horse-course-site.json")),
   );
   assert.equal(horseSiteRecord.contractId, deployment.contractId);
-  assert.equal(horseSiteRecord.candidateCodeSha256, deployment.wasmSha256);
+  assert.equal(horseSiteRecord.candidateCodeSha256, map.currentCodeSha256);
   assert.equal(horseSiteRecord.status, "verified");
   assert.equal(horseSiteRecord.afterSiteCount, 8);
 }

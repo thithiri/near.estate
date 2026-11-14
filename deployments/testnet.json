@@ -3,7 +3,7 @@
   "contractId": "dev-20261110121817-59798568433631.testnet",
   "moderatorId": "dev-20261110121820-76563125621460.testnet",
   "inspectorId": "dev-20261110121823-64776049168223.testnet",
-  "wasmSha256": "27e17dd14a6cb1094c8f71f8007481f5ed525dffb977ecbb512211271c88a646",
+  "wasmSha256": "a01d2a108bb63a91557f269023d7939c6dba8636087b0a2c017871feb2a28e01",
   "configVersion": 2,
   "citySeedVersion": 2,
   "plotCount": 100,

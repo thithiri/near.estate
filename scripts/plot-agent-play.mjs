@@ -16,7 +16,7 @@ import {
   PLOT_AGENT_METHODS,
 } from "./plot-agent-permission.mjs";
 
-const CALL_GAS = 60n * 10n ** 12n;
+const CALL_GAS = 30n * 10n ** 12n;
 const args = process.argv.slice(2);
 const option = (name) => {
   const at = args.indexOf(name);
@@ -124,7 +124,8 @@ async function resume(url, accountId, path) {
             ? "failed"
             : "success"
           : "pending";
-    } catch {
+    } catch (error) {
+      if (/INVALID_TRANSACTION|InvalidTxError/.test(String(error))) throw error;
       state = await outcome(url, pending.hash, accountId).catch(
         () => "pending",
       );

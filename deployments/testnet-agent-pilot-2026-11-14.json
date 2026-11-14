@@ -1,0 +1,252 @@
+{
+  "network": "testnet",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "codeSha256": "a01d2a108bb63a91557f269023d7939c6dba8636087b0a2c017871feb2a28e01",
+  "agents": [
+    {
+      "role": "driver-parking",
+      "accountId": "dev-20261110121826-61851458515092.testnet",
+      "publicKey": "ed25519:AdFPfKqcL7DxnPtmz8wta7xTaSeDKynwm2YNT7zvCpik",
+      "methods": [
+        "park",
+        "collect",
+        "settle_expired"
+      ],
+      "gasAllowanceYocto": "50000000000000000000000"
+    },
+    {
+      "role": "owner-parking",
+      "accountId": "dev-20261110121829-19069405494728.testnet",
+      "publicKey": "ed25519:3quUWbZsBazYsSF69W8AVcG2BwSjgyiHjW7SPzmkzCmn",
+      "methods": [
+        "park",
+        "collect",
+        "settle_expired"
+      ],
+      "gasAllowanceYocto": "50000000000000000000000"
+    },
+    {
+      "role": "owner-plot",
+      "accountId": "dev-20261110121829-19069405494728.testnet",
+      "publicKey": "ed25519:76JAoGkuyjU2aaqmsr9GTRwJpaUGQN5awUUECY7ZDLAP",
+      "methods": [
+        "agent_set_rule",
+        "agent_ticket",
+        "agent_choose_design",
+        "agent_upgrade_building"
+      ],
+      "gasAllowanceYocto": "50000000000000000000000"
+    }
+  ],
+  "transactions": [
+    {
+      "label": "add-driver-parking-key",
+      "hash": "7fqtbhpPh6AM5T4f3gsCAkF7wJZrkCZvxR87dryYVytA"
+    },
+    {
+      "label": "add-owner-parking-key",
+      "hash": "7A1PE4vGYL1qcT1eXZS7RqTMfLLMd3Kjeq5dZhhFJDxg"
+    },
+    {
+      "label": "add-owner-plot-key",
+      "hash": "6fc2YxZbGzn5EV1rykeGQGFB6g9uR8b7PiqKX53a2XWS"
+    },
+    {
+      "label": "authorize-plot-agent",
+      "hash": "4cjfb8Un6CqX43YR1vkQRr18hNzsibXRZ3bzEzYcngRP"
+    },
+    {
+      "label": "driver-agent-park",
+      "hash": "5a47MHyVBaGGRGa9zKMhcTzM2bMsfHca6KHXDsWSSZ4z"
+    },
+    {
+      "label": "owner-car-agent-park",
+      "hash": "EsxHT7dTXwunxHVygmFn8ZWD9XFWiXi97PAqezLgy54z"
+    },
+    {
+      "label": "owner-building-agent-design",
+      "hash": "AFoXTq81m2g1VjoQJLmBJJRiteVEHHJr8WSFQnHRFbXw"
+    },
+    {
+      "label": "driver-parking-collect",
+      "hash": "8BjUBvGHckULi6vNQDzjNoqTV7bn7eceQWevySSSsqvF"
+    },
+    {
+      "label": "owner-parking-collect",
+      "hash": "9ASj9z98dCK5ynYnrBVHLG8awQTaTrjb5N9ZBJXXYDFj"
+    },
+    {
+      "label": "revoke-plot-grant",
+      "hash": "98UMTdfPwb8sUbdmDQihNF2YA6FtMuDL7x852BMA77qC"
+    },
+    {
+      "label": "delete-driver-parking-key",
+      "hash": "C91Pxc5xsivrr717zNpY6EXD8ykKtbuceKpwujnjdPN2"
+    },
+    {
+      "label": "delete-owner-parking-key",
+      "hash": "7YNxdRRpSwm4kQDxZoVVL6pJJrN8Je5xP9BxQnzBkpiH"
+    },
+    {
+      "label": "delete-owner-plot-key",
+      "hash": "xmdnihnPeUhpTc6zXmvJWf138tqESFAH8GCb8hhUkYY"
+    }
+  ],
+  "before": {
+    "driver": {
+      "balance": "100856110",
+      "durability": 82
+    },
+    "owner": {
+      "balance": "81651110",
+      "durability": 84
+    },
+    "plot": {
+      "id": "plot-main-n-1",
+      "designChoice": 3
+    }
+  },
+  "rejectedAttempts": [
+    {
+      "label": "driver-agent-park-preflight",
+      "hash": "FkV2m3QDKdNsRJFcEHsD3CMKoiG1nV3y1WRF92ih3ELM",
+      "reason": "NotEnoughAllowance: 60 Tgas prepaid cost exceeded 0.05 NEAR key allowance",
+      "nonceUnused": true
+    }
+  ],
+  "parkingPlans": [
+    {
+      "kind": "call",
+      "method": "park",
+      "args": {
+        "car_id": 1,
+        "plot_id": "plot-central-n-7",
+        "slot": 0
+      },
+      "reason": "free curb available"
+    },
+    {
+      "kind": "call",
+      "method": "park",
+      "args": {
+        "car_id": 3,
+        "plot_id": "plot-central-s-8",
+        "slot": 0
+      },
+      "reason": "free curb available"
+    }
+  ],
+  "buildingPlan": {
+    "kind": "call",
+    "method": "agent_choose_design",
+    "args": {
+      "plot_id": "plot-main-n-1",
+      "choice": 4
+    },
+    "reason": "requested curated design"
+  },
+  "after": {
+    "driver": {
+      "balance": "101739443",
+      "durability": 80,
+      "activeSession": null
+    },
+    "owner": {
+      "balance": "82534443",
+      "durability": 82,
+      "activeSession": null
+    },
+    "plot": {
+      "id": "plot-main-n-1",
+      "designChoice": 4
+    },
+    "grantActionsRemainingToday": 4
+  },
+  "keysRevoked": true,
+  "completedAt": "2026-11-14T12:06:16.069Z",
+  "receiptEvidence": [
+    {
+      "label": "driver-agent-park",
+      "hash": "5a47MHyVBaGGRGa9zKMhcTzM2bMsfHca6KHXDsWSSZ4z",
+      "signerPublicKey": "ed25519:AdFPfKqcL7DxnPtmz8wta7xTaSeDKynwm2YNT7zvCpik",
+      "event": "parked",
+      "data": {
+        "session_id": 22,
+        "car_id": 1,
+        "driver": "dev-20261110121826-61851458515092.testnet",
+        "location_id": "plot-central-n-7",
+        "slot": 0,
+        "facility": "Curb",
+        "legal": true,
+        "expires_at": 1794659812
+      }
+    },
+    {
+      "label": "owner-car-agent-park",
+      "hash": "EsxHT7dTXwunxHVygmFn8ZWD9XFWiXi97PAqezLgy54z",
+      "signerPublicKey": "ed25519:3quUWbZsBazYsSF69W8AVcG2BwSjgyiHjW7SPzmkzCmn",
+      "event": "parked",
+      "data": {
+        "session_id": 23,
+        "car_id": 3,
+        "driver": "dev-20261110121829-19069405494728.testnet",
+        "location_id": "plot-central-s-8",
+        "slot": 0,
+        "facility": "Curb",
+        "legal": true,
+        "expires_at": 1794659819
+      }
+    },
+    {
+      "label": "owner-building-agent-design",
+      "hash": "AFoXTq81m2g1VjoQJLmBJJRiteVEHHJr8WSFQnHRFbXw",
+      "signerPublicKey": "ed25519:76JAoGkuyjU2aaqmsr9GTRwJpaUGQN5awUUECY7ZDLAP",
+      "event": "building_updated",
+      "data": {
+        "plot_id": "plot-main-n-1",
+        "revision": 3,
+        "change": "design",
+        "design_choice": 4
+      }
+    },
+    {
+      "label": "driver-parking-collect",
+      "hash": "8BjUBvGHckULi6vNQDzjNoqTV7bn7eceQWevySSSsqvF",
+      "signerPublicKey": "ed25519:AdFPfKqcL7DxnPtmz8wta7xTaSeDKynwm2YNT7zvCpik",
+      "event": "collected",
+      "data": {
+        "session_id": 22,
+        "location_id": "plot-central-n-7",
+        "slot": 0,
+        "facility": "Curb",
+        "gross": "883333",
+        "driver_payout": "883333",
+        "recipient_payout": "0",
+        "owner_payout": "0",
+        "treasury_payout": "0",
+        "owner_account": null,
+        "forfeited": "0"
+      }
+    },
+    {
+      "label": "owner-parking-collect",
+      "hash": "9ASj9z98dCK5ynYnrBVHLG8awQTaTrjb5N9ZBJXXYDFj",
+      "signerPublicKey": "ed25519:3quUWbZsBazYsSF69W8AVcG2BwSjgyiHjW7SPzmkzCmn",
+      "event": "collected",
+      "data": {
+        "session_id": 23,
+        "location_id": "plot-central-s-8",
+        "slot": 0,
+        "facility": "Curb",
+        "gross": "883333",
+        "driver_payout": "883333",
+        "recipient_payout": "0",
+        "owner_payout": "0",
+        "treasury_payout": "0",
+        "owner_account": null,
+        "forfeited": "0"
+      }
+    }
+  ],
+  "verifiedAt": "2026-11-14T12:07:15.240Z"
+}

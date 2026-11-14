@@ -427,7 +427,10 @@ async fn main() -> Result<()> {
             !city.paused
                 && city.city_version == 2
                 && city.plot_count == 100
-                && city.npc_site_count == 7
+                && u64::from(city.npc_site_count)
+                    == manifest["npcSiteCount"]
+                        .as_u64()
+                        .context("manifest NPC site count missing")?
                 && city.admin == id,
             "live city root differs from release expectations"
         );
