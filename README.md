@@ -72,7 +72,7 @@ This browser path has not yet been completed end to end with a named wallet, so 
 
 ## What is on-chain
 
-**Live contract:** [`dev-20261110121817-59798568433631.testnet`](https://testnet.nearblocks.io/address/dev-20261110121817-59798568433631.testnet), code SHA-256 `27e17dd1…c88a646`.
+**Live contract:** [`dev-20261110121817-59798568433631.testnet`](https://testnet.nearblocks.io/address/dev-20261110121817-59798568433631.testnet), code SHA-256 `f32cff1a…c594d1f8`.
 
 The contract owns:
 
@@ -124,7 +124,7 @@ For a local **parking agent**, create a separate protected key with `npm run age
 
 ## Testnet deployment
 
-`npm run deploy:plan` builds the exact release WebAssembly, validates the city seed, and prints its SHA-256 without contacting testnet. The shared testnet city is recorded in [deployments/testnet.json](deployments/testnet.json): 100 variable-width plots (180 curb spaces) and seven game-owned sites, running the version-2 code from its [release record](deployments/variable-city-release-db33845c80179c1a.json). A [restricted-key check](deployments/testnet-gameplay-key.json) passed method, deposit and receiver limits, allowance exhaustion and on-chain revocation. An [event-source probe](deployments/testnet-event-source.json) matched a finalized contract receipt between Neardata and archival RPC and rediscovered its transaction from the archived block. Wallet UI transactions still need testing with Meteor and a second active wallet. The deployment and credential procedure is in [deployments/README.md](deployments/README.md). The contract restricts first initialization to the contract account.
+`npm run deploy:plan` builds the exact release WebAssembly, validates the city seed, and prints its SHA-256 without contacting testnet. The shared testnet city is recorded in [deployments/testnet.json](deployments/testnet.json): 100 variable-width plots (180 curb spaces) and eight game-owned sites. The version-2 city was introduced by its [release record](deployments/variable-city-release-db33845c80179c1a.json), and later state-preserving runtime upgrades are recorded in `deployments/runtime-upgrade-*.json`; the latest is [`runtime-upgrade-live-f32cff1a48532d3c.json`](deployments/runtime-upgrade-live-f32cff1a48532d3c.json). A [restricted-key check](deployments/testnet-gameplay-key.json) passed method, deposit and receiver limits, allowance exhaustion and on-chain revocation. An [event-source probe](deployments/testnet-event-source.json) matched a finalized contract receipt between Neardata and archival RPC and rediscovered its transaction from the archived block. Wallet UI transactions still need testing with Meteor and a second active wallet. The deployment and credential procedure is in [deployments/README.md](deployments/README.md). The contract restricts first initialization to the contract account.
 
 ## Trust boundary
 
