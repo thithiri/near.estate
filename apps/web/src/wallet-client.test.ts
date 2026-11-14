@@ -8,6 +8,8 @@ import {
   GAMEPLAY_KEY_ALLOWANCE,
   GAMEPLAY_METHODS,
   GameWalletClient,
+  PARKING_AGENT_KEY_ALLOWANCE,
+  PARKING_AGENT_METHODS,
   type GameplayKeyStatus,
   type MockGenerationJob,
 } from "./wallet-client.js";
@@ -723,6 +725,104 @@ test("pending gameplay key survives a closed tab and recovers after chain confir
       JSON.parse(values.get(keyName) ?? "null").publicKey,
       pending.publicKey,
     );
+  } finally {
+    if (originalStorage)
+      Object.defineProperty(globalThis, "localStorage", originalStorage);
+    else Reflect.deleteProperty(globalThis, "localStorage");
+  }
+});
+
+test("parking agent key gets only parking methods and can be revoked", async () => {
+  const originalStorage = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "localStorage",
+  );
+  const values = new Map<string, string>();
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => void values.set(key, value),
+      removeItem: (key: string) => void values.delete(key),
+    },
+  });
+  const pair = KeyPair.fromRandom("ed25519");
+  let addCount = 0;
+  let onChain: {
+    public_key: string;
+    access_key: {
+      permission: {
+        FunctionCall: {
+          receiver_id: string;
+          method_names: string[];
+          allowance: string;
+        };
+      };
+    };
+  } | null = null;
+  const selector = {
+    store: {
+      getState: () => ({
+        contract: { contractId: "estate.testnet" },
+        accounts: [{ accountId: "driver.testnet", active: true }],
+      }),
+    },
+    wallet: async () => ({
+      signAndSendTransaction: async ({ actions }: { actions: any[] }) => {
+        const action = actions[0];
+        if (action.enum === "addKey") {
+          addCount++;
+          const permission = action.addKey.accessKey.permission.functionCall;
+          assert.deepEqual(permission.methodNames, [...PARKING_AGENT_METHODS]);
+          assert.equal(permission.receiverId, "estate.testnet");
+          assert.equal(permission.allowance, PARKING_AGENT_KEY_ALLOWANCE);
+          onChain = {
+            public_key: pair.getPublicKey().toString(),
+            access_key: {
+              permission: {
+                FunctionCall: {
+                  receiver_id: permission.receiverId,
+                  method_names: permission.methodNames,
+                  allowance: permission.allowance.toString(),
+                },
+              },
+            },
+          };
+        } else if (action.enum === "deleteKey") {
+          assert.equal(
+            action.deleteKey.publicKey.toString(),
+            pair.getPublicKey().toString(),
+          );
+          onChain = null;
+        } else {
+          assert.fail(`Unexpected wallet action ${action.enum}`);
+        }
+      },
+    }),
+  };
+  const client = Object.assign(Object.create(GameWalletClient.prototype), {
+    reader: {
+      contractId: "estate.testnet",
+      accessKeyList: async () => ({ keys: onChain ? [onChain] : [] }),
+    },
+    selector,
+  }) as GameWalletClient;
+  try {
+    assert.equal((await client.parkingAgentKeyStatus()).state, "none");
+    assert.equal(
+      (await client.addParkingAgentKey(pair.getPublicKey().toString())).state,
+      "ready",
+    );
+    values.delete(
+      "near-estate:testnet:estate.testnet:driver.testnet:parking-agent-key",
+    );
+    assert.equal((await client.parkingAgentKeyStatus()).state, "none");
+    assert.equal(
+      (await client.addParkingAgentKey(pair.getPublicKey().toString())).state,
+      "ready",
+    );
+    assert.equal(addCount, 1);
+    assert.equal((await client.revokeParkingAgentKey()).state, "none");
   } finally {
     if (originalStorage)
       Object.defineProperty(globalThis, "localStorage", originalStorage);

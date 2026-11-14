@@ -67,3 +67,27 @@ test("agent will not invent a profitable move without a parkable car or legal sp
     "idle",
   );
 });
+
+test("agent uses the chosen car and leaves another car's session alone", () => {
+  const twoCars = {
+    ...player,
+    cars: [{ id: 3, durability: 100, parked_session_id: null }, ...player.cars],
+  };
+  assert.equal(
+    planAgentTurn({ player: twoCars, plots, nowSeconds: 100, carId: 4 }).args
+      .car_id,
+    4,
+  );
+  assert.deepEqual(
+    planAgentTurn({
+      player: {
+        ...twoCars,
+        active_session: { id: 9, car_id: 3, earn_until: 100, expires_at: 200 },
+      },
+      plots,
+      nowSeconds: 150,
+      carId: 4,
+    }),
+    { kind: "idle", reason: "another car has the active session" },
+  );
+});

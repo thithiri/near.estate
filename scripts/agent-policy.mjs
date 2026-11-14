@@ -1,9 +1,17 @@
 // A conservative, deterministic player policy. It only uses public chain state.
-export function planAgentTurn({ player, plots, nowSeconds, accountId = "" }) {
+export function planAgentTurn({
+  player,
+  plots,
+  nowSeconds,
+  accountId = "",
+  carId = null,
+}) {
   if (!player?.account)
     return { kind: "idle", reason: "register_player first" };
   const session = player.active_session;
   if (session) {
+    if (carId !== null && session.car_id !== carId)
+      return { kind: "idle", reason: "another car has the active session" };
     if (nowSeconds >= session.expires_at) {
       return {
         kind: "call",
@@ -28,7 +36,9 @@ export function planAgentTurn({ player, plots, nowSeconds, accountId = "" }) {
   }
   const car = player.cars.find(
     (candidate) =>
-      candidate.parked_session_id === null && candidate.durability >= 2,
+      (carId === null || candidate.id === carId) &&
+      candidate.parked_session_id === null &&
+      candidate.durability >= 2,
   );
   if (!car) return { kind: "idle", reason: "no parkable car" };
   const offset =

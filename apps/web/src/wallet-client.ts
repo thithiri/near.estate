@@ -1,4 +1,4 @@
-import { KeyPair } from "@near-js/crypto";
+import { KeyPair, PublicKey } from "@near-js/crypto";
 import { KeyPairSigner } from "@near-js/signers";
 import {
   actionCreators,
@@ -40,6 +40,12 @@ export const GAMEPLAY_METHODS = [
 ] as const;
 export type GameplayMethod = (typeof GAMEPLAY_METHODS)[number];
 export const GAMEPLAY_KEY_ALLOWANCE = 250n * 10n ** 21n; // 0.25 testnet NEAR
+export const PARKING_AGENT_METHODS = [
+  "park",
+  "collect",
+  "settle_expired",
+] as const;
+export const PARKING_AGENT_KEY_ALLOWANCE = 50n * 10n ** 21n; // 0.05 testnet NEAR
 const CALL_GAS = 60n * 10n ** 12n;
 const FINAL_BLOCK_SAFETY_MARGIN = 2n;
 const NETWORK = "testnet";
@@ -61,6 +67,16 @@ type PendingGameplayAction = {
   | { version: 2; signedAtBlockHeight: number; nonce: string }
 );
 export type GameplayKeyStatus = "ready" | "pending" | "inactive" | "none";
+export type ParkingAgentKeyStatus = {
+  state: "none" | "pending-add" | "ready" | "inactive" | "pending-revoke";
+  publicKey: string | null;
+  allowance: string | null;
+};
+type ParkingAgentRecord = {
+  accountId: string;
+  publicKey: string;
+  operation: "add" | "revoke";
+};
 export type ArtworkUpload = {
   uploadId: string;
   hash: string;
@@ -875,6 +891,158 @@ export class GameWalletClient {
 
   private keyName(accountId: string): string {
     return `near-estate:${NETWORK}:${this.reader.contractId}:${accountId}:gameplay-key`;
+  }
+
+  private parkingAgentName(accountId: string): string {
+    return `near-estate:${NETWORK}:${this.reader.contractId}:${accountId}:parking-agent-key`;
+  }
+
+  private parkingAgentRecord(accountId: string): ParkingAgentRecord | null {
+    const raw = localStorage.getItem(this.parkingAgentName(accountId));
+    if (!raw) return null;
+    try {
+      const record = JSON.parse(raw) as ParkingAgentRecord;
+      if (
+        record.accountId === accountId &&
+        /^ed25519:[A-Za-z0-9]+$/.test(record.publicKey) &&
+        (record.operation === "add" || record.operation === "revoke")
+      ) {
+        PublicKey.fromString(record.publicKey);
+        return record;
+      }
+    } catch {
+      // An unknown local record must not be overwritten with another key.
+    }
+    throw new Error(
+      "Saved parking agent key is damaged; recover it before creating another",
+    );
+  }
+
+  async parkingAgentKeyStatus(): Promise<ParkingAgentKeyStatus> {
+    const accountId = this.requiredAccount();
+    const record = this.parkingAgentRecord(accountId);
+    if (!record) return { state: "none", publicKey: null, allowance: null };
+    const listed = await this.reader.accessKeyList(accountId);
+    const access = listed.keys.find(
+      (item) => item.public_key === record.publicKey,
+    )?.access_key;
+    if (!access) {
+      if (record.operation === "revoke") {
+        localStorage.removeItem(this.parkingAgentName(accountId));
+        return { state: "none", publicKey: null, allowance: null };
+      }
+      return {
+        state: "pending-add",
+        publicKey: record.publicKey,
+        allowance: null,
+      };
+    }
+    const permission =
+      access.permission === "FullAccess" || access.permission === null
+        ? null
+        : access.permission.FunctionCall;
+    const allowed =
+      permission?.receiver_id === this.reader.contractId &&
+      permission.method_names.length === PARKING_AGENT_METHODS.length &&
+      PARKING_AGENT_METHODS.every((method) =>
+        permission.method_names.includes(method),
+      ) &&
+      permission.allowance !== null &&
+      BigInt(permission.allowance) > 0n &&
+      BigInt(permission.allowance) <= PARKING_AGENT_KEY_ALLOWANCE;
+    return {
+      state:
+        record.operation === "revoke"
+          ? "pending-revoke"
+          : allowed
+            ? "ready"
+            : "inactive",
+      publicKey: record.publicKey,
+      allowance: permission?.allowance ?? null,
+    };
+  }
+
+  async addParkingAgentKey(publicKey: string): Promise<ParkingAgentKeyStatus> {
+    const accountId = this.requiredAccount();
+    if (!/^ed25519:[A-Za-z0-9]+$/.test(publicKey))
+      throw new Error("Paste an ed25519 public key from agent:key:new");
+    let parsed: PublicKey;
+    try {
+      parsed = PublicKey.fromString(publicKey);
+    } catch {
+      throw new Error("Parking agent public key is invalid");
+    }
+    const prior = this.parkingAgentRecord(accountId);
+    if (prior && prior.publicKey !== publicKey)
+      throw new Error("Revoke or finish the existing parking agent key first");
+    if (prior?.operation === "revoke")
+      throw new Error("Finish revoking the parking agent key first");
+    if (prior) {
+      const state = await this.parkingAgentKeyStatus();
+      if (state.state === "ready") return state;
+      if (state.state === "inactive")
+        throw new Error(
+          "Existing agent key has different permissions; revoke it first",
+        );
+    } else {
+      const listed = await this.reader.accessKeyList(accountId);
+      const existing = listed.keys.some(
+        (item) => item.public_key === publicKey,
+      );
+      localStorage.setItem(
+        this.parkingAgentName(accountId),
+        JSON.stringify({ accountId, publicKey, operation: "add" }),
+      );
+      if (existing) {
+        const status = await this.parkingAgentKeyStatus();
+        if (status.state === "ready") return status;
+        localStorage.removeItem(this.parkingAgentName(accountId));
+        throw new Error("Existing public key is not a parking-only agent key");
+      }
+    }
+    const wallet = await this.selector.wallet();
+    await wallet.signAndSendTransaction({
+      signerId: accountId,
+      receiverId: accountId,
+      actions: [
+        actionCreators.addKey(
+          parsed,
+          actionCreators.functionCallAccessKey(
+            this.reader.contractId,
+            [...PARKING_AGENT_METHODS],
+            PARKING_AGENT_KEY_ALLOWANCE,
+          ),
+        ),
+      ],
+    });
+    if (this.accountId !== accountId)
+      throw new Error("Wallet account changed while adding the agent key");
+    return this.parkingAgentKeyStatus();
+  }
+
+  async revokeParkingAgentKey(): Promise<ParkingAgentKeyStatus> {
+    const accountId = this.requiredAccount();
+    const record = this.parkingAgentRecord(accountId);
+    if (!record) throw new Error("No parking agent key is saved here");
+    const state = await this.parkingAgentKeyStatus();
+    if (state.state === "pending-add")
+      throw new Error("Check or retry key creation before revoking it");
+    if (state.state === "none") return state;
+    localStorage.setItem(
+      this.parkingAgentName(accountId),
+      JSON.stringify({ ...record, operation: "revoke" }),
+    );
+    const wallet = await this.selector.wallet();
+    await wallet.signAndSendTransaction({
+      signerId: accountId,
+      receiverId: accountId,
+      actions: [
+        actionCreators.deleteKey(PublicKey.fromString(record.publicKey)),
+      ],
+    });
+    if (this.accountId !== accountId)
+      throw new Error("Wallet account changed while revoking the agent key");
+    return this.parkingAgentKeyStatus();
   }
 
   private pendingName(accountId: string): string {

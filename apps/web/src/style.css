@@ -2975,6 +2975,13 @@ h3 {
 .trip-street-card span {
   font-size: 10px;
 }
+.chain-parking-agent code,
+.chain-agent-key {
+  overflow-wrap: anywhere;
+}
+.chain-parking-agent input {
+  max-width: 100%;
+}
 .guest-design-card small {
   margin-top: 3px;
   color: #5e7987;

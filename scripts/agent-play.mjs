@@ -11,9 +11,13 @@ import {
 } from "@near-js/transactions";
 import { baseDecode, baseEncode } from "@near-js/utils";
 import { planAgentTurn } from "./agent-policy.mjs";
+import {
+  assertParkingAgentPermission,
+  PARKING_AGENT_METHODS,
+} from "./agent-permission.mjs";
 
 const CALL_GAS = 60n * 10n ** 12n;
-const METHODS = ["park", "collect", "settle_expired"];
+const METHODS = PARKING_AGENT_METHODS;
 const ROADS = ["main", "market", "river", "central", "harbor"];
 const SIDES = ["North", "South"];
 const args = process.argv.slice(2);
@@ -70,6 +74,9 @@ async function privateKey(file, accountId) {
     throw new Error(
       "Key file must contain this accountId and an ed25519 secretKey",
     );
+  const pair = KeyPair.fromString(record.secretKey);
+  if (record.publicKey && record.publicKey !== pair.getPublicKey().toString())
+    throw new Error("Key file public key does not match its secret key");
   return record.secretKey;
 }
 
@@ -80,18 +87,7 @@ async function permission(url, accountId, publicKey, contractId, method) {
     account_id: accountId,
     public_key: publicKey,
   });
-  const call = key?.permission?.FunctionCall;
-  if (
-    !call ||
-    call.receiver_id !== contractId ||
-    !Array.isArray(call.method_names) ||
-    !call.method_names.includes(method) ||
-    call.allowance === null ||
-    BigInt(call.allowance ?? "0") <= 0n
-  )
-    throw new Error(
-      "Agent key must have a finite function-call allowance for this game method",
-    );
+  assertParkingAgentPermission(key, contractId, method);
   return key;
 }
 
@@ -116,15 +112,22 @@ async function outcome(url, hash, accountId) {
   }
 }
 
-async function resume(url, accountId, path) {
+async function resume(url, accountId, path, carId) {
   let pending;
   try {
+    const meta = await lstat(path);
+    if (!meta.isFile() || meta.isSymbolicLink() || meta.mode & 0o077)
+      throw new Error("Agent journal must be a regular 0600 file");
     pending = JSON.parse(await readFile(path, "utf8"));
   } catch (error) {
     if (error.code === "ENOENT") return false;
     throw error;
   }
-  if (pending.accountId !== accountId || !METHODS.includes(pending.method))
+  if (
+    pending.accountId !== accountId ||
+    pending.carId !== carId ||
+    !METHODS.includes(pending.method)
+  )
     throw new Error("Invalid pending agent transaction");
   let state = await outcome(url, pending.hash, accountId);
   if (state === "unknown" || state === "pending") {
@@ -157,9 +160,15 @@ async function main() {
   const accountId = option("--account");
   const execute = args.includes("--execute");
   const keyFile = option("--key-file");
+  const requestedCarId = option("--car-id");
+  const carId = requestedCarId === null ? null : Number(requestedCarId);
   if (!accountId || !/^[a-z0-9._-]+\.testnet$/.test(accountId))
     throw new Error("Pass --account <player.testnet>");
   if (execute && !keyFile) throw new Error("Execution requires --key-file");
+  if (execute && requestedCarId === null)
+    throw new Error("Execution requires --car-id for the agent's chosen car");
+  if (requestedCarId !== null && (!Number.isSafeInteger(carId) || carId < 1))
+    throw new Error("--car-id must be a positive car ID");
   const deployment = JSON.parse(
     await readFile(new URL("../deployments/testnet.json", import.meta.url)),
   );
@@ -171,7 +180,7 @@ async function main() {
   )
     throw new Error("Testnet contract and HTTPS RPC required");
   const path = journalPath(accountId);
-  if (execute && (await resume(url, accountId, path))) return;
+  if (execute && (await resume(url, accountId, path, carId))) return;
   const [account, cars, nowSeconds] = await Promise.all([
     view(url, contractId, "get_account", { account_id: accountId }),
     view(url, contractId, "get_cars", { account_id: accountId }),
@@ -199,10 +208,11 @@ async function main() {
     plots,
     nowSeconds,
     accountId,
+    carId,
   });
   console.log(JSON.stringify({ accountId, contractId, plan }));
-  if (!execute || plan.kind !== "call") return;
-  if (!METHODS.includes(plan.method))
+  if (!execute) return;
+  if (plan.kind === "call" && !METHODS.includes(plan.method))
     throw new Error("Agent policy requested an unsupported method");
   const secretKey = await privateKey(keyFile, accountId);
   const keyPair = KeyPair.fromString(secretKey);
@@ -212,8 +222,9 @@ async function main() {
     accountId,
     publicKey,
     contractId,
-    plan.method,
+    plan.kind === "call" ? plan.method : "park",
   );
+  if (plan.kind !== "call") return;
   const transaction = createTransaction(
     accountId,
     keyPair.getPublicKey(),
@@ -226,6 +237,7 @@ async function main() {
   const [hashBytes, signed] = await signer.signTransaction(transaction);
   const pending = {
     accountId,
+    carId,
     method: plan.method,
     hash: baseEncode(hashBytes),
     signedTxBase64: Buffer.from(encodeTransaction(signed)).toString("base64"),
@@ -238,7 +250,7 @@ async function main() {
   if (!journalDirectory.isDirectory() || (journalDirectory.mode & 0o077) !== 0)
     throw new Error("Agent journal directory must have permissions 0700");
   await writeFile(path, JSON.stringify(pending), { mode: 0o600, flag: "wx" });
-  await resume(url, accountId, path);
+  await resume(url, accountId, path, carId);
 }
 
 main().catch((error) => {

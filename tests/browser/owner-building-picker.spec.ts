@@ -70,6 +70,7 @@ const ownerReviewPage = `<!doctype html><html><head>
     const adCalls = [];
     window.adCalls = adCalls;
     window.designCalls = [];
+    window.agentCalls = [];
     window.uploadedAdBytes = [];
     const adUpload = { uploadId: "upload-1", hash: "a".repeat(64), url: "/api/assets/preview", width: 512, height: 256, status: "pending", layoutRevision: 1 };
     const adProposal = { id: "proposal-1", uploadId: adUpload.uploadId, accountId, plotId: plot.plot.id, kind: "Billboard", assetHash: adUpload.hash, link: "https://example.com/ad", buildingType: "Cafe", level, layoutRevision: 1, expectedMediaRevision: 0, proposalRevision: null, status: "selected", decidedAt: null, decisionReason: null, createdAt: 1, assetUrl: adUpload.url };
@@ -80,10 +81,24 @@ const ownerReviewPage = `<!doctype html><html><head>
       createMediaProposal: async (_upload, plotId, kind, link) => { adCalls.push(["prepare", plotId, kind, link]); return adProposal; },
       submitMediaProposal: async (proposal) => { adCalls.push(["wallet", proposal.id]); return { ...proposal, status: "submitted" }; },
     };
+    const agentWallet = {
+      accountId,
+      hasPendingGameplayAction: () => false,
+      addParkingAgentKey: async (publicKey) => {
+        window.agentCalls.push(["add", publicKey]);
+        screen.parkingAgentStatus = { state: "ready", publicKey, allowance: "50000000000000000000000" };
+        return screen.parkingAgentStatus;
+      },
+      revokeParkingAgentKey: async () => {
+        window.agentCalls.push(["revoke"]);
+        screen.parkingAgentStatus = { state: "none", publicKey: null, allowance: null };
+        return screen.parkingAgentStatus;
+      },
+    };
     const screen = new ChainScreen(document.querySelector("#host"), {}, () => ({ roadId: "main", side: "North" }), [], async () => ({}));
     Object.assign(screen, {
       visible: true,
-      wallet: query.has("ad-flow") ? adWallet : { accountId, hasPendingGameplayAction: () => false, chooseDesign: async (plotId, index) => { window.designCalls.push([plotId, index]); } },
+      wallet: query.has("ad-flow") ? adWallet : query.has("agent-flow") ? agentWallet : { accountId, hasPendingGameplayAction: () => false, chooseDesign: async (plotId, index) => { window.designCalls.push([plotId, index]); } },
       player: { account_id: accountId, account: { balance: "100000000", active_session_id: null, last_emergency_repair_at: null }, cars: [], active_session: null },
       plots: customNeighbour ? [plot, neighbor] : [plot],
       mockJob: customNeighbour || query.has("variable-job") ? mockJob : null,
@@ -92,7 +107,7 @@ const ownerReviewPage = `<!doctype html><html><head>
       selectedOwnedPlotId: "plot-main-n-0",
       ownerDraft: { plotId: "plot-main-n-0", ruleKind: "Free", meterRate: "5", color: "Red", buildingType: "Cafe", variant: 1, palette: "#F6C85F", name: "Cafe" },
     });
-    if (query.has("ad-flow") || query.has("design-preview")) screen.refresh = async () => screen.render();
+    if (query.has("ad-flow") || query.has("design-preview") || query.has("agent-flow")) screen.refresh = async () => screen.render();
     screen.render();
   </script></body></html>`;
 
@@ -227,6 +242,38 @@ for (const width of [320, 1280]) {
     }
   });
 }
+
+test("owner can authorize and revoke a separate parking-agent key", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/__owner_type_review?agent-flow", (route) =>
+    route.fulfill({ contentType: "text/html", body: ownerReviewPage }),
+  );
+  await page.goto("/__owner_type_review?agent-flow");
+  await expect(page.locator(".chain-parking-agent")).toContainText(
+    "It cannot buy, repair, upgrade, ticket, or change your plots.",
+  );
+  await page
+    .locator("#parking-agent-public-key")
+    .fill("ed25519:ExamplePublicKey");
+  await page.locator("#parking-agent-add").click();
+  await expect(page.locator(".chain-parking-agent")).toContainText(
+    "Ready to run",
+  );
+  await expect(page.locator(".chain-parking-agent")).toContainText(
+    "0.05 testnet NEAR gas allowance left",
+  );
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+  await page.locator("#parking-agent-revoke").click();
+  await expect(page.locator(".chain-parking-agent")).toContainText("Off");
+  expect(await page.evaluate(() => window.agentCalls)).toEqual([
+    ["add", "ed25519:ExamplePublicKey"],
+    ["revoke"],
+  ]);
+});
 
 test("level 4 shape cards fit a narrow owner editor", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });

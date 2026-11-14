@@ -47,6 +47,7 @@ import {
   GameWalletClient,
   type ArtworkUpload,
   type GameplayKeyStatus,
+  type ParkingAgentKeyStatus,
   type MediaProposalRecord,
   type MockGenerationJob,
   type PaidGenerationJob,
@@ -187,6 +188,11 @@ export class ChainScreen {
   private loadingNeighbourThumbnails = new Set<string>();
   private failedNeighbourThumbnails = new Map<string, number>();
   private keyStatus: GameplayKeyStatus = "none";
+  private parkingAgentStatus: ParkingAgentKeyStatus | null = {
+    state: "none",
+    publicKey: null,
+    allowance: null,
+  };
   private accountId: string | null = null;
   private selectedCarId: number | null = null;
   private quote: string | null = null;
@@ -296,6 +302,7 @@ export class ChainScreen {
       this.plotStatsLoading = false;
       this.plotStatsRequest++;
       this.keyStatus = "none";
+      this.parkingAgentStatus = null;
       this.accountId = accountId;
     }
     const { roadId, side } = this.getRoadSide();
@@ -324,6 +331,7 @@ export class ChainScreen {
         street,
         player,
         keyStatus,
+        parkingAgentStatus,
         quote,
         towerState,
         towerSpaceState,
@@ -334,6 +342,13 @@ export class ChainScreen {
         accountId && this.wallet
           ? this.wallet.resumePendingKey()
           : Promise.resolve("none" as const),
+        accountId && this.wallet?.parkingAgentKeyStatus
+          ? this.wallet.parkingAgentKeyStatus().catch(() => null)
+          : Promise.resolve({
+              state: "none" as const,
+              publicKey: null,
+              allowance: null,
+            }),
         accountId ? this.reader.registrationQuote() : Promise.resolve(null),
         tower ? this.reader.towerState(tower.id) : Promise.resolve(null),
         tower
@@ -353,6 +368,7 @@ export class ChainScreen {
       this.street = street;
       this.player = player;
       this.keyStatus = keyStatus;
+      this.parkingAgentStatus = parkingAgentStatus;
       this.quote = quote;
       this.towerFloors = towerState?.floors ?? null;
       this.towerAvailable = towerState?.available ?? null;
@@ -427,6 +443,7 @@ export class ChainScreen {
       this.towerSpaces = null;
       this.towerSpaceError = "";
       this.keyStatus = "none";
+      this.parkingAgentStatus = null;
       this.message =
         error instanceof Error ? error.message : "Chain read failed";
       this.render();
@@ -1114,6 +1131,34 @@ export class ChainScreen {
     </section>`;
   }
 
+  private parkingAgentMarkup(accountId: string, carId: number | null): string {
+    const status = this.parkingAgentStatus;
+    const state = status?.state;
+    const publicKey = status?.publicKey;
+    const label =
+      status === null
+        ? "Could not verify key; refresh to retry"
+        : state === "ready"
+          ? "Ready to run"
+          : state === "pending-add"
+            ? "Awaiting wallet or chain confirmation"
+            : state === "pending-revoke"
+              ? "Revocation awaiting confirmation"
+              : state === "inactive"
+                ? "Wrong permissions or gas exhausted"
+                : "Off";
+    return `<section class="card chain-parking-agent"><h2>Parking agent</h2>
+      <p>Let an agent park and collect with your car. It cannot buy, repair, upgrade, ticket, or change your plots.</p>
+      <p><strong>${label}</strong>${state === "ready" && status?.allowance ? ` · ${nearAmount(status.allowance)} gas allowance left` : ""}</p>
+      ${publicKey ? `<p class="muted chain-agent-key">Key: <code>${html(publicKey)}</code></p>` : ""}
+      ${state === "none" ? `<p class="muted">On the computer that will run the agent, generate its private key with <code>npm run agent:key:new -- --account ${html(accountId)}</code>. Paste only the public key here. You can also paste an existing parking-agent public key to recover its controls.</p><label>Agent public key <input id="parking-agent-public-key" autocomplete="off" spellcheck="false" placeholder="ed25519:…" /></label><button id="parking-agent-add" ${this.busy ? "disabled" : ""}>Allow or recover parking agent</button>` : ""}
+      ${state === "pending-add" ? `<button id="parking-agent-retry-add" ${this.busy ? "disabled" : ""}>Retry or check key setup</button>` : ""}
+      ${state === "ready" && carId !== null ? `<p class="muted">Run <code>npm run agent:run -- --account ${html(accountId)} --car-id ${carId} --key-file ~/.near-estate-agent/${html(accountId)}.key.json</code> on that computer. Keep the private key there.</p>` : ""}
+      ${state === "ready" || state === "inactive" || state === "pending-revoke" ? `<button id="parking-agent-revoke" ${this.busy ? "disabled" : ""}>${state === "pending-revoke" ? "Retry or check revocation" : "Revoke parking agent · wallet confirmation"}</button>` : ""}
+      <p class="muted">The runner targets ${carId === null ? "one chosen car" : `car #${carId}`}. Do not manually park that car while the agent runs; it may collect that session at the earnings cap. The key itself is limited by methods and gas, not car ID. It can call only park, collect and settle_expired on this contract, with a 0.05 testnet NEAR gas limit. Disconnecting your wallet does not stop the agent; revoke this key to stop it.</p>
+    </section>`;
+  }
+
   private render(): void {
     if (!this.visible) return;
     const wallet = this.wallet;
@@ -1189,6 +1234,7 @@ export class ChainScreen {
           <button id="chain-signout" ${busy}>${this.keyStatus === "ready" || this.keyStatus === "inactive" ? "Revoke key and disconnect" : "Disconnect wallet"}</button>`
         }
       </section>
+      ${registered && accountId ? this.parkingAgentMarkup(accountId, car?.id ?? player?.cars[0]?.id ?? null) : ""}
       ${
         registered
           ? `<section class="card"><h2>My cars</h2>
@@ -1348,6 +1394,38 @@ export class ChainScreen {
         this.host.querySelector<HTMLSelectElement>("#starter-color")!.value;
       void this.mutate(async () => this.wallet?.register(body, color));
     });
+    on("#parking-agent-add", () => {
+      const publicKey =
+        this.host
+          .querySelector<HTMLInputElement>("#parking-agent-public-key")
+          ?.value.trim() ?? "";
+      void this.mutate(async () => {
+        const status = await this.wallet?.addParkingAgentKey(publicKey);
+        return status?.state === "ready"
+          ? "Parking agent key confirmed. Start the local runner on the agent computer."
+          : "Parking agent key is awaiting chain confirmation.";
+      });
+    });
+    on("#parking-agent-retry-add", () => {
+      const publicKey = this.parkingAgentStatus?.publicKey;
+      if (!publicKey) return;
+      void this.mutate(async () => {
+        const status = await this.wallet?.addParkingAgentKey(publicKey);
+        return status?.state === "ready"
+          ? "Parking agent key confirmed."
+          : "Parking agent key is awaiting chain confirmation.";
+      });
+    });
+    on(
+      "#parking-agent-revoke",
+      () =>
+        void this.mutate(async () => {
+          const status = await this.wallet?.revokeParkingAgentKey();
+          return status?.state === "none"
+            ? "Parking agent key revoked on-chain."
+            : "Parking agent key revocation is awaiting chain confirmation.";
+        }),
+    );
     on(
       "#chain-enable-key",
       () =>
