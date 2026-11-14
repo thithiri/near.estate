@@ -11,7 +11,7 @@ use near_sdk::{
     serde_json::{json, Value},
     store::LookupMap,
 };
-use near_workspaces::types::{Gas, NearToken};
+use near_workspaces::types::{AccessKey, Gas, KeyType, NearToken, SecretKey};
 use std::path::PathBuf;
 
 fn wasm_path() -> PathBuf {
@@ -209,6 +209,89 @@ async fn deployed_runtime_parks_and_tickets_a_three_unit_curb() -> Result<()> {
         read_u128(&owner_after_duplicate, "balance")? == balance_after,
         "duplicate ticket changed owner balance"
     );
+
+    let agent_secret = SecretKey::from_seed(KeyType::ED25519, "plot-owner-agent-v1");
+    let agent_public_key = agent_secret.public_key();
+    let added = owner
+        .batch(owner.id())
+        .add_key(
+            agent_public_key.clone(),
+            AccessKey::function_call_access(
+                city.id(),
+                &[
+                    "agent_set_rule",
+                    "agent_ticket",
+                    "agent_choose_design",
+                    "agent_upgrade_building",
+                ],
+                Some(NearToken::from_yoctonear(50 * 10u128.pow(21))),
+            ),
+        )
+        .transact()
+        .await?;
+    ensure!(added.is_success(), "agent key creation failed: {added:?}");
+    let agent =
+        near_workspaces::Account::from_secret_key(owner.id().clone(), agent_secret, &sandbox);
+    let agent_quote: String = city.view("plot_agent_storage_quote").await?.json()?;
+    let now: u64 = city.view("chain_time_seconds").await?.json()?;
+    let authorized = owner
+        .call(city.id(), "authorize_plot_agent")
+        .args_json(json!({
+            "public_key": agent_public_key.to_string(),
+            "plot_ids": [plot_id],
+            "expires_at": now + 3_600,
+            "daily_coin_limit": "0",
+            "daily_action_limit": 2,
+            "allow_design_changes": false
+        }))
+        .deposit(NearToken::from_yoctonear(agent_quote.parse()?))
+        .transact()
+        .await?;
+    ensure!(
+        authorized.is_success(),
+        "agent grant failed: {authorized:?}"
+    );
+    let changed = agent
+        .call(city.id(), "agent_set_rule")
+        .args_json(json!({"plot_id": plot_id, "rule": {"kind": "Free"}}))
+        .transact()
+        .await?;
+    ensure!(changed.is_success(), "agent rule failed: {changed:?}");
+    let bypass = agent
+        .call(city.id(), "set_rule")
+        .args_json(json!({"plot_id": plot_id, "rule": {"kind": "Free"}}))
+        .transact()
+        .await;
+    ensure!(
+        match bypass {
+            Ok(outcome) => !outcome.is_success(),
+            Err(_) => true,
+        },
+        "agent bypassed restricted method list"
+    );
+    let design = agent
+        .call(city.id(), "agent_choose_design")
+        .args_json(json!({"plot_id": plot_id, "choice": 1}))
+        .transact()
+        .await?;
+    ensure!(
+        !design.is_success(),
+        "agent changed design without permission"
+    );
+    let revoked = owner
+        .call(city.id(), "revoke_plot_agent")
+        .transact()
+        .await?;
+    ensure!(
+        revoked.is_success(),
+        "agent grant revoke failed: {revoked:?}"
+    );
+    let after_revoke = agent
+        .call(city.id(), "agent_set_rule")
+        .args_json(json!({"plot_id": plot_id, "rule": {"kind": "Free"}}))
+        .transact()
+        .await?;
+    ensure!(!after_revoke.is_success(), "revoked agent still acted");
 
     let first_facade = owner
         .call(city.id(), "propose_appearance")

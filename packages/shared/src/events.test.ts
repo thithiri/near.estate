@@ -24,6 +24,12 @@ const samples = {
   npc_site_seeded: { site_id: "npc-main-tower", role: "game_owned" },
   plot_bought: { plot_id, owner, price_yocto: "1000000000000000000000000" },
   ticket_reward_policy_set: { daily_owner_cap: "15000000" },
+  plot_agent_authorized: {
+    owner,
+    public_key: "ed25519:agentkey",
+    expires_at: 7_200,
+  },
+  plot_agent_revoked: { owner },
   parked: {
     session_id: 1,
     car_id: 1,

@@ -1,0 +1,21 @@
+{
+  "scope": "read-only testnet import; candidate deployed only to local sandbox",
+  "contractId": "dev-20261110121817-59798568433631.testnet",
+  "liveCodeSha256": "27e17dd14a6cb1094c8f71f8007481f5ed525dffb977ecbb512211271c88a646",
+  "candidateCodeSha256": "a01d2a108bb63a91557f269023d7939c6dba8636087b0a2c017871feb2a28e01",
+  "cityVersion": 2,
+  "plotCount": 100,
+  "npcSiteCount": 8,
+  "stateEntries": 383,
+  "stateSha256Before": "f26fa682730e7b2c3e88de84b1ade1eb92de9944a6953f2a8407ba1365ed4222",
+  "pausedStateSha256": "50d52fd4164f774aa21d4d9eff3116e1b31c68d697c2836dda5d997c82dc196a",
+  "candidatePreservedPausedState": true,
+  "stateSha256After": "f26fa682730e7b2c3e88de84b1ade1eb92de9944a6953f2a8407ba1365ed4222",
+  "stateSha256AfterRollback": "f26fa682730e7b2c3e88de84b1ade1eb92de9944a6953f2a8407ba1365ed4222",
+  "streetSideViewsChecked": 10,
+  "plotsCoveredByViews": 100,
+  "publicViewsUnchanged": true,
+  "publicViewsSha256": "e7ef607173496a230e1673ad78b396d5d0416fe63e5ca7bceafe362606a19379",
+  "rollbackCodeSha256": "27e17dd14a6cb1094c8f71f8007481f5ed525dffb977ecbb512211271c88a646",
+  "rollbackPublicViewsUnchanged": true
+}

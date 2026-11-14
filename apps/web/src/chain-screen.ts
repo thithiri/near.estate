@@ -48,6 +48,7 @@ import {
   type ArtworkUpload,
   type GameplayKeyStatus,
   type ParkingAgentKeyStatus,
+  type PlotAgentAccess,
   type MediaProposalRecord,
   type MockGenerationJob,
   type PaidGenerationJob,
@@ -193,6 +194,7 @@ export class ChainScreen {
     publicKey: null,
     allowance: null,
   };
+  private plotAgentAccess: PlotAgentAccess | null = null;
   private accountId: string | null = null;
   private selectedCarId: number | null = null;
   private quote: string | null = null;
@@ -303,6 +305,7 @@ export class ChainScreen {
       this.plotStatsRequest++;
       this.keyStatus = "none";
       this.parkingAgentStatus = null;
+      this.plotAgentAccess = null;
       this.accountId = accountId;
     }
     const { roadId, side } = this.getRoadSide();
@@ -332,6 +335,7 @@ export class ChainScreen {
         player,
         keyStatus,
         parkingAgentStatus,
+        plotAgentAccess,
         quote,
         towerState,
         towerSpaceState,
@@ -349,6 +353,9 @@ export class ChainScreen {
               publicKey: null,
               allowance: null,
             }),
+        accountId && this.wallet?.plotAgentAccess
+          ? this.wallet.plotAgentAccess().catch(() => null)
+          : Promise.resolve(null),
         accountId ? this.reader.registrationQuote() : Promise.resolve(null),
         tower ? this.reader.towerState(tower.id) : Promise.resolve(null),
         tower
@@ -369,6 +376,7 @@ export class ChainScreen {
       this.player = player;
       this.keyStatus = keyStatus;
       this.parkingAgentStatus = parkingAgentStatus;
+      this.plotAgentAccess = plotAgentAccess;
       this.quote = quote;
       this.towerFloors = towerState?.floors ?? null;
       this.towerAvailable = towerState?.available ?? null;
@@ -444,6 +452,7 @@ export class ChainScreen {
       this.towerSpaceError = "";
       this.keyStatus = "none";
       this.parkingAgentStatus = null;
+      this.plotAgentAccess = null;
       this.message =
         error instanceof Error ? error.message : "Chain read failed";
       this.render();
@@ -1159,6 +1168,20 @@ export class ChainScreen {
     </section>`;
   }
 
+  private plotAgentMarkup(accountId: string): string {
+    const owned = this.plots.filter((entry) => entry.plot.owner === accountId);
+    if (!owned.length) return "";
+    const access = this.plotAgentAccess;
+    const grant = access?.status?.grant;
+    const state = access?.state;
+    const publicKey = access?.publicKey ?? "";
+    return `<section class="card chain-plot-agent"><h2>Plot & building agent</h2>
+      <p>Delegate selected plot actions for seven days. The agent's coin spending stays in your account and is limited on-chain each UTC day.</p>
+      ${access === null ? `<p class="muted">Plot-agent controls are unavailable until the new contract runtime is released or the connection recovers.</p>` : grant ? `<p><strong>${state === "ready" ? "Ready to run" : "Grant active, key needs attention"}</strong> · ${html(grant.plot_ids.join(", "))}</p><p>${formatCoins(access.status!.coins_remaining_today)} of ${formatCoins(grant.daily_coin_limit)} coins left today · ${access.status!.actions_remaining_today} of ${grant.daily_action_limit} actions left · design changes ${grant.allow_design_changes ? "allowed" : "off"}.</p><p class="muted">Expires ${new Date(grant.expires_at * 1000).toLocaleString()}. Agent key: <code>${html(grant.public_key)}</code></p><button id="plot-agent-revoke" ${this.busy ? "disabled" : ""}>Revoke plot agent · wallet confirmation</button>` : `<p><strong>${state === "pending-key" ? "Key awaiting confirmation" : state === "pending-grant" ? "Key ready; grant still needed" : state === "inactive" ? "Key has wrong permissions or no gas" : "Off"}</strong></p><p class="muted">Generate a separate key on the agent computer with <code>npm run agent:key:new -- --account ${html(accountId)} --role plot</code>. Paste only its public key. Setup may require two wallet confirmations and a refundable storage reserve.</p><label>Agent public key <input id="plot-agent-public-key" autocomplete="off" spellcheck="false" value="${html(publicKey)}" placeholder="ed25519:…" /></label><label>Managed plot <select id="plot-agent-plot">${owned.map((entry) => `<option value="${html(entry.plot.id)}" ${entry.plot.id === this.selectedOwnedPlotId ? "selected" : ""}>${html(entry.plot.road_id)} · plot ${entry.plot.index + 1}</option>`).join("")}</select></label><label>Daily coin limit <select id="plot-agent-coins"><option value="0">0 coins · rules and tickets only</option><option value="50000000">50 coins</option><option value="200000000">200 coins</option></select></label><label>Daily actions <select id="plot-agent-actions"><option value="5">5 actions</option><option value="10">10 actions</option><option value="20">20 actions</option></select></label><label><input id="plot-agent-design" type="checkbox" /> Allow curated design changes and building upgrades (may hide approved media)</label><button id="plot-agent-authorize" ${this.busy || state === "inactive" ? "disabled" : ""}>Authorize plot agent · wallet confirmation</button>${state === "inactive" ? `<button id="plot-agent-revoke" ${this.busy ? "disabled" : ""}>Remove inactive key</button>` : ""}`}
+      <p class="muted">Plot purchases still need your wallet. Generated images still need moderation. Disconnecting your wallet does not revoke this agent.</p>
+    </section>`;
+  }
+
   private render(): void {
     if (!this.visible) return;
     const wallet = this.wallet;
@@ -1235,6 +1258,7 @@ export class ChainScreen {
         }
       </section>
       ${registered && accountId ? this.parkingAgentMarkup(accountId, car?.id ?? player?.cars[0]?.id ?? null) : ""}
+      ${registered && accountId ? this.plotAgentMarkup(accountId) : ""}
       ${
         registered
           ? `<section class="card"><h2>My cars</h2>
@@ -1424,6 +1448,45 @@ export class ChainScreen {
           return status?.state === "none"
             ? "Parking agent key revoked on-chain."
             : "Parking agent key revocation is awaiting chain confirmation.";
+        }),
+    );
+    on("#plot-agent-authorize", () => {
+      const publicKey = this.host
+        .querySelector<HTMLInputElement>("#plot-agent-public-key")!
+        .value.trim();
+      const plotId =
+        this.host.querySelector<HTMLSelectElement>("#plot-agent-plot")!.value;
+      const coinLimit =
+        this.host.querySelector<HTMLSelectElement>("#plot-agent-coins")!.value;
+      const actionLimit = Number(
+        this.host.querySelector<HTMLSelectElement>("#plot-agent-actions")!
+          .value,
+      );
+      const design =
+        this.host.querySelector<HTMLInputElement>(
+          "#plot-agent-design",
+        )!.checked;
+      void this.mutate(async () => {
+        const access = await this.wallet?.authorizePlotAgent(
+          publicKey,
+          [plotId],
+          coinLimit,
+          actionLimit,
+          design,
+        );
+        return access?.state === "ready"
+          ? "Plot-agent grant and key confirmed."
+          : "Plot-agent setup is awaiting confirmation. Retry with the same public key.";
+      });
+    });
+    on(
+      "#plot-agent-revoke",
+      () =>
+        void this.mutate(async () => {
+          const access = await this.wallet?.revokePlotAgent();
+          return access?.state === "none"
+            ? "Plot-agent grant and key revoked."
+            : "Plot-agent revocation is awaiting confirmation. Check it again before regranting.";
         }),
     );
     on(

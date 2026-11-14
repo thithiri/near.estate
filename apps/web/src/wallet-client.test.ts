@@ -10,6 +10,8 @@ import {
   GameWalletClient,
   PARKING_AGENT_KEY_ALLOWANCE,
   PARKING_AGENT_METHODS,
+  PLOT_AGENT_KEY_ALLOWANCE,
+  PLOT_AGENT_METHODS,
   type GameplayKeyStatus,
   type MockGenerationJob,
 } from "./wallet-client.js";
@@ -20,6 +22,119 @@ test("Meteor wallet browser module and its SDK import cleanly", async () => {
     import("@meteorwallet/sdk"),
   ]);
   assert.equal(typeof wallet.setupMeteorWallet, "function");
+});
+
+test("plot agent setup grants exact methods and revokes grant before key", async () => {
+  const originalStorage = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "localStorage",
+  );
+  const values = new Map<string, string>();
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        values.set(key, value);
+      },
+      removeItem: (key: string) => {
+        values.delete(key);
+      },
+    },
+  });
+  const pair = KeyPair.fromRandom("ed25519");
+  const publicKey = pair.getPublicKey().toString();
+  const calls: string[] = [];
+  let key: any = null;
+  let grant: any = null;
+  const client = Object.assign(Object.create(GameWalletClient.prototype), {
+    reader: {
+      contractId: "estate.testnet",
+      accessKeyList: async () => ({ keys: key ? [key] : [] }),
+      plotAgentStatus: async () => grant,
+      plotAgentStorageQuote: async () => "10240000000000000000000",
+      chainTimeSeconds: async () => 1_000,
+    },
+    selector: {
+      store: {
+        getState: () => ({
+          contract: { contractId: "estate.testnet" },
+          accounts: [{ accountId: "owner.testnet", active: true }],
+        }),
+      },
+      wallet: async () => ({
+        signAndSendTransaction: async ({
+          receiverId,
+          actions,
+        }: {
+          receiverId: string;
+          actions: any[];
+        }) => {
+          const action = actions[0];
+          calls.push(action.enum);
+          if (action.enum === "addKey") {
+            assert.equal(receiverId, "owner.testnet");
+            const permission = action.addKey.accessKey.permission.functionCall;
+            assert.deepEqual(permission.methodNames, [...PLOT_AGENT_METHODS]);
+            assert.equal(permission.allowance, PLOT_AGENT_KEY_ALLOWANCE);
+            key = {
+              public_key: publicKey,
+              access_key: {
+                permission: {
+                  FunctionCall: {
+                    receiver_id: "estate.testnet",
+                    method_names: [...PLOT_AGENT_METHODS],
+                    allowance: PLOT_AGENT_KEY_ALLOWANCE.toString(),
+                  },
+                },
+              },
+            };
+          } else if (action.enum === "functionCall") {
+            assert.equal(receiverId, "estate.testnet");
+            if (action.functionCall.methodName === "authorize_plot_agent") {
+              grant = {
+                grant: { public_key: publicKey },
+                coins_remaining_today: "0",
+                actions_remaining_today: 5,
+              };
+            } else if (action.functionCall.methodName === "revoke_plot_agent") {
+              grant = null;
+            } else assert.fail("unexpected plot agent contract method");
+          } else if (action.enum === "deleteKey") {
+            assert.equal(receiverId, "owner.testnet");
+            assert.equal(grant, null, "grant must be gone before deleting key");
+            key = null;
+          } else assert.fail(`unexpected action ${action.enum}`);
+        },
+      }),
+    },
+  }) as GameWalletClient;
+  try {
+    assert.equal(
+      (
+        await client.authorizePlotAgent(
+          publicKey,
+          ["plot-main-n-0"],
+          "0",
+          5,
+          false,
+        )
+      ).state,
+      "ready",
+    );
+    assert.deepEqual(calls, ["addKey", "functionCall"]);
+    assert.equal((await client.revokePlotAgent()).state, "none");
+    assert.deepEqual(calls, [
+      "addKey",
+      "functionCall",
+      "functionCall",
+      "deleteKey",
+    ]);
+  } finally {
+    if (originalStorage)
+      Object.defineProperty(globalThis, "localStorage", originalStorage);
+    else Reflect.deleteProperty(globalThis, "localStorage");
+  }
 });
 
 test("Meteor SDK popup dependencies support its actual call shapes", async () => {

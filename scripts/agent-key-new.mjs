@@ -14,8 +14,13 @@ async function main() {
   const accountId = option("--account");
   if (!accountId || !/^[a-z0-9._-]+\.testnet$/.test(accountId))
     throw new Error("Pass --account <player.testnet>");
+  const role = option("--role") ?? "parking";
+  if (role !== "parking" && role !== "plot")
+    throw new Error("--role must be parking or plot");
   const defaultDir = join(homedir(), ".near-estate-agent");
-  const output = option("--out") ?? join(defaultDir, `${accountId}.key.json`);
+  const output =
+    option("--out") ??
+    join(defaultDir, `${accountId}${role === "plot" ? ".plot" : ""}.key.json`);
   if (!isAbsolute(output)) throw new Error("--out must be an absolute path");
   if (dirname(output) === defaultDir)
     await mkdir(defaultDir, { recursive: true, mode: 0o700 });
@@ -26,10 +31,10 @@ async function main() {
   const publicKey = pair.getPublicKey().toString();
   await writeFile(
     output,
-    JSON.stringify({ accountId, publicKey, secretKey: pair.toString() }),
+    JSON.stringify({ accountId, role, publicKey, secretKey: pair.toString() }),
     { mode: 0o600, flag: "wx" },
   );
-  console.log(JSON.stringify({ accountId, publicKey, keyFile: output }));
+  console.log(JSON.stringify({ accountId, role, publicKey, keyFile: output }));
 }
 
 main().catch((error) => {

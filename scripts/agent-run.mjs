@@ -10,27 +10,34 @@ const option = (name) => {
 };
 const accountId = option("--account");
 const keyFile = option("--key-file");
+const role = option("--role") ?? "parking";
 const carId = Number(option("--car-id"));
 const interval = Number(option("--interval-minutes") ?? "5");
 if (!accountId || !/^[a-z0-9._-]+\.testnet$/.test(accountId))
   throw new Error("Pass --account <player.testnet>");
 if (!keyFile || !isAbsolute(keyFile))
   throw new Error("Pass an absolute --key-file path");
-if (!Number.isSafeInteger(carId) || carId < 1)
+if (role !== "parking" && role !== "plot")
+  throw new Error("--role must be parking or plot");
+if (role === "parking" && (!Number.isSafeInteger(carId) || carId < 1))
   throw new Error("Pass --car-id for the car this agent may use");
 if (!Number.isInteger(interval) || interval < 2 || interval > 60)
   throw new Error("--interval-minutes must be from 2 to 60");
 
 const runnerArgs = [
-  fileURLToPath(new URL("./agent-play.mjs", import.meta.url)),
+  fileURLToPath(
+    new URL(
+      role === "plot" ? "./plot-agent-play.mjs" : "./agent-play.mjs",
+      import.meta.url,
+    ),
+  ),
   "--execute",
   "--account",
   accountId,
   "--key-file",
   keyFile,
-  "--car-id",
-  String(carId),
 ];
+if (role === "parking") runnerArgs.push("--car-id", String(carId));
 for (const name of ["--contract", "--rpc"]) {
   const value = option(name);
   if (value) runnerArgs.push(name, value);
@@ -59,13 +66,15 @@ async function runOne() {
 }
 
 console.log(
-  `Parking agent started for ${accountId}; checking every ${interval} minutes.`,
+  `${role === "plot" ? "Plot" : "Parking"} agent started for ${accountId}; checking every ${interval} minutes.`,
 );
 while (!stopped) {
   const code = await runOne();
   if (stopped) break;
   if (code !== 0) {
-    console.error("Parking agent stopped after a failed action or key check.");
+    console.error(
+      `${role === "plot" ? "Plot" : "Parking"} agent stopped after a failed action or key check.`,
+    );
     process.exitCode = code;
     break;
   }

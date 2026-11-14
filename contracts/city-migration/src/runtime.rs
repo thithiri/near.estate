@@ -18,6 +18,10 @@ const TOWER_SPACES_PER_FLOOR: u8 = 8;
 const MAX_MODERATION_REASON_BYTES: usize = 240;
 const TICKET_POLICY_KEY: &[u8] = b"near_estate:ticket_policy:v1";
 const TICKET_USAGE_PREFIX: &[u8] = b"near_estate:ticket_usage:v1:";
+const PLOT_AGENT_PREFIX: &[u8] = b"near_estate:plot_agent:v1:";
+const PLOT_AGENT_RESERVE_BYTES: u32 = 1_024;
+const PLOT_AGENT_MAX_SECONDS: u64 = 30 * 86_400;
+const PLOT_AGENT_MAX_DAILY_COINS: u128 = 1_000_000_000;
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
@@ -50,6 +54,28 @@ pub struct TicketRewardStatus {
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
+pub struct PlotAgentGrant {
+    pub owner: AccountId,
+    pub public_key: String,
+    pub plot_ids: Vec<String>,
+    pub expires_at: u64,
+    pub daily_coin_limit: U128,
+    pub daily_action_limit: u8,
+    pub allow_design_changes: bool,
+    pub day: u64,
+    pub coins_spent_today: U128,
+    pub actions_today: u8,
+}
+
+#[near(serializers = [json])]
+pub struct PlotAgentStatus {
+    pub grant: PlotAgentGrant,
+    pub coins_remaining_today: U128,
+    pub actions_remaining_today: u8,
+}
+
+#[near(serializers = [borsh, json])]
+#[derive(Clone)]
 pub struct PlotViewV2 {
     pub plot: PlotV2,
     pub effective_rule: ParkingRule,
@@ -77,6 +103,225 @@ pub struct StreetSideViewV2 {
 impl Contract {
     fn require_not_paused(&self) {
         require!(!self.inner.paused, "city is paused");
+    }
+
+    fn plot_agent_key(owner: &AccountId) -> Vec<u8> {
+        let mut key = Vec::with_capacity(PLOT_AGENT_PREFIX.len() + owner.as_str().len());
+        key.extend_from_slice(PLOT_AGENT_PREFIX);
+        key.extend_from_slice(owner.as_bytes());
+        key
+    }
+
+    fn read_plot_agent(owner: &AccountId) -> Option<PlotAgentGrant> {
+        env::storage_read(&Self::plot_agent_key(owner)).map(|bytes| {
+            PlotAgentGrant::try_from_slice(&bytes)
+                .unwrap_or_else(|_| env::panic_str("invalid plot agent grant"))
+        })
+    }
+
+    pub fn plot_agent_storage_quote(&self) -> U128 {
+        U128(Self::storage_quote(PLOT_AGENT_RESERVE_BYTES))
+    }
+
+    pub fn get_plot_agent_status(&self, owner: AccountId) -> Option<PlotAgentStatus> {
+        Self::read_plot_agent(&owner).map(|grant| {
+            let current_day = Self::now_seconds() / 86_400;
+            let spent = if grant.day == current_day {
+                grant.coins_spent_today.0
+            } else {
+                0
+            };
+            let actions = if grant.day == current_day {
+                grant.actions_today
+            } else {
+                0
+            };
+            PlotAgentStatus {
+                coins_remaining_today: U128(grant.daily_coin_limit.0.saturating_sub(spent)),
+                actions_remaining_today: grant.daily_action_limit.saturating_sub(actions),
+                grant,
+            }
+        })
+    }
+
+    #[payable]
+    pub fn authorize_plot_agent(
+        &mut self,
+        public_key: String,
+        plot_ids: Vec<String>,
+        expires_at: u64,
+        daily_coin_limit: U128,
+        daily_action_limit: u8,
+        allow_design_changes: bool,
+    ) -> PlotAgentStatus {
+        self.require_not_paused();
+        let owner = env::predecessor_account_id();
+        self.registered_account(&owner);
+        require!(
+            Self::read_plot_agent(&owner).is_none(),
+            "revoke the existing plot agent first"
+        );
+        require!(
+            public_key.starts_with("ed25519:") && public_key.parse::<near_sdk::PublicKey>().is_ok(),
+            "invalid plot agent public key"
+        );
+        require!(
+            (1..=5).contains(&plot_ids.len()),
+            "plot agent needs one to five plots"
+        );
+        let mut unique = std::collections::HashSet::new();
+        for plot_id in &plot_ids {
+            require!(unique.insert(plot_id), "duplicate plot agent plot");
+            self.owned_plot(plot_id, &owner);
+        }
+        let now = Self::now_seconds();
+        require!(
+            expires_at > now
+                && expires_at
+                    <= now
+                        .checked_add(PLOT_AGENT_MAX_SECONDS)
+                        .unwrap_or_else(|| env::panic_str("plot agent expiry overflow")),
+            "plot agent expiry must be within 30 days"
+        );
+        require!(
+            daily_coin_limit.0 <= PLOT_AGENT_MAX_DAILY_COINS,
+            "plot agent coin limit exceeds 1000 coins"
+        );
+        require!(
+            (1..=20).contains(&daily_action_limit),
+            "plot agent action limit must be 1 through 20"
+        );
+        let quote = Self::storage_quote(PLOT_AGENT_RESERVE_BYTES);
+        let deposit = env::attached_deposit().as_yoctonear();
+        require!(deposit >= quote, "insufficient plot agent storage deposit");
+        let grant = PlotAgentGrant {
+            owner: owner.clone(),
+            public_key,
+            plot_ids,
+            expires_at,
+            daily_coin_limit,
+            daily_action_limit,
+            allow_design_changes,
+            day: now / 86_400,
+            coins_spent_today: U128(0),
+            actions_today: 0,
+        };
+        let bytes = borsh::to_vec(&grant)
+            .unwrap_or_else(|_| env::panic_str("plot agent grant encoding failed"));
+        let before = env::storage_usage();
+        env::storage_write(&Self::plot_agent_key(&owner), &bytes);
+        require!(
+            Self::storage_delta(before) <= PLOT_AGENT_RESERVE_BYTES,
+            "plot agent grant exceeds storage reserve"
+        );
+        Self::refund_excess(owner.clone(), deposit, quote);
+        self.emit(
+            "plot_agent_authorized",
+            near_sdk::serde_json::json!({"owner": owner, "public_key": grant.public_key, "expires_at": expires_at}),
+        );
+        self.get_plot_agent_status(owner)
+            .unwrap_or_else(|| env::panic_str("plot agent grant was not stored"))
+    }
+
+    pub fn revoke_plot_agent(&mut self) {
+        let owner = env::predecessor_account_id();
+        require!(
+            env::storage_remove(&Self::plot_agent_key(&owner)),
+            "no plot agent grant"
+        );
+        Promise::new(owner.clone())
+            .transfer(NearToken::from_yoctonear(Self::storage_quote(
+                PLOT_AGENT_RESERVE_BYTES,
+            )))
+            .detach();
+        self.emit(
+            "plot_agent_revoked",
+            near_sdk::serde_json::json!({"owner": owner}),
+        );
+    }
+
+    fn use_plot_agent(&mut self, plot_id: &str, coin_cost: u128, design_change: bool) {
+        self.require_not_paused();
+        let owner = env::predecessor_account_id();
+        require!(env::signer_account_id() == owner, "direct agent call only");
+        let mut grant = Self::read_plot_agent(&owner)
+            .unwrap_or_else(|| env::panic_str("plot agent is not authorized"));
+        require!(
+            grant.public_key == env::signer_account_pk().to_string(),
+            "wrong plot agent key"
+        );
+        require!(
+            Self::now_seconds() < grant.expires_at,
+            "plot agent grant expired"
+        );
+        require!(
+            grant.plot_ids.iter().any(|allowed| allowed == plot_id),
+            "plot is outside agent scope"
+        );
+        require!(
+            !design_change || grant.allow_design_changes,
+            "building changes are not authorized"
+        );
+        self.owned_plot(plot_id, &owner);
+        let day = Self::now_seconds() / 86_400;
+        if day != grant.day {
+            grant.day = day;
+            grant.coins_spent_today = U128(0);
+            grant.actions_today = 0;
+        }
+        require!(
+            grant.actions_today < grant.daily_action_limit,
+            "plot agent daily action limit reached"
+        );
+        let spent = grant
+            .coins_spent_today
+            .0
+            .checked_add(coin_cost)
+            .unwrap_or_else(|| env::panic_str("plot agent coin counter overflow"));
+        require!(
+            spent <= grant.daily_coin_limit.0,
+            "plot agent daily coin limit reached"
+        );
+        grant.actions_today = grant
+            .actions_today
+            .checked_add(1)
+            .unwrap_or_else(|| env::panic_str("plot agent action counter overflow"));
+        grant.coins_spent_today = U128(spent);
+        let bytes = borsh::to_vec(&grant)
+            .unwrap_or_else(|_| env::panic_str("plot agent usage encoding failed"));
+        env::storage_write(&Self::plot_agent_key(&owner), &bytes);
+    }
+
+    pub fn agent_set_rule(&mut self, plot_id: String, rule: ParkingRule) -> PlotViewV2 {
+        self.use_plot_agent(&plot_id, 0, false);
+        self.set_rule(plot_id, rule)
+    }
+
+    pub fn agent_ticket(
+        &mut self,
+        plot_id: String,
+        slot: u8,
+        expected_session_id: u64,
+    ) -> Settlement {
+        self.use_plot_agent(&plot_id, 0, false);
+        self.ticket(plot_id, slot, expected_session_id)
+    }
+
+    pub fn agent_choose_design(&mut self, plot_id: String, choice: u8) -> PlotV2 {
+        self.use_plot_agent(&plot_id, 0, true);
+        self.choose_design(plot_id, choice)
+    }
+
+    pub fn agent_upgrade_building(&mut self, plot_id: String) -> PlotV2 {
+        let owner = env::predecessor_account_id();
+        let plot = self.owned_plot(&plot_id, &owner);
+        require!(
+            (1..4).contains(&plot.building.level),
+            "building is already level 4"
+        );
+        let cost = self.inner.config.building_upgrade_costs[usize::from(plot.building.level - 1)].0;
+        self.use_plot_agent(&plot_id, cost, true);
+        self.upgrade_building(plot_id)
     }
 
     fn ticket_usage_key(plot_id: &str) -> Vec<u8> {

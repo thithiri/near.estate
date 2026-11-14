@@ -69,6 +69,7 @@ async function privateKey(file, accountId) {
   const record = JSON.parse(await readFile(file, "utf8"));
   if (
     record.accountId !== accountId ||
+    (record.role && record.role !== "parking") ||
     !/^ed25519:[A-Za-z0-9]+$/.test(record.secretKey)
   )
     throw new Error(

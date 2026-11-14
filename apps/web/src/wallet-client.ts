@@ -26,6 +26,7 @@ import {
   type AssetManifestV2,
 } from "@estate/shared";
 import { ChainReader } from "./chain-reader.js";
+import type { PlotAgentStatus } from "./chain-reader.js";
 import { PRESET_PALETTES } from "./preset-catalog.js";
 
 export const GAMEPLAY_METHODS = [
@@ -46,6 +47,13 @@ export const PARKING_AGENT_METHODS = [
   "settle_expired",
 ] as const;
 export const PARKING_AGENT_KEY_ALLOWANCE = 50n * 10n ** 21n; // 0.05 testnet NEAR
+export const PLOT_AGENT_METHODS = [
+  "agent_set_rule",
+  "agent_ticket",
+  "agent_choose_design",
+  "agent_upgrade_building",
+] as const;
+export const PLOT_AGENT_KEY_ALLOWANCE = 50n * 10n ** 21n;
 const CALL_GAS = 60n * 10n ** 12n;
 const FINAL_BLOCK_SAFETY_MARGIN = 2n;
 const NETWORK = "testnet";
@@ -71,6 +79,11 @@ export type ParkingAgentKeyStatus = {
   state: "none" | "pending-add" | "ready" | "inactive" | "pending-revoke";
   publicKey: string | null;
   allowance: string | null;
+};
+export type PlotAgentAccess = {
+  state: "none" | "pending-key" | "pending-grant" | "ready" | "inactive";
+  publicKey: string | null;
+  status: PlotAgentStatus | null;
 };
 type ParkingAgentRecord = {
   accountId: string;
@@ -895,6 +908,178 @@ export class GameWalletClient {
 
   private parkingAgentName(accountId: string): string {
     return `near-estate:${NETWORK}:${this.reader.contractId}:${accountId}:parking-agent-key`;
+  }
+
+  private plotAgentName(accountId: string): string {
+    return `near-estate:${NETWORK}:${this.reader.contractId}:${accountId}:plot-agent-key`;
+  }
+
+  private plotAgentPublicKey(accountId: string): string | null {
+    const value = localStorage.getItem(this.plotAgentName(accountId));
+    if (!value) return null;
+    if (!/^ed25519:[A-Za-z0-9]+$/.test(value))
+      throw new Error("Saved plot agent public key is damaged");
+    PublicKey.fromString(value);
+    return value;
+  }
+
+  async plotAgentAccess(): Promise<PlotAgentAccess> {
+    const accountId = this.requiredAccount();
+    const status = await this.reader.plotAgentStatus(accountId);
+    const publicKey =
+      status?.grant.public_key ?? this.plotAgentPublicKey(accountId);
+    if (!publicKey) return { state: "none", publicKey: null, status: null };
+    const listed = await this.reader.accessKeyList(accountId);
+    const access = listed.keys.find(
+      (item) => item.public_key === publicKey,
+    )?.access_key;
+    if (!access)
+      return { state: status ? "inactive" : "pending-key", publicKey, status };
+    const permission =
+      access.permission === "FullAccess" || access.permission === null
+        ? null
+        : access.permission.FunctionCall;
+    const exact =
+      permission?.receiver_id === this.reader.contractId &&
+      permission.method_names.length === PLOT_AGENT_METHODS.length &&
+      PLOT_AGENT_METHODS.every((method) =>
+        permission.method_names.includes(method),
+      ) &&
+      typeof permission.allowance === "string" &&
+      BigInt(permission.allowance) > 0n &&
+      BigInt(permission.allowance) <= PLOT_AGENT_KEY_ALLOWANCE;
+    return {
+      state: exact ? (status ? "ready" : "pending-grant") : "inactive",
+      publicKey,
+      status,
+    };
+  }
+
+  async authorizePlotAgent(
+    publicKey: string,
+    plotIds: string[],
+    dailyCoinLimit: string,
+    dailyActionLimit: number,
+    allowDesignChanges: boolean,
+  ): Promise<PlotAgentAccess> {
+    const accountId = this.requiredAccount();
+    if (!/^ed25519:[A-Za-z0-9]+$/.test(publicKey))
+      throw new Error("Paste a plot-agent ed25519 public key");
+    let parsed: PublicKey;
+    try {
+      parsed = PublicKey.fromString(publicKey);
+    } catch {
+      throw new Error("Plot agent public key is invalid");
+    }
+    const saved = this.plotAgentPublicKey(accountId);
+    if (saved && saved !== publicKey)
+      throw new Error("Finish or revoke the existing plot-agent key first");
+    const before = await this.plotAgentAccess();
+    if (before.status)
+      throw new Error("Revoke the current plot-agent grant first");
+    if (before.state === "inactive")
+      throw new Error(
+        "The plot-agent key has different permissions; revoke it first",
+      );
+    if (!saved) localStorage.setItem(this.plotAgentName(accountId), publicKey);
+    if (before.state === "none" || before.state === "pending-key") {
+      const listed = await this.reader.accessKeyList(accountId);
+      if (!listed.keys.some((item) => item.public_key === publicKey)) {
+        const wallet = await this.selector.wallet();
+        await wallet.signAndSendTransaction({
+          signerId: accountId,
+          receiverId: accountId,
+          actions: [
+            actionCreators.addKey(
+              parsed,
+              actionCreators.functionCallAccessKey(
+                this.reader.contractId,
+                [...PLOT_AGENT_METHODS],
+                PLOT_AGENT_KEY_ALLOWANCE,
+              ),
+            ),
+          ],
+        });
+        if (this.accountId !== accountId)
+          throw new Error(
+            "Wallet account changed while adding the plot-agent key",
+          );
+      }
+    }
+    const keyReady = await this.plotAgentAccess();
+    if (keyReady.state !== "pending-grant") return keyReady;
+    const [quote, now] = await Promise.all([
+      this.reader.plotAgentStorageQuote(),
+      this.reader.chainTimeSeconds(),
+    ]);
+    const wallet = await this.selector.wallet();
+    await wallet.signAndSendTransaction({
+      signerId: accountId,
+      receiverId: this.reader.contractId,
+      actions: [
+        actionCreators.functionCall(
+          "authorize_plot_agent",
+          {
+            public_key: publicKey,
+            plot_ids: plotIds,
+            expires_at: now + 7 * 86_400,
+            daily_coin_limit: dailyCoinLimit,
+            daily_action_limit: dailyActionLimit,
+            allow_design_changes: allowDesignChanges,
+          },
+          CALL_GAS,
+          BigInt(quote),
+        ),
+      ],
+    });
+    if (this.accountId !== accountId)
+      throw new Error(
+        "Wallet account changed while authorizing the plot agent",
+      );
+    return this.plotAgentAccess();
+  }
+
+  async revokePlotAgent(): Promise<PlotAgentAccess> {
+    const accountId = this.requiredAccount();
+    let state = await this.plotAgentAccess();
+    if (state.publicKey && !this.plotAgentPublicKey(accountId))
+      localStorage.setItem(this.plotAgentName(accountId), state.publicKey);
+    if (state.status) {
+      const wallet = await this.selector.wallet();
+      await wallet.signAndSendTransaction({
+        signerId: accountId,
+        receiverId: this.reader.contractId,
+        actions: [
+          actionCreators.functionCall("revoke_plot_agent", {}, CALL_GAS, 0n),
+        ],
+      });
+      if (this.accountId !== accountId)
+        throw new Error(
+          "Wallet account changed while revoking the plot-agent grant",
+        );
+      state = await this.plotAgentAccess();
+      if (state.status) return state;
+    }
+    if (!state.publicKey) return state;
+    const listed = await this.reader.accessKeyList(accountId);
+    if (listed.keys.some((item) => item.public_key === state.publicKey)) {
+      const wallet = await this.selector.wallet();
+      await wallet.signAndSendTransaction({
+        signerId: accountId,
+        receiverId: accountId,
+        actions: [
+          actionCreators.deleteKey(PublicKey.fromString(state.publicKey)),
+        ],
+      });
+      if (this.accountId !== accountId)
+        throw new Error(
+          "Wallet account changed while deleting the plot-agent key",
+        );
+    }
+    const remaining = await this.reader.accessKeyList(accountId);
+    if (!remaining.keys.some((item) => item.public_key === state.publicKey))
+      localStorage.removeItem(this.plotAgentName(accountId));
+    return this.plotAgentAccess();
   }
 
   private parkingAgentRecord(accountId: string): ParkingAgentRecord | null {

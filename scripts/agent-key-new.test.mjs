@@ -36,3 +36,31 @@ test("creates one protected agent key and prints only its public key", async () 
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("plot agent receives a separate protected role key", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "estate-plot-agent-key-"));
+  const output = join(directory, "owner.plot.key.json");
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [
+        fileURLToPath(new URL("./agent-key-new.mjs", import.meta.url)),
+        "--account",
+        "owner.testnet",
+        "--role",
+        "plot",
+        "--out",
+        output,
+      ],
+      { encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    const record = JSON.parse(await readFile(output, "utf8"));
+    assert.equal(record.role, "plot");
+    assert.equal(record.accountId, "owner.testnet");
+    assert.equal((await stat(output)).mode & 0o777, 0o600);
+    assert.equal(result.stdout.includes(record.secretKey), false);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});

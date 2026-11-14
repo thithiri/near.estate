@@ -80,6 +80,23 @@ const RpcTransactionOutcome = z.object({
   final_execution_status: z.string(),
   status: z.unknown(),
 });
+const PlotAgentStatus = z.object({
+  grant: z.object({
+    owner: z.string(),
+    public_key: z.string(),
+    plot_ids: z.array(z.string()),
+    expires_at: z.number().int().nonnegative(),
+    daily_coin_limit: CoinString,
+    daily_action_limit: z.number().int().min(1).max(20),
+    allow_design_changes: z.boolean(),
+    day: z.number().int().nonnegative(),
+    coins_spent_today: CoinString,
+    actions_today: z.number().int().nonnegative(),
+  }),
+  coins_remaining_today: CoinString,
+  actions_remaining_today: z.number().int().nonnegative(),
+});
+export type PlotAgentStatus = z.infer<typeof PlotAgentStatus>;
 export type TransactionOutcome = "success" | "failure" | "pending";
 
 function transactionOutcome(value: unknown): TransactionOutcome {
@@ -360,6 +377,18 @@ export class ChainReader {
       "plot_purchase_quote",
       { plot_id: plotId },
       YoctoNearString,
+    );
+  }
+
+  plotAgentStorageQuote(): Promise<string> {
+    return this.view("plot_agent_storage_quote", {}, YoctoNearString);
+  }
+
+  plotAgentStatus(accountId: string): Promise<PlotAgentStatus | null> {
+    return this.view(
+      "get_plot_agent_status",
+      { owner: accountId },
+      PlotAgentStatus.nullable(),
     );
   }
 
