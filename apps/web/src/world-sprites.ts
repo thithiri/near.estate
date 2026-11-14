@@ -104,6 +104,8 @@ export function createNpcFacade(
   sprite.scale.set(0.25);
   const text = new Text({
     text: name,
+    resolution: 4,
+    textureStyle: { scaleMode: "linear" },
     style: {
       fontFamily: "Arial, sans-serif",
       fontWeight: "bold",
