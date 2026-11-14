@@ -20,7 +20,12 @@ function drawCar(
   x: number,
   y: number,
   color: string,
+  image?: HTMLImageElement,
 ): void {
+  if (image?.complete && image.naturalWidth > 0) {
+    context.drawImage(image, x - 70, y - 52, 140, 70);
+    return;
+  }
   roundedRect(context, x - 62, y - 31, 124, 42, 18, "#15243c");
   roundedRect(context, x - 59, y - 34, 118, 38, 16, color);
   context.fillStyle = "#b8efff";
@@ -51,9 +56,14 @@ function drawFacade(
   height: number,
   color: string,
   label: string,
+  image?: HTMLImageElement,
 ): void {
   if (x + width < -20 || x > 980) return;
   const bottom = 358;
+  if (image?.complete && image.naturalWidth > 0) {
+    context.drawImage(image, x, bottom - height, width, height);
+    return;
+  }
   roundedRect(context, x, bottom - height, width, height, 12, color);
   roundedRect(
     context,
@@ -87,6 +97,7 @@ function drawFacade(
 export function drawCinemaFrame(
   context: CanvasRenderingContext2D,
   elapsed: number,
+  art?: Record<string, HTMLImageElement>,
 ): void {
   const time = Math.max(0, Math.min(DURATION_SECONDS, elapsed));
   const camera = Math.min(time, 11.5) * 90;
@@ -111,12 +122,28 @@ export function drawCinemaFrame(
     roundedRect(context, x + 22, 286, 22, 24, 3, "#f5d587");
     roundedRect(context, x + 65, 286, 22, 24, 3, "#f5d587");
   }
-  drawFacade(context, 25 - camera, 188, 179, "#e79a7b", "CAFE");
-  drawFacade(context, 255 - camera, 190, 230, "#7dc9b5", "SHOPS");
-  drawFacade(context, 510 - camera, 196, 201, "#e7bc80", "CINEMA");
-  drawFacade(context, 770 - camera, 190, 250, "#9db9e2", "HOMES");
-  drawFacade(context, 1060 - camera, 205, 184, "#f0a88b", "BURGER");
-  drawFacade(context, 1400 - camera, 228, 287, "#8eacc6", "PARKING");
+  drawFacade(context, 25 - camera, 188, 210, "#e79a7b", "CAFE", art?.cafe);
+  drawFacade(context, 255 - camera, 190, 212, "#7dc9b5", "SHOPS", art?.shops);
+  drawFacade(context, 510 - camera, 196, 224, "#e7bc80", "CINEMA", art?.cinema);
+  drawFacade(context, 770 - camera, 190, 212, "#9db9e2", "HOMES", art?.homes);
+  drawFacade(
+    context,
+    1060 - camera,
+    205,
+    234,
+    "#f0a88b",
+    "BURGER",
+    art?.burger,
+  );
+  drawFacade(
+    context,
+    1400 - camera,
+    228,
+    260,
+    "#8eacc6",
+    "PARKING",
+    art?.tower,
+  );
   context.fillStyle = "#d6c9bc";
   context.fillRect(0, 358, 960, 52);
   context.fillStyle = "#52657c";
@@ -135,7 +162,7 @@ export function drawCinemaFrame(
   }
   const arrival = Math.max(0, Math.min(1, (time - 12) / 3));
   const carX = 340 + arrival * 205;
-  drawCar(context, carX, 453 - arrival * 40, "#ef715f");
+  drawCar(context, carX, 453 - arrival * 40, "#ef715f", art?.car);
   if (time < 3) {
     roundedRect(context, 220, 30, 520, 76, 18, "#fff4d7");
     context.fillStyle = "#14213d";
@@ -174,8 +201,11 @@ export function mountCinemaShort(
   let startedAt = 0;
   let playing = false;
   let frameId = 0;
+  let disposed = false;
+  const art: Record<string, HTMLImageElement> = {};
   const render = () => {
-    drawCinemaFrame(context, elapsed);
+    if (disposed) return;
+    drawCinemaFrame(context, elapsed, art);
     progress.value = elapsed;
     timeLabel.textContent = `${Math.floor(elapsed)} / ${DURATION_SECONDS}s`;
     caption.textContent =
@@ -231,8 +261,24 @@ export function mountCinemaShort(
   play.addEventListener("click", toggle);
   restart.addEventListener("click", replay);
   document.addEventListener("visibilitychange", onVisibility);
+  for (const [key, path] of Object.entries({
+    cafe: "guest-buildings/corner-shop-l4.png",
+    shops: "guest-buildings/glass-studio-l4.png",
+    cinema: "world/cinema.png",
+    homes: "guest-buildings/bookshop-l4.png",
+    burger: "world/burgerstop.png",
+    tower: "world/parkingtower.png",
+    car: "world/guest-hatchback-red.png",
+  })) {
+    const image = new Image();
+    image.decoding = "async";
+    image.addEventListener("load", render, { once: true });
+    image.src = `${import.meta.env.BASE_URL}${path}`;
+    art[key] = image;
+  }
   render();
   return () => {
+    disposed = true;
     pause();
     play.removeEventListener("click", toggle);
     restart.removeEventListener("click", replay);

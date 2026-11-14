@@ -90,12 +90,29 @@ function drawCourse(
   context: CanvasRenderingContext2D,
   run: PracticeRun,
   color: string,
+  carColorIndex: number,
+  art?: { track: HTMLImageElement; cars: HTMLImageElement },
 ): void {
   const canvas = context.canvas;
-  context.fillStyle = "#97d5a5";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = "#52657c";
-  context.fillRect(74, 0, 332, canvas.height);
+  if (art?.track.complete && art.track.naturalWidth > 0) {
+    const cropWidth = art.track.naturalWidth * 0.894;
+    context.drawImage(
+      art.track,
+      (art.track.naturalWidth - cropWidth) / 2,
+      0,
+      cropWidth,
+      art.track.naturalHeight,
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+    );
+  } else {
+    context.fillStyle = "#97d5a5";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#52657c";
+    context.fillRect(74, 0, 332, canvas.height);
+  }
   context.fillStyle = "#e9f1df";
   context.fillRect(70, 0, 5, canvas.height);
   context.fillRect(406, 0, 5, canvas.height);
@@ -137,21 +154,43 @@ function drawCourse(
     context.fillRect(x - 9, y + 2, 18, 5);
   }
   const carX = 74 + (332 * (run.lane + 0.5)) / 3;
+  if (art?.cars.complete && art.cars.naturalWidth > 0) {
+    const quarter = art.cars.naturalWidth / 4;
+    context.drawImage(
+      art.cars,
+      (carColorIndex + 0.16) * quarter,
+      20,
+      quarter * 0.68,
+      art.cars.naturalHeight - 40,
+      carX - 29,
+      456,
+      58,
+      106,
+    );
+  } else {
+    context.fillStyle = "#14213d";
+    context.beginPath();
+    context.roundRect(carX - 31, 459, 62, 103, 14);
+    context.fill();
+    context.fillStyle = color;
+    context.beginPath();
+    context.roundRect(carX - 27, 463, 54, 95, 11);
+    context.fill();
+    context.fillStyle = "#b9eaf1";
+    context.beginPath();
+    context.roundRect(carX - 21, 482, 42, 24, 7);
+    context.fill();
+  }
+  context.fillStyle = "#fff9ed";
+  context.beginPath();
+  context.roundRect(10, 8, 112, 37, 9);
+  context.fill();
+  context.strokeStyle = "#14213d";
+  context.lineWidth = 2;
+  context.stroke();
   context.fillStyle = "#14213d";
-  context.beginPath();
-  context.roundRect(carX - 31, 459, 62, 103, 14);
-  context.fill();
-  context.fillStyle = color;
-  context.beginPath();
-  context.roundRect(carX - 27, 463, 54, 95, 11);
-  context.fill();
-  context.fillStyle = "#b9eaf1";
-  context.beginPath();
-  context.roundRect(carX - 21, 482, 42, 24, 7);
-  context.fill();
-  context.fillStyle = "#14213d";
-  context.font = "bold 17px system-ui";
-  context.fillText("PRACTICE", 16, 34);
+  context.font = "bold 18px system-ui";
+  context.fillText("PRACTICE", 19, 33);
 }
 
 export function mountPracticeCourse(
@@ -179,6 +218,11 @@ export function mountPracticeCourse(
   let accelerating = false;
   let frameId = 0;
   let lastFrame = 0;
+  let disposed = false;
+  const art = { track: new Image(), cars: new Image() };
+  const carColorIndex = ["Red", "Blue", "Yellow", "Green"].indexOf(
+    options.color,
+  );
   const carColor =
     (
       {
@@ -189,7 +233,8 @@ export function mountPracticeCourse(
       } as Record<string, string>
     )[options.color] ?? "#ef715f";
   const refresh = () => {
-    drawCourse(context, run, carColor);
+    if (disposed) return;
+    drawCourse(context, run, carColor, Math.max(0, carColorIndex), art);
     status.textContent = `${run.checkpoints}/3 checkpoints · ${run.distance.toFixed(0)}/${COURSE_LENGTH} m · ${run.elapsed.toFixed(2)}s${run.coneHits ? ` · ${run.coneHits} cone penalties` : ""}${best === null ? "" : ` · Best ${best.toFixed(2)}s`}${run.finished ? " · Finished!" : ""}`;
     start.textContent = running
       ? "Restart run"
@@ -277,8 +322,13 @@ export function mountPracticeCourse(
   window.addEventListener("keyup", onKeyUp);
   window.addEventListener("blur", stopThrottle);
   document.addEventListener("visibilitychange", onVisibility);
+  art.track.addEventListener("load", refresh, { once: true });
+  art.cars.addEventListener("load", refresh, { once: true });
+  art.track.src = `${import.meta.env.BASE_URL}activities/practice-track-v1.webp`;
+  art.cars.src = `${import.meta.env.BASE_URL}activities/practice-cars-v1.webp`;
   refresh();
   return () => {
+    disposed = true;
     running = false;
     cancelAnimationFrame(frameId);
     window.removeEventListener("keydown", onKeyDown);

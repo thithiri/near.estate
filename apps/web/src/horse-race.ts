@@ -109,56 +109,60 @@ export function drawHorseRaceFrame(
   ctx: CanvasRenderingContext2D,
   raceNumber: number,
   elapsed: number,
+  art?: { track: HTMLImageElement; runners: HTMLImageElement },
 ): void {
   const width = 960;
   const height = 540;
-  const sky = ctx.createLinearGradient(0, 0, 0, height);
-  sky.addColorStop(0, "#a5d7e5");
-  sky.addColorStop(0.55, "#e2eee1");
-  sky.addColorStop(1, "#dcb992");
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = "#76a891";
-  ctx.fillRect(0, 146, width, 102);
-  rounded(ctx, 28, 39, 316, 139, 12, "#294b5e");
-  rounded(ctx, 40, 56, 292, 108, 7, "#f5e2c4");
-  for (let row = 0; row < 3; row++) {
-    ctx.fillStyle = row % 2 === 0 ? "#e58e73" : "#70a9a0";
-    ctx.fillRect(48, 76 + row * 25, 277, 13);
+  if (art?.track.complete && art.track.naturalWidth > 0) {
+    ctx.drawImage(art.track, 0, 0, width, height);
+  } else {
+    const sky = ctx.createLinearGradient(0, 0, 0, height);
+    sky.addColorStop(0, "#a5d7e5");
+    sky.addColorStop(0.55, "#e2eee1");
+    sky.addColorStop(1, "#dcb992");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "#76a891";
+    ctx.fillRect(0, 146, width, 102);
+    for (let lane = 0; lane < 4; lane++) {
+      const top = 213 + lane * 78;
+      ctx.fillStyle = lane % 2 === 0 ? "#d8b78f" : "#d1a97e";
+      ctx.fillRect(0, top, width, 78);
+      ctx.fillStyle = "#fff7e8";
+      ctx.fillRect(0, top, width, 2);
+    }
   }
-  ctx.fillStyle = "#294b5e";
-  ctx.beginPath();
-  ctx.moveTo(18, 42);
-  ctx.lineTo(186, 8);
-  ctx.lineTo(353, 42);
-  ctx.closePath();
-  ctx.fill();
-  rounded(ctx, 590, 31, 325, 78, 18, "#fff8eb");
-  ctx.fillStyle = "#1e2d49";
-  ctx.textAlign = "center";
-  ctx.font = "bold 33px system-ui";
-  ctx.fillText("HARBOR HORSE COURSE", 752, 77);
   for (let lane = 0; lane < 4; lane++) {
-    const top = 213 + lane * 78;
-    ctx.fillStyle = lane % 2 === 0 ? "#d8b78f" : "#d1a97e";
-    ctx.fillRect(0, top, width, 78);
-    ctx.fillStyle = "#fff7e8";
-    ctx.fillRect(0, top, width, 2);
-    ctx.fillStyle = "#39545a";
-    ctx.font = "bold 17px system-ui";
-    ctx.textAlign = "left";
-    ctx.fillText(String(lane + 1), 15, top + 31);
+    rounded(ctx, 12, 232 + lane * 78, 30, 28, 8, "#fff8eb");
+    ctx.fillStyle = "#26394b";
+    ctx.font = "bold 18px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(String(lane + 1), 27, 253 + lane * 78);
   }
   ctx.fillStyle = "#fff8eb";
-  ctx.fillRect(824, 206, 12, 333);
+  ctx.fillRect(824, 215, 16, 325);
   for (let square = 0; square < 20; square++) {
     ctx.fillStyle = square % 2 ? "#1e2d49" : "#fff8eb";
-    ctx.fillRect(824, 206 + square * 17, 12, 17);
+    ctx.fillRect(824, 215 + square * 17, 16, 17);
   }
   for (let horse = 0; horse < 4; horse++) {
     const progress = horseProgress(raceNumber, horse, elapsed);
     const x = 80 + progress * 760;
-    drawHorse(ctx, x, 252 + horse * 78, horse, elapsed * 12 + horse);
+    const y = 252 + horse * 78;
+    if (art?.runners.complete && art.runners.naturalWidth > 0) {
+      const quarter = art.runners.naturalWidth / 4;
+      ctx.drawImage(
+        art.runners,
+        horse * quarter,
+        155,
+        quarter,
+        410,
+        x - 62,
+        y - 55 + Math.sin(elapsed * 12 + horse) * 2,
+        124,
+        90,
+      );
+    } else drawHorse(ctx, x, y, horse, elapsed * 12 + horse);
   }
   if (elapsed >= HORSE_RACE_SECONDS) {
     const winner = HORSES[horseRaceOrder(raceNumber)[0]!];
@@ -186,13 +190,19 @@ export function mountHorseRace(
   let startedAt = 0;
   let frame = 0;
   let playing = false;
+  let disposed = false;
+  const art = {
+    track: new Image(),
+    runners: new Image(),
+  };
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const markState = (state: "ready" | "running" | "finished") => {
     host.dataset.horseRaceNumber = String(raceNumber);
     host.dataset.horseRaceState = state;
   };
   const render = () => {
-    drawHorseRaceFrame(context, raceNumber, elapsed);
+    if (disposed) return;
+    drawHorseRaceFrame(context, raceNumber, elapsed, art);
     status.textContent =
       elapsed >= HORSE_RACE_SECONDS
         ? `${HORSES[horseRaceOrder(raceNumber)[0]!]!.name} wins. Free spectator race; no coins changed.`
@@ -253,9 +263,14 @@ export function mountHorseRace(
   const toggle = () => (playing ? pause() : start());
   watch.addEventListener("click", toggle);
   document.addEventListener("visibilitychange", pause);
+  art.track.addEventListener("load", render, { once: true });
+  art.runners.addEventListener("load", render, { once: true });
+  art.track.src = `${import.meta.env.BASE_URL}activities/horse-track-v1.webp`;
+  art.runners.src = `${import.meta.env.BASE_URL}activities/horse-runners-v1.webp`;
   markState("ready");
   render();
   return () => {
+    disposed = true;
     pause();
     watch.removeEventListener("click", toggle);
     document.removeEventListener("visibilitychange", pause);

@@ -50,6 +50,8 @@ test("trip card routes the player toward a nearby curb", async ({ page }) => {
 test("parking near a trip stop stamps the visit without awarding coins", async ({
   page,
 }) => {
+  // Keep this one-click activity journey on the burger stop as daily routes rotate.
+  await page.clock.setFixedTime(new Date("2026-11-16T12:00:00Z"));
   await page.goto("/");
   await page.locator('[data-screen="Map"]:visible').first().click();
   await page.locator(".map-trip-stop button").first().click();
